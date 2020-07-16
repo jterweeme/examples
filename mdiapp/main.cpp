@@ -5,7 +5,6 @@
 #include <commctrl.h>
 
 wchar_t g_szChild[] = L"MyMDIChild";
-HINSTANCE g_hInst;
 HWND g_hMDIClient;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
@@ -13,14 +12,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 {
     (void)hPrevInstance;
     (void)lpszCmdParam;
-    InitCommonControls();
-    g_hInst = hInstance;
-    WinClass wc1(WndProc, hInstance, L"MyMDIWindow", L"MAIN", (HBRUSH)(COLOR_3DSHADOW+1));
-    wc1.registerClass();
-    WinClass wc2(MDIChildWndProc, hInstance, g_szChild, nullptr, (HBRUSH)(COLOR_3DFACE+1));
-    wc2.registerClass();
-    MainWindow mainWindow(&wc1);
-    mainWindow.alles(nCmdShow);
+
+    try
+    {
+        WinClass wc1(MainWindow::wndProc, hInstance, L"MyMDIWindow", L"MAIN", HBRUSH(COLOR_3DSHADOW+1));
+        WinClass wc2(MainWindow::childProc, hInstance, g_szChild, nullptr, HBRUSH(COLOR_3DFACE+1));
+        InitCommonControls();
+        wc1.registerClass();
+        wc2.registerClass();
+        MainWindow mainWindow(&wc1);
+        mainWindow.alles(nCmdShow);
+    }
+    catch (...)
+    {
+        ::MessageBoxW(0, L"Unknown Error", L"Error", 0);
+    }
 
     MSG Msg;
     while (GetMessage(&Msg, NULL, 0, 0))
