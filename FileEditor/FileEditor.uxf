@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.3.0">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>580</x>
+      <y>260</y>
+      <w>230</w>
+      <h>110</h>
+    </coordinates>
+    <panel_attributes>Window
+--
+_wc: WinClass
+--
++create(caption: LPCTSTR): void
++show(nCmdShow: int): void
++update(): void</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>20</x>
+      <y>210</y>
+      <w>410</w>
+      <h>280</h>
+    </coordinates>
+    <panel_attributes>Element
+--
+_hwnd: HWND
+_parent: Element *
+_id: int
+_x: int
+_y: int
+_width: int
+_height: int
+--
++move(x: int, y: int, width: int, height: int, repaint: BOOL): void
++move(): void
++hwnd(): HWND
++sendMsgA(msg, wp, lp): LRESULT
++sendMsgW(msg, wp, lp): LRESULT
++setFocus(): void</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>420</x>
+      <y>270</y>
+      <w>180</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;160.0;50.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>610</x>
+      <y>450</y>
+      <w>240</w>
+      <h>110</h>
+    </coordinates>
+    <panel_attributes>WinClass
+--
+_wc: WNDCLASSEX
+--
++registerClass(): void
++hInstance(): HINSTANCE
++className(): LPCWSTR</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>900</x>
+      <y>250</y>
+      <w>580</w>
+      <h>110</h>
+    </coordinates>
+    <panel_attributes>MainWindow
+--
+_editBox: EditBox
+--
++MainWindow(wc: WinClass)
++WndProc(hwnd: HWND, msg: UINT, wParam: WPARAM, lParam LPARAM): LRESULT
++create(): void</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>800</x>
+      <y>300</y>
+      <w>120</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;100.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>700</x>
+      <y>360</y>
+      <w>30</w>
+      <h>110</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>10.0;90.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>550</x>
+      <y>60</y>
+      <w>450</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes>EditBox
+--
+--
+EditBox(parent: Element)
++create(hInstance: HINSTANCE, hwnd: HWND, id: int): void
++setFont(font: int): void</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>420</x>
+      <y>110</y>
+      <w>150</w>
+      <h>160</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;140.0;130.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>840</x>
+      <y>350</y>
+      <w>210</w>
+      <h>190</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>10.0;170.0;190.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>910</x>
+      <y>140</y>
+      <w>160</w>
+      <h>130</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;140.0;110.0</additional_attributes>
+  </element>
+</diagram>

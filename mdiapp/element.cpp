@@ -1,10 +1,12 @@
 #include "element.h"
 
+#if 0
 Element::Element() :
     _hwnd(0), _parent(0), _id(0), _x(0), _y(0), _width(0), _height(0)
 {
 
 }
+#endif
 
 Element::Element(HWND parent) :
     _hwnd(0), _parent(parent), _id(0), _x(0), _y(0), _width(0), _height(0)

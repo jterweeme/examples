@@ -30,26 +30,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     BOOL bQuit = FALSE;
     float theta = 0.0f;
 
-  // register window class
-  wc.style = CS_OWNDC;
-  wc.lpfnWndProc = WndProc;
-  wc.cbClsExtra = 0;
-  wc.cbWndExtra = 0;
-  wc.hInstance = hInstance;
-  wc.hIcon = LoadIcon( NULL, IDI_APPLICATION );
-  wc.hCursor = LoadCursor( NULL, IDC_ARROW );
-  wc.hbrBackground = (HBRUSH)GetStockObject( BLACK_BRUSH );
-  wc.lpszMenuName = NULL;
-  wc.lpszClassName = L"GLSample";
-  RegisterClass( &wc );
+    // register window class
+    wc.style = CS_OWNDC;
+    wc.lpfnWndProc = WndProc;
+    wc.cbClsExtra = 0;
+    wc.cbWndExtra = 0;
+    wc.hInstance = hInstance;
+    wc.hIcon = LoadIcon( NULL, IDI_APPLICATION );
+    wc.hCursor = LoadCursor( NULL, IDC_ARROW );
+    wc.hbrBackground = (HBRUSH)GetStockObject( BLACK_BRUSH );
+    wc.lpszMenuName = NULL;
+    wc.lpszClassName = L"GLSample";
+    RegisterClass( &wc );
 
-  // create main window
-  hWnd = CreateWindowA("GLSample", "OpenGL Sample",
+    // create main window
+    hWnd = CreateWindowA("GLSample", "OpenGL Sample",
             WS_CAPTION | WS_POPUPWINDOW | WS_VISIBLE,
             0, 0, 256, 256, NULL, NULL, hInstance, NULL);
 
-  // enable OpenGL for the window
-  EnableOpenGL( hWnd, &hDC, &hRC );
+    // enable OpenGL for the window
+    EnableOpenGL( hWnd, &hDC, &hRC );
 
   // program main loop
   while (!bQuit) 
@@ -137,8 +137,7 @@ VOID EnableOpenGL(HWND hWnd, HDC *hDC, HGLRC *hRC)
   ZeroMemory( &pfd, sizeof( pfd ) );
   pfd.nSize = sizeof( pfd );
   pfd.nVersion = 1;
-  pfd.dwFlags = PFD_DRAW_TO_WINDOW | 
-  PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+  pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
   pfd.iPixelType = PFD_TYPE_RGBA;
   pfd.cColorBits = 24;
   pfd.cDepthBits = 16;

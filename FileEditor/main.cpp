@@ -7,11 +7,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     (void)hPrevInstance;
     (void)lpCmdLine;
     WinClass wc(MainWindow::WndProc, hInstance, L"MyWindowClass");
-    wc.registerClass();
     MainWindow win(&wc);
-    win.create();
-    win.show(nCmdShow);
-    win.update();
+
+    try
+    {
+        wc.registerClass();
+        win.create();
+        win.show(nCmdShow);
+        win.update();
+    }
+    catch (LPCSTR err)
+    {
+        ::MessageBoxA(0, err, "Error", 0);
+    }
+    catch (...)
+    {
+        ::MessageBoxW(0, L"Unknown Error", L"Error", 0);
+    }
+
 
     MSG msg;
     while (GetMessage(&msg, NULL, 0, 0))

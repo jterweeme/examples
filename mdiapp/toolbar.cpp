@@ -2,9 +2,8 @@
 #include "mdi_unit.h"
 #include <commctrl.h>
 
-Toolbar::Toolbar(HWND parent)
+Toolbar::Toolbar(HWND parent) : Element(parent)
 {
-    _parent = parent;
 }
 
 void Toolbar::create(HINSTANCE hInst)

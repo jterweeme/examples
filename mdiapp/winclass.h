@@ -7,10 +7,10 @@ class WinClass
 public:
     WNDCLASSEX _wc;
 public:
-    WinClass(WNDPROC wndProc, HINSTANCE hInstance, LPCWSTR className, LPCWSTR menu, HBRUSH bg);
-    LPCWSTR className() const;
+    WinClass(WNDPROC wndProc, HINSTANCE hInstance, LPCTSTR className, LPCTSTR menu, HBRUSH bg);
+    LPCTSTR className() const;
     HINSTANCE hInstance() const;
-    int registerClass();
+    void registerClass();
 };
 #endif
 

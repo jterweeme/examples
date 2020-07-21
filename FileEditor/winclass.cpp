@@ -1,6 +1,6 @@
 #include "winclass.h"
 
-WinClass::WinClass(WNDPROC wndProc, HINSTANCE hInstance, LPCWSTR className)
+WinClass::WinClass(WNDPROC wndProc, HINSTANCE hInstance, LPCTSTR className)
 {
     _wc.cbSize = sizeof(WNDCLASSEX);
     _wc.style = 0;
@@ -11,7 +11,7 @@ WinClass::WinClass(WNDPROC wndProc, HINSTANCE hInstance, LPCWSTR className)
     _wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
     _wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     _wc.hbrBackground = HBRUSH(COLOR_WINDOW + 1);
-    _wc.lpszMenuName = L"MAINMENU";
+    _wc.lpszMenuName = TEXT("MAINMENU");
     _wc.lpszClassName = className;
     _wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
 }
@@ -19,10 +19,10 @@ WinClass::WinClass(WNDPROC wndProc, HINSTANCE hInstance, LPCWSTR className)
 void WinClass::registerClass()
 {
     if (!::RegisterClassEx(&_wc))
-        throw "Window registration failed";
+        throw TEXT("Window registration failed");
 }
 
-LPCWSTR WinClass::className() const
+LPCTSTR WinClass::className() const
 {
     return _wc.lpszClassName;
 }

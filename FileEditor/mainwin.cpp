@@ -6,67 +6,52 @@
 
 MainWindow *MainWindow::_instance;
 
-MainWindow::MainWindow(WinClass *wc) : _wc(wc)
+MainWindow::MainWindow(WinClass *wc) :
+    Window(wc, CW_USEDEFAULT, CW_USEDEFAULT, 640, 480),
+    _editBox(this, IDC_MAIN_TEXT)
 {
     _instance = this;
 }
 
-void MainWindow::show(int nCmdShow)
+void MainWindow::create()
 {
-    ::ShowWindow(_hwnd, nCmdShow);
+    Window::create(TEXT("File Editor example"));
 }
 
-void MainWindow::update()
-{
-    ::UpdateWindow(_hwnd);
-}
-
-int MainWindow::create()
-{
-    _hwnd = CreateWindowEx(WS_EX_CLIENTEDGE, _wc->className(),
-                L"File Editor Example Program", WS_OVERLAPPEDWINDOW,
-                CW_USEDEFAULT, CW_USEDEFAULT, 640, 480,
-                NULL, NULL, _wc->hInstance(), NULL);
-
-    if (_hwnd == NULL)
-        throw "Window creation failed!";
-
-    return 0;
-}
-
-BOOL MainWindow::LoadFile(HWND hEdit, LPWSTR pszFileName)
+BOOL MainWindow::_loadFile(HWND hEdit, LPCTSTR pszFileName)
 {
     BOOL bSuccess = FALSE;
     HANDLE hFile = CreateFile(pszFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
 
-    if (hFile != INVALID_HANDLE_VALUE)
+    if (hFile == INVALID_HANDLE_VALUE)
+        throw TEXT("Cannot open file");
+
+    DWORD dwFileSize = GetFileSize(hFile, NULL);
+
+    if (dwFileSize != 0xFFFFFFFF)
     {
-        DWORD dwFileSize = GetFileSize(hFile, NULL);
+        LPSTR pszFileText2 = LPSTR(GlobalAlloc(GPTR, dwFileSize + 1));
 
-        if (dwFileSize != 0xFFFFFFFF)
+        if (pszFileText2 != NULL)
         {
-            LPSTR pszFileText2 = LPSTR(GlobalAlloc(GPTR, dwFileSize + 1));
+            DWORD dwRead;
 
-            if (pszFileText2 != NULL)
+            if (ReadFile(hFile, pszFileText2, dwFileSize, &dwRead, NULL))
             {
-                DWORD dwRead;
+                pszFileText2[dwFileSize] = 0; // Null terminator
 
-                if (ReadFile(hFile, pszFileText2, dwFileSize, &dwRead, NULL))
-                {
-                    pszFileText2[dwFileSize] = 0; // Null terminator
-
-                    if (SetWindowTextA(hEdit, pszFileText2))
-                        bSuccess = TRUE; // It worked!
-                }
-                GlobalFree(pszFileText2);
+                if (SetWindowTextA(hEdit, pszFileText2))
+                    bSuccess = TRUE; // It worked!
             }
+            GlobalFree(pszFileText2);
         }
-        CloseHandle(hFile);
     }
+    CloseHandle(hFile);
+
     return bSuccess;
 }
 
-BOOL MainWindow::SaveFile(HWND hEdit, LPWSTR pszFileName)
+BOOL MainWindow::SaveFile(HWND hEdit, LPCTSTR pszFileName)
 {
     BOOL bSuccess = FALSE;
 
@@ -107,10 +92,10 @@ BOOL MainWindow::DoFileOpenSave(HWND hwnd, BOOL bSave)
     szFileName[0] = 0;
     ofn.lStructSize = sizeof(ofn);
     ofn.hwndOwner = hwnd;
-    ofn.lpstrFilter = L"Text Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0\0";
+    ofn.lpstrFilter = TEXT("Text Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0\0");
     ofn.lpstrFile = szFileName;
     ofn.nMaxFile = MAX_PATH;
-    ofn.lpstrDefExt = L"txt";
+    ofn.lpstrDefExt = TEXT("txt");
 
     if (bSave)
     {
@@ -119,7 +104,7 @@ BOOL MainWindow::DoFileOpenSave(HWND hwnd, BOOL bSave)
         if (GetSaveFileName(&ofn))
         {
             if (!SaveFile(GetDlgItem(hwnd, IDC_MAIN_TEXT), szFileName))
-                throw "Save file failed";
+                throw TEXT("Save file failed");
         }
     }
     else
@@ -128,10 +113,9 @@ BOOL MainWindow::DoFileOpenSave(HWND hwnd, BOOL bSave)
 
         if (GetOpenFileName(&ofn))
         {
-            if (!LoadFile(GetDlgItem(hwnd, IDC_MAIN_TEXT), szFileName))
+            if (!_loadFile(GetDlgItem(hwnd, IDC_MAIN_TEXT), szFileName))
             {
-                ::MessageBoxA(hwnd, "Load of file failed.", "Error", MB_OK | MB_ICONEXCLAMATION);
-                return FALSE;
+                throw TEXT("Load of file failed");
             }
         }
     }
@@ -148,22 +132,15 @@ LRESULT MainWindow::_wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     switch (msg)
     {
         case WM_CREATE:
-            ::CreateWindow(L"EDIT", L"",
-                WS_CHILD | WS_VISIBLE | WS_HSCROLL | WS_VSCROLL | ES_MULTILINE | ES_WANTRETURN,
-                CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-                hwnd, HMENU(IDC_MAIN_TEXT), _wc->hInstance(), NULL);
-
-            ::SendDlgItemMessage(hwnd, IDC_MAIN_TEXT, WM_SETFONT,
-                WPARAM(GetStockObject(DEFAULT_GUI_FONT)), MAKELPARAM(TRUE, 0));
-
+            _editBox.create(_wc->hInstance(), hwnd);
             break;
         case WM_SIZE:
             if (wParam != SIZE_MINIMIZED)
-                MoveWindow(GetDlgItem(hwnd, IDC_MAIN_TEXT), 0, 0, LOWORD(lParam), HIWORD(lParam), TRUE);
+                _editBox.move(0, 0, LOWORD(lParam), HIWORD(lParam), TRUE);
 
             break;
         case WM_SETFOCUS:
-            SetFocus(GetDlgItem(hwnd, IDC_MAIN_TEXT));
+            _editBox.setFocus();
             break;
         case WM_COMMAND:
             switch (LOWORD(wParam))
@@ -175,10 +152,13 @@ LRESULT MainWindow::_wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     DoFileOpenSave(hwnd, TRUE);
                     break;
                 case CM_FILE_EXIT:
-                    PostMessage(hwnd, WM_CLOSE, 0, 0);
+                    ::PostMessage(hwnd, WM_CLOSE, 0, 0);
                     break;
                 case CM_ABOUT:
-                    MessageBoxA(NULL, "File Editor for Windows !\n Using the Win32 API" , "About...", 0);
+                    ::MessageBox(NULL,
+                          TEXT("File Editor for Windows !\n Using the Win32 API"),
+                          TEXT("About..."), 0);
+                    break;
             }
             break;
         case WM_CLOSE:

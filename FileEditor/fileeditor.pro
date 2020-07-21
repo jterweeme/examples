@@ -4,8 +4,8 @@
 TARGET = FileEditor
 TEMPLATE = app
 LIBS += -luser32 -lcomdlg32 -lgdi32
-SOURCES += main.cpp mainwin.cpp winclass.cpp
-HEADERS += main.h mainwin.h winclass.h
+SOURCES += editbox.cpp element.cpp main.cpp mainwin.cpp winclass.cpp window.cpp
+HEADERS += editbox.h element.h main.h mainwin.h winclass.h window.h
 RC_FILE += FileEditor.rc
 OTHER_FILES += FileEditor.rc
 

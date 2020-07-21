@@ -15,17 +15,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     try
     {
-        WinClass wc1(MainWindow::wndProc, hInstance, L"MyMDIWindow", L"MAIN", HBRUSH(COLOR_3DSHADOW+1));
+        WinClass wc1(MainWindow::wndProc, hInstance, TEXT("MyMDIWindow"), TEXT("MAIN"), HBRUSH(COLOR_3DSHADOW+1));
         WinClass wc2(MainWindow::childProc, hInstance, g_szChild, nullptr, HBRUSH(COLOR_3DFACE+1));
+        MainWindow mainWindow(&wc1);
         InitCommonControls();
         wc1.registerClass();
         wc2.registerClass();
-        MainWindow mainWindow(&wc1);
         mainWindow.alles(nCmdShow);
     }
     catch (...)
     {
-        ::MessageBoxW(0, L"Unknown Error", L"Error", 0);
+        ::MessageBox(0, TEXT("Unknown Error"), TEXT("Error"), 0);
     }
 
     MSG Msg;

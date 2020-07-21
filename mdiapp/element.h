@@ -8,13 +8,14 @@ class Element
 protected:
     HWND _hwnd;
     HWND _parent;
+    Element *_parentElement;
     int _id;
     int _x;
     int _y;
     int _width;
     int _height;
 public:
-    Element();
+    //Element();
     Element(HWND parent);
     Element(int id, int x, int y, int width, int height);
     Element(HWND parent, int id, int x, int y, int width, int height);
