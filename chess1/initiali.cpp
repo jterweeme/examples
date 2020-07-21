@@ -248,8 +248,7 @@ GLOBALHANDLE hGameList, hTree, hHistory, hTTable, hHashCode, hdistdata;
 GLOBALHANDLE htaxidata, hnextdir, hnextpos;
 
 /* hmm.... shouldn`t main be moved to the interface routines */
-int
-init_main (HWND hWnd)
+int init_main (HWND hWnd)
 {
   short int ahead = true, hash = true;
 
@@ -343,8 +342,9 @@ init_main (HWND hWnd)
   Initialize_dist ();
   Initialize_moves ();
   NewGame (hWnd);
+#if 0
   GetOpenings ( hWnd);
-
+#endif
   flag.easy = ahead;
   flag.hash = hash;
   hashfile = NULL;
@@ -473,9 +473,8 @@ NewGame (HWND hWnd)
     SetTimeControl ();
   }
   InitializeStats ();
-#if 0
-  time0 = time ((long *) 0);
-#endif
+  time0 = ::time ( 0);
+
   ElapsedTime (1);
   UpdateDisplay (hWnd, 0, 0, 1, 0);
 }

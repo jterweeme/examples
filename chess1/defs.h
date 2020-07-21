@@ -158,7 +158,7 @@ extern void GiveHint (HWND hWnd);
 extern int VerifyMove (HWND hWnd, char *s, short int iop, short unsigned int *mv);
 extern int init_main (HWND hWnd);
 extern void ShowSidetoMove (void);
-extern FARPROC CALLBACK About(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+extern LRESULT CALLBACK About(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 extern long FAR PASCAL ChessWndProc( HWND hWnd, unsigned message, WORD wParam, LONG lParam);
 extern void Init_Menus(HWND hWnd, WPARAM wParam, LPARAM lParam );
 extern void FreeBook (void);

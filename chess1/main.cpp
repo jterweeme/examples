@@ -36,6 +36,7 @@
  
 #include <string.h>
 #include <time.h>
+#include <iostream>
 
 #include "gnuchess.h"
 
@@ -104,7 +105,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
          CW_USEDEFAULT, CW_USEDEFAULT,
          NULL,	NULL,	hInstance,	NULL);
 
-    if (!hWnd)	return (NULL);
+    if (!hWnd)
+        return (NULL);
 
     ShowWindow(hWnd, nCmdShow);			  /* Shows the window	     */
 
@@ -130,25 +132,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         }
     }
 
-    return (msg.wParam);	   /* Returns the value from PostQuitMessage */
+    return msg.wParam;
 }
 
 LRESULT CALLBACK ChessWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-   FARPROC lpProcAbout;
-   HMENU hMenu;
-   PAINTSTRUCT ps;
-   HDC hDC;
-   TEXTMETRIC tm;
-   int i;
-   POINT point;
-   OFSTRUCT pof;
-   char FileName[256], str[80];
-   int Status;
-   HFILE hFile;
+    HMENU hMenu;
+    PAINTSTRUCT ps;
+    HDC hDC;
+    TEXTMETRIC tm;
+    POINT point;
+    OFSTRUCT pof;
+    char FileName[256], str[80];
+    int Status;
+    HFILE hFile;
 
-   switch (message)
-   {
+    switch (message)
+    {
         case WM_CREATE:
         {
          int xchar, ychar;
@@ -157,10 +157,12 @@ LRESULT CALLBACK ChessWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 
          hBrushBackGround = CreateSolidBrush ( clrBackGround );
 
-         for ( i=pawn; i<pawn+6; i++ ) pieces[i].piece = LoadBitmap(hInst, MAKEINTRESOURCE(PAWNBASE+i));
-         for ( i=pawn; i<pawn+6; i++ ) pieces[i].mask = LoadBitmap(hInst, MAKEINTRESOURCE(PAWNBASE+6+i));
-         for ( i=pawn; i<pawn+6; i++ ) pieces[i].outline = LoadBitmap(hInst, MAKEINTRESOURCE(PAWNBASE+12+i));
-
+         for (int i=pawn; i<pawn+6; i++ )
+         {
+             pieces[i].piece = LoadBitmap(hInst, MAKEINTRESOURCE(PAWNBASE+i));
+             pieces[i].mask = LoadBitmap(hInst, MAKEINTRESOURCE(PAWNBASE+6+i));
+             pieces[i].outline = LoadBitmap(hInst, MAKEINTRESOURCE(PAWNBASE+12+i));
+         }
 
          hDC = GetDC (hWnd);
          GetTextMetrics ( hDC, &tm);
@@ -211,8 +213,11 @@ LRESULT CALLBACK ChessWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
          }
 
          hDC = BeginPaint ( hWnd, &ps);
-         Draw_Board ( hDC, flag.reverse, clrBlackSquare, clrWhiteSquare );
-         if ( coords ) DrawCoords ( hDC, flag.reverse, clrBackGround, clrText);
+         Draw_Board(hDC, flag.reverse, clrBlackSquare, clrWhiteSquare);
+
+         if (coords)
+             DrawCoords ( hDC, flag.reverse, clrBackGround, clrText);
+
          DrawAllPieces ( hDC, flag.reverse, boarddraw, colordraw, clrBlackPiece, clrWhitePiece );
          EndPaint ( hWnd, &ps);
 
@@ -444,8 +449,6 @@ LRESULT CALLBACK ChessWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
          flag.bothsides = false;
          PostMessage ( hWnd, MSG_DESTROY, 0, 0);
          break;
-         
-      /* Menu item processing */
       case WM_COMMAND:
 
          /* When we execute a command stop any look ahead */
@@ -456,9 +459,8 @@ LRESULT CALLBACK ChessWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
          break;
       
       case MSG_WM_COMMAND:
-         switch ( wParam ) {
+         switch (wParam) {
             case MSG_CHESS_QUIT:
-/*               DestroyWindow ( hWnd);*/
                  PostMessage ( hWnd, MSG_DESTROY, 0, 0);
                break;
 
@@ -519,16 +521,9 @@ LRESULT CALLBACK ChessWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
                if ( hBook ) FreeBook();
                GetOpenings ( hWnd);
                break;
-
             case MSG_CHESS_ABOUT:
-#if 0
-               //lpProcAbout = MakeProcInstance(About, hInst);
-                lpProcAbout = About;
-                DialogBoxA(hInst, MAKEINTRESOURCE(AboutBox),   hWnd,  lpProcAbout);
-   		      FreeProcInstance(lpProcAbout);
-#endif
-               break;
-
+                DialogBoxA(hInst, MAKEINTRESOURCEA(AboutBox), hWnd, About);
+                break;
             case MSG_CHESS_EDIT:
                EditActive = TRUE;
                hMenu = CreateMenu ();
@@ -537,7 +532,6 @@ LRESULT CALLBACK ChessWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
                SetMenu ( hWnd, hMenu);
                DrawMenuBar ( hWnd);
                break;
-
             case MSG_CHESS_EDITDONE:
                EditActive = FALSE;
                hMenu = GetMenu ( hWnd );
@@ -794,30 +788,32 @@ LRESULT CALLBACK ChessWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
     return (NULL);
 }
 
-static void MakeHelpPathName (char * szFileName)
+static void MakeHelpPathName(char *szFileName)
 {
    char *  pcFileName;
-   int     nFileNameLen;
 
-   nFileNameLen = GetModuleFileNameA(hInst,szFileName,EXE_NAME_MAX_SIZE);
-   pcFileName = szFileName + nFileNameLen;
+    int nFileNameLen = GetModuleFileNameA(hInst, szFileName, EXE_NAME_MAX_SIZE);
+    pcFileName = szFileName + nFileNameLen;
 
-   while (pcFileName > szFileName) {
-       if (*pcFileName == '\\' || *pcFileName == ':') {
+    while (pcFileName > szFileName)
+    {
+        if (*pcFileName == '\\' || *pcFileName == ':')
+        {
            *(++pcFileName) = '\0';
            break;
-       }
-   nFileNameLen--;
-   pcFileName--;
-   }
+        }
+        nFileNameLen--;
+        pcFileName--;
+    }
 
-   if ((nFileNameLen+13) < EXE_NAME_MAX_SIZE) {
-       lstrcatA(szFileName, "chess.hlp");
-   }
+    if ((nFileNameLen+13) < EXE_NAME_MAX_SIZE)
+    {
+        lstrcatA(szFileName, "chess.hlp");
+    }
+    else
+    {
+        lstrcatA(szFileName, "?");
+    }
 
-   else {
-       lstrcatA(szFileName, "?");
-   }
-
-   return;
+    return;
 }

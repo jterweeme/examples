@@ -21,6 +21,8 @@
   notice must be preserved on all copies.
 */
 
+#ifndef TIMECNT_H
+#define TIMECNT_H
 #define TMDLG_MIN 300
 #define TMDLG_MOV 100
 
@@ -35,3 +37,4 @@
 #define TMDLG_20MOV  (TMDLG_MOV+20)
 #define TMDLG_10MOV  (TMDLG_MOV+10)
 #define TMDLG_1MOV   (TMDLG_MOV+1)
+#endif

@@ -1,0 +1,343 @@
+/*
+  C source for GNU CHESS
+
+  Revision: 1990-09-30
+
+  Modified by Daryl Baker for use in MS WINDOWS environment
+
+  This file is part of CHESS.
+
+  CHESS is distributed in the hope that it will be useful, but WITHOUT ANY
+  WARRANTY.  No author or distributor accepts responsibility to anyone for
+  the consequences of using it or for whether it serves any particular
+  purpose or works at all, unless he says so in writing.  Refer to the CHESS
+  General Public License for full details.
+
+  Everyone is granted permission to copy, modify and redistribute CHESS, but
+  only under the conditions described in the CHESS General Public License.
+  A copy of this license is supposed to have been given to you along with
+  CHESS so you can know your rights and responsibilities.  It should be in a
+  file named COPYING.  Among other things, the copyright notice and this
+  notice must be preserved on all copies.
+*/
+
+
+#include "chess.h"
+#include "saveopen.h"
+#include "stats.h"
+#include "color.h"
+#include "timecnt.h"
+
+AboutBox DIALOG LOADONCALL MOVEABLE DISCARDABLE 19, 18, 218, 107
+CAPTION "GNU Chess 3.21 for Windows"
+STYLE WS_BORDER | WS_CAPTION | WS_DLGFRAME | WS_SYSMENU | DS_MODALFRAME | WS_POPUP
+BEGIN
+    CONTROL "OK", 1, "button", BS_DEFPUSHBUTTON | WS_GROUP | WS_TABSTOP | WS_CHILD, 93, 89, 32, 14
+    CONTROL "CHESS", -1, "static", SS_ICON | WS_CHILD, 20, 12, 16, 17
+    CONTROL "Daryl K. Baker", 105, "static", SS_CENTER | WS_CHILD, 57, 4, 107, 8
+    CONTROL "Wed Dec 28 02:03:55 1989", 106, "static", SS_CENTER | WS_CHILD, 57, 13, 107, 8
+    CONTROL "Copyright © 1985-1991 Free Software Foundation Inc.", 108, "static", SS_CENTER | WS_CHILD, 0, 47, 218, 8
+    CONTROL "GNU Chess 2nd version original copyright \251 1986 John Stanback", 109, "static", SS_LEFT | WS_CHILD, 4, 75, 215, 8
+    CONTROL "Text", 110, "static", SS_BLACKFRAME | WS_CHILD, 0, 42, 216, 1
+    CONTROL "Compiled with Microsoft C 6.00ax", 111, "static", SS_CENTER | WS_CHILD, 57, 23, 107, 8
+    CONTROL "Linked with Microsoft SDK 3.0", 112, "static", SS_CENTER | WS_CHILD, 57, 32, 107, 8
+    CONTROL "GNU Chess original copyright \251 1985 Stuart Cracraft", 113, "static", SS_LEFT | WS_CHILD, 4, 66, 215, 8
+    CONTROL "Windows version additional copyright \251 1990-1991 Daryl Baker", 114, "static", SS_LEFT | WS_CHILD, 4, 57, 215, 8
+END
+
+CHESS  ICON   "chess.ico"
+
+
+PAWN    BITMAP "pawn.bmp"
+ROOK    BITMAP "rook.bmp"
+KNIGHT  BITMAP "knight.bmp"
+BISHOP  BITMAP "bishop.bmp"
+QUEEN   BITMAP "queen.bmp"
+KING    BITMAP "king.bmp"
+
+PAWNM   BITMAP "pawnm.bmp"
+ROOKM   BITMAP "rookm.bmp"
+KNIGHTM BITMAP "knightm.bmp"
+BISHOPM BITMAP "bishopm.bmp"
+QUEENM  BITMAP "queenm.bmp"
+KINGM   BITMAP "kingm.bmp"
+
+PAWNO   BITMAP "pawno.bmp"
+ROOKO   BITMAP "rooko.bmp"
+KNIGHTO BITMAP "knighto.bmp"
+BISHOPO BITMAP "bishopo.bmp"
+QUEENO  BITMAP "queeno.bmp"
+KINGO   BITMAP "kingo.bmp"
+
+#define IDD_FNAME 0x10
+#define IDD_FPATH 0x11
+#define IDD_FLIST 0x12
+#define IDD_DLIST 0x13
+#define IDD_BROWSE 0x14
+
+FILESAVE DIALOG LOADONCALL MOVEABLE DISCARDABLE 10, 10, 180, 54
+STYLE WS_DLGFRAME | WS_POPUP
+BEGIN
+    CONTROL "Save File &Name As:", -1,        "static", SS_LEFT | WS_GROUP | WS_CHILD, 6, 4, 84, 12
+    CONTROL "",                    IDD_FPATH, "static", SS_LEFT | WS_GROUP | WS_CHILD, 90, 4, 78, 12
+    CONTROL "",                    IDD_FNAME, "edit",   ES_LEFT | ES_AUTOHSCROLL | WS_BORDER | WS_TABSTOP | WS_CHILD, 6, 20, 104, 12
+    CONTROL "OK",                  IDOK,      "button", BS_DEFPUSHBUTTON | WS_GROUP | WS_TABSTOP | WS_CHILD, 124, 20, 50, 14
+    CONTROL "Cancel",              IDCANCEL,  "button", BS_PUSHBUTTON | WS_GROUP | WS_TABSTOP | WS_CHILD, 124, 36, 50, 14
+END
+
+FILEOPEN DIALOG LOADONCALL MOVEABLE DISCARDABLE 6, 9, 219, 106
+STYLE WS_DLGFRAME | WS_POPUP
+BEGIN
+    CONTROL "Open File &Name:", -1,        "static",  SS_LEFT | WS_GROUP | WS_CHILD, 7, 4, 61, 10
+    CONTROL "",                 IDD_FNAME, "edit"  ,  ES_LEFT | ES_AUTOHSCROLL | WS_BORDER | WS_TABSTOP | WS_CHILD, 70, 3, 83, 12
+    CONTROL "&Files:",          -1,        "static",  SS_LEFT | WS_GROUP | WS_CHILD, 7, 24, 38, 10
+    CONTROL "",                 IDD_FPATH, "static",  SS_LEFT | WS_GROUP | WS_CHILD, 70, 24, 143, 12
+    CONTROL "",                 IDD_FLIST, "listbox", LBS_NOTIFY | LBS_SORT | LBS_STANDARD | WS_BORDER | WS_VSCROLL | WS_TABSTOP | WS_CHILD, 7, 36, 60, 65
+    CONTROL "&OK",              IDOK,      "button",  BS_DEFPUSHBUTTON | WS_GROUP | WS_TABSTOP | WS_CHILD, 160, 64, 50, 14
+    CONTROL "&Cancel",          IDCANCEL,  "button",  BS_PUSHBUTTON | WS_GROUP | WS_TABSTOP | WS_CHILD, 160, 87, 50, 14
+    CONTROL "",                 IDD_DLIST, "listbox", LBS_NOTIFY | LBS_SORT | LBS_STANDARD | WS_BORDER | WS_VSCROLL | WS_CHILD, 73, 52, 68, 49
+    CONTROL "&Directories:",    -1,        "static",  SS_LEFT | WS_CHILD, 73, 39, 53, 10
+END
+
+WILDFILEOPEN DIALOG LOADONCALL MOVEABLE DISCARDABLE 6, 9, 219, 106
+STYLE WS_DLGFRAME | WS_POPUP
+BEGIN
+    CONTROL "Open File &Name:", -1,        "static",  SS_LEFT | WS_GROUP | WS_CHILD, 7, 4, 61, 10
+    CONTROL "",                 IDD_FNAME, "edit"  ,  ES_LEFT | ES_AUTOHSCROLL | WS_BORDER | WS_TABSTOP | WS_CHILD, 70, 3, 83, 12
+    CONTROL "&Files:",          -1,        "static",  SS_LEFT | WS_GROUP | WS_CHILD, 7, 24, 38, 10
+    CONTROL "",                 IDD_FPATH, "static",  SS_LEFT | WS_GROUP | WS_CHILD, 70, 19, 143, 12
+    CONTROL "",                 IDD_FLIST, "listbox", LBS_NOTIFY | LBS_SORT | LBS_STANDARD | WS_BORDER | WS_VSCROLL | WS_TABSTOP | WS_CHILD, 7, 36, 60, 65
+    CONTROL "&Browse",          IDD_BROWSE,"button", BS_DEFPUSHBUTTON | WS_TABSTOP | WS_CHILD, 160, 41, 50, 14
+    CONTROL "&OK",              IDOK,      "button",  BS_PUSHBUTTON | WS_GROUP | WS_TABSTOP | WS_CHILD, 160, 64, 50, 14
+    CONTROL "&Cancel",          IDCANCEL,  "button",  BS_PUSHBUTTON | WS_GROUP | WS_TABSTOP | WS_CHILD, 160, 87, 50, 14
+    CONTROL "",                 IDD_DLIST, "listbox", LBS_NOTIFY | LBS_SORT | LBS_STANDARD | WS_BORDER | WS_VSCROLL | WS_CHILD, 73, 52, 68, 49
+    CONTROL "&Directories:",    -1,        "static",  SS_LEFT | WS_CHILD, 73, 39, 53, 10
+END
+
+#define IDD_INT 0x10
+#define IDD_CHAR 0x11
+
+NUMBERDLG DIALOG LOADONCALL MOVEABLE DISCARDABLE 10,10,180,54
+   STYLE WS_POPUP | WS_DLGFRAME
+   BEGIN
+        CTEXT "",                    IDD_CHAR, 9,  4, 162, 12
+        EDITTEXT                     IDD_INT,  6, 20, 104, 12, ES_AUTOHSCROLL
+        DEFPUSHBUTTON "OK",          IDOK,     124, 20,  50, 14, WS_GROUP
+        PUSHBUTTON    "Cancel",      IDCANCEL, 124, 36,  50, 14, WS_GROUP
+  END
+
+COLOR DIALOG LOADONCALL MOVEABLE DISCARDABLE 10, 20, 139, 177
+STYLE WS_DLGFRAME | WS_POPUP
+BEGIN
+    CONTROL "Window Background Color", IDD_HEADING, "static", SS_CENTER | WS_CHILD, 0, 2, 139, 12
+    CONTROL "Color", 203, "button", BS_GROUPBOX | WS_CHILD, 6, 15, 128, 130
+    CONTROL "Black", CNT_BLACK, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 18, 26, 28, 12
+    CONTROL "Blue", CNT_BLUE, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 18, 40, 28, 12
+    CONTROL "Green", CNT_GREEN, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 18, 54, 28, 12
+    CONTROL "Cyan", CNT_CYAN, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 18, 68, 28, 12
+    CONTROL "Red", CNT_RED, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 18, 82, 28, 12
+    CONTROL "Pink", CNT_PINK, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 18, 96, 28, 12
+    CONTROL "Yellow", CNT_YELLOW, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 18, 110, 38, 12
+    CONTROL "Pale Gray", CNT_PALEGRAY, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 18, 124, 51, 12
+    CONTROL "Dark Gray", CNT_DARKGRAY, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 74, 26, 54, 12
+    CONTROL "Dark Blue", CNT_DARKBLUE, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 74, 40, 54, 12
+    CONTROL "Dark Green", CNT_DARKGREEN, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 74, 54, 48, 12
+    CONTROL "Dark Cyan", CNT_DARKCYAN, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 74, 68, 54, 12
+    CONTROL "Dark Red", CNT_DARKRED, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 74, 82, 54, 12
+    CONTROL "Dark Pink", CNT_DARKPINK, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 74, 97, 54, 12
+    CONTROL "Brown", CNT_BROWN, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 74, 110, 54, 12
+    CONTROL "White", CNT_WHITE, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 74, 124, 54, 12
+    CONTROL "OK", IDD_OK, "button", BS_DEFPUSHBUTTON | WS_TABSTOP | WS_CHILD, 17, 154, 38, 14
+    CONTROL "Cancel", IDD_CANCEL, "button", BS_PUSHBUTTON | WS_TABSTOP | WS_CHILD, 85, 154, 38, 14
+END
+
+TIMECONTROL DIALOG LOADONCALL MOVEABLE DISCARDABLE 48, 48, 180, 126
+STYLE WS_CAPTION | WS_POPUP | WS_SYSMENU | DS_MODALFRAME
+CAPTION "Set Time Limits"
+BEGIN
+    CONTROL "Number of moves", 201, "button", BS_GROUPBOX | WS_CHILD, 10, 11, 160, 32
+    CONTROL "Time limit", 202, "button", BS_GROUPBOX | WS_CHILD, 10, 51, 160, 32
+    CONTROL "1", TMDLG_1MOV, "button", BS_RADIOBUTTON |  WS_TABSTOP | WS_CHILD, 22, 24, 20, 12
+    CONTROL "10", TMDLG_10MOV, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 52, 24, 20, 12
+    CONTROL "20", TMDLG_20MOV, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 81, 24, 20, 12
+    CONTROL "40", TMDLG_40MOV, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 112, 24, 20, 12
+    CONTROL "60", TMDLG_60MOV, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 141, 24, 20, 12
+    CONTROL "5",  TMDLG_5MIN, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 21, 63, 20, 12
+    CONTROL "15", TMDLG_15MIN, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 51, 63, 20, 12
+    CONTROL "30", TMDLG_30MIN, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 81, 63, 20, 12
+    CONTROL "60", TMDLG_60MIN, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 111, 63, 20, 12
+    CONTROL "600", TMDLG_600MIN, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 141, 63, 23, 12
+    CONTROL "OK", IDOK, "button", BS_DEFPUSHBUTTON  | WS_TABSTOP | WS_CHILD, 28, 97, 38, 14
+    CONTROL "Cancel", IDCANCEL, "button", BS_PUSHBUTTON | WS_TABSTOP | WS_CHILD, 116, 97, 38, 14
+END
+
+STATS DIALOG LOADONCALL MOVEABLE DISCARDABLE 16, 28, 94, 133
+CAPTION "Search statistics"
+STYLE WS_BORDER | WS_CAPTION | WS_DLGFRAME | WS_SYSMENU | WS_VISIBLE | WS_POPUP
+BEGIN
+    CONTROL "Depth:", 100, "static", SS_LEFT | WS_CHILD, 4, 5, 32, 8
+    CONTROL "Position:", 101, "static", SS_LEFT | WS_CHILD, 4, 16, 32, 8
+    CONTROL "Score:", 109, "static", SS_LEFT | WS_CHILD, 4, 27, 32, 8
+    CONTROL "Nodes:", 104, "static", SS_LEFT | WS_CHILD, 4, 38, 32, 8
+    CONTROL "Nodes/Sec:", 110, "static", SS_LEFT | WS_CHILD, 4, 49, 40, 8
+    CONTROL "Best line", 102, "button", BS_GROUPBOX | WS_TABSTOP | WS_CHILD, 4, 60, 85, 68
+    CONTROL "", BSTLINETEXT, "static", SS_LEFT | WS_CHILD, 6, 70, 82, 57
+    CONTROL "Text", DEPTHTEXT, "static", SS_LEFT | WS_CHILD, 46, 5, 48, 8
+    CONTROL "Text", POSITIONTEXT, "static", SS_LEFT | WS_CHILD, 46, 16, 48, 8
+    CONTROL "Text", NODETEXT, "static", SS_LEFT | WS_CHILD, 46, 38, 48, 8
+    CONTROL "Text", SCORETEXT, "static", SS_LEFT | WS_CHILD, 46, 27, 48, 8
+    CONTROL "Text", NODESECTEXT, "static", SS_LEFT | WS_CHILD, 46, 49, 48, 8
+END
+
+REVIEW DIALOG LOADONCALL MOVEABLE DISCARDABLE 50, 31, 173, 130
+CAPTION "Review game moves"
+STYLE WS_BORDER | WS_CAPTION | WS_SYSMENU | WS_POPUP
+BEGIN
+    CONTROL "", 100, "listbox", LBS_NOTIFY | LBS_NOREDRAW | LBS_USETABSTOPS | WS_BORDER | WS_VSCROLL | WS_CHILD, 5, 15, 164, 113
+    CONTROL "	move	score	depth	time", 101, "static", SS_LEFT | WS_CHILD, 5, 5, 164, 8
+END
+
+TEST DIALOG LOADONCALL MOVEABLE DISCARDABLE 9, 26, 148, 51
+CAPTION "Test speed"
+STYLE WS_BORDER | WS_CAPTION | WS_DLGFRAME | WS_SYSMENU | WS_VISIBLE | WS_POPUP
+BEGIN
+    CONTROL "Text", 100, "static", SS_LEFT | WS_CHILD, 8, 13, 139, 8
+    CONTROL "Text", 101, "static", SS_LEFT | WS_CHILD, 8, 38, 139, 8
+    CONTROL "Movelist Speed", 102, "static", SS_LEFT | WS_CHILD, 8, 5, 59, 8
+    CONTROL "Capturelist Speed", 104, "static", SS_LEFT | WS_CHILD, 8, 29, 73, 8
+END
+
+PAWNPROMOTE DIALOG LOADONCALL MOVEABLE DISCARDABLE 24, 23, 164, 55
+CAPTION "Promote Pawn"
+STYLE WS_BORDER | WS_CAPTION | WS_DLGFRAME | WS_SYSMENU | WS_POPUP
+BEGIN
+    CONTROL "Knight", 100, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 4, 10, 38, 12
+    CONTROL "Bishop", 101, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 44, 10, 36, 12
+    CONTROL "Rook", 102, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 85, 10, 28, 12
+    CONTROL "Queen", 103, "button", BS_RADIOBUTTON | WS_TABSTOP | WS_CHILD, 123, 10, 35, 12
+    CONTROL "Ok", IDOK, "button", BS_DEFPUSHBUTTON | WS_TABSTOP | WS_CHILD, 63, 33, 38, 14
+END
+
+MANUALDLG DIALOG LOADONCALL MOVEABLE DISCARDABLE 73, 53, 133, 48
+CAPTION "Enter Move"
+STYLE WS_BORDER | WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_POPUP
+BEGIN
+    CONTROL "", 100, "edit", ES_LEFT | WS_BORDER | WS_TABSTOP | WS_CHILD, 33, 9, 64, 12
+    CONTROL "OK", IDOK, "button", BS_DEFPUSHBUTTON | WS_TABSTOP | WS_CHILD, 20, 28, 28, 14
+    CONTROL "Cancel", IDCANCEL, "button", BS_PUSHBUTTON | WS_TABSTOP | WS_CHILD, 85, 28, 28, 14
+END
+
+
+CHESS MENU
+BEGIN
+POPUP "&File"
+BEGIN
+MENUITEM "&New",                        MSG_CHESS_NEW
+MENUITEM "&Open...",                    MSG_CHESS_GET
+MENUITEM "&Save...",                    MSG_CHESS_SAVE
+MENUITEM "&List...",                    MSG_CHESS_LIST
+MENUITEM SEPARATOR
+MENUITEM "E&xit",                       MSG_CHESS_QUIT
+END
+
+
+POPUP "&Edit"
+BEGIN
+MENUITEM "&Setup Board",                  MSG_CHESS_EDIT
+MENUITEM "R&eview Game...",               MSG_CHESS_REVIEW
+MENUITEM SEPARATOR
+MENUITEM "&Undo\tBksp",                   MSG_CHESS_UNDO
+MENUITEM "&Remove\tALT+Bksp", MSG_CHESS_REMOVE
+MENUITEM SEPARATOR
+MENUITEM "&Force", MSG_CHESS_FORCE
+END
+
+POPUP "&Options"
+BEGIN
+MENUITEM "&Tone", MSG_CHESS_BEEP
+MENUITEM "C&oordinates",                MSG_CHESS_COORD
+MENUITEM "&Search Stats",               MSG_CHESS_POST
+MENUITEM "T&est Speed",                 MSG_CHESS_TEST
+MENUITEM SEPARATOR
+MENUITEM "&Hash",                        MSG_CHESS_HASH
+MENUITEM "&Both",                        MSG_CHESS_BOTH
+MENUITEM "Boo&k",                        MSG_CHESS_BOOK
+MENUITEM SEPARATOR
+MENUITEM "&A Window...",                 MSG_CHESS_AWIN
+MENUITEM "&B Window...",                 MSG_CHESS_BWIN
+MENUITEM "&Contemp...",                  MSG_CHESS_CONTEMP
+END
+
+POPUP "&Skill"
+                BEGIN             
+                  MENUITEM "&Time...",                    IDM_TIMECONTROL
+                  MENUITEM SEPARATOR                      
+                  MENUITEM "&Random",                     MSG_CHESS_RANDOM
+                  MENUITEM "&Easy",                       MSG_CHESS_EASY
+                  MENUITEM "&Depth...",                   MSG_CHESS_DEPTH
+              END
+
+        POPUP "S&ide"
+              BEGIN
+                  MENUITEM "&Reverse",                    MSG_CHESS_REVERSE
+                  MENUITEM "&Switch",                     MSG_CHESS_SWITCH
+                  MENUITEM "&Black",                      MSG_CHESS_BLACK
+                  MENUITEM "&White",                      MSG_CHESS_WHITE
+              END
+
+POPUP "&Colors"
+BEGIN
+MENUITEM "Window Background",   IDM_BACKGROUND
+                        MENUITEM "Black Squares",       IDM_BLACKSQUARE
+                        MENUITEM "White Squares",       IDM_WHITESQUARE
+                        MENUITEM "Black Pieces",        IDM_BLACKPIECE
+                        MENUITEM "White Pieces",        IDM_WHITEPIECE
+                        MENUITEM "Text Color",          IDM_TEXT
+                        MENUITEM SEPARATOR
+MENUITEM "Default Colors",      IDM_DEFAULT
+END
+MENUITEM "Hi&nt",                                 MSG_CHESS_HINT
+
+POPUP "&Help"
+BEGIN
+MENUITEM "&Index\tF1",           MSG_HELP_INDEX
+MENUITEM "Using &Help",          MSG_HELP_HELP
+MENUITEM SEPARATOR
+MENUITEM "A&bout Chess...",      MSG_CHESS_ABOUT
+END
+END
+
+STRINGTABLE
+BEGIN
+        IDS_CHESS,         "Chess"
+        IDS_ILLEGALMOVE,   "Illegal move"
+        IDS_AMBIGUOUSMOVE, "Ambiguous move"
+        IDS_OBAE,          "Warning: Opening book too large"
+        IDS_OBNF,          "Warning: Opening book not found"
+        IDS_UNABLESAVE,    "Unable to save game"
+        IDS_UNABLELIST,    "Unable to list game"
+        IDS_DRAWGAME,      "Draw Game"
+        IDS_YOUWIN,        "Opponent mates"
+        IDS_COMPUTERWIN,   "Computer mates"
+        IDS_MATESOON,      "Oppenent will soon mate"
+        IDS_COMPMATE,      "Computer will soon mate"
+        IDS_TTABLEAF,      "ttable Allocation Failed"
+        IDS_SQDATAAF,      "sqdata Allocation Failed"
+        IDS_HISTORYAF,     "History Allocation Failed"
+        IDS_TREEAF,        "Tree Allocation Failed"
+        IDS_GAMEAF,        "Game List Allocation Failed"
+        IDS_LOADFAILED,    "Loading saved game failed"
+        IDS_SETAWIN,       "Set A Window"
+        IDS_SETBWIN,       "Set B Window"
+        IDS_SETCONTEMPT,   "Set Contempt"
+        IDS_MAXSEARCH,     "Set maximun search depth"
+        IDS_INITERROR,     "Initialization error"
+END
+
+Chess ACCELERATORS
+BEGIN
+    VK_BACK,        MSG_CHESS_UNDO,   VIRTKEY
+    VK_BACK,        MSG_CHESS_REMOVE, VIRTKEY, ALT
+    VK_F1,          MSG_HELP_INDEX,   VIRTKEY
+END
+

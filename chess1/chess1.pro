@@ -1,6 +1,7 @@
 TEMPLATE = app
 
-SOURCES += board.cpp\
+SOURCES += about.cpp\
+    board.cpp\
     book.cpp\
     color.cpp\
     create.cpp\
@@ -28,5 +29,8 @@ HEADERS += chess.h\
     color.h defs.h gnuchess.h\
     saveopen.h stats.h\
     timecnt.h
+
+RC_FILE += chess.rc
+OTHER_FILES += chess.rc
 
 LIBS += -lgdi32

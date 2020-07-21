@@ -115,34 +115,34 @@ void SaveColors ( LPSTR appname )
 
 void GetStartupColors ( LPSTR appname )
 {
-#if 0
-   char istring[30];
+#if 1
+    char istring[30];
+    SetStandardColors();
+    GetPrivateProfileStringA(appname, lpBackGround,lpDefault,istring, sizeof(istring), lpChessini);
 
-   SetStandardColors ();
+    if (strcmp(istring, lpDefault) != 0)
+        sscanf(istring, np08lX, &clrBackGround);
 
-   GetPrivateProfileStringA( appname, lpBackGround,lpDefault,istring,
+    GetPrivateProfileStringA( appname, lpBlackSquare,lpDefault,istring, sizeof(istring), lpChessini);
+
+    if (strcmp ( istring, lpDefault) != 0)
+        sscanf ( istring, np08lX, &clrBlackSquare);
+
+    GetPrivateProfileStringA( appname, lpWhiteSquare,lpDefault,istring,
                              sizeof(istring), lpChessini);
-   if (_fstrcmp ( istring, lpDefault) != 0)  sscanf ( istring, np08lX, &clrBackGround);
-
-   GetPrivateProfileStringA( appname, lpBlackSquare,lpDefault,istring,
-                             sizeof(istring), lpChessini);
-   if (_fstrcmp ( istring, lpDefault) != 0)  sscanf ( istring, np08lX, &clrBlackSquare);
-
-   GetPrivateProfileStringA( appname, lpWhiteSquare,lpDefault,istring,
-                             sizeof(istring), lpChessini);
-   if (_fstrcmp ( istring, lpDefault) != 0)  sscanf ( istring, np08lX, &clrWhiteSquare);
+   if (strcmp ( istring, lpDefault) != 0)  sscanf ( istring, np08lX, &clrWhiteSquare);
 
    GetPrivateProfileStringA( appname, lpBlackPiece,lpDefault,istring,
                              sizeof(istring), lpChessini);
-   if (_fstrcmp ( istring, lpDefault) != 0)  sscanf ( istring, np08lX, &clrBlackPiece);
+   if (strcmp ( istring, lpDefault) != 0)  sscanf ( istring, np08lX, &clrBlackPiece);
 
    GetPrivateProfileStringA( appname, lpWhitePiece,lpDefault,istring,
                              sizeof(istring), lpChessini);
-   if (_fstrcmp ( istring, lpDefault) != 0)  sscanf ( istring, np08lX, &clrWhitePiece);
+   if (strcmp ( istring, lpDefault) != 0)  sscanf ( istring, np08lX, &clrWhitePiece);
 
    GetPrivateProfileStringA( appname, lpText,lpDefault,istring,
                              sizeof(istring), lpChessini);
-   if (_fstrcmp ( istring, lpDefault) != 0)  sscanf ( istring, np08lX, &clrText);
+   if (strcmp ( istring, lpDefault) != 0)  sscanf ( istring, np08lX, &clrText);
 #endif
 }
 
