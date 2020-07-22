@@ -24,33 +24,13 @@
   notice must be preserved on all copies.
 */
 
-#define NOATOM                /*Minimize windows.h processing*/
-#define NOCLIPBOARD
-#define NOCREATESTRUCT
-#define NOFONT
-#define NOREGION
-#define NOSOUND
-#define NOWH
-#define NOCOMM
-#define NOKANJI
- 
-#include <string.h>
-#include <time.h>
-#include <iostream>
-
 #include "gnuchess.h"
-
 #include "defs.h"
 #include "chess.h"
-#include "saveopen.h"
-#include "color.h"
-
-COLORREF clrBackGround;       /* rgb structures for various colors */
-DWORD clrBlackSquare;
-DWORD clrWhiteSquare;
-DWORD clrBlackPiece;
-DWORD clrWhitePiece;
-DWORD clrText;
+#include "resource.h"
+#include "globals.h"
+#include "winclass.h"
+#include <time.h>
 
 static HBRUSH hBrushBackGround;
 
@@ -61,68 +41,104 @@ short colordraw[64];       /* Needed because while computer is calculating*/
 
 struct PIECEBITMAP pieces[7];
 
-HINSTANCE hInst;              /* current instance */
-HACCEL hAccel;
 
-char szAppName[] = "Chess";
+TCHAR szAppName[] = TEXT("Chess");
 
-extern char mvstr[4][6];
 extern GLOBALHANDLE hBook;
 int coords = 1;
 
-static int FirstSq = -1;         /* Flag is a square is selected */
-static int GotFirst = FALSE;
-static int EditActive = FALSE;   /* Edit mode? */
-static int User_Move = TRUE;     /* User or computer's turn */
+class MainWindow
+{
+private:
+    int FirstSq = -1;         /* Flag is a square is selected */
+    int GotFirst = FALSE;
+    int EditActive = FALSE;   /* Edit mode? */
+    int User_Move = TRUE;     /* User or computer's turn */
+    HMENU hMainMenu;
+    void MakeHelpPathName(char *szFileName);
+    static MainWindow *_instance;
+    LRESULT _wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+public:
+    MainWindow();
+    static LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+};
 
-static HMENU hMainMenu;
-
-
-static void MakeHelpPathName (char * szFileName);
 #define EXE_NAME_MAX_SIZE  128
 
+void MainWindow::MakeHelpPathName(char *szFileName)
+{
+    char *pcFileName;
+
+    int nFileNameLen = GetModuleFileNameA(hInst, szFileName, EXE_NAME_MAX_SIZE);
+    pcFileName = szFileName + nFileNameLen;
+
+    while (pcFileName > szFileName)
+    {
+        if (*pcFileName == '\\' || *pcFileName == ':')
+        {
+            *(++pcFileName) = '\0';
+            break;
+        }
+        nFileNameLen--;
+        pcFileName--;
+    }
+
+    if ((nFileNameLen+13) < EXE_NAME_MAX_SIZE)
+    {
+        lstrcatA(szFileName, "chess.hlp");
+    }
+    else
+    {
+        lstrcatA(szFileName, "?");
+    }
+}
+
+MainWindow *MainWindow::_instance = 0;
+
+MainWindow::MainWindow()
+{
+    _instance = this;
+}
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
                   int nCmdShow)
 {
-    MSG msg;
     POINT pt;
-
     (void)lpCmdLine;
-
-    if (!hPrevInstance)
-       if (!ChessInit(hInstance))
-           return (NULL);
-
-    hInst = hInstance;			/* Saves the current instance	     */
+    (void)hPrevInstance;
+    WinClass wc(hInstance, MainWindow::wndProc, szAppName);
+    MainWindow win;
+    wc.registerClass();
+    hInst = hInstance;
 
     QueryBoardSize (&pt);
 
-    /* Create the mailn window.  It will be autosized in WM_CREATE message */
-    HWND hWnd = CreateWindowA(szAppName,	szAppName,
-      	WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
-         CW_USEDEFAULT, CW_USEDEFAULT,
-         CW_USEDEFAULT, CW_USEDEFAULT,
-         NULL,	NULL,	hInstance,	NULL);
+    //Create the main window.  It will be autosized in WM_CREATE message
+    HWND hWnd = CreateWindow(szAppName, szAppName,
+                    WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
+                    CW_USEDEFAULT, CW_USEDEFAULT,
+                    CW_USEDEFAULT, CW_USEDEFAULT,
+                    NULL, NULL, hInstance, NULL);
 
     if (!hWnd)
-        return (NULL);
+        return 0;
 
-    ShowWindow(hWnd, nCmdShow);			  /* Shows the window	     */
+    ShowWindow(hWnd, nCmdShow);
 
     /* Initialize chess */
     if (init_main ( hWnd ) )
     {
-        SMessageBox (hWnd, IDS_INITERROR,IDS_CHESS);
-        FreeGlobals ();
-        return (NULL);
+        SMessageBox(hWnd, IDS_INITERROR, IDS_CHESS);
+        FreeGlobals();
+        return 0;
     }
 
-    UpdateWindow(hWnd);				  /* Sends WM_PAINT message  */
-    hAccel = LoadAcceleratorsA(hInstance, szAppName);
+    UpdateWindow(hWnd);
+    hAccel = LoadAccelerators(hInstance, szAppName);
     player = opponent;
-    ShowSidetoMove ();
+    ShowSidetoMove();
 
+    MSG msg;
     while (GetMessage(&msg, NULL, NULL, NULL))
     {
         if ( !TranslateAcceleratorA(hWnd, hAccel, &msg) )
@@ -135,7 +151,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     return msg.wParam;
 }
 
-LRESULT CALLBACK ChessWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+#ifndef _tcscat
+#define _tcscat strcat
+#endif
+
+#ifndef _tcscpy
+#define _tcscpy strcpy
+#endif
+
+LRESULT
+MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HMENU hMenu;
     PAINTSTRUCT ps;
@@ -143,7 +168,8 @@ LRESULT CALLBACK ChessWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
     TEXTMETRIC tm;
     POINT point;
     OFSTRUCT pof;
-    char FileName[256], str[80];
+    CHAR FileName[256];
+    TCHAR str[80];
     int Status;
     HFILE hFile;
 
@@ -151,56 +177,56 @@ LRESULT CALLBACK ChessWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
     {
         case WM_CREATE:
         {
-         int xchar, ychar;
+            int xchar, ychar;
+            GetStartupColors(szAppName);
+            hBrushBackGround = ::CreateSolidBrush(clrBackGround);
 
-         GetStartupColors ( szAppName);
+            for (int i = pawn; i < pawn + 6; i++ )
+            {
+                pieces[i].piece = LoadBitmap(hInst, MAKEINTRESOURCE(PAWNBASE+i));
+                pieces[i].mask = LoadBitmap(hInst, MAKEINTRESOURCE(PAWNBASE+6+i));
+                pieces[i].outline = LoadBitmap(hInst, MAKEINTRESOURCE(PAWNBASE+12+i));
+            }
 
-         hBrushBackGround = CreateSolidBrush ( clrBackGround );
+            hDC = GetDC (hWnd);
+            GetTextMetrics ( hDC, &tm);
+            xchar = tm.tmMaxCharWidth;
+            ychar = tm.tmHeight+tm.tmExternalLeading;
 
-         for (int i=pawn; i<pawn+6; i++ )
-         {
-             pieces[i].piece = LoadBitmap(hInst, MAKEINTRESOURCE(PAWNBASE+i));
-             pieces[i].mask = LoadBitmap(hInst, MAKEINTRESOURCE(PAWNBASE+6+i));
-             pieces[i].outline = LoadBitmap(hInst, MAKEINTRESOURCE(PAWNBASE+12+i));
-         }
-
-         hDC = GetDC (hWnd);
-         GetTextMetrics ( hDC, &tm);
-         xchar = tm.tmMaxCharWidth;
-         ychar = tm.tmHeight+tm.tmExternalLeading;
-
-         /*Autosize main window */
-         QueryBoardSize (&point);            
-         SetWindowPos( hWnd, hWnd, 0,0,
+            /*Autosize main window */
+            QueryBoardSize (&point);
+            SetWindowPos( hWnd, hWnd, 0,0,
                  point.x+GetSystemMetrics(SM_CXFRAME)*2+50,
                  point.y+GetSystemMetrics(SM_CYFRAME)*2+GetSystemMetrics(SM_CYMENU)+
                  GetSystemMetrics(SM_CYCAPTION) + ychar,
                  SWP_NOMOVE | SWP_NOZORDER);
 
-         ReleaseDC ( hWnd, hDC);
+            ReleaseDC ( hWnd, hDC);
 
-         InitHitTest ();
-         Create_Children ( hWnd, hInst, xchar, ychar);
-         break;
-      }
+            InitHitTest ();
+            Create_Children ( hWnd, hInst, xchar, ychar);
+            break;
+        }
 
-     case MSG_DESTROY:
-         DestroyWindow ( hWnd );
-         break;
-
-     case WM_DESTROY: {		  /* message: window being destroyed */
-         char  szHelpFileName[EXE_NAME_MAX_SIZE+1];
+        case MSG_DESTROY:
+            DestroyWindow(hWnd);
+            break;
+        case WM_DESTROY:
+        {
+         char szHelpFileName[EXE_NAME_MAX_SIZE+1];
          MakeHelpPathName(szHelpFileName);
          WinHelpA(hWnd,szHelpFileName,HELP_QUIT,0L);
+         DeleteObject(hBrushBackGround);
+         Hittest_Destructor();
 
-         DeleteObject (hBrushBackGround);
-         Hittest_Destructor ();
-         if ( hBook ) FreeBook();
-         FreeGlobals ();
-         SaveColors ( szAppName);
+         if (hBook)
+             FreeBook();
+
+         FreeGlobals();
+         SaveColors(szAppName);
          PostQuitMessage(0);
-	      break;
-      }
+         break;
+        }
 
       case WM_PAINT:
 
@@ -223,34 +249,32 @@ LRESULT CALLBACK ChessWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 
          if ( FirstSq != -1 ) HiliteSquare ( hWnd, FirstSq);
          break;
-#if 0
-      case WM_CTLCOLOR:     /*Enable setting colors for the message controls*/
+      case WM_CTLCOLORSTATIC:
       {
-         POINT point;
-         if ( HIWORD(lParam) == CTLCOLOR_STATIC) {
-            UnrealizeObject ( hBrushBackGround );
-            SetBkColor ( wParam, clrBackGround);
-            SetBkMode ( wParam, TRANSPARENT);
-            SetTextColor ( wParam, clrText);
+            HDC hdc = HDC(wParam);
+            POINT point;
+            UnrealizeObject(hBrushBackGround );
+            SetBkColor(hdc, clrBackGround);
+            SetBkMode(hdc, TRANSPARENT);
+            SetTextColor(hdc, clrText);
             point.x = point.y = 0;
-            ClientToScreen ( hWnd, &point);
-            SetBrushOrg (wParam, point.x, point.y);
-            return (DWORD) hBrushBackGround;
-         } else
-            return DefWindowProc ( hWnd, message, wParam, lParam);
+            ClientToScreen(hWnd, &point);
+            SetBrushOrgEx(hdc, point.x, point.y, 0);
+            return (LRESULT)(hBrushBackGround);
       }
-#endif
       case WM_ERASEBKGND:
       {
          RECT rect;
-         UnrealizeObject (HGDIOBJ(hBrushBackGround));
-         GetClientRect ( hWnd, &rect);
-         FillRect ( (HDC)wParam, &rect, hBrushBackGround);
+         UnrealizeObject(HGDIOBJ(hBrushBackGround));
+         GetClientRect(hWnd, &rect);
+         FillRect((HDC)wParam, &rect, hBrushBackGround);
          return 1;
       }
 
       case WM_INITMENUPOPUP:
-         if ( !EditActive ) Init_Menus (hWnd, wParam, lParam);
+         if ( !EditActive )
+             Init_Menus (hWnd, wParam, lParam);
+
          break;
 
       case WM_LBUTTONDOWN:
@@ -258,23 +282,30 @@ LRESULT CALLBACK ChessWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
          /* If computer is thinking on human's time stop it at the first
             button click.  add test to ensure that "human" can't interupt
             the computer from thinking through its turn */
-         if ( User_Move ) {
+         if ( User_Move )
+         {
             flag.timeout = true;
             flag.bothsides = false;
          }
 
          /* Don't continue unless reason to */
-         if ( !(EditActive || User_Move)) break;
-#if 0
-         point = MAKEPOINT(lParam );
-#endif
+         if ( !(EditActive || User_Move))
+             break;
+
+         //point = MAKEPOINT(lParam );
+         point.x = LOWORD(lParam);
+         point.y = HIWORD(lParam);
+
+
       {
          int Hit;
 
          Hit = HitTest (point.x, point.y );
 
-         if ( Hit == -1 ){
-            if ( FirstSq != -1) {
+         if ( Hit == -1 )
+         {
+            if ( FirstSq != -1)
+            {
                UnHiliteSquare ( hWnd, FirstSq);
                GotFirst = FALSE;
                FirstSq = -1;
@@ -282,7 +313,8 @@ LRESULT CALLBACK ChessWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
             break;
          }
 
-         if ( GotFirst ) {
+         if ( GotFirst )
+         {
             UnHiliteSquare( hWnd, FirstSq);
             GotFirst = FALSE;
 
@@ -400,7 +432,8 @@ LRESULT CALLBACK ChessWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
          break;
 
       case MSG_COMPUTER_MOVE:
-         if ( !(flag.quit || flag.mate || flag.force) ) {
+         if ( !(flag.quit || flag.mate || flag.force) )
+         {
             SelectMove ( hWnd, computer, 1);
             if ( flag.beep ) MessageBeep (0);
          }
@@ -469,47 +502,58 @@ LRESULT CALLBACK ChessWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
                break;
 
             case MSG_CHESS_LIST:
-               if ( !DoFileSaveDlg ( hInst, hWnd, "chess.lst", ".lst", &Status, FileName, &pof) )
+               if (!DoFileSaveDlg(hInst, hWnd, TEXT("chess.lst"), TEXT(".lst"), &Status, FileName, &pof))
                    break;
 
-               if ( Status == 1 ) {
-                  strcpy ( str, "Replace Existing ");
-                  strcat ( str, FileName);
-                  if ( MessageBoxA(hWnd, str, szAppName, MB_YESNO | MB_ICONQUESTION | MB_APPLMODAL) == IDNO)
+               if (Status == 1)
+               {
+                  _tcscpy(str, TEXT("Replace Existing "));
+                  _tcscat(str, FileName);
+
+                  if (::MessageBox(hWnd, str, szAppName, MB_YESNO | MB_ICONQUESTION | MB_APPLMODAL) == IDNO)
                      break;
                   
-               } else OpenFile (FileName, &pof, OF_PARSE);
+               }
+               else
+               {
+                   OpenFile(FileName, &pof, OF_PARSE);
+               }
 
                ListGame ( hWnd, pof.szPathName );
                break;
 
             case MSG_CHESS_SAVE:
-               if ( !DoFileSaveDlg ( hInst, hWnd, "chess.chs", ".chs", &Status, FileName, &pof) )
+               if (!DoFileSaveDlg(hInst, hWnd, TEXT("chess.chs"), TEXT(".chs"), &Status, FileName, &pof))
                    break;
 
                if ( Status == 1 )
                {
-                  strcpy ( str, "Replace Existing ");
-                  strcat ( str, FileName);
-                  if ( MessageBoxA( hWnd, str, szAppName,
+                  _tcscpy(str, "Replace Existing ");
+                  _tcscat(str, FileName);
+
+                  if (::MessageBox(hWnd, str, szAppName,
                                     MB_YESNO | MB_ICONQUESTION | MB_APPLMODAL) == IDNO)
+                  {
                      break;
-                  
-               } else OpenFile (FileName, &pof, OF_PARSE);
+                  }
+               }
+               else
+               {
+                   OpenFile(FileName, &pof, OF_PARSE);
+               }
  
                SaveGame ( hWnd, pof.szPathName );
                break;
 
             case MSG_CHESS_GET:
-               if ( !DoFileOpenDlg ( hInst, hWnd, "*.chs", ".chs",0x0, FileName, &pof))
+               if (!DoFileOpenDlg(hInst, hWnd, TEXT("*.chs"), TEXT(".chs"), 0x0, FileName, &pof))
                   break;
 
-               if ( (hFile = OpenFile(FileName, &pof, OF_READ|OF_REOPEN)) == -1)
+               if ((hFile = OpenFile(FileName, &pof, OF_READ|OF_REOPEN)) == -1)
                {
-                  strcpy ( str, "Cannot open file: ");
-                  strcat ( str, FileName);
-                  MessageBoxA(hWnd, str, szAppName,
-                              MB_OK | MB_APPLMODAL | MB_ICONQUESTION);
+                  _tcscpy( str, "Cannot open file: ");
+                  _tcscat( str, FileName);
+                  ::MessageBox(hWnd, str, szAppName, MB_OK | MB_APPLMODAL | MB_ICONQUESTION);
                   break;
                }
                _lclose ( hFile );
@@ -589,7 +633,7 @@ LRESULT CALLBACK ChessWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
                   SendMessage ( hStats, WM_SYSCOMMAND, SC_CLOSE, 0 );
                   flag.post = false;
                } else {
-                  StatDialog ( hWnd, hInst);
+                  StatDialog(hWnd, hInst);
                   flag.post = TRUE;
                }
                break;
@@ -598,7 +642,7 @@ LRESULT CALLBACK ChessWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
             {
                char str[40];
                LoadStringA(hInst, IDS_SETAWIN, str, sizeof ( str ) ),
-               Awindow = DoGetNumberDlg ( hInst, hWnd, str, Awindow);
+               Awindow = DoGetNumberDlg(hInst, hWnd, str, Awindow);
                break;
             }
 
@@ -689,7 +733,8 @@ LRESULT CALLBACK ChessWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
                break;
 
             case IDM_BACKGROUND:
-               if (ColorDialog ( hWnd, hInst, wParam) ) {
+               if (ColorDialog ( hWnd, hInst, wParam) )
+               {
                   InvalidateRect (hWnd, NULL, TRUE);
                   DeleteObject (hBrushBackGround);
                   hBrushBackGround = CreateSolidBrush ( clrBackGround );
@@ -788,32 +833,10 @@ LRESULT CALLBACK ChessWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
     return (NULL);
 }
 
-static void MakeHelpPathName(char *szFileName)
+LRESULT CALLBACK MainWindow::wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-   char *  pcFileName;
-
-    int nFileNameLen = GetModuleFileNameA(hInst, szFileName, EXE_NAME_MAX_SIZE);
-    pcFileName = szFileName + nFileNameLen;
-
-    while (pcFileName > szFileName)
-    {
-        if (*pcFileName == '\\' || *pcFileName == ':')
-        {
-           *(++pcFileName) = '\0';
-           break;
-        }
-        nFileNameLen--;
-        pcFileName--;
-    }
-
-    if ((nFileNameLen+13) < EXE_NAME_MAX_SIZE)
-    {
-        lstrcatA(szFileName, "chess.hlp");
-    }
-    else
-    {
-        lstrcatA(szFileName, "?");
-    }
-
-    return;
+    if (_instance)
+        return _instance->_wndProc(hwnd, msg, wParam, lParam);
+    return 0;
 }
+

@@ -21,59 +21,27 @@
   notice must be preserved on all copies.
 */
 
-#define NOATOM 
-#define NOCLIPBOARD
-#define NOCREATESTRUCT
-#define NOFONT
-#define NOREGION
-#define NOSOUND
-#define NOWH
-#define NOWINOFFSETS
-#define NOCOMM
-#define NOKANJI
-
-#include <windows.h>
 #include "gnuchess.h"
-#include "stats.h"
+#include "resource.h"
 
-extern HWND hStats;
-
-BOOL FAR PASCAL StatDlgProc ( HWND hDlg, unsigned message,
-                               WORD wParam, LONG lParam);
-
-
-int StatDialog ( HWND hWnd, HANDLE hInst)
-{
-#if 0
-   FARPROC lpProcStat;
-
-   lpProcStat = MakeProcInstance(StatDlgProc, hInst);
-    hStats = CreateDialogA(hInst, MAKEINTRESOURCE(STATS), hWnd, lpProcStat);
-   return hStats;
-#else
-    return 0;
-#endif
-}
-
-BOOL FAR PASCAL StatDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK
+StatDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     (void)lParam;
 
-   switch (message)
-   {
-	   case WM_INITDIALOG:		   /* message: initialize dialog box */
-
-         SetDlgItemTextA(hDlg, DEPTHTEXT,    " ");
-         SetDlgItemTextA(hDlg, POSITIONTEXT, " ");
-         SetDlgItemTextA(hDlg, NODETEXT,     " ");
-         SetDlgItemTextA(hDlg, BSTLINETEXT,  " ");
-         SetDlgItemTextA(hDlg, SCORETEXT,    " ");
-         SetDlgItemTextA(hDlg, NODESECTEXT,  " ");
-         
-         return (TRUE);
-
-      case WM_SYSCOMMAND:
-         if ( (wParam&0xfff0) == SC_CLOSE ) {
+    switch (message)
+    {
+    case WM_INITDIALOG:
+        SetDlgItemTextA(hDlg, DEPTHTEXT,    " ");
+        SetDlgItemTextA(hDlg, POSITIONTEXT, " ");
+        SetDlgItemTextA(hDlg, NODETEXT,     " ");
+        SetDlgItemTextA(hDlg, BSTLINETEXT,  " ");
+        SetDlgItemTextA(hDlg, SCORETEXT,    " ");
+        SetDlgItemTextA(hDlg, NODESECTEXT,  " ");
+        return (TRUE);
+    case WM_SYSCOMMAND:
+        if ( (wParam&0xfff0) == SC_CLOSE )
+        {
                DestroyWindow (hDlg);
 	   	      return TRUE;
          }
@@ -85,5 +53,12 @@ BOOL FAR PASCAL StatDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
          break;
     }
 
-    return (FALSE);			      /* Didn't process a message    */
+    return (FALSE);
 }
+
+int StatDialog(HWND hWnd, HINSTANCE hInst)
+{
+    CreateDialog(hInst, MAKEINTRESOURCE(STATS), hWnd, StatDlgProc);
+    //return hStats;
+}
+

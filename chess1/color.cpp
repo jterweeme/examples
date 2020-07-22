@@ -22,23 +22,12 @@
   notice must be preserved on all copies.
 */
 
-#define NOATOM 
-#define NOCLIPBOARD
-#define NOCREATESTRUCT
-#define NOFONT
-#define NOREGION
-#define NOSOUND
-#define NOWH
-#define NOWINOFFSETS
-#define NOCOMM
-#define NOKANJI
-
-#include <windows.h>
+#include "resource.h"
+#include "chess.h"
+#include "globals.h"
+#include <tchar.h>
 #include <string.h>
 #include <stdio.h>
-
-#include "chess.h"
-#include "color.h"
 
 #define CBLACK     RGB(0,0,0)
 #define BLUE      RGB(0,0,255)
@@ -57,109 +46,133 @@
 #define BROWN     RGB(128,128,64)
 #define CWHITE     RGB(255,255,255)
 
-extern DWORD clrBackGround;
-extern DWORD clrBlackSquare;
-extern DWORD clrWhiteSquare;
-extern DWORD clrBlackPiece;
-extern DWORD clrWhitePiece;
-extern DWORD clrText;
-
-BOOL FAR PASCAL ColorDlgProc ( HWND hDlg, unsigned message,
-                               WORD wParam, LONG lParam);
-
-
-void SetStandardColors ( VOID )
+void SetStandardColors(VOID)
 {
-   clrBackGround =  BROWN;
-   clrBlackSquare = DARKGREEN;
-   clrWhiteSquare = PALEGRAY;
-   clrBlackPiece  = RED;
-   clrWhitePiece  = CWHITE;
-   clrText        = CBLACK;
+    clrBackGround = BROWN;
+    clrBlackSquare = DARKGREEN;
+    clrWhiteSquare = PALEGRAY;
+    clrBlackPiece = RED;
+    clrWhitePiece = CWHITE;
+    clrText = CBLACK;
 }
 
+static TCHAR lpChessini[] = TEXT("chess.ini");
+static TCHAR lpBackGround[] = TEXT("BackGround");
+static TCHAR lpBlackSquare[] = TEXT("BlackSquare");
+static TCHAR lpWhiteSquare[] = TEXT("WhiteSquare");
+static TCHAR lpBlackPiece[]  = TEXT("BlackPiece");
+static TCHAR lpWhitePiece[]  = TEXT("WhitePiece");
+static TCHAR lpDefault[]     = TEXT("Default");
+static TCHAR lpText[]        = TEXT("Text");
 
-static char lpChessini[]    = "chess.ini";
-static char lpBackGround[]  = "BackGround";
-static char lpBlackSquare[] = "BlackSquare";
-static char lpWhiteSquare[] = "WhiteSquare";
-static char lpBlackPiece[]  = "BlackPiece";
-static char lpWhitePiece[]  = "WhitePiece";
-static char lpDefault[]     = "Default";
-static char lpText[]        = "Text";
+static TCHAR np08lX[] = TEXT("%08lX");
 
-static char np08lX[] = "%08lX";
-
-void SaveColors ( LPSTR appname )
+void SaveColors(LPTSTR appname)
 {
-   char ostring[30];
-
-   wsprintfA( ostring, np08lX, clrBackGround);
-   WritePrivateProfileStringA( appname, lpBackGround,ostring,lpChessini);
-
-   wsprintfA( ostring, np08lX, clrBlackSquare);
-   WritePrivateProfileStringA( appname, lpBlackSquare,ostring,lpChessini);
-   
-   wsprintfA( ostring, np08lX, clrWhiteSquare);
-   WritePrivateProfileStringA( appname, lpWhiteSquare,ostring,lpChessini);
-   
-   wsprintfA( ostring, np08lX, clrBlackPiece);
-   WritePrivateProfileStringA( appname, lpBlackPiece,ostring,lpChessini);
-   
-   wsprintfA( ostring, np08lX, clrWhitePiece);
-   WritePrivateProfileStringA( appname, lpWhitePiece,ostring,lpChessini);
-
-   wsprintfA( ostring, np08lX, clrText);
-   WritePrivateProfileStringA( appname, lpText,ostring,lpChessini);
+    TCHAR ostring[30];
+    wsprintf(ostring, np08lX, clrBackGround);
+    WritePrivateProfileString(appname, lpBackGround, ostring, lpChessini);
+    wsprintf(ostring, np08lX, clrBlackSquare);
+    WritePrivateProfileString(appname, lpBlackSquare, ostring, lpChessini);
+    wsprintf(ostring, np08lX, clrWhiteSquare);
+    WritePrivateProfileString(appname, lpWhiteSquare, ostring,lpChessini);
+    wsprintf(ostring, np08lX, clrBlackPiece);
+    WritePrivateProfileString(appname, lpBlackPiece, ostring,lpChessini);
+    wsprintf(ostring, np08lX, clrWhitePiece);
+    WritePrivateProfileString(appname, lpWhitePiece, ostring,lpChessini);
+    wsprintf(ostring, np08lX, clrText);
+    WritePrivateProfileString(appname, lpText,ostring,lpChessini);
 }
 
-void GetStartupColors ( LPSTR appname )
+void GetStartupColors(LPCTSTR appname)
 {
-#if 1
-    char istring[30];
+    TCHAR istring[30];
     SetStandardColors();
-    GetPrivateProfileStringA(appname, lpBackGround,lpDefault,istring, sizeof(istring), lpChessini);
+    GetPrivateProfileString(appname, lpBackGround, lpDefault,
+                            istring, sizeof(istring), lpChessini);
 
-    if (strcmp(istring, lpDefault) != 0)
-        sscanf(istring, np08lX, &clrBackGround);
+    if (_tcscmp(istring, lpDefault) != 0)
+        _stscanf(istring, np08lX, &clrBackGround);
 
-    GetPrivateProfileStringA( appname, lpBlackSquare,lpDefault,istring, sizeof(istring), lpChessini);
+    GetPrivateProfileString(appname, lpBlackSquare, lpDefault,
+                            istring, sizeof(istring), lpChessini);
 
-    if (strcmp ( istring, lpDefault) != 0)
-        sscanf ( istring, np08lX, &clrBlackSquare);
+    if (_tcscmp(istring, lpDefault) != 0)
+        _stscanf(istring, np08lX, &clrBlackSquare);
 
-    GetPrivateProfileStringA( appname, lpWhiteSquare,lpDefault,istring,
+    GetPrivateProfileString(appname, lpWhiteSquare, lpDefault,
+                            istring, sizeof(istring), lpChessini);
+
+    if (_tcscmp(istring, lpDefault) != 0)
+        _stscanf(istring, np08lX, &clrWhiteSquare);
+
+    GetPrivateProfileString(appname, lpBlackPiece, lpDefault,istring,
                              sizeof(istring), lpChessini);
-   if (strcmp ( istring, lpDefault) != 0)  sscanf ( istring, np08lX, &clrWhiteSquare);
 
-   GetPrivateProfileStringA( appname, lpBlackPiece,lpDefault,istring,
-                             sizeof(istring), lpChessini);
-   if (strcmp ( istring, lpDefault) != 0)  sscanf ( istring, np08lX, &clrBlackPiece);
+    if (_tcscmp(istring, lpDefault) != 0)
+        _stscanf(istring, np08lX, &clrBlackPiece);
 
-   GetPrivateProfileStringA( appname, lpWhitePiece,lpDefault,istring,
+    GetPrivateProfileString(appname, lpWhitePiece,lpDefault,istring,
                              sizeof(istring), lpChessini);
-   if (strcmp ( istring, lpDefault) != 0)  sscanf ( istring, np08lX, &clrWhitePiece);
 
-   GetPrivateProfileStringA( appname, lpText,lpDefault,istring,
-                             sizeof(istring), lpChessini);
-   if (strcmp ( istring, lpDefault) != 0)  sscanf ( istring, np08lX, &clrText);
-#endif
+    if (_tcscmp(istring, lpDefault) != 0)
+        _stscanf(istring, np08lX, &clrWhitePiece);
+
+    GetPrivateProfileString(appname, lpText, lpDefault,
+                            istring, sizeof(istring), lpChessini);
+
+    if (_tcscmp(istring, lpDefault) != 0)
+        _stscanf(istring, np08lX, &clrText);
 }
 
+static TCHAR lpWBGC[] = TEXT("Window background color");
+static TCHAR lpBS[] = TEXT("Black square color");
+static TCHAR lpWS[] = TEXT("White square color");
+static TCHAR lpBP[] = TEXT("Black piece color");
+static TCHAR lpWP[] = TEXT("White piece color");
+static TCHAR lpTX[] = TEXT("Text color");
 
-int ColorDialog ( HWND hWnd, HANDLE hInst, DWORD Param )
+static DWORD *pclr;
+static int index;
+
+static DWORD IndexToColor(int color)
 {
-   FARPROC lpProcColor;
-   int status;
-#if 0
-   lpProcColor = MakeProcInstance(ColorDlgProc, hInst);
-	status = DialogBoxParam (hInst, MAKEINTRESOURCE(COLOR),   hWnd,  lpProcColor, Param);
-   FreeProcInstance(lpProcColor);
-#endif
-   return status;
+    switch (color)
+    {
+    case CNT_BLACK:
+        return CBLACK;
+    case CNT_BLUE:
+        return BLUE;
+    }
+
+    if (color == CNT_BLACK)
+        return CBLACK;
+
+    if (color == CNT_BLUE)
+        return BLUE;
+
+    if (color == CNT_GREEN)
+        return GREEN;
+    if (color == CNT_CYAN)
+        return CYAN;
+    if (color == CNT_RED)
+        return RED;
+    if (color == CNT_PINK)
+        return PINK;
+    else if (color == CNT_YELLOW) return YELLOW;
+    else if (color == CNT_PALEGRAY) return PALEGRAY;
+    else if (color == CNT_DARKGRAY) return DARKGRAY;
+    else if (color == CNT_DARKBLUE) return DARKBLUE;
+    else if (color == CNT_DARKGREEN) return DARKGREEN;
+    else if (color == CNT_DARKCYAN) return DARKCYAN;
+    else if (color == CNT_DARKRED) return DARKRED;
+    else if (color == CNT_DARKPINK) return DARKPINK;
+    else if (color == CNT_BROWN) return BROWN;
+    else if (color == CNT_WHITE) return CWHITE;
+    return RGB(255,0,0);
 }
 
-static int ColorToIndex ( DWORD color)
+static int ColorToIndex(DWORD color)
 {
    if (color == CBLACK ) return CNT_BLACK;
    else if ( color == BLUE) return CNT_BLUE;
@@ -180,49 +193,19 @@ static int ColorToIndex ( DWORD color)
    return CNT_WHITE;
 }
 
-static DWORD IndexToColor ( int color)
+static LRESULT CALLBACK
+ColorDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-   if (color == CNT_BLACK ) return  CBLACK;
-   else if ( color == CNT_BLUE) return  BLUE;
-   else if ( color == CNT_GREEN) return  GREEN;
-   else if ( color == CNT_CYAN) return  CYAN;
-   else if ( color == CNT_RED) return  RED;
-   else if ( color == CNT_PINK) return  PINK;
-   else if ( color == CNT_YELLOW) return  YELLOW;
-   else if ( color == CNT_PALEGRAY) return  PALEGRAY;
-   else if ( color == CNT_DARKGRAY) return  DARKGRAY;
-   else if ( color == CNT_DARKBLUE) return  DARKBLUE;
-   else if ( color == CNT_DARKGREEN) return  DARKGREEN;
-   else if ( color == CNT_DARKCYAN) return  DARKCYAN;
-   else if ( color == CNT_DARKRED) return  DARKRED;
-   else if ( color == CNT_DARKPINK) return  DARKPINK;
-   else if ( color == CNT_BROWN) return  BROWN;
-   else if ( color == CNT_WHITE) return  CWHITE;
-   return RGB(255,0,0);
-}
+    char *pchHeading;
 
-static char lpWBGC[] ="Window background color";
-static char lpBS[]   ="Black square color";
-static char lpWS[]   ="White square color";
-static char lpBP[]   ="Black piece color";
-static char lpWP[]   ="White piece color";
-static char lpTX[]   ="Text color";
-
-static DWORD *pclr;
-static int index;
-
-BOOL FAR PASCAL ColorDlgProc ( HWND hDlg, unsigned message,
-                               WORD wParam, LONG lParam)
-{
-   char far *pchHeading;
-
-   switch (message) {
-	   case WM_INITDIALOG:		   /* message: initialize dialog box */
-
-         switch (lParam){
+    switch (message)
+    {
+        case WM_INITDIALOG:
+            switch (lParam)
+            {
             default:
             case IDM_BACKGROUND:
-               pchHeading = (char far *) lpWBGC; 
+               pchHeading = (char far *) lpWBGC;
                pclr       = &clrBackGround;
                break;
 
@@ -252,47 +235,55 @@ BOOL FAR PASCAL ColorDlgProc ( HWND hDlg, unsigned message,
                break;
          }
 
-         SetDlgItemTextA( hDlg, IDD_HEADING, pchHeading);
-         index = ColorToIndex ( *pclr);
-         CheckRadioButton ( hDlg, CNT_BLACK, CNT_WHITE, index);
-         return (TRUE);
+         SetDlgItemTextA(hDlg, IDD_HEADING, pchHeading);
+         index = ColorToIndex(*pclr);
+         CheckRadioButton(hDlg, CNT_BLACK, CNT_WHITE, index);
+         return TRUE;
+       case WM_COMMAND:
+         switch (wParam)
+         {
 
-	   case WM_COMMAND:		      /* message: received a command */
-         switch (wParam) {
-         
             case IDD_OK:
-		         EndDialog(hDlg, 1);
+                 EndDialog(hDlg, 1);
                *pclr = IndexToColor (index);
-		         return TRUE;
+                 return TRUE;
 
             case IDD_CANCEL:
-   		      EndDialog(hDlg, NULL);
-	   	      return TRUE;
+              EndDialog(hDlg, NULL);
+              return TRUE;
 
             case CNT_BLACK:
-            case CNT_BLUE:     
-            case CNT_GREEN:    
-            case CNT_CYAN:     
-            case CNT_RED:      
-            case CNT_PINK:     
-            case CNT_YELLOW:   
-            case CNT_PALEGRAY: 
-            case CNT_DARKGRAY: 
-            case CNT_DARKBLUE: 
-            case CNT_DARKGREEN:   
-            case CNT_DARKCYAN:    
-            case CNT_DARKRED:     
-            case CNT_DARKPINK:    
+            case CNT_BLUE:
+            case CNT_GREEN:
+            case CNT_CYAN:
+            case CNT_RED:
+            case CNT_PINK:
+            case CNT_YELLOW:
+            case CNT_PALEGRAY:
+            case CNT_DARKGRAY:
+            case CNT_DARKBLUE:
+            case CNT_DARKGREEN:
+            case CNT_DARKCYAN:
+            case CNT_DARKRED:
+            case CNT_DARKPINK:
             case CNT_BROWN:
             case CNT_WHITE:
-
-               index = wParam;       
-               CheckRadioButton ( hDlg, CNT_BLACK, CNT_WHITE, index);
-               break;
-         }
-	      break;
+                index = wParam;
+                CheckRadioButton(hDlg, CNT_BLACK, CNT_WHITE, index);
+                break;
+        }
+        break;
     }
 
-    return (FALSE);			      /* Didn't process a message    */
+    return FALSE;
 }
+
+int ColorDialog(HWND hWnd, HINSTANCE hInst, WPARAM Param)
+{
+    int status;
+    status = DialogBoxParamA(hInst, MAKEINTRESOURCEA(COLOR), hWnd, ColorDlgProc, Param);
+    return status;
+}
+
+
 

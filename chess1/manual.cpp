@@ -21,75 +21,48 @@
   notice must be preserved on all copies.
 */
 
-#define NOATOM 
-#define NOCLIPBOARD
-#define NOCREATESTRUCT
-#define NOFONT
-#define NOREGION
-#define NOSOUND
-#define NOWH
-#define NOWINOFFSETS
-#define NOCOMM
-#define NOKANJI
-
-#include <windows.h>
 #include "chess.h"
 
+static char ManualDlgChar[8];
 
-static char  ManualDlgChar[8];
-
-int FAR DoManualMoveDlg (HANDLE hInst, HWND hWnd, char * szPrompt);
-
-BOOL FAR PASCAL ManualMoveDlgProc (HWND hDlg, unsigned iMessage,
-                                  WORD wParam, LONG lParam)
+static LRESULT CALLBACK
+ManualMoveDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM)
 {
-   switch ( iMessage ){
-      case WM_INITDIALOG:
-         SendMessage ( GetDlgItem(hDlg, 100), EM_LIMITTEXT, sizeof(ManualDlgChar)-1,0);
-         SetDlgItemTextA(hDlg, 100, (LPSTR) ManualDlgChar);
-         return TRUE;
-
-      case WM_SYSCOMMAND:
-         if ( (wParam&0xfff0) == SC_CLOSE ) {
-   		      EndDialog(hDlg, FALSE);
-	   	      return TRUE;
-         }
-         return FALSE;
-         break;
-
-      case WM_COMMAND:
-         switch (wParam) {
-            case IDOK:
-               GetDlgItemTextA( hDlg, 100, ManualDlgChar, sizeof(ManualDlgChar)-1);
-               EndDialog ( hDlg, TRUE);
-               break;
-
-            case IDCANCEL:
-               EndDialog ( hDlg, FALSE);
-               break;
-
-            default: return FALSE;
-
-         }
-
-      default: return FALSE;
-   }
-   return TRUE;
+    switch (iMessage)
+    {
+    case WM_INITDIALOG:
+        SendMessage(GetDlgItem(hDlg, 100), EM_LIMITTEXT, sizeof(ManualDlgChar)-1,0);
+        SetDlgItemTextA(hDlg, 100, (LPSTR) ManualDlgChar);
+        return TRUE;
+    case WM_SYSCOMMAND:
+        if ( (wParam&0xfff0) == SC_CLOSE )
+        {
+            EndDialog(hDlg, FALSE);
+            return TRUE;
+        }
+        return FALSE;
+    case WM_COMMAND:
+        switch (wParam)
+        {
+        case IDOK:
+            GetDlgItemTextA( hDlg, 100, ManualDlgChar, sizeof(ManualDlgChar)-1);
+            EndDialog ( hDlg, TRUE);
+            return TRUE;
+        case IDCANCEL:
+            EndDialog ( hDlg, FALSE);
+            return TRUE;
+        }
+        return FALSE;
+    }
+    return FALSE;
 }
 
-int FAR DoManualMoveDlg (HANDLE hInst, HWND hWnd, char * szPrompt)
+int DoManualMoveDlg(HINSTANCE hInst, HWND hWnd, char *szPrompt)
 {
-   FARPROC lpfnManualDlgProc;
-   int stat;
-
-   lstrcpyA( ManualDlgChar, "");
-#if 0
-   lpfnManualDlgProc = MakeProcInstance ( ManualMoveDlgProc, hInst);
-   stat = DialogBox ( hInst, MAKEINTRESOURCE(MANUALDLG), hWnd, lpfnManualDlgProc);
-   FreeProcInstance ( lpfnManualDlgProc);
-#endif
-   lstrcpyA( szPrompt, ManualDlgChar);
-   return stat;
+    lstrcpyA(ManualDlgChar, "");
+    int stat = DialogBox(hInst, MAKEINTRESOURCE(MANUALDLG), hWnd, ::ManualMoveDlgProc);
+    lstrcpyA(szPrompt, ManualDlgChar);
+    return stat;
 }
 
 

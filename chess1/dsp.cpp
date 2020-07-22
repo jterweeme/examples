@@ -24,27 +24,15 @@
   notice must be preserved on all copies.
 */
 
-#define NOATOM 
-#define NOCLIPBOARD
-#define NOCREATESTRUCT
-#define NOFONT
-#define NOREGION
-#define NOSOUND
-#define NOWH
-#define NOWINOFFSETS
-#define NOCOMM
-#define NOKANJI
-
-#include <windows.h>
-#include <string.h>
-#include <time.h>
-#include <stdio.h>
 
 #include "gnuchess.h"
 #include "defs.h"
 #include "chess.h"
+#include "resource.h"
+#include "globals.h"
+#include <time.h>
 
-
+#if 0
 static short Stboard[64] =
 {rook, knight, bishop, queen, king, bishop, knight, rook,
  pawn, pawn, pawn, pawn, pawn, pawn, pawn, pawn,
@@ -60,11 +48,9 @@ static short Stcolor[64] =
  2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
  black, black, black, black, black, black, black, black,
  black, black, black, black, black, black, black, black};
+#endif
 
 int mycntl1, mycntl2;
-
-char mvstr[4][6];
-long evrate;
 int PositionFlag = 0;
 
 #define pxx " PNBRQK"
@@ -72,37 +58,30 @@ int PositionFlag = 0;
 
 void TerminateSearch (int), Die (int);
 
-void
-Initialize (void)
+void Initialize (void)
 {
-  mycntl1 = mycntl2 = 0;
+    mycntl1 = mycntl2 = 0;
 }
 
-void
-ExitChess (void)
+void ExitChess (void)
 {
 
 }
 
-void
-Die (int Sig)
+void Die(int)
 {
 }
 
-void
-TerminateSearch (int Sig)
+void TerminateSearch(int)
 {
-  flag.timeout = true;
-  flag.bothsides = false;
+    flag.timeout = true;
+    flag.bothsides = false;
 }
-
-void
-algbr (short int f, short int t, short int flag)
 
 /*
    Generate move strings in different formats.
 */
-
+void algbr(short int f, short int t, short int flag)
 {
   int m3p;
 
@@ -231,36 +210,35 @@ VerifyMove (HWND hWnd, char *s, short int iop, short unsigned int *mv)
           return (true);
         }
     }
-  if (cnt > 1) SMessageBox (hWnd, IDS_AMBIGUOUSMOVE, IDS_CHESS);
-  return (false);
-}
 
-void
-ElapsedTime (short int iop)
+    if (cnt > 1)
+        SMessageBox (hWnd, IDS_AMBIGUOUSMOVE, IDS_CHESS);
+
+    return false;
+}
 
 /*
   Determine the time that has passed since the search was started. If
   the elapsed time exceeds the target (ResponseTime+ExtraTime) then set
   timeout to true which will terminate the search.
 */
-
+void ElapsedTime (short int iop)
 {
-#if 0
-  et = time ((long *) 0) - time0;
-#endif
-  if (et < 0)
-    et = 0;
-  ETnodes += 50;
-  if (et > et0 || iop == 1)
+    et = ::time(0) - time0;
+
+    if (et < 0)
+        et = 0;
+
+    ETnodes += 50;
+
+    if (et > et0 || iop == 1)
     {
       if (et > ResponseTime + ExtraTime && Sdepth > 1)
         flag.timeout = true;
       et0 = et;
       if (iop == 1)
         {
-#if 0
-          time0 = time ((long *) 0);
-#endif
+          time0 = time(0);
           et0 = 0;
         }
       if (et > 0)
@@ -273,8 +251,7 @@ ElapsedTime (short int iop)
     }
 }
 
-void
-SetTimeControl (void)
+void SetTimeControl()
 {
   if (TCflag)
     {
@@ -351,25 +328,26 @@ void GetGame (HWND hWnd, char *fname)
   UpdateDisplay (hWnd, 0, 0, 1, 0);
 }
 
-void
-SaveGame (HWND hWnd, char *fname)
+void SaveGame (HWND hWnd, char *fname)
 {
-  FILE *fd;
-  short sq, i, c;
+    FILE *fd;
+    short sq, i, c;
 
-  if (NULL == (fd = fopen (fname, "w")))
+    if (NULL == (fd = fopen (fname, "w")))
     {
-      ShowMessage (hWnd, "Not saved");
-      return;
+        ShowMessage(hWnd, "Not saved");
+        return;
     }
 
-  fprintf (fd, "%d %d %d\n", computer + 1, opponent + 1, Game50);
-  fprintf (fd, "%d %d\n", castld[white], castld[black]);
-  fprintf (fd, "%d %d\n", TCflag, OperatorTime);
-  fprintf (fd, "%ld %ld %d %d\n",
+    fprintf(fd, "%d %d %d\n", computer + 1, opponent + 1, Game50);
+    fprintf(fd, "%d %d\n", castld[white], castld[black]);
+    fprintf(fd, "%d %d\n", TCflag, OperatorTime);
+
+    fprintf(fd, "%ld %ld %d %d\n",
            TimeControl.clock[white], TimeControl.clock[black],
            TimeControl.moves[white], TimeControl.moves[black]);
-  for (sq = 0; sq < 64; sq++)
+
+    for (sq = 0; sq < 64; sq++)
     {
       if (color[sq] == neutral)
         c = 0;
@@ -424,20 +402,19 @@ ListGame (HWND hWnd, char *fname)
   fclose (fd);
 }
 
-void
-Undo (HWND hWnd)
-
 /*
   Undo the most recent half-move.
 */
-
+void Undo(HWND hWnd)
 {
-  short f, t;
-  f = GameList[GameCnt].gmove >> 8;
-  t = GameList[GameCnt].gmove & 0xFF;
-  if (board[t] == king && distance (t, f) > 1)
-    (void) castle (GameList[GameCnt].color, f, t, 2);
-  else
+    short f = GameList[GameCnt].gmove >> 8;
+    short t = GameList[GameCnt].gmove & 0xFF;
+
+    if (board[t] == king && distance (t, f) > 1)
+    {
+        (void)castle(GameList[GameCnt].color, f, t, 2);
+    }
+    else
     {
       /* Check for promotion: */
       if ((color[t] == white && row (f) == 6 && row (t) == 7)
@@ -445,7 +422,7 @@ Undo (HWND hWnd)
         {
           int g, from = f;
           for (g = GameCnt - 1; g > 0; g--)
-            if (GameList[g].gmove & 0xFF == from)
+            if (GameList[g].gmove & (0xFF == from))
               from = GameList[g].gmove >> 8;
           if ((color[t] == white && row (from) == 1)
               || (color[t] == black && row (from) == 6))

@@ -21,64 +21,34 @@
   notice must be preserved on all copies.
 */
 
-#define NOATOM 
-#define NOCLIPBOARD
-#define NOCREATESTRUCT
-#define NOFONT
-#define NOREGION
-#define NOSOUND
-#define NOWH
-#define NOWINOFFSETS
-#define NOCOMM
-#define NOKANJI
-
-#include <windows.h>
-#include "timecnt.h"
 #include "chess.h"
+#include "resource.h"
+#include <windows.h>
 
 extern int TCmoves, TCminutes, TCflag;
-
-BOOL FAR PASCAL TimeControlDlgProc ( HWND hDlg, unsigned message,
-                               WORD wParam, LONG lParam);
-
-
-int TimeControlDialog ( HWND hWnd, HANDLE hInst, DWORD Param )
-{
-   FARPROC lpProcTime;
-   int status;
-#if 0
-   lpProcTime = MakeProcInstance(TimeControlDlgProc, hInst);
-	status = DialogBoxParam (hInst, MAKEINTRESOURCE(TIMECONTROL),   hWnd,  lpProcTime, Param);
-   FreeProcInstance(lpProcTime);
-#endif
-   return status;
-}
 
 static int tmpTCmoves;
 static int tmpTCminutes;
 
-BOOL FAR PASCAL TimeControlDlgProc ( HWND hDlg, unsigned message,
-                               WORD wParam, LONG lParam)
+static INT_PTR CALLBACK
+TimeControlDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
 {
-
-   switch (message) {
-	   case WM_INITDIALOG:		   /* message: initialize dialog box */
-
-         CheckRadioButton ( hDlg, TMDLG_1MOV, TMDLG_60MOV, TCmoves+TMDLG_MOV);
-         CheckRadioButton ( hDlg, TMDLG_5MIN, TMDLG_600MIN, TCminutes+TMDLG_MIN);
-         tmpTCminutes = TCminutes;
-         tmpTCmoves   = TCmoves;
-         return (TRUE);
-
-      case WM_SYSCOMMAND:
-         if ( (wParam&0xfff0) == SC_CLOSE ) {
-   		      EndDialog(hDlg, NULL);
-	   	      return TRUE;
-         }
-         break;
-
-
-	   case WM_COMMAND:		      /* message: received a command */
+    switch (message)
+    {
+    case WM_INITDIALOG:
+        CheckRadioButton(hDlg, TMDLG_1MOV, TMDLG_60MOV, TCmoves + TMDLG_MOV);
+        CheckRadioButton(hDlg, TMDLG_5MIN, TMDLG_600MIN, TCminutes+TMDLG_MIN);
+        tmpTCminutes = TCminutes;
+        tmpTCmoves   = TCmoves;
+        return TRUE;
+    case WM_SYSCOMMAND:
+        if ((wParam&0xfff0) == SC_CLOSE)
+        {
+            EndDialog(hDlg, NULL);
+            return TRUE;
+        }
+        break;
+    case WM_COMMAND:
          switch (wParam) {
          
             case IDOK:
@@ -110,9 +80,16 @@ BOOL FAR PASCAL TimeControlDlgProc ( HWND hDlg, unsigned message,
                   tmpTCminutes = wParam - TMDLG_MIN;
                   CheckRadioButton ( hDlg, TMDLG_5MIN, TMDLG_600MIN, wParam);
                   break;
-         }
-	      break;
+        }
+        break;
     }
 
-    return (FALSE);			      /* Didn't process a message    */
+    return FALSE;
 }
+
+int TimeControlDialog(HWND hWnd, HINSTANCE hInst, DWORD Param )
+{
+    int status = DialogBoxParam(hInst, MAKEINTRESOURCE(TIMECONTROL), hWnd, TimeControlDlgProc, Param);
+    return status;
+}
+

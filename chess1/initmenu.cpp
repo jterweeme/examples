@@ -21,24 +21,13 @@
   notice must be preserved on all copies.
 */
 
-#define NOATOM 
-#define NOCLIPBOARD
-#define NOCREATESTRUCT
-#define NOFONT
-#define NOREGION
-#define NOSOUND
-#define NOWH
-#define NOWINOFFSETS
-#define NOCOMM
-#define NOKANJI
-
-#include <windows.h>
 #include "gnuchess.h"
 #include "chess.h"
+#include "resource.h"
 
 extern int coords;
 
-void Init_Menus (HWND hWnd, WPARAM wParamx, LPARAM lParam )
+void Init_Menus(HWND, WPARAM wParamx, LPARAM lParam)
 {
     WORD Status;
 

@@ -24,33 +24,22 @@
   notice must be preserved on all copies.
 */
 
-#define NOATOM 
-#define NOCLIPBOARD
-#define NOCREATESTRUCT
-#define NOFONT
-#define NOREGION
-#define NOSOUND
-#define NOWH
-#define NOCOMM
-#define NOKANJI
- 
-#include <windows.h>
-#include <time.h>
-#include <stdlib.h>
-#include <stdio.h>
 
+#include "resource.h"
 #include "gnuchess.h"
 #include "defs.h"
 #include "chess.h"
+#include "globals.h"
+#include <time.h>
+#include <stdlib.h>
 
 #define MAX_BOOK_SIZE (32*1024)
 
 static unsigned int book_used = 0;
 static char far * xBook;
 GLOBALHANDLE hBook = 0;
-extern HINSTANCE hInst;
 
-void FreeBook (void)
+void FreeBook(void)
 {
    GlobalUnlock ( hBook );
    GlobalFree ( hBook);
@@ -58,7 +47,7 @@ void FreeBook (void)
    book_used = 0;
 }
 
-static void far *Book_alloc ( unsigned int size )
+static void *Book_alloc ( unsigned int size )
 {
     char far * temp;
     if ( book_used+size >= MAX_BOOK_SIZE ) return (void far *)0;

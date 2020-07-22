@@ -24,17 +24,7 @@
   notice must be preserved on all copies.
 */
 
-#define NOATOM 
-#define NOCLIPBOARD
-#define NOCREATESTRUCT
-#define NOSOUND
-#define NOWH
-#define NOWINOFFSETS
-#define NOCOMM
-#define NOKANJI
 
-#include <windows.h>
-#include <stdio.h>
 #include "defs.h"
 
 /* All units defined in pixels */
@@ -50,15 +40,16 @@
 static void DrawOneSquare ( HDC hDC, short x, short y);
 static int HilitSq;
 
-void QueryBoardSize ( POINT *pptl )
+void QueryBoardSize(POINT *pptl)
 {
-   pptl->x = 2*BRD_HORZMARGIN + 8*BRD_HORZFRONT;
-   pptl->y = BRD_BACKMARGIN + 8*BRD_VERT + 2*BRD_FRONTMARGIN + 2*BRD_EDGE;
+    pptl->x = 2*BRD_HORZMARGIN + 8*BRD_HORZFRONT;
+    pptl->y = BRD_BACKMARGIN + 8*BRD_VERT + 2*BRD_FRONTMARGIN + 2*BRD_EDGE;
 }
 
-void QuerySqSize ( POINT *pptl ) {
-   pptl->x = BRD_HORZFRONT;
-   pptl->y = BRD_VERT;
+void QuerySqSize(POINT *pptl)
+{
+    pptl->x = BRD_HORZFRONT;
+    pptl->y = BRD_VERT;
 }
 
 void QuerySqOrigin ( short x, short y, POINT *pptl)

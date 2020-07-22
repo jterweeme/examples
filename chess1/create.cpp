@@ -21,31 +21,9 @@
   notice must be preserved on all copies.
 */
 
-#define NOATOM 
-#define NOCLIPBOARD
-#define NOCREATESTRUCT
-#define NOFONT
-#define NOREGION
-#define NOSOUND
-#define NOWH
-#define NOWINOFFSETS
-#define NOCOMM
-#define NOKANJI
-
-#include <windows.h>
-#include <stdio.h>
-
 #include "defs.h"
 #include "chess.h"
-
-extern HWND hComputerColor;
-extern HWND hComputerMove;
-extern HWND hWhosTurn;
-extern HWND hClockComputer;
-extern HWND hClockHuman;
-extern HWND hMsgComputer;
-extern HWND hMsgHuman;
-
+#include "globals.h"
 
 void Create_Children ( HWND hWnd, HINSTANCE hInst, short xchar, short ychar)
 {

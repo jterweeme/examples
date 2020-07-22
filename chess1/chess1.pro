@@ -9,7 +9,6 @@ SOURCES += about.cpp\
     eval.cpp\
     globals.cpp\
     hittest.cpp\
-    init.cpp\
     initiali.cpp\
     initmenu.cpp\
     main.cpp\
@@ -23,14 +22,17 @@ SOURCES += about.cpp\
     search.cpp\
     stats.cpp\
     test.cpp\
-    timecnt.cpp
+    timecnt.cpp\
+    winclass.cpp
 
 HEADERS += chess.h\
-    color.h defs.h gnuchess.h\
-    saveopen.h stats.h\
-    timecnt.h
+    defs.h\
+    globals.h\
+    gnuchess.h\
+    resource.h\
+    winclass.h
 
 RC_FILE += chess.rc
 OTHER_FILES += chess.rc
-
+DEFINES -= UNICODE _UNICODE
 LIBS += -lgdi32

@@ -118,54 +118,13 @@ struct PIECEBITMAP {
 
 #define IDM_TIMECONTROL 306
 
-/* Resource definitions */
-
 #define AboutBox    262
 #define REVIEW      263
 #define NUMBERDLG   264
 #define COLOR       266
 #define TIMECONTROL 267
-/*#define STATS     268*/
 #define TEST        269
-/*#define FILESAVE  270*/     /* Defined in saveopen.h */
-/*#define FILEOPEN  271*/
-/*#define WILDFILEOPEN 272*/
 #define PAWNPROMOTE 273
 #define MANUALDLG   274
-
-
-/* String Definitions */
-
-#define IDS_ILLEGALMOVE   1000     /* Illeagal move */
-#define IDS_AMBIGUOUSMOVE 1001    /* Ambigous move */
-#define IDS_OBAE          1002    /* Opening book allocation error */
-#define IDS_OBNF          1003    /* Opening Book not found */
-#define IDS_UNABLESAVE    1004    /* Unable to save game*/
-#define IDS_UNABLELIST    1005    /* Unable to list game */
-#define IDS_CHESS         1006    /* Chess */
-#define IDS_DRAWGAME      1007    /* Draw Game */
-#define IDS_YOUWIN        1008    /* You win */
-#define IDS_COMPUTERWIN   1009    /* Computer wins */
-#define IDS_MATESOON      1010    /* You will soon mate */
-#define IDS_COMPMATE      1011    /* Computer will soon mate */
-#define IDS_TTABLEAF      1012    /* ttable Allocation Failed*/
-#define IDS_SQDATAAF      1013    /* sqdata Allocation Failed*/
-#define IDS_HISTORYAF     1014    /* History Allocation Failed*/
-#define IDS_TREEAF        1016    /* Tree Allocation Failed*/
-#define IDS_GAMEAF        1017    /* Game List Allocation Failed*/
-#define IDS_LOADFAILED    1018
-#define IDS_SETAWIN       1019
-#define IDS_SETBWIN       1020
-#define IDS_SETCONTEMPT   1021
-#define IDS_MAXSEARCH     1022
-#define IDS_INITERROR     1023
-
-#define MENU_ID_FILE      0
-#define MENU_ID_EDIT      1
-#define MENU_ID_OPTIONS   2
-#define MENU_ID_SKILL     3
-#define MENU_ID_SIDE      4
-#define MENU_ID_HINT      5
-#define MENU_ID_ABORT     6
 #endif
 

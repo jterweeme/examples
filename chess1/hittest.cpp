@@ -21,17 +21,6 @@
   notice must be preserved on all copies.
 */
 
-#define NOATOM 
-#define NOCLIPBOARD
-#define NOCREATESTRUCT
-#define NOFONT
-#define NOSOUND
-#define NOWH
-#define NOCOMM
-#define NOKANJI
-
-#include <windows.h>
-#include <stdio.h>
 
 #include "defs.h"
 
@@ -64,12 +53,12 @@ void Hittest_Destructor (VOID)
 
 static int HorzHitTest ( int x, int y)
 {
-   int i;
-
-   for ( i=0; i<8; i++) {
-      if ( PtInRegion ( hitrgn[i],x,y) ) return i;
-   }
-   return -1;
+    for (int i=0; i<8; i++)
+    {
+        if (PtInRegion(hitrgn[i],x,y))
+            return i;
+    }
+    return -1;
 }
 
 int HitTest ( int x, int y)

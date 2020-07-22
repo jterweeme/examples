@@ -21,48 +21,35 @@
   notice must be preserved on all copies.
 */
 
-#define NOATOM 
-#define NOCLIPBOARD
-#define NOCREATESTRUCT
-#define NOFONT
-#define NOREGION
-#define NOSOUND
-#define NOWH
-#define NOCOMM
-#define NOKANJI
 
 #include <windows.h>
 #include <time.h>
-#include <sys\types.h>
-#include <sys\stat.h>
 
 extern char Version[];
 char Version[100];
 
-LRESULT CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
 {
     switch (message)
     {
-
-      case WM_INITDIALOG:		   /* message: initialize dialog box */
-         SetDlgItemTextA( hDlg, 106, Version);
-         return (TRUE);
-
-      case WM_SYSCOMMAND:
-         if ( (wParam&0xfff0) == SC_CLOSE ) {
-   		      EndDialog(hDlg, NULL);
-	   	      return TRUE;
-         }
-         break;
-
-
-	   case WM_COMMAND:		      /* message: received a command */
-	      if (wParam == IDOK) {
-		      EndDialog(hDlg, NULL);
-		      return (TRUE);
-	      }
-	      break;
+    case WM_INITDIALOG:
+        SetDlgItemTextA(hDlg, 106, Version);
+        return (TRUE);
+    case WM_SYSCOMMAND:
+        if ((wParam & 0xfff0) == SC_CLOSE)
+        {
+            EndDialog(hDlg, NULL);
+            return TRUE;
+        }
+        break;
+    case WM_COMMAND:
+        if (wParam == IDOK)
+        {
+            EndDialog(hDlg, NULL);
+            return TRUE;
+        }
+        break;
     }
 
-    return (FALSE);			      /* Didn't process a message    */
+    return FALSE;
 }

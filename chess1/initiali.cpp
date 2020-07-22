@@ -106,21 +106,23 @@ extern unsigned char far * nextdir;
   piece can be used directly in nextpos/nextdir when generating moves
   for pieces that are not black pawns.
 */
+#if 0
 static short ptype[2][8] =
 {
-  no_piece, pawn, knight, bishop, rook, queen, king, no_piece,
-  no_piece, bpawn, knight, bishop, rook, queen, king, no_piece};
+  {no_piece, pawn, knight, bishop, rook, queen, king, no_piece},
+  {no_piece, bpawn, knight, bishop, rook, queen, king, no_piece}};
+#endif
 
 static short direc[8][8] =
 {
-  0, 0, 0, 0, 0, 0, 0, 0,
-  10, 9, 11, 0, 0, 0, 0, 0,
-  8, -8, 12, -12, 19, -19, 21, -21,
-  9, 11, -9, -11, 0, 0, 0, 0,
-  1, 10, -1, -10, 0, 0, 0, 0,
-  1, 10, -1, -10, 9, 11, -9, -11,
-  1, 10, -1, -10, 9, 11, -9, -11,
-  -10, -9, -11, 0, 0, 0, 0, 0};
+  {0, 0, 0, 0, 0, 0, 0, 0},
+  {10, 9, 11, 0, 0, 0, 0, 0},
+  {8, -8, 12, -12, 19, -19, 21, -21},
+  {9, 11, -9, -11, 0, 0, 0, 0},
+  {1, 10, -1, -10, 0, 0, 0, 0},
+  {1, 10, -1, -10, 9, 11, -9, -11},
+  {1, 10, -1, -10, 9, 11, -9, -11},
+  {-10, -9, -11, 0, 0, 0, 0, 0}};
 
 static short max_steps[8] =
 {0, 2, 1, 7, 7, 7, 1, 2};
@@ -141,15 +143,13 @@ static short nunmap[120] =
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 
 
-void
-Initialize_moves (void)
-
 /*
   This procedure pre-calculates all moves for every piece from every square.
   This data is stored in nextpos/nextdir and used later in the move generation
   routines.
 */
-
+void
+Initialize_moves (void)
 {
   short ptyp, po, p0, d, di, s, delta;
   unsigned char far *ppos, far *pdir;

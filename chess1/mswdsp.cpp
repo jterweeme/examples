@@ -24,29 +24,18 @@
   notice must be preserved on all copies.
 */
 
-#define NOATOM 
-#define NOCLIPBOARD
-#define NOCREATESTRUCT
-#define NOSOUND
-#define NOWH
-#define NOCOMM
-#define NOKANJI
-
-#include <windows.h>
-#include <string.h>
-#include <stdio.h>
-
 #include "gnuchess.h"
 #include "chess.h"
 #include "defs.h"
-#include "stats.h"
+#include "resource.h"
+#include <stdio.h>
 
 extern short boarddraw[64];
 extern short colordraw[64];
 
 extern char mvstr[4][6];
 extern long evrate;
-static char* ColorStr[2] = {"White", "Black"};
+static const char *ColorStr[2] = {"White", "Black"};
 
 extern HINSTANCE hInst;
 
@@ -78,10 +67,9 @@ ShowScore (short score)
    }
 }
 
-void
-ShowMessage (HWND hWnd, char *s)
+void ShowMessage(HWND hWnd, LPCSTR s)
 {
-  MessageBoxA( hWnd, s, "Chess", MB_OK | MB_ICONEXCLAMATION | MB_APPLMODAL);
+    MessageBoxA(hWnd, s, "Chess", MB_OK | MB_ICONEXCLAMATION | MB_APPLMODAL);
 }
 
 void SMessageBox ( HWND hWnd, int str_num, int str1_num )
@@ -98,15 +86,16 @@ ClearMessage (void)
 }
 
 void
-ShowCurrentMove (short int pnt, short int f, short int t)
+ShowCurrentMove(short int pnt, short int f, short int t)
 {
-   char tmp[30];
+    char tmp[30];
 
-   if ( hStats) {
-      algbr (f, t, false);
-      wsprintfA( tmp, "(%2d) %4s",pnt, (char far *)mvstr[0]);
-      SetDlgItemTextA( hStats, POSITIONTEXT, tmp);
-   }
+    if (hStats)
+    {
+        algbr(f, t, false);
+        wsprintfA(tmp, "(%2d) %4s",pnt, (char far *)mvstr[0]);
+        SetDlgItemTextA(hStats, POSITIONTEXT, tmp);
+    }
 }
 
 void
@@ -137,35 +126,35 @@ ShowNodeCnt (long int NodeCnt, long int evrate)
 }  
 
 void
-ShowResults (short int score, short unsigned int *bstline, char ch)
+ShowResults(short int score, PWORD bstline, char ch)
 {
-  unsigned char d, ply;
-  char str[300];
-  int s;
+    BYTE ply;
+    char str[300];
 
-  if (flag.post)
+    if (flag.post)
     {
-      ShowDepth (ch);
-      ShowScore (score);
-      d = 7; s = 0;
-      for (ply = 1; bstline[ply] > 0; ply++)
+        ShowDepth (ch);
+        ShowScore (score);
+        int s = 0;
+
+        for (ply = 1; bstline[ply] > 0; ply++)
         {
-         algbr ((short) bstline[ply] >> 8, (short) bstline[ply] & 0xFF, false);
-         if ( ply==5 || ply==9 || ply==13 || ply==17)
-            s += wsprintfA( str+s,"\n");
-         s += wsprintfA( str+s,"%-5s ", (char far *) mvstr[0]);
+            algbr(short(bstline[ply]) >> 8, (short) bstline[ply] & 0xFF, false);
+
+            if (ply==5 || ply==9 || ply==13 || ply==17)
+                s += wsprintfA(str + s, "\n");
+
+            s += wsprintfA(str + s,"%-5s ", (char far *) mvstr[0]);
         }
-      SetDlgItemTextA( hStats, BSTLINETEXT, (LPSTR) str);
+        SetDlgItemTextA( hStats, BSTLINETEXT, (LPSTR) str);
     }
 }
 
-void
-SearchStartStuff (short int side)
+void SearchStartStuff(short int)
 {
 }
 
-void
-OutputMove (HWND hWnd)
+void OutputMove(HWND hWnd)
 {
   char tmp[30];
 
@@ -220,34 +209,35 @@ UpdateClocks (void)
     ShowNodeCnt (NodeCnt, evrate);
 }
 
-void
-ShowPostnValue (short int sq)
+void ShowPostnValue(short int)
 {
 }
 
-void
-ShowPostnValues (void)
+void ShowPostnValues(void)
 {
 }
 
-void DrawPiece ( HWND hWnd, short int f )
+void DrawPiece(HWND hWnd, short int f)
 {
-   POINT aptl[4];
-   HRGN hRgn;
-   int x,y;
+    POINT aptl[4];
+    HRGN hRgn;
+    int x,y;
 
-   if ( flag.reverse ) {
-     x = 7-(f%8);
-     y = 7-(f/8);
-   } else {
-      x = f%8;
-      y = f/8;
-   }
+    if (flag.reverse)
+    {
+        x = 7-(f%8);
+        y = 7-(f/8);
+    }
+    else
+    {
+        x = f%8;
+        y = f/8;
+    }
 
-   QuerySqCoords ( x,y, aptl+0);
-   hRgn = CreatePolygonRgn( aptl, 4, WINDING);
-   InvalidateRgn ( hWnd, hRgn, FALSE );
-   DeleteObject ( hRgn);
+    QuerySqCoords(x, y, aptl+0);
+    hRgn = CreatePolygonRgn(aptl, 4, WINDING);
+    InvalidateRgn(hWnd, hRgn, FALSE );
+    DeleteObject(hRgn);
 }
 
 void

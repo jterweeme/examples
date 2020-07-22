@@ -24,7 +24,6 @@
 #ifndef GNUCHESS_H
 #define GNUCHESS_H
 
-#include <stdio.h>
 #include <windows.h>
 
 #define SEEK_SET 0
@@ -245,7 +244,7 @@ extern unsigned short hint, PrVar[maxdepth];
 
 #define row(a) ((a) >> 3)
 #define column(a) ((a) & 7)
-#define locn(a,b) (((a) << 3) | b)
+#define locn(a,b) (((a) << 3) | (b))
 /*extern short distdata[64][64];*/
 extern short far *distdata;
 #endif

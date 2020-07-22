@@ -21,39 +21,10 @@
   notice must be preserved on all copies.
 */
 
-#define NOATOM 
-#define NOCLIPBOARD
-#define NOCREATESTRUCT
-#define NOFONT
-#define NOREGION
-#define NOSOUND
-#define NOWH
-#define NOWINOFFSETS
-#define NOCOMM
-#define NOKANJI
-
-#include <windows.h>
-#include <time.h>
-
 #include "gnuchess.h"
 #include "chess.h"
 #include "defs.h"
-
-BOOL FAR PASCAL TestDlgProc ( HWND hDlg, unsigned message,
-                               WORD wParam, LONG lParam);
-
-
-int TestDialog ( HWND hWnd, HANDLE hInst)
-{
-   FARPROC lpProcTest;
-   int status;
-#if 0
-   lpProcTest = MakeProcInstance(TestDlgProc, hInst);
-	status = DialogBox (hInst, MAKEINTRESOURCE(TEST),   hWnd,  lpProcTest);
-   FreeProcInstance(lpProcTest);
-#endif
-   return status;
-}
+#include <time.h>
 
 void
 TestSpeed(HWND hWnd, int cnt, void (*f) (short int side, short int ply))
@@ -75,36 +46,41 @@ TestSpeed(HWND hWnd, int cnt, void (*f) (short int side, short int ply))
   SetDlgItemTextA(hWnd, cnt, tmp);
 }
 
-BOOL FAR PASCAL TestDlgProc ( HWND hDlg, unsigned message,
-                               WORD wParam, LONG lParam)
+static INT_PTR CALLBACK
+TestDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
 {
+    HCURSOR hCursor;
 
-   HCURSOR hCursor;
-
-   switch (message) {
-	   case WM_INITDIALOG:		   /* message: initialize dialog box */
-
-         SetDlgItemTextA( hDlg, 100, " ");
-         SetDlgItemTextA( hDlg, 101, " ");
-         PostMessage ( hDlg, (WM_USER+1), 0, 0);
-         return (TRUE);
-
-      case (WM_USER+1):
-          hCursor = SetCursor ( LoadCursor(NULL, IDC_WAIT) );
-          ShowCursor (TRUE);
-          TestSpeed (hDlg, 100, MoveList);
-          TestSpeed (hDlg, 101, CaptureList);
-          ShowCursor (FALSE);
-          SetCursor ( hCursor);
-         break;
-
-      case WM_SYSCOMMAND:
-         if ( (wParam&0xfff0) == SC_CLOSE ) {
-   		      EndDialog(hDlg, NULL);
-	   	      return TRUE;
-         }
-         break;
+    switch (message)
+    {
+    case WM_INITDIALOG:		   /* message: initialize dialog box */
+        SetDlgItemTextA( hDlg, 100, " ");
+        SetDlgItemTextA( hDlg, 101, " ");
+        PostMessage ( hDlg, (WM_USER+1), 0, 0);
+        return (TRUE);
+    case (WM_USER+1):
+        hCursor = ::SetCursor(::LoadCursor(NULL, IDC_WAIT) );
+        ::ShowCursor(TRUE);
+        ::TestSpeed(hDlg, 100, MoveList);
+        ::TestSpeed(hDlg, 101, CaptureList);
+        ::ShowCursor(FALSE);
+        ::SetCursor(hCursor);
+        break;
+    case WM_SYSCOMMAND:
+        if ((wParam&0xfff0) == SC_CLOSE )
+        {
+            ::EndDialog(hDlg, NULL);
+            return TRUE;
+        }
+        break;
     }
 
-    return (FALSE);			      /* Didn't process a message    */
+    return FALSE;
+}
+
+int TestDialog(HWND hWnd, HINSTANCE hInst)
+{
+    int status;
+    status = DialogBox(hInst, MAKEINTRESOURCE(TEST), hWnd, TestDlgProc);
+    return status;
 }

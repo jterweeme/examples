@@ -21,74 +21,51 @@
   notice must be preserved on all copies.
 */
 
-#define NOATOM 
-#define NOCLIPBOARD
-#define NOCREATESTRUCT
-#define NOFONT
-#define NOREGION
-#define NOSOUND
-#define NOWH
-#define NOWINOFFSETS
-#define NOCOMM
-#define NOKANJI
 
-#include <windows.h>
 #include "chess.h"
-
-BOOL FAR PASCAL PromoteDlgProc ( HWND hDlg, unsigned message,
-                               WORD wParam, LONG lParam);
-
-
-int PromoteDialog(HWND hWnd, HANDLE hInst)
-{
-   FARPROC lpProcPromote;
-   int status;
-#if 0
-   lpProcPromote = MakeProcInstance(PromoteDlgProc, hInst);
-	status = DialogBox(hInst, MAKEINTRESOURCE(PAWNPROMOTE),   hWnd,  lpProcPromote);
-#endif
-   FreeProcInstance(lpProcPromote);
-   return status;
-}
+#include <windows.h>
 
 static int xstatus;
 
-BOOL FAR PASCAL PromoteDlgProc ( HWND hDlg, unsigned message,
-                               WORD wParam, LONG lParam)
+static LRESULT CALLBACK
+PromoteDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
 {
-
-   switch (message) {
-	   case WM_INITDIALOG:		   /* message: initialize dialog box */
-         xstatus = 5;
-         CheckRadioButton ( hDlg, 100, 103, 103);
-         return (TRUE);
-
-      case WM_SYSCOMMAND:
-         if ( (wParam&0xfff0) == SC_CLOSE ) {
-   		      EndDialog(hDlg, xstatus);
-	   	      return xstatus;
-         }
-         break;
-
-
-	   case WM_COMMAND:		      /* message: received a command */
-         switch (wParam) {
-
-            case IDOK:
-               EndDialog ( hDlg, xstatus);
-               return TRUE;
-         
-            case 100:
-            case 101:
-            case 102:
-            case 103:
-                  xstatus = 2+wParam-100;
-                  CheckRadioButton ( hDlg, 100, 103, wParam);
-                  break;
-
-         }
-	      break;
+    switch (message)
+    {
+        case WM_INITDIALOG:
+            xstatus = 5;
+            CheckRadioButton(hDlg, 100, 103, 103);
+            return TRUE;
+        case WM_SYSCOMMAND:
+            if ((wParam&0xfff0) == SC_CLOSE)
+            {
+                EndDialog(hDlg, xstatus);
+                return xstatus;
+            }
+            break;
+        case WM_COMMAND:
+            switch (wParam)
+            {
+                case IDOK:
+                    EndDialog(hDlg, xstatus);
+                    return TRUE;
+                case 100:
+                case 101:
+                case 102:
+                case 103:
+                    xstatus = 2 + wParam - 100;
+                    CheckRadioButton(hDlg, 100, 103, wParam);
+                    break;
+            }
+            break;
     }
 
-    return (FALSE);			      /* Didn't process a message    */
+    return FALSE;
 }
+
+int PromoteDialog(HWND hWnd, HINSTANCE hInst)
+{
+    int status = DialogBox(hInst, MAKEINTRESOURCE(PAWNPROMOTE), hWnd, PromoteDlgProc);
+    return status;
+}
+

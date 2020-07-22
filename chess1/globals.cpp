@@ -24,34 +24,19 @@
   notice must be preserved on all copies.
 */
 
-#define NOATOM 
-#define NOCLIPBOARD
-#define NOCREATESTRUCT
-#define NOFONT
-#define NOREGION
-#define NOSOUND
-#define NOWH
-#define NOWINOFFSETS
-#define NOCOMM
-#define NOKANJI
-
+#include "gnuchess.h"
 #include <windows.h>
 #include <stdio.h>
-
-#include "gnuchess.h"
 
 struct BookEntry far  *Book;
 
 #if ttblsz
 unsigned long hashkey, hashbd;
-/*struct hashval hashcode[2][7][64];*/
-/*static struct huge ttable[2][ttblsz]; */
 struct hashval far *hashcode;
 struct hashentry far *ttable;
 #endif /* ttblsz */
 
 FILE *hashfile;
-/*struct leaf Tree[2000], *root;*/
 struct leaf far *Tree, far *root;
 
 short TrPnt[maxdepth];
@@ -66,13 +51,9 @@ short opponent, computer, Awindow, Bwindow, dither, INCscore;
 long ResponseTime, ExtraTime, Level, et, et0, time0, ft;
 long NodeCnt, ETnodes, EvalNodes, HashCnt, FHashCnt, HashCol;
 short player, xwndw, rehash;
-
-/*struct GameRec GameList[512];*/
 struct GameRec far *GameList;
-
 short Sdepth, GameCnt, Game50, MaxSearchDepth;
 short epsquare, contempt;
-/*struct BookEntry *Book;*/
 struct TimeControlRec TimeControl;
 short TCflag, TCmoves, TCminutes, OperatorTime;
 unsigned short hint, PrVar[maxdepth];
@@ -99,13 +80,9 @@ short RHOPN, RHOPNX, KHOPN, KHOPNX, KSFTY;
 short ATAKD, HUNGP, HUNGX, KCASTLD, KMOVD, XRAY, PINVAL;
 short stage, stage2, Developed[2];
 short PawnBonus, BishopBonus, RookBonus;
-
-/*short distdata[64][64], taxidata[64][64];*/
 short far *distdata, far *taxidata;
 
 short board[64], color[64];
-/*unsigned char nextpos[8][64][64]; */
-/*unsigned char nextdir[8][64][64]; */
 unsigned char far *nextpos;
 unsigned char far *nextdir;
 
@@ -143,4 +120,16 @@ HWND hClockHuman;
 HWND hMsgComputer;
 HWND hMsgHuman;
 HWND hStats;
+
+COLORREF clrBackGround;
+DWORD clrBlackSquare;
+DWORD clrWhiteSquare;
+DWORD clrBlackPiece;
+DWORD clrWhitePiece;
+DWORD clrText;
+HINSTANCE hInst;
+HACCEL hAccel;
+
+char mvstr[4][6];
+long evrate;
 

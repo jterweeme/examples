@@ -75,20 +75,9 @@
                GetGame ( pof->szPathName );
 */
 
-#define NOATOM 
-#define NOCLIPBOARD
-#define NOCREATESTRUCT
-#define NOFONT
-#define NOREGION
-#define NOSOUND
-#define NOWH
-#define NOWINOFFSETS
-#define NOCOMM
-#define NOKANJI
-
-#include <windows.h>
+#include "resource.h"
+#include "defs.h"
 #include <string.h>
-#include "saveopen.h"
 
 #define IDD_FNAME    0x10
 #define IDD_FPATH    0x11
@@ -96,11 +85,8 @@
 #define IDD_DLIST    0x13
 #define IDD_BROWSE   0x14
 
-BOOL FAR PASCAL FileOpenDlgProc (HWND hDlg, unsigned iMessage, WORD wParam, LONG lParam);
 BOOL FAR PASCAL FileSaveDlgProc (HWND hDlg, unsigned iMessage, WORD wParam, LONG lParam);
 BOOL FAR PASCAL WildFileOpenDlgProc (HWND hDlg, unsigned iMessage, WORD wParam, LONG lParam);
-
-/* FileDlg.c */
 
 static char szDefExt[5];
 static char szFileName[96];
@@ -108,37 +94,17 @@ static char szFileSpec[16];
 static WORD wFileAttr, wStatus;
 static POFSTRUCT pof;
 
-int FAR DoFileOpenDlg(HINSTANCE hInst, HWND hWnd, LPCSTR szFileSpecIn,
-                       LPCSTR szDefExtIn, WORD wFileAttrIn,
-                       char *szFileNameOut, POFSTRUCT pofIn)
+int FAR DoWildFileOpenDlg(HINSTANCE hInst, HWND hWnd, char *szFileSpecIn,
+                           char *szDefExtIn, WORD   wFileAttrIn,
+                           char *szFileNameOut, POFSTRUCT pofIn)
 {
-   FARPROC lpfnFileOpenProc;
-   int iReturn;
+    FARPROC lpfnFileOpenProc;
+    int iReturn;
 
-   lstrcpyA( szFileSpec, szFileSpecIn);
-   lstrcpyA( szDefExt,   szDefExtIn);
-   wFileAttr = wFileAttrIn;
-   pof = pofIn;
-#if 0
-   lpfnFileOpenProc = MakeProcInstance ( FileOpenDlgProc, hInst);
-   iReturn = DialogBox ( hInst, MAKEINTRESOURCE(FILEOPEN), hWnd, lpfnFileOpenProc);
-   FreeProcInstance ( lpfnFileOpenProc);
-#endif
-   lstrcpyA( szFileNameOut, szFileName);
-   return iReturn;
-}
-
-int FAR DoWildFileOpenDlg (HANDLE hInst, HWND   hWnd, char   *szFileSpecIn,
-                           char   *szDefExtIn, WORD   wFileAttrIn,
-                           char   *szFileNameOut, POFSTRUCT pofIn)
-{
-   FARPROC lpfnFileOpenProc;
-   int iReturn;
-
-   lstrcpyA( szFileSpec, szFileSpecIn);
-   lstrcpyA( szDefExt,   szDefExtIn);
-   wFileAttr = wFileAttrIn;
-   pof = pofIn;
+    lstrcpyA(szFileSpec, szFileSpecIn);
+    lstrcpyA(szDefExt, szDefExtIn);
+    wFileAttr = wFileAttrIn;
+    pof = pofIn;
 #if 0
    lpfnFileOpenProc = MakeProcInstance ( WildFileOpenDlgProc, hInst);
    iReturn = DialogBox ( hInst, MAKEINTRESOURCE(WILDFILEOPEN), hWnd, lpfnFileOpenProc);
@@ -147,7 +113,6 @@ int FAR DoWildFileOpenDlg (HANDLE hInst, HWND   hWnd, char   *szFileSpecIn,
    lstrcpyA( szFileNameOut, szFileName);
    return iReturn;
 }
-
 
 int FAR DoFileSaveDlg(HINSTANCE hInst, HWND hWnd, LPCSTR szFileSpecIn,
                        LPCSTR szDefExtIn, int *pwStatusOut,
@@ -169,31 +134,28 @@ int FAR DoFileSaveDlg(HINSTANCE hInst, HWND hWnd, LPCSTR szFileSpecIn,
    return iReturn;
 }
 
-#if 1
 static BOOL DlgDirSelect(HWND hDlg, LPCSTR fn, int id)
 {
     return TRUE;
 }
-#endif
 
-BOOL FAR PASCAL
+static INT_PTR CALLBACK
 FileOpenDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
-   char cLastChar;
-   short nEditLen;
+    char cLastChar;
+    short nEditLen;
 
-   switch ( iMessage )
-   {
-      case WM_INITDIALOG:
-         SendDlgItemMessage ( hDlg, IDD_FNAME, EM_LIMITTEXT, 80, 0L);
-         DlgDirListA( hDlg, szFileSpec, IDD_FLIST, IDD_FPATH, wFileAttr);
-         DlgDirListA( hDlg, szFileSpec, IDD_DLIST, NULL, 0x4010|0x8000);
-         SetDlgItemTextA( hDlg, IDD_FNAME, szFileSpec);
-         return TRUE;
-
-      case WM_COMMAND:
-         switch (wParam)
-         {
+    switch (iMessage)
+    {
+    case WM_INITDIALOG:
+        SendDlgItemMessage(hDlg, IDD_FNAME, EM_LIMITTEXT, 80, 0L);
+        DlgDirListA(hDlg, szFileSpec, IDD_FLIST, IDD_FPATH, wFileAttr);
+        DlgDirListA(hDlg, szFileSpec, IDD_DLIST, NULL, 0x4010|0x8000);
+        SetDlgItemTextA(hDlg, IDD_FNAME, szFileSpec);
+        return TRUE;
+    case WM_COMMAND:
+        switch (wParam)
+        {
             case IDD_FLIST:
                switch ( HIWORD(lParam) )
                {
@@ -290,6 +252,27 @@ FileOpenDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
          return FALSE;
    }
    return TRUE;
+}
+
+int DoFileOpenDlg(HINSTANCE hInst, HWND hWnd, LPCSTR szFileSpecIn,
+                       LPCSTR szDefExtIn, WORD wFileAttrIn,
+                       char *szFileNameOut, POFSTRUCT pofIn)
+{
+   FARPROC lpfnFileOpenProc;
+   int iReturn;
+
+   lstrcpyA( szFileSpec, szFileSpecIn);
+   lstrcpyA( szDefExt,   szDefExtIn);
+   wFileAttr = wFileAttrIn;
+   pof = pofIn;
+#if 0
+   lpfnFileOpenProc = MakeProcInstance ( FileOpenDlgProc, hInst);
+   iReturn = DialogBox ( hInst, MAKEINTRESOURCE(FILEOPEN), hWnd, lpfnFileOpenProc);
+   FreeProcInstance ( lpfnFileOpenProc);
+#endif
+   iReturn = DialogBox(hInst, MAKEINTRESOURCE(FILEOPEN), hWnd, FileOpenDlgProc);
+   lstrcpyA( szFileNameOut, szFileName);
+   return iReturn;
 }
 
 BOOL FAR PASCAL

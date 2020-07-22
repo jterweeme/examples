@@ -47,11 +47,9 @@
 
 #if ttblsz
 extern unsigned long hashkey, hashbd;
-/*extern struct hashval hashcode[2][7][64];*/
-/*extern struct hashentry huge ttable[2][ttblsz];*/
 extern struct hashval far *hashcode;
 extern struct hashentry far *ttable;
-#endif /* ttblsz */
+#endif
 
 /*extern unsigned char history[8192];*/
 extern unsigned char far * history;
@@ -93,32 +91,34 @@ static short control[7] =
 
 /* ............    MOVE GENERATION & SEARCH ROUTINES    .............. */
 
-void
-pick (short int p1, short int p2)
+
 
 /*
   Find the best move in the tree between indexes p1 and p2. Swap the best
   move into the p1 element.
 */
-
+void pick (short int p1, short int p2)
 {
-  short p, s;
-  short p0, s0;
-  struct leaf temp;
+    short p, s;
+    short p0, s0;
+    struct leaf temp;
 
-  s0 = Tree[p1].score;
-  p0 = p1;
-  for (p = p1 + 1; p <= p2; p++)
-    if ((s = Tree[p].score) > s0)
-      {
-        s0 = s;
-        p0 = p;
-      }
-  if (p0 != p1)
+    s0 = Tree[p1].score;
+    p0 = p1;
+    for (p = p1 + 1; p <= p2; p++)
     {
-      temp = Tree[p1];
-      Tree[p1] = Tree[p0];
-      Tree[p0] = temp;
+        if ((s = Tree[p].score) > s0)
+        {
+            s0 = s;
+            p0 = p;
+        }
+    }
+
+    if (p0 != p1)
+    {
+        temp = Tree[p1];
+        Tree[p1] = Tree[p0];
+        Tree[p0] = temp;
     }
 }
 
@@ -508,10 +508,12 @@ search (HWND hWnd,
     return (score);
 
   if (ply > 1)
+  {
     if (depth > 0)
       MoveList (side, ply);
     else
       CaptureList (side, ply);
+  }
 
   if (TrPnt[ply] == TrPnt[ply + 1])
     return (score);
@@ -606,12 +608,14 @@ search (HWND hWnd,
                   pbst = 0;
                 }
               if (Sdepth > 2)
+              {
                 if (best > beta)
                   ShowResults (best, bstline, '\xab' /*'+'*/);
                 else if (best < alpha)
                   ShowResults (best, bstline, '\xbb' /* '-'*/);
                 else
                   ShowResults (best, bstline, '\xb1' /*'&'*/);
+              }
             }
         }
       if (NodeCnt > ETnodes)
@@ -683,20 +687,18 @@ search (HWND hWnd,
                | (color[2 * (i) + 1] ? 0x8 : 0)\
                | (board[2 * (i) + 1]))
 
+/*
+  Look for the current board position in the transposition table.
+*/
 int
-ProbeTTable (short int side,
+ProbeTTable(short int side,
              short int depth,
              short int *alpha,
              short int *beta,
              short int *score)
-
-/*
-  Look for the current board position in the transposition table.
-*/
-
 {
   struct hashentry far *ptbl;
-  register unsigned short i;
+  unsigned short i;
 
 /*  ptbl = &ttable[side][hashkey & (ttblsz - 1)]; */
    ptbl = ttable+side*2+(hashkey & (ttblsz - 1));
@@ -742,6 +744,11 @@ ProbeTTable (short int side,
   return(false);
 }
 
+
+
+/*
+  Store the current board position in the transposition table.
+*/
 void
 PutInTTable (short int side,
              short int score,
@@ -749,14 +756,9 @@ PutInTTable (short int side,
              short int alpha,
              short int beta,
              short unsigned int mv)
-
-/*
-  Store the current board position in the transposition table.
-*/
-
 {
   struct hashentry far *ptbl;
-  register unsigned short i;
+  unsigned short i;
 
 /*  ptbl = &ttable[side][hashkey & (ttblsz - 1)]; */
   ptbl = ttable+side*2+(hashkey & (ttblsz - 1));
@@ -787,10 +789,9 @@ PutInTTable (short int side,
     }
 }
 
-void
-ZeroTTable (void)
+void ZeroTTable (void)
 {
-  register int side, i;
+  int side, i;
 
   if (flag.hash)
     for (side = white; side <= black; side++)
@@ -922,14 +923,11 @@ PutInFTable (short int side,
 #endif /* HASHFILE */
 #endif /* ttblsz */
 
-void
-ZeroRPT (void)
+void ZeroRPT()
 {
-  register int side, i;
-
-  for (side = white; side <= black; side++)
-    for (i = 0; i < 256; i++)
-      rpthash[side][i] = 0;
+    for (int side = white; side <= black; side++)
+        for (int i = 0; i < 256; i++)
+            rpthash[side][i] = 0;
 }
 
 #define Link(from,to,flag,s) \
@@ -942,12 +940,7 @@ ZeroRPT (void)
              ++TrPnt[ply+1];\
              }
 
-static inline void
-LinkMove (short int ply,
-          short int f,
-          short int t,
-          short int flag,
-          short int xside)
+
 
 /*
   Add a move to the tree.  Assign a bonus to order the moves
@@ -958,13 +951,14 @@ LinkMove (short int ply,
   4. Killer moves
   5. "history" killers
 */
-
+static inline void
+LinkMove (short int ply, short int f, short int t,
+          short int flag, short int xside)
 {
-  register short s, z;
+  short s, z;
   unsigned short mv;
-  struct leaf far *node;
 
-  node = &Tree[TrPnt[ply + 1]];
+  struct leaf *node = &Tree[TrPnt[ply + 1]];
   mv = (f << 8) | t;
   s = 0;
   if (mv == Swag0)
@@ -982,14 +976,17 @@ LinkMove (short int ply,
     z |= 0x1000;
 /*  s += history[z]; */
   s += *(history+z);
-  if (color[t] != neutral)
+
+    if (color[t] != neutral)
     {
       if (t == TOsquare)
         s += 500;
       s += value[board[t]] - board[f];
     }
-  if (board[f] == pawn)
-    if (row (t) == 0 || row (t) == 7)
+
+    if (board[f] == pawn)
+    {
+      if (row (t) == 0 || row (t) == 7)
       {
         flag |= promote;
         s += 800;
@@ -1001,11 +998,12 @@ LinkMove (short int ply,
         flag |= bishop;
         s -= 50;
       }
-    else if (row (t) == 1 || row (t) == 6)
+      else if (row (t) == 1 || row (t) == 6)
       {
         flag |= pwnthrt;
         s += 600;
       }
+    }
   Link (f, t, flag, s - 20000);
 }
 
@@ -1257,45 +1255,38 @@ castle (short int side, short int kf, short int kt, short int iop)
   return (true);
 }
 
-
+//Make or unmake an en passant move.
 static inline void
 EnPassant (short int xside, short int f, short int t, short int iop)
-
-/*
-  Make or unmake an en passant move.
-*/
-
 {
-  register short l;
+    short l;
 
-  if (t > f)
-    l = t - 8;
-  else
-    l = t + 8;
-  if (iop == 1)
+    if (t > f)
+        l = t - 8;
+    else
+        l = t + 8;
+
+    if (iop == 1)
     {
       board[l] = no_piece;
       color[l] = neutral;
     }
-  else
+    else
     {
       board[l] = pawn;
       color[l] = xside;
     }
-  InitializeStats ();
+    InitializeStats();
 }
-
-
-static inline void
-UpdatePieceList (short int side, short int sq, short int iop)
 
 /*
   Update the PieceList and Pindex arrays when a piece is captured or when a
   capture is unmade.
 */
-
+static inline void
+UpdatePieceList (short int side, short int sq, short int iop)
 {
-  register short i;
+  short i;
   if (iop == 1)
     {
       PieceCnt[side]--;
@@ -1313,6 +1304,11 @@ UpdatePieceList (short int side, short int sq, short int iop)
     }
 }
 
+/*
+  Update Arrays board[], color[], and Pindex[] to reflect the new board
+  position obtained after making the move pointed to by node. Also update
+  miscellaneous stuff that changes when a move is made.
+*/
 void
 MakeMove (short int side,
           struct leaf far * node,
@@ -1321,13 +1317,6 @@ MakeMove (short int side,
           short int *tempsf,
           short int *tempst,
           short int *INCscore)
-
-/*
-  Update Arrays board[], color[], and Pindex[] to reflect the new board
-  position obtained after making the move pointed to by node. Also update
-  miscellaneous stuff that changes when a move is made.
-*/
-
 {
   short f, t, xside, ct, cf;
 
@@ -1549,22 +1538,19 @@ InitializeStats (void)
 }
 
 
-int
-SqAtakd (short int sq, short int side)
+
 
 /*
   See if any piece with color 'side' ataks sq.  First check pawns then Queen,
   Bishop, Rook and King and last Knight.
 */
-
+int SqAtakd (short int sq, short int side)
 {
-  register short u;
-  unsigned char far *ppos, far *pdir;
-  short xside;
+  unsigned char *ppos, *pdir;
 
-  xside = otherside[side];
+  short xside = otherside[side];
   pdir = nextdir+ptype[xside][pawn]*64*64+sq*64;
-  u = pdir[sq];         /* follow captures thread */
+  short u = pdir[sq];         /* follow captures thread */
   if (u != sq)
     {
       if (board[u] == pawn && color[u] == side)
@@ -1620,15 +1606,13 @@ SqAtakd (short int sq, short int side)
   return (false);
 }
 
-void
-ataks (short int side, short int *a)
-
 /*
   Fill array atak[][] with info about ataks to a square.  Bits 8-15 are set
   if the piece (king..pawn) ataks the square.  Bits 0-7 contain a count of
   total ataks to the square.
 */
-
+void
+ataks (short int side, short int *a)
 {
   short u, c, sq;
   unsigned char far *ppos, far *pdir;

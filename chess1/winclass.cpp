@@ -1,0 +1,21 @@
+#include "winclass.h"
+
+WinClass::WinClass(HINSTANCE hInstance, WNDPROC wndProc, LPCTSTR className)
+{
+    _wc.cbClsExtra = 0;
+    _wc.cbWndExtra = 0;
+    _wc.style = NULL;
+    _wc.lpfnWndProc = wndProc;
+    _wc.hInstance = hInstance;
+    _wc.hIcon = ::LoadIcon(hInstance, className);
+    _wc.hCursor = ::LoadCursor(NULL, IDC_ARROW);
+    _wc.hbrBackground = HBRUSH(GetStockObject(WHITE_BRUSH));
+    _wc.lpszMenuName = className;
+    _wc.lpszClassName = className;
+}
+
+void WinClass::registerClass()
+{
+    if (!::RegisterClass(&_wc))
+        throw TEXT("Error registering class");
+}

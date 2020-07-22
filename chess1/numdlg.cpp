@@ -39,54 +39,44 @@
 #define IDD_INT 0x10
 #define IDD_CHAR 0x11
 
-static int   NumberDlgInt;
-static char  NumberDlgChar[80];
+static int NumberDlgInt;
+static char NumberDlgChar[80];
 
-int FAR DoGetNumberDlg (HANDLE hInst, HWND hWnd, char * szPrompt, int def);
-
-BOOL FAR PASCAL NumberDlgDlgProc (HWND hDlg, unsigned iMessage,
-                                  WORD wParam, LONG lParam)
+static LRESULT CALLBACK
+NumberDlgDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM)
 {
-   int temp, Ier;
-   switch ( iMessage ){
-      case WM_INITDIALOG:
-         SetDlgItemTextA(hDlg, IDD_CHAR, (LPSTR) NumberDlgChar);
-         SetDlgItemInt ( hDlg, IDD_INT, NumberDlgInt, TRUE);
-         return TRUE;
+    int temp, Ier;
+    switch (iMessage)
+    {
+    case WM_INITDIALOG:
+        SetDlgItemTextA(hDlg, IDD_CHAR, (LPSTR) NumberDlgChar);
+        SetDlgItemInt ( hDlg, IDD_INT, NumberDlgInt, TRUE);
+        return TRUE;
+    case WM_COMMAND:
+        switch (wParam)
+        {
+        case IDOK:
+            temp = GetDlgItemInt(hDlg, IDD_INT, &Ier, TRUE);
 
-      case WM_COMMAND:
-         switch (wParam) {
-            case IDOK:
-               temp = GetDlgItemInt (hDlg, IDD_INT, &Ier, TRUE);
-               if ( Ier != 0 ) {
+            if ( Ier != 0 )
+            {
                   NumberDlgInt = temp;
                   EndDialog ( hDlg, TRUE);
-               }
-               break;
-
-            case IDCANCEL:
-               EndDialog ( hDlg, TRUE);
-               break;
-
-            default: return FALSE;
-
-         }
-
-      default: return FALSE;
-   }
-   return TRUE;
+            }
+            return FALSE;
+        case IDCANCEL:
+            EndDialog ( hDlg, TRUE);
+            return FALSE;
+        }
+        return FALSE;
+    }
+    return TRUE;
 }
 
-int FAR DoGetNumberDlg (HANDLE hInst, HWND hWnd, char * szPrompt, int def)
+int DoGetNumberDlg(HINSTANCE hInst, HWND hWnd, char *szPrompt, int def)
 {
-   FARPROC lpfnNumberDlgProc;
-
-   strcpy ( NumberDlgChar, szPrompt);
-   NumberDlgInt = def;
-#if 0
-   lpfnNumberDlgProc = MakeProcInstance ( NumberDlgDlgProc, hInst);
-   DialogBox ( hInst, MAKEINTRESOURCE(NUMBERDLG), hWnd, lpfnNumberDlgProc);
-   FreeProcInstance ( lpfnNumberDlgProc);
-#endif
-   return NumberDlgInt;
+   strcpy(::NumberDlgChar, szPrompt);
+   ::NumberDlgInt = def;
+   DialogBox(hInst, MAKEINTRESOURCE(NUMBERDLG), hWnd, NumberDlgDlgProc);
+   return ::NumberDlgInt;
 }

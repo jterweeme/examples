@@ -32,40 +32,24 @@
 #define NOCOMM
 #define NOKANJI
 
-#include <windows.h>
 #include "gnuchess.h"
 #include "defs.h"
 #include "chess.h"
+#include <windows.h>
 
 extern char mvstr[4][6];
 
-BOOL FAR PASCAL ReviewDlgProc ( HWND hDlg, unsigned message,
-                               WORD wParam, LONG lParam);
-
-
-int ReviewDialog ( HWND hWnd, HANDLE hInst)
+LRESULT CALLBACK
+ReviewDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
 {
-   FARPROC lpProcReview;
-   int status;
-#if 0
-   lpProcReview = MakeProcInstance(ReviewDlgProc, hInst);
-	status = DialogBoxParam (hInst, MAKEINTRESOURCE(REVIEW),   hWnd,  lpProcReview, 0);
-   FreeProcInstance(lpProcReview);
-#endif
-   return status;
-}
+    int i,f,t;
+    char tmp[50];
 
-BOOL FAR PASCAL ReviewDlgProc ( HWND hDlg, unsigned message,
-                               WORD wParam, LONG lParam)
-{
-
-   int i,f,t;
-   char tmp[50];
-
-   switch (message) {
-	   case WM_INITDIALOG:		   /* message: initialize dialog box */
-
-        for (i = 1; i <= GameCnt; i++) {
+    switch (message)
+    {
+    case WM_INITDIALOG:
+        for (i = 1; i <= GameCnt; i++)
+        {
             f = GameList[i].gmove >> 8;
             t = (GameList[i].gmove & 0xFF);
             algbr (f, t, false);
@@ -74,15 +58,12 @@ BOOL FAR PASCAL ReviewDlgProc ( HWND hDlg, unsigned message,
                (char far *)mvstr[0],
                GameList[i].score, GameList[i].depth,
                GameList[i].time);
-#if 0
-            SendDlgItemMessage (hDlg, 100, LB_ADDSTRING, 0, (LONG) (LPSTR) tmp);
-#endif
-         }
-         SendDlgItemMessage (hDlg, 100, WM_SETREDRAW, TRUE, 0);
-         return (TRUE);
-
-      case WM_SYSCOMMAND:
-         if ( (wParam&0xfff0) == SC_CLOSE ) {
+            SendDlgItemMessage (hDlg, 100, LB_ADDSTRING, 0, (LPARAM)(tmp));
+        }
+        SendDlgItemMessage (hDlg, 100, WM_SETREDRAW, TRUE, 0);
+        return TRUE;
+    case WM_SYSCOMMAND:
+        if ( (wParam&0xfff0) == SC_CLOSE ) {
    		      EndDialog(hDlg, NULL);
 	   	      return TRUE;
          }
@@ -101,5 +82,12 @@ BOOL FAR PASCAL ReviewDlgProc ( HWND hDlg, unsigned message,
 	      break;
     }
 
-    return (FALSE);			      /* Didn't process a message    */
+    return (FALSE);
 }
+
+int ReviewDialog(HWND hWnd, HINSTANCE hInst)
+{
+    int status = DialogBoxParam(hInst, MAKEINTRESOURCE(REVIEW), hWnd, ReviewDlgProc, 0);
+    return status;
+}
+
