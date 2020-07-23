@@ -28,7 +28,7 @@
 #define DEFS_H
 
 #include <windows.h>
-#include <stdio.h>
+#include <cstdio>
 
 extern int parse (FILE * fd, short unsigned int *mv, short int side);
 extern void GetOpenings (HWND hWnd);
@@ -126,7 +126,7 @@ extern void ShowResults (short int score,
 extern void algbr(short int f, short int t, short int flag);
 extern void OutputMove(HWND hWnd);
 extern void ShowCurrentMove(short int pnt, short int f, short int t);
-extern void ShowMessage(HWND hWnd, LPCSTR s);
+extern void ShowMessage(HWND hWnd, LPCTSTR s);
 extern void ClrScreen(void);
 extern void gotoXY(short int x, short int y);
 extern void ClrEoln(void);
@@ -158,7 +158,7 @@ extern void SaveGame(HWND hWnd, char *fname);
 extern void GetGame(HWND hWnd, char *fname);
 extern void Undo(HWND hWnd);
 extern void GiveHint(HWND hWnd);
-extern int VerifyMove(HWND hWnd, char *s, short int iop, short unsigned int *mv);
+extern int VerifyMove(HWND hWnd, TCHAR *s, short int iop, short unsigned int *mv);
 extern int init_main(HWND hWnd);
 extern void ShowSidetoMove(void);
 extern INT_PTR CALLBACK About(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -173,17 +173,19 @@ extern void SMessageBox(HWND hWnd, int str_num, int str1_num );
 extern void ShowPlayers(void);
 extern void FreeGlobals(void);
 extern void algbr(short int f, short int t, short int flag);
-extern int DoGetNumberDlg(HINSTANCE hInst, HWND hwnd, char *, int);
-extern int DoManualMoveDlg(HINSTANCE hInst, HWND hWnd, char *szPrompt);
+extern int DoGetNumberDlg(HINSTANCE hInst, HWND hwnd, LPTSTR, int);
+extern int DoManualMoveDlg(HINSTANCE hInst, HWND hWnd, TCHAR *szPrompt);
 
+#ifndef WINCE
 int DoFileOpenDlg(HINSTANCE hInst, HWND hWnd, LPCTSTR szFileSpecIn,
-            LPCTSTR szDefExtIn, WORD wFileAttrIn, char *szFileNameOut,
+            LPCTSTR szDefExtIn, WORD wFileAttrIn, LPTSTR szFileNameOut,
                        POFSTRUCT pof);
 
 int DoWildFileOpenDlg (HINSTANCE hInst, HWND hWnd, LPCTSTR szFileSpecIn,
                        LPCTSTR szDefExtIn, WORD wFileAttrIn, char *szFileNameOut,
                        POFSTRUCT pof);
 int DoFileSaveDlg(HINSTANCE hInst, HWND hWnd, LPCTSTR szFileSpecIn,
-                       LPCTSTR szDefExtIn, int *pwStatusOut, LPSTR szFileNameOut,
+                       LPCTSTR szDefExtIn, int *pwStatusOut, LPTSTR szFileNameOut,
                        POFSTRUCT pof);
+#endif
 #endif

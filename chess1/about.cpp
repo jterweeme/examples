@@ -23,29 +23,27 @@
 
 
 #include <windows.h>
-#include <time.h>
 
-extern char Version[];
-char Version[100];
+TCHAR Version[100];
 
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
 {
     switch (message)
     {
     case WM_INITDIALOG:
-        SetDlgItemTextA(hDlg, 106, Version);
-        return (TRUE);
+        SetDlgItemText(hDlg, 106, Version);
+        return TRUE;
     case WM_SYSCOMMAND:
         if ((wParam & 0xfff0) == SC_CLOSE)
         {
-            EndDialog(hDlg, NULL);
+            ::EndDialog(hDlg, NULL);
             return TRUE;
         }
         break;
     case WM_COMMAND:
         if (wParam == IDOK)
         {
-            EndDialog(hDlg, NULL);
+            ::EndDialog(hDlg, NULL);
             return TRUE;
         }
         break;

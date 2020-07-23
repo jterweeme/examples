@@ -24,26 +24,22 @@
   notice must be preserved on all copies.
 */
 
-#include "gnuchess.h"
-#include <windows.h>
+#include "globals.h"
 #include <stdio.h>
 
-struct BookEntry far  *Book;
+struct BookEntry *Book;
 
 #if ttblsz
-unsigned long hashkey, hashbd;
+DWORD hashkey, hashbd;
 struct hashval far *hashcode;
 struct hashentry far *ttable;
-#endif /* ttblsz */
+#endif
 
 FILE *hashfile;
-struct leaf far *Tree, far *root;
+struct leaf *Tree, *root;
 
 short TrPnt[maxdepth];
 short PieceList[2][16], PawnCnt[2][8];
-#define wking PieceList[white][0]
-#define bking PieceList[black][0]
-#define EnemyKing PieceList[c2][0]
 short castld[2], Mvboard[64];
 short svalue[64];
 struct flags flag;
@@ -51,12 +47,12 @@ short opponent, computer, Awindow, Bwindow, dither, INCscore;
 long ResponseTime, ExtraTime, Level, et, et0, time0, ft;
 long NodeCnt, ETnodes, EvalNodes, HashCnt, FHashCnt, HashCol;
 short player, xwndw, rehash;
-struct GameRec far *GameList;
+struct GameRec *GameList;
 short Sdepth, GameCnt, Game50, MaxSearchDepth;
 short epsquare, contempt;
 struct TimeControlRec TimeControl;
 short TCflag, TCmoves, TCminutes, OperatorTime;
-unsigned short hint, PrVar[maxdepth];
+WORD hint, PrVar[maxdepth];
 short Pindex[64];
 short PieceCnt[2];
 short c1, c2, *atk1, *atk2, *PC1, *PC2, atak[2][64];
@@ -65,11 +61,9 @@ short FROMsquare, TOsquare, Zscore, zwndw;
 short HasKnight[2], HasBishop[2], HasRook[2], HasQueen[2];
 short ChkFlag[maxdepth], CptrFlag[maxdepth], PawnThreat[maxdepth];
 short Pscore[maxdepth], Tscore[maxdepth];
-unsigned short killr0[maxdepth], killr1[maxdepth];
-unsigned short killr2[maxdepth], killr3[maxdepth];
-unsigned short PV, Swag0, Swag1, Swag2, Swag3, Swag4;
-/*unsigned char history[8192];*/
-unsigned char far *history;
+WORD killr0[maxdepth], killr1[maxdepth], killr2[maxdepth], killr3[maxdepth];
+WORD PV, Swag0, Swag1, Swag2, Swag3, Swag4;
+BYTE *history;
 
 short rpthash[2][256];
 short Mwpawn[64], Mbpawn[64], Mknight[2][64], Mbishop[2][64];
@@ -80,11 +74,11 @@ short RHOPN, RHOPNX, KHOPN, KHOPNX, KSFTY;
 short ATAKD, HUNGP, HUNGX, KCASTLD, KMOVD, XRAY, PINVAL;
 short stage, stage2, Developed[2];
 short PawnBonus, BishopBonus, RookBonus;
-short far *distdata, far *taxidata;
+short *distdata, *taxidata;
 
 short board[64], color[64];
-unsigned char far *nextpos;
-unsigned char far *nextdir;
+BYTE *nextpos;
+BYTE *nextdir;
 
 
 const short otherside[3] = {1, 0, 2};
@@ -121,6 +115,7 @@ HWND hMsgComputer;
 HWND hMsgHuman;
 HWND hStats;
 
+GLOBALHANDLE hBook = 0;
 COLORREF clrBackGround;
 DWORD clrBlackSquare;
 DWORD clrWhiteSquare;
@@ -130,6 +125,11 @@ DWORD clrText;
 HINSTANCE hInst;
 HACCEL hAccel;
 
-char mvstr[4][6];
+TCHAR mvstr[4][6];
 long evrate;
+int coords = 1;
 
+struct PIECEBITMAP pieces[7];
+
+short boarddraw[64];
+short colordraw[64];

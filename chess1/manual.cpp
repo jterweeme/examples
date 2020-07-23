@@ -23,19 +23,19 @@
 
 #include "chess.h"
 
-static char ManualDlgChar[8];
+static TCHAR ManualDlgChar[8];
 
-static LRESULT CALLBACK
+static INT_PTR CALLBACK
 ManualMoveDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM)
 {
     switch (iMessage)
     {
     case WM_INITDIALOG:
-        SendMessage(GetDlgItem(hDlg, 100), EM_LIMITTEXT, sizeof(ManualDlgChar)-1,0);
-        SetDlgItemTextA(hDlg, 100, (LPSTR) ManualDlgChar);
+        SendMessage(GetDlgItem(hDlg, 100), EM_LIMITTEXT, sizeof(ManualDlgChar) - 1, 0);
+        SetDlgItemText(hDlg, 100, ManualDlgChar);
         return TRUE;
     case WM_SYSCOMMAND:
-        if ( (wParam&0xfff0) == SC_CLOSE )
+        if ((wParam&0xfff0) == SC_CLOSE)
         {
             EndDialog(hDlg, FALSE);
             return TRUE;
@@ -45,11 +45,11 @@ ManualMoveDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM)
         switch (wParam)
         {
         case IDOK:
-            GetDlgItemTextA( hDlg, 100, ManualDlgChar, sizeof(ManualDlgChar)-1);
-            EndDialog ( hDlg, TRUE);
+            GetDlgItemText(hDlg, 100, ManualDlgChar, sizeof(ManualDlgChar)-1);
+            EndDialog(hDlg, TRUE);
             return TRUE;
         case IDCANCEL:
-            EndDialog ( hDlg, FALSE);
+            EndDialog(hDlg, FALSE);
             return TRUE;
         }
         return FALSE;
@@ -57,11 +57,11 @@ ManualMoveDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM)
     return FALSE;
 }
 
-int DoManualMoveDlg(HINSTANCE hInst, HWND hWnd, char *szPrompt)
+int DoManualMoveDlg(HINSTANCE hInst, HWND hWnd, TCHAR *szPrompt)
 {
-    lstrcpyA(ManualDlgChar, "");
+    lstrcpy(ManualDlgChar, TEXT(""));
     int stat = DialogBox(hInst, MAKEINTRESOURCE(MANUALDLG), hWnd, ::ManualMoveDlgProc);
-    lstrcpyA(szPrompt, ManualDlgChar);
+    lstrcpy(szPrompt, ManualDlgChar);
     return stat;
 }
 

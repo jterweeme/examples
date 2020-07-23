@@ -24,58 +24,23 @@
   notice must be preserved on all copies.
 */
 
-#define NOATOM 
-#define NOCLIPBOARD
-#define NOCREATESTRUCT
-#define NOFONT
-#define NOREGION
-#define NOSOUND
-#define NOWH
-#define NOWINOFFSETS
-#define NOCOMM
-#define NOKANJI
-
-#include <windows.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-
-#include "gnuchess.h"
+#include "globals.h"
 #include "defs.h"
+#include <cstdlib>
+#include <ctime>
 
-extern HWND hStats;
-
-/*extern short distdata[64][64], taxidata[64][64];*/
-extern short far *distdata, far *taxidata;
-
-extern FILE *hashfile;
-extern short stage, stage2, Developed[2];
-extern short ChkFlag[maxdepth], CptrFlag[maxdepth], PawnThreat[maxdepth];
-extern short Pscore[maxdepth], Tscore[maxdepth];
-extern short rehash;
-
-/* extern struct hashval hashcode[2][7][64]; */
-extern struct hashval far *hashcode;
-extern unsigned char far * history;
-
-void
-Initialize_dist (void)
+void Initialize_dist()
 {
-  short a, b, d, di;
-
-  for (a = 0; a < 64; a++)
-    for (b = 0; b < 64; b++)
-      {
-        d = abs (column (a) - column (b));
-        di = abs (row (a) - row (b));
-/*
-        taxidata[a][b] = d + di;
-        distdata[a][b] = (d > di ? d : di);
-*/
-        *(taxidata+a*64+b) = d + di;
-        *(distdata+a*64+b) = (d > di ? d : di);
-
-      }
+    for (short a = 0; a < 64; a++)
+    {
+        for (short b = 0; b < 64; b++)
+        {
+            short d = ::abs(column(a) - column(b));
+            short di = ::abs(row(a) - row(b));
+            *(taxidata+a*64+b) = d + di;
+            *(distdata+a*64+b) = (d > di ? d : di);
+        }
+    }
 }
 
 static short Stboard[64] =
@@ -94,12 +59,6 @@ static short Stcolor[64] =
  black, black, black, black, black, black, black, black,
  black, black, black, black, black, black, black, black};
 
-extern short board[64], color[64];
-
-/*extern unsigned char nextpos[8][64][64];*/
-/*extern unsigned char nextdir[8][64][64];*/
-extern unsigned char far * nextpos;
-extern unsigned char far * nextdir;
 /*
   ptype is used to separate white and black pawns, like this;
   ptyp = ptype[side][piece]
@@ -148,52 +107,61 @@ static short nunmap[120] =
   This data is stored in nextpos/nextdir and used later in the move generation
   routines.
 */
-void
-Initialize_moves (void)
+void Initialize_moves()
 {
-  short ptyp, po, p0, d, di, s, delta;
-  unsigned char far *ppos, far *pdir;
-  short dest[8][8];
-  short steps[8];
-  short sorted[8];
+    short ptyp, po, p0, d, di, s, delta;
+    unsigned char far *ppos, far *pdir;
+    short dest[8][8];
+    short steps[8];
+    short sorted[8];
 
-  for (ptyp = 0; ptyp < 8; ptyp++)
-    for (po = 0; po < 64; po++)
-      for (p0 = 0; p0 < 64; p0++)
+    for (ptyp = 0; ptyp < 8; ptyp++)
+    {
+        for (po = 0; po < 64; po++)
         {
-          *(nextpos+ptyp*64*64+po*64+p0) = (unsigned char) po;
-          *(nextdir+ptyp*64*64+po*64+p0) = (unsigned char) po;
+            for (p0 = 0; p0 < 64; p0++)
+            {
+                *(nextpos+ptyp*64*64+po*64+p0) = BYTE(po);
+                *(nextdir+ptyp*64*64+po*64+p0) = BYTE(po);
+            }
         }
+    }
+
   for (ptyp = 1; ptyp < 8; ptyp++)
     for (po = 21; po < 99; po++)
       if (nunmap[po] >= 0)
-        {
+      {
           ppos = nextpos+ptyp*64*64+nunmap[po]*64;
           pdir = nextdir+ptyp*64*64+nunmap[po]*64;
           /* dest is a function of direction and steps */
           for (d = 0; d < 8; d++)
-            {
+          {
               dest[d][0] = nunmap[po];
               delta = direc[ptyp][d];
               if (delta != 0)
-                {
+              {
                   p0 = po;
                   for (s = 0; s < max_steps[ptyp]; s++)
-                    {
+                  {
                       p0 = p0 + delta;
                       /*
                         break if (off board) or
                         (pawns only move two steps from home square)
                       */
-                      if (nunmap[p0] < 0 || (ptyp == pawn || ptyp == bpawn)
-                          && s > 0 && (d > 0 || Stboard[nunmap[po]] != pawn))
-                        break;
+                      if (nunmap[p0] < 0 || ((ptyp == pawn || ptyp == bpawn) && s > 0 && (d > 0 || Stboard[nunmap[po]] != pawn)))
+                      {
+                          break;
+                      }
                       else
-                        dest[d][s] = nunmap[p0];
-                    }
-                }
+                      {
+                          dest[d][s] = nunmap[p0];
+                      }
+                  }
+              }
               else
-                s = 0;
+              {
+                  s = 0;
+              }
 
               /*
                 sort dest in number of steps order
@@ -202,10 +170,12 @@ Initialize_moves (void)
               */
               steps[d] = s;
               for (di = d; s > 0 && di > 0; di--)
-                if (steps[sorted[di - 1]] == 0) /* should be: < s */
-                  sorted[di] = sorted[di - 1];
-                else
-                  break;
+              {
+                  if (steps[sorted[di - 1]] == 0) /* should be: < s */
+                      sorted[di] = sorted[di - 1];
+                  else
+                      break;
+              }
               sorted[di] = d;
             }
 
@@ -329,26 +299,27 @@ int init_main (HWND hWnd)
    hTTable = GlobalAlloc ( GMEM_MOVEABLE | GMEM_ZEROINIT,
                           (long) (2*ttblsz * sizeof (struct hashentry)) );
 
-   if ( hTTable == NULL ) {
-      return 1;
-   }
+    if ( hTTable == NULL )
+	{
+        return 1;
+    }
 
-   ttable = (struct hashentry far *) GlobalLock (hTTable);
+    ttable = (struct hashentry far *) GlobalLock (hTTable);
 
-  Level = 0;
-  TCflag = false;
-  OperatorTime = 0;
-  Initialize ();
-  Initialize_dist ();
-  Initialize_moves ();
-  NewGame (hWnd);
+    Level = 0;
+    TCflag = false;
+    OperatorTime = 0;
+    Initialize ();
+    Initialize_dist ();
+    Initialize_moves ();
+    NewGame (hWnd);
 #if 0
-  GetOpenings ( hWnd);
+    GetOpenings ( hWnd);
 #endif
-  flag.easy = ahead;
-  flag.hash = hash;
-  hashfile = NULL;
-  return (0);
+    flag.easy = ahead;
+    flag.hash = hash;
+    hashfile = NULL;
+    return (0);
 }
 
 
@@ -401,20 +372,17 @@ void FreeGlobals (void)
 
 }
 
-
-void
-NewGame (HWND hWnd)
-
 /*
   Reset the board and other variables to start a new game.
 */
-
+void NewGame(HWND hWnd)
 {
   short l, c, p;
 
   stage = stage2 = -1;          /* the game is not yet started */
 
-  if ( flag.post ) {
+  if ( flag.post )
+  {
       SendMessage ( hStats, WM_SYSCOMMAND, SC_CLOSE, 0 );
       flag.post = false;
   }
@@ -473,9 +441,11 @@ NewGame (HWND hWnd)
     SetTimeControl ();
   }
   InitializeStats ();
+#ifndef WINCE
   time0 = ::time ( 0);
-
+#endif
   ElapsedTime (1);
   UpdateDisplay (hWnd, 0, 0, 1, 0);
 }
+
 

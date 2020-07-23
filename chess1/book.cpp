@@ -24,7 +24,7 @@
   notice must be preserved on all copies.
 */
 
-
+#include <cstdio>
 #include "resource.h"
 #include "gnuchess.h"
 #include "defs.h"
@@ -37,12 +37,11 @@
 
 static unsigned int book_used = 0;
 static char far * xBook;
-GLOBALHANDLE hBook = 0;
 
 void FreeBook(void)
 {
-   GlobalUnlock ( hBook );
-   GlobalFree ( hBook);
+   GlobalUnlock(hBook);
+   GlobalFree(hBook);
    hBook = 0;
    book_used = 0;
 }
@@ -56,9 +55,11 @@ static void *Book_alloc ( unsigned int size )
     return temp;
 }
 
+#ifndef BOOK
+#define BOOK "/usr/games/lib/gnuchess.book"
+#endif   
 
-void
-GetOpenings (HWND hWnd)
+
      
 /*
    Read in the Opening Book file and parse the algebraic notation for a move
@@ -68,29 +69,25 @@ GetOpenings (HWND hWnd)
    moves. More Opening lines of up to 256 half moves may be added to
    gnuchess.book.
 */
-#ifndef BOOK
-#define BOOK "/usr/games/lib/gnuchess.book"
-#endif /* BOOK */     
+void GetOpenings(HWND hWnd)
 {
-  FILE *fd;
-  int c, i, j, side;
-
-  /* char buffr[2048]; */
-  struct BookEntry far  *entry;
-  unsigned short mv, far  *mp, tmp[100];
-  char lpFile[_MAX_FNAME+_MAX_EXT+_MAX_DRIVE+_MAX_DIR+1];
-  char sFname[_MAX_FNAME], sExt[_MAX_EXT], sDrive[_MAX_DRIVE], sDir[_MAX_DIR];
-
-  GetModuleFileNameA( hInst, lpFile, sizeof(lpFile) );
-
-  _splitpath ( lpFile, sDrive, sDir, sFname, sExt);
-  _makepath  ( lpFile, sDrive, sDir, "gnuchess", "boo");
-
-  fd = fopen (lpFile, "r");
-
+    FILE *fd;
+    int c, i, j, side;
+    struct BookEntry *entry;
+    WORD mv, *mp, tmp[100];
+    TCHAR lpFile[_MAX_FNAME+_MAX_EXT+_MAX_DRIVE+_MAX_DIR+1];
+    char sFname[_MAX_FNAME], sExt[_MAX_EXT], sDrive[_MAX_DRIVE], sDir[_MAX_DIR];
+    GetModuleFileName(hInst, lpFile, sizeof(lpFile));
+#ifndef UNICODE
+    _splitpath( lpFile, sDrive, sDir, sFname, sExt);
+    _makepath( lpFile, sDrive, sDir, "gnuchess", "boo");
+#endif
+#ifndef UNICODE
+    fd = fopen(lpFile, "r");
+#endif
 /*  if ((fd = fopen (BOOK, "r")) == NULL)
     fd = fopen ("gnuchess.book", "r"); */
-  if (fd != NULL)
+    if (fd != NULL)
     {
       hBook = GlobalAlloc ( GMEM_MOVEABLE | GMEM_ZEROINIT,
                             (long) (MAX_BOOK_SIZE * sizeof (char)) );

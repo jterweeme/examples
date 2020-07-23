@@ -29,20 +29,25 @@ static HRGN hitrgn[8];
 
 void InitHitTest ( void )
 {
-   POINT ptls[4];
-   POINT toppt, botpt;
-   int i;
-   for (i=0; i<8; i++) {
+    POINT ptls[4];
+    POINT toppt, botpt;
+    int i;
+
+    for (i=0; i<8; i++)
+    {
       QuerySqOrigin ( i, 0, ptls+0 );
       QuerySqOrigin ( i, 8, ptls+1 );
       QuerySqOrigin ( i+1, 8, ptls+2 );
       QuerySqOrigin ( i+1, 0, ptls+3 );
+#ifndef WINCE
       hitrgn[i] = CreatePolygonRgn ( ptls, 4, WINDING);
-   }
-      QuerySqOrigin ( 0, 0, &botpt );
-      QuerySqOrigin ( 0, 8, &toppt );
-      deltay = botpt.y-toppt.y;
- }
+#endif
+    }
+
+    QuerySqOrigin(0, 0, &botpt);
+    QuerySqOrigin(0, 8, &toppt);
+    deltay = botpt.y-toppt.y;
+}
 
 void Hittest_Destructor (VOID)
 {

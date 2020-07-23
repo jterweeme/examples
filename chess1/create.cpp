@@ -25,27 +25,21 @@
 #include "chess.h"
 #include "globals.h"
 
-void Create_Children ( HWND hWnd, HINSTANCE hInst, short xchar, short ychar)
+void Create_Children(HWND hWnd, HINSTANCE hInst, short xchar, short ychar)
 {
     POINT pt;
-    static char lpStatic[] = "Static";
+    static TCHAR lpStatic[] = TEXT("Static");
 
     /* Get the location of lower left conor of client area */
-    QueryBoardSize ( &pt);
+    QueryBoardSize(&pt);
    
-    hComputerColor = CreateWindowA(lpStatic, NULL,
-                           WS_CHILD | SS_CENTER | WS_VISIBLE, 0, pt.y,
-                            10*xchar, ychar, hWnd, HMENU(1000), hInst, NULL);
+    hComputerColor = CreateWindow(lpStatic, NULL, WS_CHILD | SS_CENTER | WS_VISIBLE,
+                         0, pt.y, 10*xchar, ychar, hWnd, HMENU(1000), hInst, NULL);
 
-    hWhosTurn = CreateWindowA(lpStatic, NULL,
-                     	WS_CHILD | SS_CENTER | WS_VISIBLE,
-                     	10*xchar,
-                     	pt.y,
-                     	10*xchar,
-                     	ychar,
-                        hWnd, HMENU(1001), hInst, NULL);
+    hWhosTurn = CreateWindow(lpStatic, NULL, WS_CHILD | SS_CENTER | WS_VISIBLE,
+                        10*xchar, pt.y, 10*xchar, ychar, hWnd, HMENU(1001), hInst, NULL);
 
-    hComputerMove = CreateWindowA(lpStatic, NULL,
+    hComputerMove = CreateWindow(lpStatic, NULL,
                      	WS_CHILD | SS_LEFT | WS_VISIBLE,
                      	375 /*0*/,
                      	10 /*pt.y+(3*ychar)/2*/,
@@ -54,22 +48,22 @@ void Create_Children ( HWND hWnd, HINSTANCE hInst, short xchar, short ychar)
                         hWnd, HMENU(1003), hInst, NULL);
 
 
-    hClockComputer = CreateWindowA( lpStatic, NULL,
+    hClockComputer = CreateWindow(lpStatic, NULL,
                      	WS_CHILD | SS_CENTER | WS_VISIBLE,
                         390, 55, 6*xchar, ychar, hWnd,
                         HMENU(1010), hInst, NULL);
 
-    hClockHuman =  CreateWindowA( lpStatic, NULL,
+    hClockHuman =  CreateWindow(lpStatic, NULL,
                      	WS_CHILD | SS_CENTER | WS_VISIBLE,
                         390, 55+3*ychar, 6*xchar, ychar, hWnd,
                         HMENU(1011), hInst, NULL);
 
-    hMsgComputer = CreateWindowA( lpStatic, "Black:",
+    hMsgComputer = CreateWindow(lpStatic, TEXT("Black:"),
                      	WS_CHILD | SS_CENTER | WS_VISIBLE,
                         390, 55-3*ychar/2, 6*xchar, ychar, hWnd,
                         HMENU(1020), hInst, NULL);
 
-    hMsgHuman    = CreateWindowA( lpStatic, "White:",
+    hMsgHuman    = CreateWindow(lpStatic, TEXT("White:"),
                       	WS_CHILD | SS_CENTER | WS_VISIBLE,
                         390, 55+3*ychar/2, 6*xchar, ychar, hWnd,
                         HMENU(1021), hInst, NULL);

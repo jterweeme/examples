@@ -24,8 +24,7 @@
 #include "gnuchess.h"
 #include "chess.h"
 #include "resource.h"
-
-extern int coords;
+#include "globals.h"
 
 void Init_Menus(HWND, WPARAM wParamx, LPARAM lParam)
 {
@@ -33,11 +32,11 @@ void Init_Menus(HWND, WPARAM wParamx, LPARAM lParam)
 
     HMENU wParam = HMENU(wParamx);  //moet nog andere naam uiteraard
 
-    if ( lParam == MENU_ID_FILE )
+    if (lParam == MENU_ID_FILE)
     {
-            EnableMenuItem ( wParam, MSG_CHESS_SAVE,
+        EnableMenuItem(wParam, MSG_CHESS_SAVE,
                              (GameCnt>0 ? MF_ENABLED : MF_GRAYED) );
-            EnableMenuItem ( wParam, MSG_CHESS_LIST,
+        EnableMenuItem(wParam, MSG_CHESS_LIST,
                              (GameCnt>0 ? MF_ENABLED : MF_GRAYED) );
 
     } else if ( lParam == MENU_ID_EDIT ) {       /*Edit Menu */
@@ -91,5 +90,4 @@ void Init_Menus(HWND, WPARAM wParamx, LPARAM lParam)
             }
 
          }
-
 }

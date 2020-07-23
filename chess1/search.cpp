@@ -24,70 +24,23 @@
   notice must be preserved on all copies.
 */
 
-#define NOATOM 
-#define NOCLIPBOARD
-#define NOCREATESTRUCT
-#define NOFONT
-#define NOREGION
-#define NOSOUND
-#define NOWH
-#define NOWINOFFSETS
-#define NOCOMM
-#define NOKANJI
-
-#include <windows.h>
-#include <string.h>
-#include <time.h>
-#include <stdlib.h>
-#include <malloc.h>
-#include <stdio.h>
-
 #include "gnuchess.h"
 #include "defs.h"
-
-#if ttblsz
-extern unsigned long hashkey, hashbd;
-extern struct hashval far *hashcode;
-extern struct hashentry far *ttable;
-#endif
-
-/*extern unsigned char history[8192];*/
-extern unsigned char far * history;
-
-extern short rpthash[2][256];
-/*extern unsigned char nextpos[8][64][64];*/
-/*extern unsigned char nextdir[8][64][64];*/
-extern unsigned char far *nextpos;
-extern unsigned char far *nextdir;
-
-extern short FROMsquare, TOsquare, Zscore, zwndw;
-extern unsigned short PV, Swag0, Swag1, Swag2, Swag3, Swag4;
-extern unsigned short killr0[maxdepth], killr1[maxdepth];
-extern unsigned short killr2[maxdepth], killr3[maxdepth];
-extern short Pscore[maxdepth], Tscore[maxdepth];
-extern unsigned long hashkey, hashbd;
-extern short ChkFlag[maxdepth], CptrFlag[maxdepth], PawnThreat[maxdepth];
-extern short mtl[2], pmtl[2], emtl[2], hung[2];
-extern short player, xwndw, rehash;
-extern short PieceCnt[2];
-extern long NodeCnt, ETnodes, EvalNodes, HashCnt, FHashCnt, HashCol;
-extern short HasKnight[2], HasBishop[2], HasRook[2], HasQueen[2];
-extern short Pindex[64];
+#include "globals.h"
+#include <time.h>
+#include <stdlib.h>
 
 static short rank7[3] = {6, 1, 0};
 static short kingP[3] = {4, 60, 0};
-static short value[7] =
-{0, valueP, valueN, valueB, valueR, valueQ, valueK};
+static short value[7] = {0, valueP, valueN, valueB, valueR, valueQ, valueK};
 
-static short sweep[8] =
-{false, false, false, true, true, true, false, false};
+static short sweep[8] = {false, false, false, true, true, true, false, false};
 
 static short ptype[2][8] = {
   {no_piece, pawn, knight, bishop, rook, queen, king, no_piece},
   {no_piece, bpawn, knight, bishop, rook, queen, king, no_piece}};
 
-static short control[7] =
-{0, ctlP, ctlN, ctlB, ctlR, ctlQ, ctlK};
+static short control[7] = {0, ctlP, ctlN, ctlB, ctlR, ctlQ, ctlK};
 
 /* ............    MOVE GENERATION & SEARCH ROUTINES    .............. */
 
@@ -97,7 +50,7 @@ static short control[7] =
   Find the best move in the tree between indexes p1 and p2. Swap the best
   move into the p1 element.
 */
-void pick (short int p1, short int p2)
+void pick(short int p1, short int p2)
 {
     short p, s;
     short p0, s0;
@@ -122,9 +75,6 @@ void pick (short int p1, short int p2)
     }
 }
 
-void
-SelectMove (HWND hWnd, short int side, short int iop)
-
 /*
   Select a move by calling function search() at progressively deeper ply
   until time is up or a mate or draw is reached. An alpha-beta window of -90
@@ -133,7 +83,7 @@ SelectMove (HWND hWnd, short int side, short int iop)
   opponents move and the search will start at a depth of Sdepth+1 rather
   than a depth of 1.
 */
-
+void SelectMove(HWND hWnd, short int side, short int iop)
 {
   static short i, tempb, tempc, tempsf, tempst, xside, rpt;
   static short alpha, beta, score;
@@ -535,7 +485,7 @@ search (HWND hWnd,
       /* Little code segment to allow cooperative multitasking */
       {
          MSG msg;
-         extern HACCEL hAccel;
+
          if ( !flag.timeout && PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)){
             if ( !TranslateAccelerator (hWnd, hAccel, &msg) ) {
                TranslateMessage(&msg);
@@ -646,6 +596,7 @@ search (HWND hWnd,
       if (*(history+j) < 150)
         *(history+j) += (unsigned char) 2 * depth;
       if (node->t != (GameList[GameCnt].gmove & 0xFF))
+      {
         if (best <= beta)
           killr3[ply] = mv;
         else if (mv != killr1[ply])
@@ -653,6 +604,7 @@ search (HWND hWnd,
             killr2[ply] = killr1[ply];
             killr1[ply] = mv;
           }
+      }
       if (best > 9000)
         killr0[ply] = mv;
       else
@@ -1007,24 +959,21 @@ LinkMove (short int ply, short int f, short int t,
   Link (f, t, flag, s - 20000);
 }
 
-
-static inline void
-GenMoves (short int ply, short int sq, short int side, short int xside)
-
 /*
   Generate moves for a piece. The moves are taken from the precalulated
   array nextpos/nextdir. If the board is free, next move is choosen from
   nextpos else from nextdir.
 */
-
+static inline void
+GenMoves(short int ply, short int sq, short int side, short int xside)
 {
-  register short u, piece;
-  unsigned char far *ppos, far *pdir;
+    short u;
+    unsigned char far *ppos, far *pdir;
+    short piece = board[sq];
+    ppos = nextpos+ptype[side][piece]*64*64+sq*64;
+    pdir = nextdir+ptype[side][piece]*64*64+sq*64;
 
-  piece = board[sq];
-  ppos = nextpos+ptype[side][piece]*64*64+sq*64;
-  pdir = nextdir+ptype[side][piece]*64*64+sq*64;
-  if (piece == pawn)
+    if (piece == pawn)
     {
       u = ppos[sq];     /* follow no captures thread */
       if (color[u] == neutral)
@@ -1067,30 +1016,32 @@ GenMoves (short int ply, short int sq, short int side, short int xside)
     }
 }
 
-void
-MoveList (short int side, short int ply)
-
 /*
   Fill the array Tree[] with all available moves for side to play. Array
   TrPnt[ply] contains the index into Tree[] of the first move at a ply.
 */
-
+void
+MoveList (short int side, short int ply)
 {
   short i, xside, f;
 
   xside = otherside[side];
   TrPnt[ply + 1] = TrPnt[ply];
+
   if (PV == 0)
     Swag0 = killr0[ply];
   else
     Swag0 = PV;
+
   Swag1 = killr1[ply];
   Swag2 = killr2[ply];
   Swag3 = killr3[ply];
+
   if (ply > 2)
     Swag4 = killr1[ply - 2];
   else
     Swag4 = 0;
+
   for (i = PieceCnt[side]; i >= 0; i--)
     GenMoves (ply, PieceList[side][i], side, xside);
   if (!castld[side])
@@ -1107,15 +1058,13 @@ MoveList (short int side, short int ply)
     }
 }
 
-void
-CaptureList (short int side, short int ply)
-
 /*
   Fill the array Tree[] with all available cature and promote moves for
   side to play. Array TrPnt[ply] contains the index into Tree[]
   of the first move at a ply.
 */
-
+void
+CaptureList (short int side, short int ply)
 {
   short u, sq, xside;
   struct leaf far *node;
@@ -1379,11 +1328,15 @@ MakeMove (short int side,
       PieceList[side][Pindex[t]] = t;
       color[f] = neutral;
       board[f] = no_piece;
+
       if (board[t] == pawn)
+      {
         if (t - f == 16)
           epsquare = f + 8;
         else if (f - t == 16)
           epsquare = f - 8;
+      }
+
       if (node->flags & promote)
         {
           board[t] = node->flags & pmask;
@@ -1652,4 +1605,5 @@ ataks (short int side, short int *a)
         }
     }
 }
+
 

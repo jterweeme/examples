@@ -27,7 +27,7 @@
 
 static int xstatus;
 
-static LRESULT CALLBACK
+static INT_PTR CALLBACK
 PromoteDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
 {
     switch (message)

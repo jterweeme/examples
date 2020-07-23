@@ -21,36 +21,23 @@
   notice must be preserved on all copies.
 */
 
-#define NOATOM 
-#define NOCLIPBOARD
-#define NOCREATESTRUCT
-#define NOFONT
-#define NOREGION
-#define NOSOUND
-#define NOWH
-#define NOWINOFFSETS
-#define NOCOMM
-#define NOKANJI
-
-#include <windows.h>
-#include <string.h>
 #include "chess.h"
 
 #define IDD_INT 0x10
 #define IDD_CHAR 0x11
 
 static int NumberDlgInt;
-static char NumberDlgChar[80];
+static TCHAR NumberDlgChar[80];
 
-static LRESULT CALLBACK
+static INT_PTR CALLBACK
 NumberDlgDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM)
 {
     int temp, Ier;
     switch (iMessage)
     {
     case WM_INITDIALOG:
-        SetDlgItemTextA(hDlg, IDD_CHAR, (LPSTR) NumberDlgChar);
-        SetDlgItemInt ( hDlg, IDD_INT, NumberDlgInt, TRUE);
+        SetDlgItemText(hDlg, IDD_CHAR, NumberDlgChar);
+        SetDlgItemInt(hDlg, IDD_INT, NumberDlgInt, TRUE);
         return TRUE;
     case WM_COMMAND:
         switch (wParam)
@@ -73,10 +60,10 @@ NumberDlgDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM)
     return TRUE;
 }
 
-int DoGetNumberDlg(HINSTANCE hInst, HWND hWnd, char *szPrompt, int def)
+int DoGetNumberDlg(HINSTANCE hInst, HWND hWnd, TCHAR *szPrompt, int def)
 {
-   strcpy(::NumberDlgChar, szPrompt);
-   ::NumberDlgInt = def;
-   DialogBox(hInst, MAKEINTRESOURCE(NUMBERDLG), hWnd, NumberDlgDlgProc);
-   return ::NumberDlgInt;
+    lstrcpy(::NumberDlgChar, szPrompt);
+    ::NumberDlgInt = def;
+    DialogBox(hInst, MAKEINTRESOURCE(NUMBERDLG), hWnd, NumberDlgDlgProc);
+    return ::NumberDlgInt;
 }

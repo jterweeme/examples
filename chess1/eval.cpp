@@ -24,57 +24,24 @@
   notice must be preserved on all copies.
 */
 
-
-#include "gnuchess.h"
+#include "globals.h"
 #include "defs.h"
-#include <windows.h>
-#include <stdio.h>
 
-/*#define taxicab(a,b) taxidata[a][b]*/
 #define taxicab(a,b) *(taxidata+a*64+b)
 
 #define wking PieceList[white][0]
 #define bking PieceList[black][0]
 #define EnemyKing PieceList[c2][0]
 
-/*extern short distdata[64][64], taxidata[64][64];*/
-extern short far *distdata, far *taxidata;
-
-/*extern unsigned char nextpos[8][64][64];*/
-/*extern unsigned char nextdir[8][64][64];*/
-extern unsigned char far * nextpos;
-extern unsigned char far * nextdir;
-
-
-extern short PieceList[2][16], PawnCnt[2][8];
-extern short Pscore[maxdepth], Tscore[maxdepth];
-extern short mtl[2], pmtl[2], emtl[2], hung[2];
-extern short c1, c2, *atk1, *atk2, *PC1, *PC2, atak[2][64];
-extern short ChkFlag[maxdepth], CptrFlag[maxdepth], PawnThreat[maxdepth];
-extern short Pindex[64];
-extern short PieceCnt[2];
-extern short FROMsquare, TOsquare, Zscore, zwndw;
-extern short Mking[2][64], Kfield[2][64];
-extern short ATAKD, HUNGP, HUNGX, KCASTLD, KMOVD, XRAY, PINVAL;
-extern short RHOPN, RHOPNX, KHOPN, KHOPNX, KSFTY;
-extern short HasKnight[2], HasBishop[2], HasRook[2], HasQueen[2];
-extern short Mwpawn[64], Mbpawn[64], Mknight[2][64], Mbishop[2][64];
-extern short Mking[2][64], Kfield[2][64];
-extern short KNIGHTPOST, KNIGHTSTRONG, BISHOPSTRONG, KATAK;
-extern short PEDRNK2B, PWEAKH, PADVNCM, PADVNCI, PAWNSHIELD, PDOUBLED, PBLOK;
-extern short stage, stage2, Developed[2];
-extern short PawnBonus, BishopBonus, RookBonus;
-
-
-static short KingOpening[64] =
-{0, 0, -4, -10, -10, -4, 0, 0,
- -4, -4, -8, -12, -12, -8, -4, -4,
- -12, -16, -20, -20, -20, -20, -16, -12,
- -16, -20, -24, -24, -24, -24, -20, -16,
- -16, -20, -24, -24, -24, -24, -20, -16,
- -12, -16, -20, -20, -20, -20, -16, -12,
- -4, -4, -8, -12, -12, -8, -4, -4,
- 0, 0, -4, -10, -10, -4, 0, 0};
+static short KingOpening[64] = {
+      0,   0,  -4, -10, -10,  -4,   0,   0,
+     -4,  -4,  -8, -12, -12,  -8,  -4,  -4,
+    -12, -16, -20, -20, -20, -20, -16, -12,
+    -16, -20, -24, -24, -24, -24, -20, -16,
+    -16, -20, -24, -24, -24, -24, -20, -16,
+    -12, -16, -20, -20, -20, -20, -16, -12,
+     -4,  -4,  -8, -12, -12,  -8,  -4,  -4,
+      0,   0,  -4, -10, -10,  -4,   0,   0};
 
 static short KingEnding[64] =
 {0, 6, 12, 18, 18, 12, 6, 0,

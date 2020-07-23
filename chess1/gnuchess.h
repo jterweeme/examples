@@ -29,14 +29,6 @@
 #define SEEK_SET 0
 #define SEEK_END 2
 
-#if !defined(__STDC__) || !defined(MSDOS)
-#define const
-#endif
-
-#ifndef __GNUC__
-#define inline
-#endif
-
 /*
   ttblsz must be a power of 2.
   Setting ttblsz 0 removes the transposition tables.
@@ -70,8 +62,10 @@
 #define capture 0x0200
 #define draw 0x0400
 #define maxdepth 30
+#ifndef WINCE
 #define false 0
 #define true 1
+#endif
 /* #define absv(x) ((x) < 0 ? -(x) : (x)) */
 
 #define valueP 100
@@ -143,31 +137,15 @@ unsigned int urand (void);
 void srand (unsigned int seed);
 
 #else
-int rand (void);
-void srand ( unsigned int seed);
+int rand(void);
+void srand(unsigned int seed);
 #define urand rand
-#endif /* HASHFILE */
+#endif
 
 extern unsigned long hashkey, hashbd;
-/*extern struct hashval hashcode[2][7][64];*/
 extern struct hashval *hashcode;
-
-/*extern struct hashentry huge ttable[2][ttblsz];*/
 extern struct hashentry *ttable;
-
-#endif /* ttblsz */
-
-
-extern HWND hComputerColor;
-extern HWND hComputerMove;
-extern HWND hWhosTurn;
-extern HWND hClockComputer;
-extern HWND hClockHuman;
-extern HWND hMsgComputer;
-extern HWND hMsgHuman;
-extern HWND hStats;
-
-
+#endif
 
 struct leaf
 {
@@ -207,9 +185,7 @@ struct flags
   short rcptr;		/* enable/disable recapture heuristics */
 };
 
-/* extern struct leaf Tree[2000], *root; */
-extern struct leaf far *Tree, far *root;
-
+extern struct leaf *Tree, *root;
 extern short TrPnt[maxdepth];
 extern short board[64], color[64];
 extern short PieceList[2][16], PawnCnt[2][8];
@@ -221,25 +197,15 @@ extern short dither, player;
 extern short xwndw, epsquare, contempt;
 extern long ResponseTime, ExtraTime, Level, et, et0, time0, ft;
 extern long NodeCnt, ETnodes, EvalNodes, HashCnt, HashCol;
-/* extern struct GameRec GameList[512];*/
-extern struct GameRec far *GameList;
-
+extern struct GameRec *GameList;
 extern short GameCnt, Game50;
 extern short Sdepth, MaxSearchDepth;
-/*extern struct BookEntry *Book;*/
-extern struct BookEntry far *Book;
-
+extern struct BookEntry *Book;
 extern struct TimeControlRec TimeControl;
 extern short TCflag, TCmoves, TCminutes, OperatorTime;
 extern const short otherside[3];
-/*
-extern const short otherside[3];
-extern const short Stboard[64];
-extern const short Stcolor[64];
-*/
 extern unsigned short hint, PrVar[maxdepth];
 
-/*#define distance(a,b) distdata[a][b]*/
 #define distance(a,b) *(distdata+a*64+b)
 
 #define row(a) ((a) >> 3)

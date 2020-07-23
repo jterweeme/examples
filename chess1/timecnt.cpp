@@ -23,9 +23,8 @@
 
 #include "chess.h"
 #include "resource.h"
+#include "globals.h"
 #include <windows.h>
-
-extern int TCmoves, TCminutes, TCflag;
 
 static int tmpTCmoves;
 static int tmpTCminutes;

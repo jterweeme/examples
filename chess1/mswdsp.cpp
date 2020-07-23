@@ -24,87 +24,76 @@
   notice must be preserved on all copies.
 */
 
+#include <cstdio>
 #include "gnuchess.h"
 #include "chess.h"
 #include "defs.h"
 #include "resource.h"
-#include <stdio.h>
+#include "globals.h"
 
-extern short boarddraw[64];
-extern short colordraw[64];
+static LPCTSTR ColorStr[2] = {TEXT("White"), TEXT("Black")};
 
-extern char mvstr[4][6];
-extern long evrate;
-static const char *ColorStr[2] = {"White", "Black"};
-
-extern HINSTANCE hInst;
-
-void
-ShowPlayers (void)
+void ShowPlayers()
 {
-  /* display in the status line what color the computer is playing */
-  SetWindowTextA( hComputerColor, (computer == black) ? "Computer is black" :
-                                                        "Computer is white" );
+    /* display in the status line what color the computer is playing */
+    SetWindowText( hComputerColor, (computer == black) ? TEXT("Computer is black") : TEXT("Computer is white"));
 }
 
-void
-ShowDepth (char ch)
+void ShowDepth(char ch)
 {
-   char tmp[30];
-   if ( hStats ) {
-      wsprintfA( tmp, "%d%c", Sdepth, ch);
-      SetDlgItemTextA( hStats, DEPTHTEXT, tmp);
-   }
+    TCHAR tmp[30];
+
+    if (hStats)
+    {
+        wsprintf(tmp, TEXT("%d%c"), Sdepth, ch);
+        SetDlgItemText(hStats, DEPTHTEXT, tmp);
+    }
 }
 
-void
-ShowScore (short score)
+void ShowScore(short score)
 {
-   char tmp[30];
-   if ( hStats) {
-      wsprintfA( tmp, "%d",score);
-      SetDlgItemTextA( hStats, SCORETEXT, tmp);
-   }
+    TCHAR tmp[30];
+    if (hStats)
+    {
+        wsprintf(tmp, TEXT("%d"), score);
+        SetDlgItemText(hStats, SCORETEXT, tmp);
+    }
 }
 
-void ShowMessage(HWND hWnd, LPCSTR s)
+void ShowMessage(HWND hWnd, LPCTSTR s)
 {
-    MessageBoxA(hWnd, s, "Chess", MB_OK | MB_ICONEXCLAMATION | MB_APPLMODAL);
+    MessageBox(hWnd, s, TEXT("Chess"), MB_OK | MB_ICONEXCLAMATION | MB_APPLMODAL);
 }
 
-void SMessageBox ( HWND hWnd, int str_num, int str1_num )
+void SMessageBox(HWND hWnd, int str_num, int str1_num )
 {
-   char str[80], str1[20];
-   LoadStringA( hInst, str_num, str, sizeof ( str ) );
-   LoadStringA( hInst, str1_num, str1, sizeof ( str1 ) );
-   MessageBoxA( hWnd, str, str1, MB_OK | MB_ICONEXCLAMATION | MB_APPLMODAL );
+    TCHAR str[80], str1[20];
+    LoadString(hInst, str_num, str, sizeof(str));
+    LoadString(hInst, str1_num, str1, sizeof ( str1 ) );
+    MessageBox(hWnd, str, str1, MB_OK | MB_ICONEXCLAMATION | MB_APPLMODAL );
 }
 
-void
-ClearMessage (void)
+void ClearMessage()
 {
 }
 
-void
-ShowCurrentMove(short int pnt, short int f, short int t)
+void ShowCurrentMove(short int pnt, short int f, short int t)
 {
-    char tmp[30];
+    TCHAR tmp[30];
 
     if (hStats)
     {
         algbr(f, t, false);
-        wsprintfA(tmp, "(%2d) %4s",pnt, (char far *)mvstr[0]);
-        SetDlgItemTextA(hStats, POSITIONTEXT, tmp);
+        wsprintf(tmp, TEXT("(%2d) %4s"), pnt, (TCHAR *)mvstr[0]);
+        SetDlgItemText(hStats, POSITIONTEXT, tmp);
     }
 }
 
-void
-ShowSidetoMove (void)
+void ShowSidetoMove(void)
 {
-   char tmp[30];
-   wsprintfA( tmp, "It is %s's turn",(char far*)ColorStr[player]);
-   SetWindowTextA( hWhosTurn, (LPSTR) tmp);
-
+    TCHAR tmp[30];
+    wsprintf(tmp, TEXT("It is %s's turn"), (TCHAR *)(ColorStr[player]));
+    SetWindowText(hWhosTurn, (LPTSTR)tmp);
 }
 
 void
@@ -112,24 +101,23 @@ ShowPrompt (void)
 {
 }
 
-void
-ShowNodeCnt (long int NodeCnt, long int evrate)
+void ShowNodeCnt(long int NodeCnt, long int evrate)
 {
-   char tmp[40];
+    TCHAR tmp[40];
 
-   if ( hStats ) {
-      wsprintfA( tmp,"%-8ld", NodeCnt);
-      SetDlgItemTextA( hStats, NODETEXT, tmp);
-      wsprintfA( tmp,"%-5ld", evrate);
-      SetDlgItemTextA( hStats, NODESECTEXT, tmp);
-   }
+    if (hStats)
+    {
+        wsprintf(tmp, TEXT("%-8ld"), NodeCnt);
+        SetDlgItemText(hStats, NODETEXT, tmp);
+        wsprintf(tmp, TEXT("%-5ld"), evrate);
+        SetDlgItemText(hStats, NODESECTEXT, tmp);
+    }
 }  
 
-void
-ShowResults(short int score, PWORD bstline, char ch)
+void ShowResults(short int score, PWORD bstline, char ch)
 {
     BYTE ply;
-    char str[300];
+    TCHAR str[300];
 
     if (flag.post)
     {
@@ -142,11 +130,11 @@ ShowResults(short int score, PWORD bstline, char ch)
             algbr(short(bstline[ply]) >> 8, (short) bstline[ply] & 0xFF, false);
 
             if (ply==5 || ply==9 || ply==13 || ply==17)
-                s += wsprintfA(str + s, "\n");
+                s += wsprintf(str + s, TEXT("\n"));
 
-            s += wsprintfA(str + s,"%-5s ", (char far *) mvstr[0]);
+            s += wsprintf(str + s, TEXT("%-5s "), (TCHAR *) mvstr[0]);
         }
-        SetDlgItemTextA( hStats, BSTLINETEXT, (LPSTR) str);
+        SetDlgItemText( hStats, BSTLINETEXT, (LPTSTR) str);
     }
 }
 
@@ -156,16 +144,15 @@ void SearchStartStuff(short int)
 
 void OutputMove(HWND hWnd)
 {
-  char tmp[30];
+    TCHAR tmp[30];
+    UpdateDisplay(hWnd, root->f, root->t, 0, (short) root->flags);
+    wsprintf(tmp, TEXT("My move is %s"), (char far *) mvstr[0]);
+    SetWindowText(hComputerMove, tmp);
 
-  UpdateDisplay (hWnd, root->f, root->t, 0, (short) root->flags);
-  wsprintfA( tmp, "My move is %s",(char far *) mvstr[0]);
-  SetWindowTextA( hComputerMove, tmp);
-
-  if (root->flags & draw)
-    SMessageBox ( hWnd, IDS_DRAWGAME,IDS_CHESS);
-  else if (root->score == -9999)
-    SMessageBox ( hWnd, IDS_YOUWIN, IDS_CHESS);
+    if (root->flags & draw)
+        SMessageBox ( hWnd, IDS_DRAWGAME,IDS_CHESS);
+    else if (root->score == -9999)
+        SMessageBox ( hWnd, IDS_YOUWIN, IDS_CHESS);
   else if (root->score == 9998)
     SMessageBox ( hWnd, IDS_COMPUTERWIN,IDS_CHESS);
   else if (root->score < -9000)
@@ -182,27 +169,30 @@ void OutputMove(HWND hWnd)
     }
 }
 
-void
-UpdateClocks (void)
+void UpdateClocks()
 {
-  short m, s;
-  char tmp[20];
+    short m, s;
+    TCHAR tmp[20];
 
-  m = (short) (et / 60);
-  s = (short) (et - 60 * (long) m);
-  if (TCflag)
+    m = (short) (et / 60);
+    s = (short) (et - 60 * (long) m);
+
+    if (TCflag)
     {
-      m = (short) ((TimeControl.clock[player] - et) / 60);
-      s = (short) (TimeControl.clock[player] - et - 60 * (long) m);
+        m = (short) ((TimeControl.clock[player] - et) / 60);
+        s = (short) (TimeControl.clock[player] - et - 60 * (long) m);
     }
-  if (m < 0) m = 0;
-  if (s < 0) s = 0;
+    if (m < 0)
+        m = 0;
+    if (s < 0)
+        s = 0;
 
-  wsprintfA( tmp, "%0d:%02d",m,s);
+  wsprintf(tmp, TEXT("%0d:%02d"), m, s);
+
   if ( player == white ) {
-      SetWindowTextA(hClockHuman, tmp);
+      SetWindowText(hClockHuman, tmp);
   } else {
-      SetWindowTextA(hClockComputer, tmp);
+      SetWindowText(hClockComputer, tmp);
   }
 
   if (flag.post)
@@ -235,20 +225,23 @@ void DrawPiece(HWND hWnd, short int f)
     }
 
     QuerySqCoords(x, y, aptl+0);
+#ifndef WINCE
     hRgn = CreatePolygonRgn(aptl, 4, WINDING);
+#endif
     InvalidateRgn(hWnd, hRgn, FALSE );
     DeleteObject(hRgn);
 }
 
 void
-UpdateDisplay (HWND hWnd, short int f, short int t, short int redraw, short int isspec)
+UpdateDisplay(HWND hWnd, short int f, short int t, short int redraw, short int isspec)
 {
-  short sq;
+    short sq;
   
-  for (sq=0; sq<64; sq++) {
-         boarddraw[sq] = board[sq];
-         colordraw[sq] = color[sq];
-  }
+    for (sq=0; sq<64; sq++)
+    {
+        boarddraw[sq] = board[sq];
+        colordraw[sq] = color[sq];
+    }
 
   if (redraw){
       InvalidateRect ( hWnd, NULL, TRUE);
@@ -277,12 +270,11 @@ UpdateDisplay (HWND hWnd, short int f, short int t, short int redraw, short int 
     }
 }
 
-void
-GiveHint (HWND hWnd)
+void GiveHint(HWND hWnd)
 {
-  char s[40];
-  algbr ((short) (hint >> 8), (short) (hint & 0xFF), false);
-  strcpy (s, "try ");
-  strcat (s, mvstr[0]);
-  ShowMessage (hWnd, s);
+    TCHAR s[40];
+    algbr ((short) (hint >> 8), (short) (hint & 0xFF), false);
+    lstrcpy(s, TEXT("try "));
+    lstrcat(s, mvstr[0]);
+    ShowMessage(hWnd, s);
 }

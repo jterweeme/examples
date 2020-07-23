@@ -21,29 +21,17 @@
   notice must be preserved on all copies.
 */
 
-#define NOATOM 
-#define NOCLIPBOARD
-#define NOCREATESTRUCT
-#define NOFONT
-#define NOREGION
-#define NOSOUND
-#define NOWH
-#define NOWINOFFSETS
-#define NOCOMM
-#define NOKANJI
-
 #include "gnuchess.h"
 #include "defs.h"
 #include "chess.h"
+#include "globals.h"
 #include <windows.h>
 
-extern char mvstr[4][6];
-
-LRESULT CALLBACK
+static INT_PTR CALLBACK
 ReviewDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
 {
     int i,f,t;
-    char tmp[50];
+    TCHAR tmp[50];
 
     switch (message)
     {
@@ -53,17 +41,19 @@ ReviewDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
             f = GameList[i].gmove >> 8;
             t = (GameList[i].gmove & 0xFF);
             algbr (f, t, false);
-            wsprintfA(tmp, "%4d-%c\t%5s\t%-5d\t%-2d\t%-5d",
+
+            wsprintf(tmp, TEXT("%4d-%c\t%5s\t%-5d\t%-2d\t%-5d"),
                (i+1)/2, (i%2 ? 'w' : 'b'),
                (char far *)mvstr[0],
                GameList[i].score, GameList[i].depth,
                GameList[i].time);
-            SendDlgItemMessage (hDlg, 100, LB_ADDSTRING, 0, (LPARAM)(tmp));
+            SendDlgItemMessage(hDlg, 100, LB_ADDSTRING, 0, (LPARAM)(tmp));
         }
-        SendDlgItemMessage (hDlg, 100, WM_SETREDRAW, TRUE, 0);
+        SendDlgItemMessage(hDlg, 100, WM_SETREDRAW, TRUE, 0);
         return TRUE;
     case WM_SYSCOMMAND:
-        if ( (wParam&0xfff0) == SC_CLOSE ) {
+        if ((wParam&0xfff0) == SC_CLOSE)
+		{
    		      EndDialog(hDlg, NULL);
 	   	      return TRUE;
          }
@@ -71,15 +61,13 @@ ReviewDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
 
 
 	   case WM_COMMAND:		      /* message: received a command */
-         switch (wParam) {
-         
+         switch (wParam)
+		 {
             case IDOK:
 		         EndDialog(hDlg, 1);
 		         return TRUE;
-               break;
-
          }
-	      break;
+	     break;
     }
 
     return (FALSE);

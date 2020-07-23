@@ -85,60 +85,23 @@
 #define IDD_DLIST    0x13
 #define IDD_BROWSE   0x14
 
-BOOL FAR PASCAL FileSaveDlgProc (HWND hDlg, unsigned iMessage, WORD wParam, LONG lParam);
-BOOL FAR PASCAL WildFileOpenDlgProc (HWND hDlg, unsigned iMessage, WORD wParam, LONG lParam);
-
-static char szDefExt[5];
-static char szFileName[96];
-static char szFileSpec[16];
+static TCHAR szDefExt[5];
+static TCHAR szFileName[96];
+static TCHAR szFileSpec[16];
 static WORD wFileAttr, wStatus;
+
+#ifndef WINCE
 static POFSTRUCT pof;
-
-int FAR DoWildFileOpenDlg(HINSTANCE hInst, HWND hWnd, char *szFileSpecIn,
-                           char *szDefExtIn, WORD   wFileAttrIn,
-                           char *szFileNameOut, POFSTRUCT pofIn)
-{
-    FARPROC lpfnFileOpenProc;
-    int iReturn;
-
-    lstrcpyA(szFileSpec, szFileSpecIn);
-    lstrcpyA(szDefExt, szDefExtIn);
-    wFileAttr = wFileAttrIn;
-    pof = pofIn;
-#if 0
-   lpfnFileOpenProc = MakeProcInstance ( WildFileOpenDlgProc, hInst);
-   iReturn = DialogBox ( hInst, MAKEINTRESOURCE(WILDFILEOPEN), hWnd, lpfnFileOpenProc);
-   FreeProcInstance ( lpfnFileOpenProc);
 #endif
-   lstrcpyA( szFileNameOut, szFileName);
-   return iReturn;
-}
 
-int FAR DoFileSaveDlg(HINSTANCE hInst, HWND hWnd, LPCSTR szFileSpecIn,
-                       LPCSTR szDefExtIn, int *pwStatusOut,
-                       char *szFileNameOut, POFSTRUCT pofIn)
-{
-   FARPROC lpfnFileSaveProc;
-   int iReturn;
-
-   lstrcpyA( szFileSpec, szFileSpecIn);
-   lstrcpyA( szDefExt,   szDefExtIn);
-   pof = pofIn;
-#if 0
-   lpfnFileSaveProc = MakeProcInstance ( FileSaveDlgProc, hInst);
-   iReturn = DialogBox ( hInst, MAKEINTRESOURCE(FILESAVE), hWnd, lpfnFileSaveProc);
-   FreeProcInstance ( lpfnFileSaveProc);
-#endif
-   lstrcpyA( szFileNameOut, szFileName);
-   *pwStatusOut = wStatus;
-   return iReturn;
-}
-
-static BOOL DlgDirSelect(HWND hDlg, LPCSTR fn, int id)
+#if 1
+static BOOL DlgDirSelect(HWND, LPCTSTR, int)
 {
     return TRUE;
 }
+#endif
 
+#ifndef WINCE
 static INT_PTR CALLBACK
 FileOpenDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
@@ -149,102 +112,111 @@ FileOpenDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
     {
     case WM_INITDIALOG:
         SendDlgItemMessage(hDlg, IDD_FNAME, EM_LIMITTEXT, 80, 0L);
-        DlgDirListA(hDlg, szFileSpec, IDD_FLIST, IDD_FPATH, wFileAttr);
-        DlgDirListA(hDlg, szFileSpec, IDD_DLIST, NULL, 0x4010|0x8000);
-        SetDlgItemTextA(hDlg, IDD_FNAME, szFileSpec);
+        DlgDirList(hDlg, szFileSpec, IDD_FLIST, IDD_FPATH, wFileAttr);
+        DlgDirList(hDlg, szFileSpec, IDD_DLIST, NULL, 0x4010|0x8000);
+        SetDlgItemText(hDlg, IDD_FNAME, szFileSpec);
         return TRUE;
     case WM_COMMAND:
         switch (wParam)
         {
-            case IDD_FLIST:
-               switch ( HIWORD(lParam) )
-               {
-                  case LBN_SELCHANGE:
-                     if (DlgDirSelect (hDlg, szFileName, IDD_FLIST))
-                        lstrcatA( szFileName, szFileSpec) ;
-                     SetDlgItemTextA( hDlg, IDD_FNAME, szFileName);
-                     break;
+        case IDD_FLIST:
+            switch (HIWORD(lParam))
+            {
+            case LBN_SELCHANGE:
+                if (DlgDirSelect(hDlg, szFileName, IDD_FLIST))
+                    lstrcat(szFileName, szFileSpec);
 
-                  case LBN_DBLCLK:
-                     if ( DlgDirSelect (hDlg, szFileName, IDD_FLIST))
+                SetDlgItemText(hDlg, IDD_FNAME, szFileName);
+                break;
+            case LBN_DBLCLK:
+                     if (DlgDirSelect (hDlg, szFileName, IDD_FLIST))
                      {
-                        lstrcatA( szFileName, szFileSpec);
-                        DlgDirListA( hDlg, szFileName, IDD_FLIST, IDD_FPATH, wFileAttr);
-                        SetDlgItemTextA( hDlg, IDD_FNAME, szFileName);
-                     } else {
-                        SetDlgItemTextA( hDlg, IDD_FNAME, szFileName);
-                        SendMessage ( hDlg, WM_COMMAND, IDOK, 0L);
+                        lstrcat(szFileName, szFileSpec);
+                        DlgDirList(hDlg, szFileName, IDD_FLIST, IDD_FPATH, wFileAttr);
+                        SetDlgItemText(hDlg, IDD_FNAME, szFileName);
+                     }
+                     else
+                     {
+                        SetDlgItemText(hDlg, IDD_FNAME, szFileName);
+                        SendMessage(hDlg, WM_COMMAND, IDOK, 0L);
                      }
                      break;
                }
                break;
 
             case IDD_DLIST:
-               switch ( HIWORD(lParam) ) {
+               switch (HIWORD(lParam))
+               {
                   case LBN_DBLCLK:
-                     if ( DlgDirSelect (hDlg, szFileName, IDD_DLIST)) {
-                        lstrcatA( szFileName, szFileSpec);
-                        DlgDirListA( hDlg, szFileName, IDD_FLIST, IDD_FPATH,
-                                                       wFileAttr);
-                        DlgDirListA( hDlg, szFileName, IDD_DLIST, NULL, 0x4010|0x8000);
-                        SetDlgItemTextA( hDlg, IDD_FNAME, szFileName);
+                     if ( DlgDirSelect (hDlg, szFileName, IDD_DLIST))
+                     {
+                        lstrcat(szFileName, szFileSpec);
+                        DlgDirList(hDlg, szFileName, IDD_FLIST, IDD_FPATH, wFileAttr);
+                        DlgDirList(hDlg, szFileName, IDD_DLIST, NULL, 0x4010|0x8000);
+                        SetDlgItemText(hDlg, IDD_FNAME, szFileName);
                      }
                      break;
                }
                break;
-
-
             case IDD_FNAME:
                if (HIWORD (lParam) == EN_CHANGE )
+               {
                   EnableWindow ( GetDlgItem(hDlg,IDOK),
-                     (BOOL) SendMessage(HWND(LOWORD(lParam)), WM_GETTEXTLENGTH,
-                                         0,0L));
+                     (BOOL) SendMessage(HWND(LOWORD(lParam)), WM_GETTEXTLENGTH, 0,0L));
+               }
                break;
-
             case IDOK:
-               GetDlgItemTextA(hDlg, IDD_FNAME, szFileName, 80);
-               nEditLen = lstrlenA( szFileName);
-               cLastChar = *AnsiPrev (szFileName, szFileName+nEditLen);
+               GetDlgItemText(hDlg, IDD_FNAME, szFileName, 80);
+               nEditLen = lstrlen(szFileName);
+#ifndef UNICODE
+               cLastChar = *AnsiPrev(szFileName, szFileName+nEditLen);
 
-               if ( cLastChar == '\\' || cLastChar == ':')
-                  lstrcatA( szFileName, szFileSpec);
+               if (cLastChar == '\\' || cLastChar == ':')
+                  lstrcat( szFileName, szFileSpec);
 
-               if ( strchr (szFileName, '*') || strchr(szFileName, '?') ){
-                  if ( DlgDirListA(hDlg, szFileName, IDD_FLIST, IDD_FPATH,
-                                   wFileAttr)) {
-                     lstrcpyA(szFileSpec, szFileName);
-                     SetDlgItemTextA(hDlg, IDD_FNAME, szFileSpec);
-                  } else
-                     MessageBeep (0);
+               if (strchr(szFileName, '*') || strchr(szFileName, '?') )
+               {
+                  if (DlgDirList(hDlg, szFileName, IDD_FLIST, IDD_FPATH, wFileAttr))
+                  {
+                     lstrcpy(szFileSpec, szFileName);
+                     SetDlgItemText(hDlg, IDD_FNAME, szFileSpec);
+                  }
+                  else
+                  {
+                     MessageBeep(0);
+                  }
                   break;
                }
-               lstrcatA( lstrcatA(szFileName,"\\"), szFileSpec);
+               lstrcat(lstrcat(szFileName, TEXT("\\")), szFileSpec);
 
-               if (DlgDirListA( hDlg, szFileName, IDD_FLIST,
-                                                  IDD_FPATH,wFileAttr)) {
-                  lstrcpyA( szFileSpec, szFileName);
-                  SetDlgItemTextA(hDlg, IDD_FNAME, szFileSpec);
+               if (DlgDirList(hDlg, szFileName, IDD_FLIST,
+                                                  IDD_FPATH,wFileAttr))
+               {
+                  lstrcpy( szFileSpec, szFileName);
+                  SetDlgItemText(hDlg, IDD_FNAME, szFileSpec);
                   break;
                }
 
                szFileName[nEditLen] = '\0';
 
-               if (OpenFile(szFileName, pof, OF_READ|OF_EXIST) == -1) {
-                  lstrcatA( szFileName, szDefExt);
-                  if (OpenFile(szFileName, pof, OF_READ|OF_EXIST) == -1) {
-                     MessageBeep (0);
+               if (OpenFile(szFileName, pof, OF_READ|OF_EXIST) == -1)
+               {
+                  lstrcat(szFileName, szDefExt);
+
+                  if (OpenFile(szFileName, pof, OF_READ|OF_EXIST) == -1)
+                  {
+                     MessageBeep(0);
                      break;
                   }
                }
-               lstrcpyA( szFileName,  AnsiNext(strrchr(pof->szPathName,'\\')));
-               OemToAnsi( szFileName, szFileName);
-               EndDialog (hDlg, TRUE);
+               lstrcpy(szFileName, AnsiNext(strrchr(pof->szPathName,'\\')));
+               OemToAnsi(szFileName, szFileName);
+#endif
+               ::EndDialog(hDlg, TRUE);
                break;
-
             case IDCANCEL:
-               EndDialog (hDlg, FALSE);
+               ::EndDialog (hDlg, FALSE);
                break;
-
             default:
                return FALSE;
          }
@@ -253,119 +225,129 @@ FileOpenDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
    }
    return TRUE;
 }
-
-int DoFileOpenDlg(HINSTANCE hInst, HWND hWnd, LPCSTR szFileSpecIn,
-                       LPCSTR szDefExtIn, WORD wFileAttrIn,
-                       char *szFileNameOut, POFSTRUCT pofIn)
-{
-   FARPROC lpfnFileOpenProc;
-   int iReturn;
-
-   lstrcpyA( szFileSpec, szFileSpecIn);
-   lstrcpyA( szDefExt,   szDefExtIn);
-   wFileAttr = wFileAttrIn;
-   pof = pofIn;
-#if 0
-   lpfnFileOpenProc = MakeProcInstance ( FileOpenDlgProc, hInst);
-   iReturn = DialogBox ( hInst, MAKEINTRESOURCE(FILEOPEN), hWnd, lpfnFileOpenProc);
-   FreeProcInstance ( lpfnFileOpenProc);
 #endif
-   iReturn = DialogBox(hInst, MAKEINTRESOURCE(FILEOPEN), hWnd, FileOpenDlgProc);
-   lstrcpyA( szFileNameOut, szFileName);
-   return iReturn;
-}
 
-BOOL FAR PASCAL
+#ifndef WINCE
+int DoFileOpenDlg(HINSTANCE hInst, HWND hWnd, LPCTSTR szFileSpecIn,
+                       LPCTSTR szDefExtIn, WORD wFileAttrIn,
+                       LPTSTR szFileNameOut, POFSTRUCT pofIn)
+{
+    lstrcpy(szFileSpec, szFileSpecIn);
+    lstrcpy(szDefExt, szDefExtIn);
+    wFileAttr = wFileAttrIn;
+    pof = pofIn;
+    int iReturn = DialogBox(hInst, MAKEINTRESOURCE(FILEOPEN), hWnd, FileOpenDlgProc);
+    lstrcpy(szFileNameOut, szFileName);
+    return iReturn;
+}
+#endif
+
+static INT_PTR
 WildFileOpenDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
-   char cLastChar;
-   short nEditLen;
+    char cLastChar;
+    short nEditLen;
 
-   switch ( iMessage ){
-      case WM_INITDIALOG:
-         SendDlgItemMessage ( hDlg, IDD_FNAME, EM_LIMITTEXT, 80, 0L);
-         DlgDirListA( hDlg, szFileSpec, IDD_FLIST, IDD_FPATH, wFileAttr);
-         DlgDirListA( hDlg, szFileSpec, IDD_DLIST, NULL, 0x4010|0x8000);
-         SetDlgItemTextA( hDlg, IDD_FNAME, szFileSpec);
-         return TRUE;
+    switch (iMessage)
+    {
+    case WM_INITDIALOG:
+        ::SendDlgItemMessage(hDlg, IDD_FNAME, EM_LIMITTEXT, 80, 0L);
+#ifndef WINCE
+        ::DlgDirList(hDlg, szFileSpec, IDD_FLIST, IDD_FPATH, wFileAttr);
+        ::DlgDirList(hDlg, szFileSpec, IDD_DLIST, NULL, 0x4010|0x8000);
+#endif
+        ::SetDlgItemText(hDlg, IDD_FNAME, szFileSpec);
+        return TRUE;
+    case WM_COMMAND:
+        switch (wParam)
+        {
+        case IDD_FLIST:
+            switch (HIWORD(lParam))
+            {
+            case LBN_SELCHANGE:
+                if (DlgDirSelect(hDlg, szFileName, IDD_FLIST))
+                    lstrcat(szFileName, szFileSpec);
 
-      case WM_COMMAND:
-         switch (wParam) {
-            case IDD_FLIST:
-               switch ( HIWORD(lParam) ) {
-                  case LBN_SELCHANGE:
-                     if (DlgDirSelect(hDlg, szFileName, IDD_FLIST))
-                        lstrcatA( szFileName, szFileSpec) ;
-                     SetDlgItemTextA( hDlg, IDD_FNAME, szFileName);
-                     break;
-
-                  case LBN_DBLCLK:
-                     if ( DlgDirSelect (hDlg, szFileName, IDD_FLIST)) {
-                        lstrcatA( szFileName, szFileSpec);
-                        DlgDirListA( hDlg, szFileName, IDD_FLIST, IDD_FPATH,
-                                                       wFileAttr);
-                        SetDlgItemTextA( hDlg, IDD_FNAME, szFileName);
-                     } else {
-                        SetDlgItemTextA( hDlg, IDD_FNAME, szFileName);
-                        SendMessage ( hDlg, WM_COMMAND, IDOK, 0L);
-                     }
-                     break;
-               }
-               break;
-
-            case IDD_DLIST:
-               switch ( HIWORD(lParam) ) {
-                  case LBN_DBLCLK:
-                     if ( DlgDirSelect(hDlg, szFileName, IDD_DLIST)) {
-                        lstrcatA( szFileName, szFileSpec);
-                        DlgDirListA( hDlg, szFileName, IDD_FLIST, IDD_FPATH,
-                                                       wFileAttr);
-                        DlgDirListA( hDlg, szFileName, IDD_DLIST, NULL, 0x4010|0x8000);
-                        SetDlgItemTextA( hDlg, IDD_FNAME, szFileName);
-                     }
-                     break;
-               }
-               break;
-
-
-            case IDD_FNAME:
+                SetDlgItemText(hDlg, IDD_FNAME, szFileName);
+                break;
+            case LBN_DBLCLK:
+                if (DlgDirSelect (hDlg, szFileName, IDD_FLIST))
+                {
+                    lstrcat(szFileName, szFileSpec);
+#ifndef WINCE
+                    DlgDirList(hDlg, szFileName, IDD_FLIST, IDD_FPATH, wFileAttr);
+#endif
+                    SetDlgItemText(hDlg, IDD_FNAME, szFileName);
+                }
+                else
+                {
+                    SetDlgItemText(hDlg, IDD_FNAME, szFileName);
+                    SendMessage(hDlg, WM_COMMAND, IDOK, 0L);
+                }
+                break;
+            }
+            break;
+        case IDD_DLIST:
+            switch (HIWORD(lParam))
+            {
+            case LBN_DBLCLK:
+                if ( DlgDirSelect(hDlg, szFileName, IDD_DLIST))
+                {
+                        lstrcat(szFileName, szFileSpec);
+#ifndef WINCE
+                        DlgDirList(hDlg, szFileName, IDD_FLIST, IDD_FPATH, wFileAttr);
+                        DlgDirList(hDlg, szFileName, IDD_DLIST, NULL, 0x4010|0x8000);
+#endif
+                        SetDlgItemText(hDlg, IDD_FNAME, szFileName);
+                }
+                break;
+            }
+            break;
+        case IDD_FNAME:
                if (HIWORD (lParam) == EN_CHANGE )
-                  EnableWindow ( GetDlgItem(hDlg,IDOK),
-                     (BOOL) SendMessage(HWND(LOWORD(lParam)), WM_GETTEXTLENGTH,
-                                         0,0L));
+               {
+                  EnableWindow(GetDlgItem(hDlg, IDOK),
+                     (BOOL) SendMessage(HWND(LOWORD(lParam)), WM_GETTEXTLENGTH, 0,0L));
+               }
                break;
-
             case IDD_BROWSE:
-               GetDlgItemTextA(hDlg, IDD_FNAME, szFileName, 80);
-               nEditLen = lstrlenA( szFileName);
-               cLastChar = *AnsiPrev (szFileName, szFileName+nEditLen);
+               GetDlgItemText(hDlg, IDD_FNAME, szFileName, 80);
+#ifndef UNICODE
+               nEditLen = lstrlen(szFileName);
+               cLastChar = *AnsiPrev(szFileName, szFileName+nEditLen);
 
                if ( cLastChar == '\\' || cLastChar == ':')
-                  lstrcatA( szFileName, szFileSpec);
+                  lstrcat(szFileName, szFileSpec);
 
-               if ( strchr (szFileName, '*') || strchr(szFileName, '?') ){
-                  if ( DlgDirListA(hDlg, szFileName, IDD_FLIST, IDD_FPATH,
-                                   wFileAttr)) {
-                     lstrcpyA(szFileSpec, szFileName);
-                     SetDlgItemTextA(hDlg, IDD_FNAME, szFileSpec);
+               if (strchr(szFileName, '*') || strchr(szFileName, '?') )
+               {
+                  if (DlgDirList(hDlg, szFileName, IDD_FLIST, IDD_FPATH, wFileAttr))
+                  {
+                     lstrcpy(szFileSpec, szFileName);
+                     SetDlgItemText(hDlg, IDD_FNAME, szFileSpec);
                   } else
+                  {
                      MessageBeep (0);
+                  }
                   break;
                }
-               lstrcatA( lstrcatA(szFileName,"\\"), szFileSpec);
+               lstrcat(lstrcat(szFileName, TEXT("\\")), szFileSpec);
 
-               if (DlgDirListA( hDlg, szFileName, IDD_FLIST,
-                                                  IDD_FPATH,wFileAttr)) {
-                  lstrcpyA( szFileSpec, szFileName);
-                  SetDlgItemTextA(hDlg, IDD_FNAME, szFileSpec);
+               if (DlgDirList(hDlg, szFileName, IDD_FLIST, IDD_FPATH,wFileAttr))
+               {
+                  lstrcpy(szFileSpec, szFileName);
+                  SetDlgItemText(hDlg, IDD_FNAME, szFileSpec);
                   break;
                }
 
                szFileName[nEditLen] = '\0';
 
-               if (OpenFile(szFileName, pof, OF_READ|OF_EXIST) == -1) {
-                  lstrcatA( szFileName, szDefExt);
-                  if (OpenFile(szFileName, pof, OF_READ|OF_EXIST) == -1) {
+               if (OpenFile(szFileName, pof, OF_READ|OF_EXIST) == -1)
+               {
+                  lstrcat( szFileName, szDefExt);
+
+                  if (OpenFile(szFileName, pof, OF_READ|OF_EXIST) == -1)
+                  {
                      MessageBeep (0);
                      break;
                   }
@@ -375,56 +357,59 @@ WildFileOpenDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
                OemToAnsi( szFileName, szFileName);
                EndDialog (hDlg, TRUE);
 */
+#endif
                break;
-
            case IDOK:
-               GetDlgItemTextA(hDlg, IDD_FNAME, szFileName, 80);
-               nEditLen = lstrlenA( szFileName);
-               cLastChar = *AnsiPrev (szFileName, szFileName+nEditLen);
+               GetDlgItemText(hDlg, IDD_FNAME, szFileName, 80);
+#ifndef UNICODE
+               nEditLen = lstrlen(szFileName);
+               cLastChar = *AnsiPrev(szFileName, szFileName+nEditLen);
 
                if ( cLastChar == '\\' || cLastChar == ':')
-                  lstrcatA( szFileName, szFileSpec);
+                  lstrcat(szFileName, szFileSpec);
 
-               if ( strchr (szFileName, '*') || strchr(szFileName, '?') ){
-                  if ( DlgDirListA(hDlg, szFileName, IDD_FLIST, IDD_FPATH,
-                                   wFileAttr)) {
+               if ( strchr(szFileName, '*') || strchr(szFileName, '?') )
+               {
+                  if (DlgDirList(hDlg, szFileName, IDD_FLIST, IDD_FPATH, wFileAttr))
+                  {
 /*
                      lstrcpy (szFileSpec, szFileName);
                      SetDlgItemText (hDlg, IDD_FNAME, szFileSpec);
 */
-                     OemToAnsi( szFileName, szFileName);
+                     OemToAnsi(szFileName, szFileName);
                      EndDialog (hDlg, TRUE);
                   } else
                      MessageBeep (0);
                   break;
                }
-               lstrcatA( lstrcatA(szFileName,"\\"), szFileSpec);
+               lstrcat(lstrcat(szFileName, TEXT("\\")), szFileSpec);
 
-               if (DlgDirListA( hDlg, szFileName, IDD_FLIST,
-                                                  IDD_FPATH,wFileAttr)) {
-                  lstrcpyA( szFileSpec, szFileName);
-                  SetDlgItemTextA(hDlg, IDD_FNAME, szFileSpec);
+               if (DlgDirList(hDlg, szFileName, IDD_FLIST, IDD_FPATH,wFileAttr))
+               {
+                  lstrcpy(szFileSpec, szFileName);
+                  SetDlgItemText(hDlg, IDD_FNAME, szFileSpec);
                   break;
                }
 
                szFileName[nEditLen] = '\0';
 
-               if (OpenFile(szFileName, pof, OF_READ|OF_EXIST) == -1) {
-                  lstrcatA( szFileName, szDefExt);
-                  if (OpenFile(szFileName, pof, OF_READ|OF_EXIST) == -1) {
+               if (OpenFile(szFileName, pof, OF_READ|OF_EXIST) == -1)
+               {
+                  lstrcat(szFileName, szDefExt);
+                  if (OpenFile(szFileName, pof, OF_READ|OF_EXIST) == -1)
+                  {
                      MessageBeep (0);
                      break;
                   }
                }
-               lstrcpyA( szFileName, AnsiNext(strrchr(pof->szPathName,'\\')));
-               OemToAnsi( szFileName, szFileName);
-               EndDialog (hDlg, TRUE);
+               lstrcpy(szFileName, AnsiNext(strrchr(pof->szPathName,'\\')));
+               OemToAnsi(szFileName, szFileName);
+#endif
+               EndDialog(hDlg, TRUE);
                break;
-
            case IDCANCEL:
                EndDialog (hDlg, FALSE);
                break;
-
             default:
                return FALSE;
          }
@@ -434,60 +419,99 @@ WildFileOpenDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
    return TRUE;
 }
 
-BOOL FAR PASCAL FileSaveDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
+#ifndef WINCE
+int DoWildFileOpenDlg(HINSTANCE hInst, HWND hWnd, LPCTSTR szFileSpecIn,
+                           LPCTSTR szDefExtIn, WORD wFileAttrIn,
+                           LPTSTR szFileNameOut, POFSTRUCT pofIn)
 {
+    lstrcpy(szFileSpec, szFileSpecIn);
+    lstrcpy(szDefExt, szDefExtIn);
+    wFileAttr = wFileAttrIn;
+    pof = pofIn;
+    int iReturn = DialogBox(hInst, MAKEINTRESOURCE(WILDFILEOPEN), hWnd, WildFileOpenDlgProc);
+    lstrcpy(szFileNameOut, szFileName);
+    return iReturn;
+}
+#endif
 
-   switch ( iMessage ){
-      case WM_INITDIALOG:
-         SendDlgItemMessage ( hDlg, IDD_FNAME, EM_LIMITTEXT, 80, 0L);
-         DlgDirListA( hDlg, szFileSpec, 0, IDD_FPATH, 0);
-         SetDlgItemTextA( hDlg, IDD_FNAME, szFileSpec);
-         return TRUE;
-
-      case WM_COMMAND:
-         switch (wParam)
-         {
-            case IDD_FNAME:
-               if (HIWORD(lParam) == EN_CHANGE)
-                  EnableWindow ( GetDlgItem(hDlg, IDOK),
+static INT_PTR
+FileSaveDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
+{
+    switch (iMessage)
+    {
+    case WM_INITDIALOG:
+        SendDlgItemMessage(hDlg, IDD_FNAME, EM_LIMITTEXT, 80, 0L);
+#ifndef WINCE
+        DlgDirList(hDlg, szFileSpec, 0, IDD_FPATH, 0);
+#endif
+        SetDlgItemText(hDlg, IDD_FNAME, szFileSpec);
+        return TRUE;
+    case WM_COMMAND:
+        switch (wParam)
+        {
+        case IDD_FNAME:
+            if (HIWORD(lParam) == EN_CHANGE)
+            {
+                EnableWindow ( GetDlgItem(hDlg, IDOK),
                      (BOOL) SendMessageA(HWND(LOWORD(lParam)), WM_GETTEXTLENGTH,0,0L));
-               break;
+            }
+            break;
+        case IDOK:
+            GetDlgItemText(hDlg, IDD_FNAME, szFileName, 80);
+#ifndef UNICODE
+            if (OpenFile(szFileName, pof,OF_PARSE) == -1)
+            {
+                MessageBeep(0);
+                break;
+            }
 
-            case IDOK:
-               GetDlgItemTextA(hDlg, IDD_FNAME, szFileName, 80);
-               if ( OpenFile (szFileName, pof,OF_PARSE) == -1) {
-                  MessageBeep (0);
-                  break;
-               }
+            if (!strchr ((PSTR)AnsiNext (strrchr (pof->szPathName,'\\')),'.'))
+                lstrcat(szFileName, szDefExt);
 
-               if ( !strchr ((PSTR)AnsiNext (strrchr (pof->szPathName,'\\')),'.'))
-                  lstrcatA(szFileName, szDefExt);
+            if (OpenFile(szFileName, pof, OF_WRITE|OF_EXIST) != -1)
+            {
+                wStatus = 1;
+            }
+            else if (OpenFile (szFileName, pof, OF_CREATE|OF_EXIST) != -1)
+            {
+                wStatus = 0;
+            }
+            else
+            {
+                MessageBeep(0);
+                break;
+            }
 
-               if ( OpenFile (szFileName, pof, OF_WRITE|OF_EXIST) != -1) {
-                  wStatus = 1;
-               } else if ( OpenFile (szFileName, pof, OF_CREATE|OF_EXIST) != -1) {
-                  wStatus = 0;
-               } else {
-                  MessageBeep(0);
-                  break;
-               }
-
-               lstrcpyA( szFileName, AnsiNext(strrchr(pof->szPathName,'\\')));
-               OemToAnsi(szFileName, szFileName);
-               EndDialog (hDlg, TRUE);
-               break;
-            
-            case IDCANCEL:
-               EndDialog (hDlg, FALSE);
-               break;
-
-            default:
-               return FALSE;
-      }
-
-      default:
-         return FALSE;
+            ::lstrcpy(szFileName, AnsiNext(strrchr(pof->szPathName,'\\')));
+            ::OemToAnsi(szFileName, szFileName);
+#endif
+            ::EndDialog(hDlg, TRUE);
+            break;
+        case IDCANCEL:
+            ::EndDialog(hDlg, FALSE);
+            break;
+        default:
+            return FALSE;
+        }
+        break;
+    default:
+        return FALSE;
    }
 
    return TRUE;
 }
+
+#ifndef WINCE
+int DoFileSaveDlg(HINSTANCE hInst, HWND hWnd, LPCTSTR szFileSpecIn,
+                       LPCTSTR szDefExtIn, int *pwStatusOut,
+                       LPTSTR szFileNameOut, POFSTRUCT pofIn)
+{
+    lstrcpy(szFileSpec, szFileSpecIn);
+    lstrcpy(szDefExt, szDefExtIn);
+    pof = pofIn;
+    int iReturn = DialogBox(hInst, MAKEINTRESOURCE(FILESAVE), hWnd, FileSaveDlgProc);
+    lstrcpy(szFileNameOut, szFileName);
+    *pwStatusOut = wStatus;
+    return iReturn;
+}
+#endif

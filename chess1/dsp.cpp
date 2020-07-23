@@ -24,13 +24,13 @@
   notice must be preserved on all copies.
 */
 
-
+#include <cstdio>
 #include "gnuchess.h"
 #include "defs.h"
 #include "chess.h"
 #include "resource.h"
 #include "globals.h"
-#include <time.h>
+#include <ctime>
 
 #if 0
 static short Stboard[64] =
@@ -71,6 +71,28 @@ void ExitChess (void)
 void Die(int)
 {
 }
+
+#ifdef UNICODE
+#ifndef _tcscat
+#define _tcscat wcscat
+#endif
+#ifndef _tcscpy
+#define _tcscpy wcscpy
+#endif
+#ifndef _tcscmp
+#define _tcscmp wcscmp
+#endif
+#else
+#ifndef _tcscat
+#define _tcscat strcat
+#endif
+#ifndef _tcscpy
+#define _tcscpy strcpy
+#endif
+#ifndef _tcscmp
+#define _tcscmp strcmp
+#endif
+#endif
 
 void TerminateSearch(int)
 {
@@ -124,19 +146,19 @@ void algbr(short int f, short int t, short int flag)
           mvstr[2][2] = mvstr[1][1] = mvstr[0][2];      /* to column */
           mvstr[2][3] = mvstr[1][2] = mvstr[0][3];      /* to row */
           mvstr[2][4] = mvstr[1][3] = '\0';
-          strcpy (mvstr[3], mvstr[2]);
+          _tcscpy(mvstr[3], mvstr[2]);
           mvstr[3][1] = mvstr[0][0];
           if (flag & cstlmask)
             {
               if (t > f)
                 {
-                  strcpy (mvstr[1], "o-o");
-                  strcpy (mvstr[2], "O-O");
+                  _tcscpy (mvstr[1], TEXT("o-o"));
+                  _tcscpy (mvstr[2], TEXT("O-O"));
                 }
               else
                 {
-                  strcpy (mvstr[1], "o-o-o");
-                  strcpy (mvstr[2], "O-O-O");
+                  _tcscpy (mvstr[1], TEXT("o-o-o"));
+                  _tcscpy (mvstr[2], TEXT("O-O-O"));
                 }
             }
         }
@@ -145,34 +167,35 @@ void algbr(short int f, short int t, short int flag)
     mvstr[0][0] = mvstr[1][0] = mvstr[2][0] = mvstr[3][0] = '\0';
 }
 
-int
-VerifyMove (HWND hWnd, char *s, short int iop, short unsigned int *mv)
-
 /*
    Compare the string 's' to the list of legal moves available for the
    opponent. If a match is found, make the move on the board.
 */
-
+int
+VerifyMove(HWND hWnd, TCHAR *s, short int iop, WORD *mv)
 {
-  static short pnt, tempb, tempc, tempsf, tempst, cnt;
-  static struct leaf xnode;
-  struct leaf  far *node;
+    static short pnt, tempb, tempc, tempsf, tempst, cnt;
+    static struct leaf xnode;
+    struct leaf  far *node;
 
-  *mv = 0;
-  if (iop == 2)
+    *mv = 0;
+
+    if (iop == 2)
     {
-      UnmakeMove (opponent, &xnode, &tempb, &tempc, &tempsf, &tempst);
-      return (false);
+        UnmakeMove(opponent, &xnode, &tempb, &tempc, &tempsf, &tempst);
+        return (false);
     }
-  cnt = 0;
-  MoveList (opponent, 2);
-  pnt = TrPnt[2];
-  while (pnt < TrPnt[3])
+    cnt = 0;
+    MoveList (opponent, 2);
+    pnt = TrPnt[2];
+
+    while (pnt < TrPnt[3])
     {
       node = &Tree[pnt++];
       algbr (node->f, node->t, (short) node->flags);
-      if (strcmp (s, mvstr[0]) == 0 || strcmp (s, mvstr[1]) == 0 ||
-          strcmp (s, mvstr[2]) == 0 || strcmp (s, mvstr[3]) == 0)
+
+      if (_tcscmp(s, mvstr[0]) == 0 || _tcscmp(s, mvstr[1]) == 0 ||
+          _tcscmp (s, mvstr[2]) == 0 || _tcscmp (s, mvstr[3]) == 0)
         {
           cnt++;
           xnode = *node;
@@ -222,9 +245,11 @@ VerifyMove (HWND hWnd, char *s, short int iop, short unsigned int *mv)
   the elapsed time exceeds the target (ResponseTime+ExtraTime) then set
   timeout to true which will terminate the search.
 */
-void ElapsedTime (short int iop)
+void ElapsedTime(short int iop)
 {
+#ifndef WINCE
     et = ::time(0) - time0;
+#endif
 
     if (et < 0)
         et = 0;
@@ -233,13 +258,17 @@ void ElapsedTime (short int iop)
 
     if (et > et0 || iop == 1)
     {
-      if (et > ResponseTime + ExtraTime && Sdepth > 1)
-        flag.timeout = true;
-      et0 = et;
-      if (iop == 1)
+        if (et > ResponseTime + ExtraTime && Sdepth > 1)
+            flag.timeout = true;
+
+        et0 = et;
+
+        if (iop == 1)
         {
-          time0 = time(0);
-          et0 = 0;
+#ifndef WINCE
+            time0 = time(0);
+#endif
+            et0 = 0;
         }
       if (et > 0)
         /* evrate used to be Nodes / cputime I dont` know why */
@@ -270,26 +299,27 @@ void SetTimeControl()
 
 void GetGame (HWND hWnd, char *fname)
 {
-  FILE *fd;
-  int c;
-  short sq;
-  unsigned short m;
+    FILE *fd;
+    int c;
+    short sq;
+    unsigned short m;
 
-  struct GameRec tmp_rec;
+    struct GameRec tmp_rec;
 
-  if ((fd = fopen (fname, "r")) == NULL)
+    if ((fd = fopen (fname, "r")) == NULL)
     {
-      SMessageBox (hWnd, IDS_LOADFAILED, IDS_CHESS);
-      return;
+        SMessageBox (hWnd, IDS_LOADFAILED, IDS_CHESS);
+        return;
     }
 
-  fscanf (fd, "%hd%hd%hd", &computer, &opponent, &Game50);
-  fscanf (fd, "%hd%hd", &castld[white], &castld[black]);
-  fscanf (fd, "%hd%hd", &TCflag, &OperatorTime);
-  fscanf (fd, "%ld%ld%hd%hd",
+    fscanf (fd, "%hd%hd%hd", &computer, &opponent, &Game50);
+    fscanf (fd, "%hd%hd", &castld[white], &castld[black]);
+    fscanf (fd, "%hd%hd", &TCflag, &OperatorTime);
+    fscanf (fd, "%ld%ld%hd%hd",
           &TimeControl.clock[white], &TimeControl.clock[black],
           &TimeControl.moves[white], &TimeControl.moves[black]);
-  for (sq = 0; sq < 64; sq++)
+
+    for (sq = 0; sq < 64; sq++)
     {
       fscanf (fd, "%hd%hd", &m, &Mvboard[sq]);
       board[sq] = (m >> 8);
@@ -335,7 +365,7 @@ void SaveGame (HWND hWnd, char *fname)
 
     if (NULL == (fd = fopen (fname, "w")))
     {
-        ShowMessage(hWnd, "Not saved");
+        ShowMessage(hWnd, TEXT("Not saved"));
         return;
     }
 
@@ -376,7 +406,7 @@ ListGame (HWND hWnd, char *fname)
   short i, f, t;
 
   if ( (fd = fopen (fname, "w")) == NULL) {
-      ShowMessage (hWnd, "Cannot write chess.lst");
+      ShowMessage(hWnd, TEXT("Cannot write chess.lst"));
       return;
   }
 

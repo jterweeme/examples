@@ -24,12 +24,6 @@
 #define CHESS_H
 #include <windows.h>
 
-struct PIECEBITMAP {
-   HBITMAP piece;
-   HBITMAP mask;
-   HBITMAP outline;
-};
-
 #define BLACK 1
 #define WHITE 2
 

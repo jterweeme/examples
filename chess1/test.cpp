@@ -24,26 +24,28 @@
 #include "gnuchess.h"
 #include "chess.h"
 #include "defs.h"
-#include <time.h>
+#include <ctime>
 
-void
-TestSpeed(HWND hWnd, int cnt, void (*f) (short int side, short int ply))
+void TestSpeed(HWND hWnd, int cnt, void (*f) (short int side, short int ply))
 {
-  short i;
-  long t1, t2, evrate;
-  char tmp[40];
+    long t2, evrate;
+    TCHAR tmp[40];
+    long t1;
+#ifndef WINCE
+	t1 = time(0);
+#endif
 
-  t1 = time (0);
-  for (i = 0; i < 10000; i++)
+    for (short i = 0; i < 10000; i++)
     {
-      f (opponent, 2);
+        f(opponent, 2);
     }
-  t2 = time (0);
-  NodeCnt = 10000L * (TrPnt[3] - TrPnt[2]);
-  evrate = NodeCnt / (t2 - t1);
-
-  wsprintfA( tmp, "Nodes= %8ld, Nodes/Sec= %5ld", NodeCnt, evrate);
-  SetDlgItemTextA(hWnd, cnt, tmp);
+#ifndef WINCE
+    t2 = time(0);
+#endif
+    NodeCnt = 10000L * (TrPnt[3] - TrPnt[2]);
+    evrate = NodeCnt / (t2 - t1);
+    wsprintf(tmp, TEXT("Nodes= %8ld, Nodes/Sec= %5ld"), NodeCnt, evrate);
+    SetDlgItemText(hWnd, cnt, tmp);
 }
 
 static INT_PTR CALLBACK
@@ -53,10 +55,10 @@ TestDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
 
     switch (message)
     {
-    case WM_INITDIALOG:		   /* message: initialize dialog box */
-        SetDlgItemTextA( hDlg, 100, " ");
-        SetDlgItemTextA( hDlg, 101, " ");
-        PostMessage ( hDlg, (WM_USER+1), 0, 0);
+    case WM_INITDIALOG:
+        SetDlgItemText(hDlg, 100, TEXT(" "));
+        SetDlgItemText(hDlg, 101, TEXT(" "));
+        PostMessage(hDlg, WM_USER + 1, 0, 0);
         return (TRUE);
     case (WM_USER+1):
         hCursor = ::SetCursor(::LoadCursor(NULL, IDC_WAIT) );
@@ -67,7 +69,7 @@ TestDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
         ::SetCursor(hCursor);
         break;
     case WM_SYSCOMMAND:
-        if ((wParam&0xfff0) == SC_CLOSE )
+        if ((wParam&0xfff0) == SC_CLOSE)
         {
             ::EndDialog(hDlg, NULL);
             return TRUE;
@@ -84,3 +86,4 @@ int TestDialog(HWND hWnd, HINSTANCE hInst)
     status = DialogBox(hInst, MAKEINTRESOURCE(TEST), hWnd, TestDlgProc);
     return status;
 }
+

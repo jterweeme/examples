@@ -69,6 +69,7 @@ static TCHAR np08lX[] = TEXT("%08lX");
 
 void SaveColors(LPTSTR appname)
 {
+#ifndef WINCE
     TCHAR ostring[30];
     wsprintf(ostring, np08lX, clrBackGround);
     WritePrivateProfileString(appname, lpBackGround, ostring, lpChessini);
@@ -82,12 +83,14 @@ void SaveColors(LPTSTR appname)
     WritePrivateProfileString(appname, lpWhitePiece, ostring,lpChessini);
     wsprintf(ostring, np08lX, clrText);
     WritePrivateProfileString(appname, lpText,ostring,lpChessini);
+#endif
 }
 
 void GetStartupColors(LPCTSTR appname)
 {
-    TCHAR istring[30];
     SetStandardColors();
+#ifndef WINCE
+	TCHAR istring[30];
     GetPrivateProfileString(appname, lpBackGround, lpDefault,
                             istring, sizeof(istring), lpChessini);
 
@@ -123,6 +126,7 @@ void GetStartupColors(LPCTSTR appname)
 
     if (_tcscmp(istring, lpDefault) != 0)
         _stscanf(istring, np08lX, &clrText);
+#endif
 }
 
 static TCHAR lpWBGC[] = TEXT("Window background color");
@@ -281,7 +285,9 @@ ColorDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 int ColorDialog(HWND hWnd, HINSTANCE hInst, WPARAM Param)
 {
     int status;
+#ifndef WINCE
     status = DialogBoxParamA(hInst, MAKEINTRESOURCEA(COLOR), hWnd, ColorDlgProc, Param);
+#endif
     return status;
 }
 

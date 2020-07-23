@@ -27,30 +27,26 @@
 
 #include "chess.h"
 #include "defs.h"
+#include "globals.h"
 #include <windows.h>
 #include <stdio.h>
-
-extern struct PIECEBITMAP pieces[6];
 
 #define PIECE_XAXIS 32
 #define PIECE_YAXIS 32
 
-static void QuerySqCenter ( short x, short y, POINT *pptl);
-static short ConvertCoordToIndex ( short x, short y);
-static void PieceOriginFromCenter ( POINT *pptl);
-static void QuerySqPieceOrigin ( short x, short y, POINT *pptl);
-static void DrawOnePiece ( HDC hDC, short x, short y, struct PIECEBITMAP *piece, DWORD color);
-static void ShowPiece ( HDC hDC, POINT *pptl, struct PIECEBITMAP *Piece_bitmap,
-                  DWORD Color );
+static short ConvertCoordToIndex(short x, short y);
+static void PieceOriginFromCenter(POINT *pptl);
+static void QuerySqPieceOrigin(short x, short y, POINT *pptl);
+static void DrawOnePiece(HDC hDC, short x, short y, struct PIECEBITMAP *piece, DWORD color);
+static void ShowPiece(HDC hDC, POINT *pptl, struct PIECEBITMAP *Piece_bitmap, DWORD Color);
 
-static void QuerySqCenter ( short x, short y, POINT *pptl)
+static void QuerySqCenter(short x, short y, POINT *pptl)
 {
     POINT aptl[4];
-    QuerySqCoords ( x, y, aptl );
+    QuerySqCoords(x, y, aptl);
     pptl->x = (aptl[0].x + aptl[1].x + aptl[2].x + aptl[3].x)/4;
     pptl->y = (aptl[0].y + aptl[2].y)/2;
 }
-
 
 static void PieceOriginFromCenter ( POINT *pptl)
 {
@@ -60,10 +56,9 @@ static void PieceOriginFromCenter ( POINT *pptl)
 
 static void QuerySqPieceOrigin ( short x, short y, POINT *pptl)
 {
-      QuerySqCenter ( x, y, pptl);
-      PieceOriginFromCenter (pptl);
+    QuerySqCenter(x, y, pptl);
+    PieceOriginFromCenter (pptl);
 }
-
 
 /*
    Draw a piece in the specificed point

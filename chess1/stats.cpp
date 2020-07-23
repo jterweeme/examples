@@ -21,44 +21,42 @@
   notice must be preserved on all copies.
 */
 
-#include "gnuchess.h"
+#include "globals.h"
 #include "resource.h"
 
-INT_PTR CALLBACK
-StatDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK
+StatDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
 {
-    (void)lParam;
-
     switch (message)
     {
     case WM_INITDIALOG:
-        SetDlgItemTextA(hDlg, DEPTHTEXT,    " ");
-        SetDlgItemTextA(hDlg, POSITIONTEXT, " ");
-        SetDlgItemTextA(hDlg, NODETEXT,     " ");
-        SetDlgItemTextA(hDlg, BSTLINETEXT,  " ");
-        SetDlgItemTextA(hDlg, SCORETEXT,    " ");
-        SetDlgItemTextA(hDlg, NODESECTEXT,  " ");
+        SetDlgItemText(hDlg, DEPTHTEXT,    TEXT(" "));
+        SetDlgItemText(hDlg, POSITIONTEXT, TEXT(" "));
+        SetDlgItemText(hDlg, NODETEXT,     TEXT(" "));
+        SetDlgItemText(hDlg, BSTLINETEXT,  TEXT(" "));
+        SetDlgItemText(hDlg, SCORETEXT,    TEXT(" "));
+        SetDlgItemText(hDlg, NODESECTEXT,  TEXT(" "));
         return (TRUE);
     case WM_SYSCOMMAND:
-        if ( (wParam&0xfff0) == SC_CLOSE )
+        if ((wParam&0xfff0) == SC_CLOSE)
         {
-               DestroyWindow (hDlg);
-	   	      return TRUE;
-         }
-         break;
-
-      case WM_DESTROY:
-         hStats = NULL;
-         flag.post = false;
-         break;
+            ::DestroyWindow(hDlg);
+            return TRUE;
+        }
+        break;
+    case WM_DESTROY:
+        hStats = NULL;
+        flag.post = false;
+        break;
     }
 
-    return (FALSE);
+    return FALSE;
 }
 
 int StatDialog(HWND hWnd, HINSTANCE hInst)
 {
     CreateDialog(hInst, MAKEINTRESOURCE(STATS), hWnd, StatDlgProc);
+	return 0;
     //return hStats;
 }
 
