@@ -1,27 +1,30 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-#include "gnuchess.h"
+#include "chess.h"
 #include <cstdio>
 
-struct PIECEBITMAP
-{
-    HBITMAP piece;
-    HBITMAP mask;
-    HBITMAP outline;
-};
-
-#if ttblsz
+extern struct BookEntry *Book;
 extern DWORD hashkey, hashbd;
-extern struct hashval far *hashcode;
-extern struct hashentry far *ttable;
-#endif
-
+extern struct hashval *hashcode;
+extern struct hashentry *ttable;
 extern FILE *hashfile;
+extern struct leaf *Tree, *root;
+extern short TrPnt[maxdepth];
 extern short PieceList[2][16], PawnCnt[2][8];
+extern short castld[2], Mvboard[64];
+extern short svalue[64];
+extern struct flags flag;
+extern short opponent, computer, Awindow, Bwindow, dither, INCscore;
+extern long ResponseTime, ExtraTime, Level, et, et0, time0, ft;
 extern long NodeCnt, ETnodes, EvalNodes, HashCnt, FHashCnt, HashCol;
 extern short player, xwndw, rehash;
-extern short TCmoves, TCminutes, TCflag;
+extern struct GameRec *GameList;
+extern short Sdepth, GameCnt, Game50, MaxSearchDepth;
+extern short epsquare, contempt;
+extern struct TimeControlRec TimeControl;
+extern short TCmoves, TCminutes, TCflag, OperatorTime;
+extern WORD hint, PrVar[maxdepth];
 extern short Pindex[64];
 extern short PieceCnt[2];
 extern short c1, c2, *atk1, *atk2, *PC1, *PC2, atak[2][64];
@@ -44,8 +47,10 @@ extern short ATAKD, HUNGP, HUNGX, KCASTLD, KMOVD, XRAY, PINVAL;
 extern short stage, stage2, Developed[2];
 extern short PawnBonus, BishopBonus, RookBonus;
 extern short *distdata, *taxidata;
+extern short board[64], color[64];
 extern BYTE *nextpos;
 extern BYTE *nextdir;
+extern const short otherside[3];
 extern HWND hComputerColor;
 extern HWND hComputerMove;
 extern HWND hWhosTurn;

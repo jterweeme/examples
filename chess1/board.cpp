@@ -24,7 +24,7 @@
   notice must be preserved on all copies.
 */
 
-#include "defs.h"
+#include "protos.h"
 
 /* All units defined in pixels */
 
@@ -36,7 +36,7 @@
 #define BRD_BACKMARGIN  5
 #define BRD_FRONTMARGIN 5
 
-static void DrawOneSquare ( HDC hDC, short x, short y);
+static void DrawOneSquare(HDC hDC, short x, short y);
 static int HilitSq;
 
 void QueryBoardSize(POINT *pptl)
@@ -81,105 +81,88 @@ static void DrawOneSquare ( HDC hDC, short x, short y)
 
 void Draw_Board(HDC hDC, int reverse, DWORD DarkColor, DWORD LightColor )
 {
-    int x, y, OldPolyMode;
     POINT aptl[4];
 
     HBRUSH hBrush_lt = ::CreateSolidBrush(LightColor);
     HBRUSH hBrush_dk = ::CreateSolidBrush(DarkColor);
 
-    HBRUSH hOldBrush = HBRUSH(SelectObject(hDC, hBrush_lt));
-    HPEN hOldPen = HPEN(SelectObject(hDC, GetStockObject (BLACK_PEN)));
-#ifndef WINCE
-    OldPolyMode = SetPolyFillMode(hDC, WINDING);
-#endif
+    HBRUSH hOldBrush = HBRUSH(::SelectObject(hDC, hBrush_lt));
+    HPEN hOldPen = HPEN(::SelectObject(hDC, ::GetStockObject(BLACK_PEN)));
+    int OldPolyMode = ::SetPolyFillMode(hDC, WINDING);
 
-    for (y=0; y<8; y++)
+    for (int y = 0; y < 8; y++)
     {
-      for (x=0; x<8; x++)
-      {
-         if (reverse == 0)
-         {
-            SelectObject(hDC, ((x+y)&1) ? hBrush_lt : hBrush_dk);
-            DrawOneSquare(hDC, x, y);
-         }
-         else
-         {
-            SelectObject(hDC, (((7-x)+(7-y))&1) ? hBrush_lt : hBrush_dk);
-            DrawOneSquare(hDC, 7-x, 7-y);
-         }
-      }
-   }
+        for (int x = 0; x < 8; x++)
+        {
+            if (reverse == 0)
+            {
+                SelectObject(hDC, ((x+y)&1) ? hBrush_lt : hBrush_dk);
+                DrawOneSquare(hDC, x, y);
+            }
+            else
+            {
+                SelectObject(hDC, (((7-x)+(7-y))&1) ? hBrush_lt : hBrush_dk);
+                DrawOneSquare(hDC, 7-x, 7-y);
+            }
+        }
+    }
 
-/* Now draw the bottom edge of the board */
+    /* Now draw the bottom edge of the board */
+    for (int x = 0; x < 8; x++)
+    {
+        QuerySqCoords(x, 0, aptl);
+        aptl[2].x = aptl[1].x;
+        aptl[2].y = aptl[1].y + BRD_EDGE;
+        aptl[3].x = aptl[0].x;
+        aptl[3].y = aptl[0].y + BRD_EDGE;
+        SelectObject(hDC, x & 1 ? hBrush_lt : hBrush_dk);
+        Polygon(hDC, aptl, 4);
+    }
 
-   for (x=0; x<8; x++) {
-      QuerySqCoords ( x,0, aptl);
-
-      aptl[2].x = aptl[1].x;
-      aptl[2].y = aptl[1].y + BRD_EDGE;
-
-      aptl[3].x = aptl[0].x;
-      aptl[3].y = aptl[0].y + BRD_EDGE;
-
-      SelectObject ( hDC, (x&1) ? hBrush_lt : hBrush_dk);
-      Polygon ( hDC, aptl, 4 );
-   }
-#ifndef WINCE
-   SetPolyFillMode (hDC, OldPolyMode);
-#endif
-   SelectObject(hDC, hOldPen);
-   SelectObject(hDC, hOldBrush);
-
-   DeleteObject(hBrush_lt);
-   DeleteObject(hBrush_dk);
+    SetPolyFillMode (hDC, OldPolyMode);
+    SelectObject(hDC, hOldPen);
+    SelectObject(hDC, hOldBrush);
+    DeleteObject(hBrush_lt);
+    DeleteObject(hBrush_dk);
 }
 
 void DrawCoords(HDC hDC, int reverse, DWORD clrBackGround, DWORD clrText)
 {
-    HFONT hOldFont;
-    int i, OldBkMode;
-    DWORD OldBkColor, OldTextColor;
-    short xchar, ychar;
+    int i;
     POINT pt;
     TEXTMETRIC tm;
-#ifndef WINCE
-    HFONT hFont = CreateFont( 13, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+
+    HFONT hFont = ::CreateFont(13, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
                         ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
                         DEFAULT_QUALITY, FIXED_PITCH | FF_SWISS, TEXT("Helv"));
 
-    hOldFont = HFONT(SelectObject ( hDC, hFont));
-#endif
-    OldBkColor = SetBkColor ( hDC, clrBackGround);
-    OldBkMode = SetBkMode ( hDC, TRANSPARENT);
-    OldTextColor = SetTextColor (hDC, clrText);
+    HFONT hOldFont = HFONT(::SelectObject(hDC, hFont));
+    DWORD OldBkColor = SetBkColor(hDC, clrBackGround);
+    int OldBkMode = SetBkMode(hDC, TRANSPARENT);
+    DWORD OldTextColor = SetTextColor(hDC, clrText);
+    ::GetTextMetrics(hDC, &tm);
+    short xchar = tm.tmMaxCharWidth;
+    short ychar = tm.tmHeight;
 
-    GetTextMetrics(hDC, &tm);
-    xchar = tm.tmMaxCharWidth;
-    ychar = tm.tmHeight;
-
-    for ( i=0; i<8; i++)
+    for (i = 0; i < 8; i++)
     {
         QuerySqOrigin(0, i, &pt);
-#ifndef WINCE
+
         TextOut(hDC, pt.x-xchar, pt.y-BRD_VERT/2-ychar/2,
               (reverse ? TEXT("87654321") + i : TEXT("12345678") +i) ,1);
-#endif
-        QuerySqOrigin (i,0, &pt );
-#ifndef WINCE
+
+        QuerySqOrigin(i, 0, &pt);
+
         TextOut(hDC, pt.x+BRD_HORZFRONT/2-xchar/2, pt.y+BRD_EDGE,
               (reverse ? TEXT("hgfedcba") + i : TEXT("abcdefgh") + i), 1);
-#endif
     }
    
-    SelectObject(hDC, hOldFont);
-#ifndef WINCE
-    DeleteObject(hFont);
-#endif
-    SetBkColor(hDC, OldBkColor);
-    SetBkMode(hDC, OldBkMode);
-    SetTextColor(hDC, OldTextColor);
+    ::SelectObject(hDC, hOldFont);
+    ::DeleteObject(hFont);
+    ::SetBkColor(hDC, OldBkColor);
+    ::SetBkMode(hDC, OldBkMode);
+    ::SetTextColor(hDC, OldTextColor);
 }
-
 
 void DrawWindowBackGround(HDC hDC, HWND hWnd, DWORD bkcolor)
 {
@@ -197,18 +180,12 @@ void HiliteSquare(HWND hWnd, int Square)
     POINT aptl[4];
     int y = Square / 8;
     int x = Square % 8;
-    QuerySqCoords(x, y, aptl+0);
-#ifndef WINCE
+    QuerySqCoords(x, y, aptl + 0);
     HRGN hRgn = CreatePolygonRgn(aptl, 4, WINDING);
-#endif
     HDC hDC = GetDC(hWnd);
-#ifndef WINCE
     InvertRgn(hDC, hRgn);
-#endif
     ReleaseDC(hWnd, hDC);
-#ifndef WINCE
     DeleteObject(hRgn);
-#endif
     HilitSq = Square;
 }
 

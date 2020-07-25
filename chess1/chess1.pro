@@ -10,8 +10,8 @@ SOURCES += about.cpp\
     globals.cpp\
     hittest.cpp\
     initiali.cpp\
-    initmenu.cpp\
     main.cpp\
+    mainwin.cpp\
     manual.cpp\
     mswdsp.cpp\
     numdlg.cpp\
@@ -23,13 +23,16 @@ SOURCES += about.cpp\
     stats.cpp\
     test.cpp\
     timecnt.cpp\
+    toolbox.cpp\
     winclass.cpp
 
 HEADERS += chess.h\
-    defs.h\
     globals.h\
     gnuchess.h\
+    mainwin.h\
+    protos.h\
     resource.h\
+    toolbox.h\
     winclass.h
 
 RC_FILE += chess.rc

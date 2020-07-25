@@ -9,6 +9,7 @@ private:
     WNDCLASS _wc;
 public:
     WinClass(HINSTANCE hInstance, WNDPROC wndProc, LPCTSTR className);
+    HINSTANCE hInstance() const;
     void registerClass();
 };
 

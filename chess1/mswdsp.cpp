@@ -24,19 +24,17 @@
   notice must be preserved on all copies.
 */
 
-#include <cstdio>
-#include "gnuchess.h"
-#include "chess.h"
-#include "defs.h"
+#include "protos.h"
 #include "resource.h"
 #include "globals.h"
+#include "gnuchess.h"
 
 static LPCTSTR ColorStr[2] = {TEXT("White"), TEXT("Black")};
 
 void ShowPlayers()
 {
     /* display in the status line what color the computer is playing */
-    SetWindowText( hComputerColor, (computer == black) ? TEXT("Computer is black") : TEXT("Computer is white"));
+    SetWindowText(hComputerColor, (computer == black) ? TEXT("Computer is black") : TEXT("Computer is white"));
 }
 
 void ShowDepth(char ch)
@@ -45,8 +43,8 @@ void ShowDepth(char ch)
 
     if (hStats)
     {
-        wsprintf(tmp, TEXT("%d%c"), Sdepth, ch);
-        SetDlgItemText(hStats, DEPTHTEXT, tmp);
+        ::wsprintf(tmp, TEXT("%d%c"), Sdepth, ch);
+        ::SetDlgItemText(hStats, DEPTHTEXT, tmp);
     }
 }
 
@@ -65,39 +63,38 @@ void ShowMessage(HWND hWnd, LPCTSTR s)
     MessageBox(hWnd, s, TEXT("Chess"), MB_OK | MB_ICONEXCLAMATION | MB_APPLMODAL);
 }
 
-void SMessageBox(HWND hWnd, int str_num, int str1_num )
+void SMessageBox(HINSTANCE hInstance, HWND hWnd, int str_num, int str1_num )
 {
     TCHAR str[80], str1[20];
-    LoadString(hInst, str_num, str, sizeof(str));
-    LoadString(hInst, str1_num, str1, sizeof ( str1 ) );
-    MessageBox(hWnd, str, str1, MB_OK | MB_ICONEXCLAMATION | MB_APPLMODAL );
+    ::LoadString(hInstance, str_num, str, sizeof(str));
+    ::LoadString(hInstance, str1_num, str1, sizeof ( str1 ) );
+    ::MessageBox(hWnd, str, str1, MB_OK | MB_ICONEXCLAMATION | MB_APPLMODAL );
 }
 
 void ClearMessage()
 {
 }
 
-void ShowCurrentMove(short int pnt, short int f, short int t)
+void ShowCurrentMove(short pnt, short f, short t)
 {
     TCHAR tmp[30];
 
     if (hStats)
     {
         algbr(f, t, false);
-        wsprintf(tmp, TEXT("(%2d) %4s"), pnt, (TCHAR *)mvstr[0]);
-        SetDlgItemText(hStats, POSITIONTEXT, tmp);
+        ::wsprintf(tmp, TEXT("(%2d) %4s"), pnt, (TCHAR *)mvstr[0]);
+        ::SetDlgItemText(hStats, POSITIONTEXT, tmp);
     }
 }
 
 void ShowSidetoMove(void)
 {
     TCHAR tmp[30];
-    wsprintf(tmp, TEXT("It is %s's turn"), (TCHAR *)(ColorStr[player]));
-    SetWindowText(hWhosTurn, (LPTSTR)tmp);
+    ::wsprintf(tmp, TEXT("It is %s's turn"), (TCHAR *)(ColorStr[player]));
+    ::SetWindowText(hWhosTurn, (LPTSTR)tmp);
 }
 
-void
-ShowPrompt (void)
+void ShowPrompt()
 {
 }
 
@@ -107,10 +104,10 @@ void ShowNodeCnt(long int NodeCnt, long int evrate)
 
     if (hStats)
     {
-        wsprintf(tmp, TEXT("%-8ld"), NodeCnt);
-        SetDlgItemText(hStats, NODETEXT, tmp);
-        wsprintf(tmp, TEXT("%-5ld"), evrate);
-        SetDlgItemText(hStats, NODESECTEXT, tmp);
+        ::wsprintf(tmp, TEXT("%-8ld"), NodeCnt);
+        ::SetDlgItemText(hStats, NODETEXT, tmp);
+        ::wsprintf(tmp, TEXT("%-5ld"), evrate);
+        ::SetDlgItemText(hStats, NODESECTEXT, tmp);
     }
 }  
 
@@ -132,9 +129,9 @@ void ShowResults(short int score, PWORD bstline, char ch)
             if (ply==5 || ply==9 || ply==13 || ply==17)
                 s += wsprintf(str + s, TEXT("\n"));
 
-            s += wsprintf(str + s, TEXT("%-5s "), (TCHAR *) mvstr[0]);
+            s += ::wsprintf(str + s, TEXT("%-5s "), (TCHAR *)(mvstr[0]));
         }
-        SetDlgItemText( hStats, BSTLINETEXT, (LPTSTR) str);
+        ::SetDlgItemText(hStats, BSTLINETEXT, (LPTSTR) str);
     }
 }
 
@@ -150,18 +147,19 @@ void OutputMove(HWND hWnd)
     SetWindowText(hComputerMove, tmp);
 
     if (root->flags & draw)
-        SMessageBox ( hWnd, IDS_DRAWGAME,IDS_CHESS);
+        SMessageBox(hInst, hWnd, IDS_DRAWGAME,IDS_CHESS);
     else if (root->score == -9999)
-        SMessageBox ( hWnd, IDS_YOUWIN, IDS_CHESS);
-  else if (root->score == 9998)
-    SMessageBox ( hWnd, IDS_COMPUTERWIN,IDS_CHESS);
-  else if (root->score < -9000)
-    SMessageBox ( hWnd, IDS_MATESOON,IDS_CHESS);
-  else if (root->score > 9000)
-    SMessageBox ( hWnd, IDS_COMPMATE,IDS_CHESS);
-  if (flag.post)
+        SMessageBox(hInst, hWnd, IDS_YOUWIN, IDS_CHESS);
+    else if (root->score == 9998)
+        SMessageBox(hInst, hWnd, IDS_COMPUTERWIN,IDS_CHESS);
+    else if (root->score < -9000)
+        SMessageBox(hInst, hWnd, IDS_MATESOON,IDS_CHESS);
+    else if (root->score > 9000)
+        SMessageBox(hInst, hWnd, IDS_COMPMATE,IDS_CHESS);
+
+    if (flag.post)
     {
-      ShowNodeCnt (NodeCnt, evrate);
+        ShowNodeCnt(NodeCnt, evrate);
 /*
       for (i = 1999; i >= 0 && Tree[i].f == 0 && Tree[i].t == 0; i--);
       printz ("Max Tree= %5d", i);
@@ -187,13 +185,12 @@ void UpdateClocks()
     if (s < 0)
         s = 0;
 
-  wsprintf(tmp, TEXT("%0d:%02d"), m, s);
+  ::wsprintf(tmp, TEXT("%0d:%02d"), m, s);
 
-  if ( player == white ) {
-      SetWindowText(hClockHuman, tmp);
-  } else {
-      SetWindowText(hClockComputer, tmp);
-  }
+  if (player == white)
+      ::SetWindowText(hClockHuman, tmp);
+  else
+      ::SetWindowText(hClockComputer, tmp);
 
   if (flag.post)
     ShowNodeCnt (NodeCnt, evrate);
@@ -233,47 +230,50 @@ void DrawPiece(HWND hWnd, short int f)
 }
 
 void
-UpdateDisplay(HWND hWnd, short int f, short int t, short int redraw, short int isspec)
+UpdateDisplay(HWND hWnd, short f, short t, short redraw, short isspec)
 {
-    short sq;
-  
-    for (sq=0; sq<64; sq++)
+    for (short sq=0; sq<64; sq++)
     {
         boarddraw[sq] = board[sq];
         colordraw[sq] = color[sq];
     }
 
-  if (redraw){
-      InvalidateRect ( hWnd, NULL, TRUE);
-      ShowPlayers ();
-      UpdateWindow ( hWnd );
-  } else {
-      DrawPiece (hWnd, f);
-      DrawPiece (hWnd, t);
-      if (isspec & cstlmask)
-        if (t > f)
-          {
-            DrawPiece (hWnd, f + 3);
-            DrawPiece (hWnd, t - 1);
-          }
-        else
-          {
-            DrawPiece (hWnd, f - 4);
-            DrawPiece (hWnd, t + 1);
-          }
-      else if (isspec & epmask)
+    if (redraw)
+    {
+        ::InvalidateRect(hWnd, NULL, TRUE);
+        ShowPlayers();
+        ::UpdateWindow(hWnd);
+    }
+    else
+    {
+        DrawPiece(hWnd, f);
+        DrawPiece(hWnd, t);
+        if (isspec & cstlmask)
         {
-          DrawPiece (hWnd, t - 8);
-          DrawPiece (hWnd, t + 8);
+            if (t > f)
+            {
+                DrawPiece (hWnd, f + 3);
+                DrawPiece (hWnd, t - 1);
+            }
+            else
+            {
+                DrawPiece (hWnd, f - 4);
+                DrawPiece (hWnd, t + 1);
+            }
         }
-      UpdateWindow (hWnd);
+        else if (isspec & epmask)
+        {
+            DrawPiece (hWnd, t - 8);
+            DrawPiece (hWnd, t + 8);
+        }
+        UpdateWindow (hWnd);
     }
 }
 
 void GiveHint(HWND hWnd)
 {
     TCHAR s[40];
-    algbr ((short) (hint >> 8), (short) (hint & 0xFF), false);
+    algbr(short(hint >> 8), short(hint & 0xFF), false);
     lstrcpy(s, TEXT("try "));
     lstrcat(s, mvstr[0]);
     ShowMessage(hWnd, s);

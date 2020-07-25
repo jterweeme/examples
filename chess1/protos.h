@@ -27,64 +27,31 @@
 #ifndef DEFS_H
 #define DEFS_H
 
-#include <windows.h>
+/*function prototypes
+*/
+
+#include "chess.h"
 #include <cstdio>
 
-extern int parse (FILE * fd, short unsigned int *mv, short int side);
-extern void GetOpenings (HWND hWnd);
-extern void OpeningBook (unsigned short int *hint);
-extern void repetition (short int *cnt);
-extern void SelectMove (HWND hWnd, short int side, short int iop);
+extern int parse(FILE *fd, WORD *mv, short side);
+extern void GetOpenings(HINSTANCE hInstance);
+extern void OpeningBook(unsigned short int *hint);
+extern void repetition(short int *cnt);
+extern void SelectMove(HWND hWnd, short side, short iop);
 
-extern int search (HWND hWnd, short int side,
-		   short int ply,
-		   short int depth,
-		   short int alpha,
-		   short int beta,
-		   short unsigned int *bstline,
-		   short int *rpt);
+extern int search (HWND hWnd, short side,
+           short ply, short depth, short alpha,
+           short beta, WORD *bstline, short *rpt);
 
-#if ttblsz
-extern int ProbeTTable (short int side,
-			short int depth,
-			short int *alpha,
-			short int *beta,
-			short int *score);
-extern void PutInTTable (short int side,
-			 short int score,
-			 short int depth,
-			 short int alpha,
-			 short int beta,
-			 short unsigned int mv);
-extern void ZeroTTable (void);
-extern void ZeroRPT (void);
-#ifdef HASHFILE
-extern int ProbeFTable (short int side,
-			short int depth,
-			short int *alpha,
-			short int *beta,
-			short int *score);
-extern void PutInFTable (short int side,
-			 short int score,
-			 short int depth,
-			 short int alpha,
-			 short int beta,
-			 short unsigned int f,
-			 short unsigned int t);
-#endif /* HASHFILE */
-#endif /* ttblsz */
-extern void Initialize_moves (void);
-extern void MoveList (short int side, short int ply);
-extern void CaptureList (short int side, short int ply);
-extern int castle (short int side, short int kf, short int kt, short int iop);
+extern void ZeroTTable();
+extern void ZeroRPT();
+extern void Initialize_moves();
+extern void MoveList(short int side, short int ply);
+extern void CaptureList(short int side, short int ply);
+extern int castle(short int side, short int kf, short int kt, short int iop);
 
-extern void MakeMove (short int side,
-		      struct leaf far * node,
-		      short int *tempb,
-		      short int *tempc,
-		      short int *tempsf,
-		      short int *tempst,
-		      short int *INCscore);
+extern void MakeMove(short side, struct leaf *node, short *tempb,
+              short *tempc, short *tempsf, short *tempst, short *INCscore);
 
 extern void UnmakeMove (short int side, struct leaf *node,
             short int *tempb, short int *tempc, short int *tempsf,
@@ -93,17 +60,12 @@ extern void UnmakeMove (short int side, struct leaf *node,
 extern void InitializeStats (void);
 extern int SqAtakd (short int sq, short int side);
 
-extern int evaluate (short int side,
-		     short int ply,
-		     short int alpha,
-		     short int beta,
-		     short int INCscore,
-		     short int *slk,
-		     short int *InChk);
+extern int evaluate(short side, short ply, short alpha, short beta,
+             short INCscore, short *slk, short *InChk);
 
-extern void ScoreLoneKing (short int side, short int *score);
-extern void ScorePosition (short int side, short int *score);
-extern void ExaminePosition (void);
+extern void ScoreLoneKing(short int side, short int *score);
+extern void ScorePosition(short int side, short int *score);
+extern void ExaminePosition(void);
 extern void UpdateWeights(void);
 extern void Initialize(void);
 extern void InputCommand(void);
@@ -111,28 +73,22 @@ extern void ExitChess(void);
 extern void ClrScreen(void);
 extern void SetTimeControl(void);
 extern void SelectLevel(void);
-
-extern void UpdateDisplay(HWND hWnd, short int f,
-               short int t, short int flag, short int iscastle);
-
+extern void UpdateDisplay(HWND hWnd, short f, short t, short flag, short iscastle);
 extern void ElapsedTime(short int iop);
 extern void ShowSidetoMove(void);
 extern void SearchStartStuff(short int side);
 extern void ShowDepth(char ch);
-
-extern void ShowResults (short int score,
-			 short unsigned int *bstline, char ch);
-
+extern void ShowResults(short score, WORD *bstline, char ch);
 extern void algbr(short int f, short int t, short int flag);
 extern void OutputMove(HWND hWnd);
 extern void ShowCurrentMove(short int pnt, short int f, short int t);
 extern void ShowMessage(HWND hWnd, LPCTSTR s);
-extern void ClrScreen(void);
-extern void gotoXY(short int x, short int y);
-extern void ClrEoln(void);
+extern void ClrScreen();
+extern void gotoXY(short x, short y);
+extern void ClrEoln();
 extern void DrawPiece(HWND hWnd, short int sq);
-extern void UpdateClocks (void);
-extern void ataks(short int side, short int *a);
+extern void UpdateClocks();
+extern void ataks(short side, short *a);
 extern void ListGame(HWND hWnd, char *fname);
 extern void NewGame(HWND hWnd);
 extern void QuerySqSize(POINT *pptl);
@@ -142,7 +98,7 @@ extern void QuerySqCoords(short x, short y, POINT aptl[]);
 extern void Draw_Board(HDC hDC, int reverse, DWORD DarkColor, DWORD LightColor);
 extern void DrawAllPieces(HDC hDC, int reverse, short *pbrd, short *color, DWORD xblack, DWORD xwhite);
 extern void DrawWindowBackGround(HDC hDC, HWND hWnd, DWORD bkcolor);
-extern void InitHitTest(void);
+extern void InitHitTest();
 extern int HitTest(int x, int y);
 extern void HiliteSquare(HWND hWnd, int Square);
 extern void UnHiliteSquare(HWND hWnd, int Square);
@@ -160,23 +116,21 @@ extern void Undo(HWND hWnd);
 extern void GiveHint(HWND hWnd);
 extern int VerifyMove(HWND hWnd, TCHAR *s, short int iop, short unsigned int *mv);
 extern int init_main(HWND hWnd);
-extern void ShowSidetoMove(void);
+extern void ShowSidetoMove();
 extern INT_PTR CALLBACK About(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-extern void Init_Menus(HWND hWnd, WPARAM wParam, LPARAM lParam);
-extern void FreeBook(void);
+extern void FreeBook();
 extern void DrawCoords(HDC hDC, int reverse, DWORD clrBackGround, DWORD clrText);
 extern int TestDialog(HWND hWnd, HINSTANCE hInst);
 extern int StatDialog(HWND hWnd, HINSTANCE hInst);
 extern int PromoteDialog(HWND hWnd, HINSTANCE hInst);
 extern void pick(short int p1, short int p2);
-extern void SMessageBox(HWND hWnd, int str_num, int str1_num );
+extern void SMessageBox(HINSTANCE hInstance, HWND hWnd, int str_num, int str1_num );
 extern void ShowPlayers(void);
 extern void FreeGlobals(void);
 extern void algbr(short int f, short int t, short int flag);
 extern int DoGetNumberDlg(HINSTANCE hInst, HWND hwnd, LPTSTR, int);
 extern int DoManualMoveDlg(HINSTANCE hInst, HWND hWnd, TCHAR *szPrompt);
 
-#ifndef WINCE
 int DoFileOpenDlg(HINSTANCE hInst, HWND hWnd, LPCTSTR szFileSpecIn,
             LPCTSTR szDefExtIn, WORD wFileAttrIn, LPTSTR szFileNameOut,
                        POFSTRUCT pof);
@@ -187,5 +141,4 @@ int DoWildFileOpenDlg (HINSTANCE hInst, HWND hWnd, LPCTSTR szFileSpecIn,
 int DoFileSaveDlg(HINSTANCE hInst, HWND hWnd, LPCTSTR szFileSpecIn,
                        LPCTSTR szDefExtIn, int *pwStatusOut, LPTSTR szFileNameOut,
                        POFSTRUCT pof);
-#endif
 #endif

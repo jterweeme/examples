@@ -21,27 +21,24 @@
   notice must be preserved on all copies.
 */
 
-#include "gnuchess.h"
+#include "globals.h"
 #include "chess.h"
-#include "defs.h"
+#include "protos.h"
+#include "resource.h"
 #include <ctime>
 
 void TestSpeed(HWND hWnd, int cnt, void (*f) (short int side, short int ply))
 {
     long t2, evrate;
     TCHAR tmp[40];
-    long t1;
-#ifndef WINCE
-	t1 = time(0);
-#endif
+    long t1 = time(0);
 
     for (short i = 0; i < 10000; i++)
     {
         f(opponent, 2);
     }
-#ifndef WINCE
+
     t2 = time(0);
-#endif
     NodeCnt = 10000L * (TrPnt[3] - TrPnt[2]);
     evrate = NodeCnt / (t2 - t1);
     wsprintf(tmp, TEXT("Nodes= %8ld, Nodes/Sec= %5ld"), NodeCnt, evrate);
@@ -56,10 +53,10 @@ TestDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
     switch (message)
     {
     case WM_INITDIALOG:
-        SetDlgItemText(hDlg, 100, TEXT(" "));
-        SetDlgItemText(hDlg, 101, TEXT(" "));
-        PostMessage(hDlg, WM_USER + 1, 0, 0);
-        return (TRUE);
+        ::SetDlgItemText(hDlg, 100, TEXT(" "));
+        ::SetDlgItemText(hDlg, 101, TEXT(" "));
+        ::PostMessage(hDlg, WM_USER + 1, 0, 0);
+        return TRUE;
     case (WM_USER+1):
         hCursor = ::SetCursor(::LoadCursor(NULL, IDC_WAIT) );
         ::ShowCursor(TRUE);

@@ -24,7 +24,6 @@
 #include "chess.h"
 #include "resource.h"
 #include "globals.h"
-#include <windows.h>
 
 static int tmpTCmoves;
 static int tmpTCminutes;
@@ -41,44 +40,39 @@ TimeControlDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
         tmpTCmoves   = TCmoves;
         return TRUE;
     case WM_SYSCOMMAND:
-        if ((wParam&0xfff0) == SC_CLOSE)
+        if ((wParam & 0xfff0) == SC_CLOSE)
         {
             EndDialog(hDlg, NULL);
             return TRUE;
         }
         break;
     case WM_COMMAND:
-         switch (wParam) {
-         
-            case IDOK:
-               TCminutes = tmpTCminutes;
-               TCmoves   = tmpTCmoves;
-		         EndDialog(hDlg, 1);
-		         return TRUE;
-               break;
-
-             case IDCANCEL:
-   		      EndDialog(hDlg, NULL);
-	   	      return TRUE;
-               break;
-
-            case TMDLG_1MOV:
-            case TMDLG_10MOV:
-            case TMDLG_20MOV:
-            case TMDLG_40MOV:
-            case TMDLG_60MOV:
-                  tmpTCmoves = wParam - TMDLG_MOV;       
-                  CheckRadioButton ( hDlg, TMDLG_1MOV, TMDLG_60MOV, wParam);
-                  break;
-
-            case TMDLG_5MIN:
-            case TMDLG_15MIN:
-            case TMDLG_30MIN:
-            case TMDLG_60MIN:
-            case TMDLG_600MIN:
-                  tmpTCminutes = wParam - TMDLG_MIN;
-                  CheckRadioButton ( hDlg, TMDLG_5MIN, TMDLG_600MIN, wParam);
-                  break;
+        switch (wParam)
+        {
+        case IDOK:
+            TCminutes = tmpTCminutes;
+            TCmoves = tmpTCmoves;
+            ::EndDialog(hDlg, 1);
+            return TRUE;
+        case IDCANCEL:
+            EndDialog(hDlg, NULL);
+            return TRUE;
+        case TMDLG_1MOV:
+        case TMDLG_10MOV:
+        case TMDLG_20MOV:
+        case TMDLG_40MOV:
+        case TMDLG_60MOV:
+            tmpTCmoves = wParam - TMDLG_MOV;
+            CheckRadioButton(hDlg, TMDLG_1MOV, TMDLG_60MOV, wParam);
+            break;
+        case TMDLG_5MIN:
+        case TMDLG_15MIN:
+        case TMDLG_30MIN:
+        case TMDLG_60MIN:
+        case TMDLG_600MIN:
+            tmpTCminutes = wParam - TMDLG_MIN;
+            CheckRadioButton(hDlg, TMDLG_5MIN, TMDLG_600MIN, wParam);
+            break;
         }
         break;
     }

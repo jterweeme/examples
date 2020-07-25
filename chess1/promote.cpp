@@ -23,7 +23,7 @@
 
 
 #include "chess.h"
-#include <windows.h>
+#include "resource.h"
 
 static int xstatus;
 

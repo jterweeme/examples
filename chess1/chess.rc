@@ -21,8 +21,6 @@
   notice must be preserved on all copies.
 */
 
-
-#include "chess.h"
 #include "resource.h"
 
 AboutBox DIALOG LOADONCALL MOVEABLE DISCARDABLE 19, 18, 218, 107
@@ -115,13 +113,13 @@ END
 #define IDD_CHAR 0x11
 
 NUMBERDLG DIALOG LOADONCALL MOVEABLE DISCARDABLE 10,10,180,54
-   STYLE WS_POPUP | WS_DLGFRAME
-   BEGIN
-        CTEXT "",                    IDD_CHAR, 9,  4, 162, 12
-        EDITTEXT                     IDD_INT,  6, 20, 104, 12, ES_AUTOHSCROLL
-        DEFPUSHBUTTON "OK",          IDOK,     124, 20,  50, 14, WS_GROUP
-        PUSHBUTTON    "Cancel",      IDCANCEL, 124, 36,  50, 14, WS_GROUP
-  END
+STYLE WS_POPUP | WS_DLGFRAME
+BEGIN
+CTEXT "",                    IDD_CHAR, 9,  4, 162, 12
+EDITTEXT                     IDD_INT,  6, 20, 104, 12, ES_AUTOHSCROLL
+DEFPUSHBUTTON "OK",          IDOK,     124, 20,  50, 14, WS_GROUP
+PUSHBUTTON    "Cancel",      IDCANCEL, 124, 36,  50, 14, WS_GROUP
+END
 
 COLOR DIALOG LOADONCALL MOVEABLE DISCARDABLE 10, 20, 139, 177
 STYLE WS_DLGFRAME | WS_POPUP
@@ -224,111 +222,105 @@ BEGIN
     CONTROL "Cancel", IDCANCEL, "button", BS_PUSHBUTTON | WS_TABSTOP | WS_CHILD, 85, 28, 28, 14
 END
 
-
 CHESS MENU
 BEGIN
 POPUP "&File"
 BEGIN
-MENUITEM "&New",                        MSG_CHESS_NEW
-MENUITEM "&Open...",                    MSG_CHESS_GET
-MENUITEM "&Save...",                    MSG_CHESS_SAVE
-MENUITEM "&List...",                    MSG_CHESS_LIST
-MENUITEM SEPARATOR
-MENUITEM "E&xit",                       MSG_CHESS_QUIT
+    MENUITEM "&New",                        MSG_CHESS_NEW
+    MENUITEM "&Open...",                    MSG_CHESS_GET
+    MENUITEM "&Save...",                    MSG_CHESS_SAVE
+    MENUITEM "&List...",                    MSG_CHESS_LIST
+    MENUITEM SEPARATOR
+    MENUITEM "E&xit",                       MSG_CHESS_QUIT
 END
-
-
 POPUP "&Edit"
 BEGIN
-MENUITEM "&Setup Board",                  MSG_CHESS_EDIT
-MENUITEM "R&eview Game...",               MSG_CHESS_REVIEW
-MENUITEM SEPARATOR
-MENUITEM "&Undo\tBksp",                   MSG_CHESS_UNDO
-MENUITEM "&Remove\tALT+Bksp", MSG_CHESS_REMOVE
-MENUITEM SEPARATOR
-MENUITEM "&Force", MSG_CHESS_FORCE
+    MENUITEM "&Setup Board",                  MSG_CHESS_EDIT
+    MENUITEM "R&eview Game...",               MSG_CHESS_REVIEW
+    MENUITEM SEPARATOR
+    MENUITEM "&Undo\tBksp",                   MSG_CHESS_UNDO
+    MENUITEM "&Remove\tALT+Bksp", MSG_CHESS_REMOVE
+    MENUITEM SEPARATOR
+    MENUITEM "&Force", MSG_CHESS_FORCE
 END
-
 POPUP "&Options"
 BEGIN
-MENUITEM "&Tone", MSG_CHESS_BEEP
-MENUITEM "C&oordinates",                MSG_CHESS_COORD
-MENUITEM "&Search Stats",               MSG_CHESS_POST
-MENUITEM "T&est Speed",                 MSG_CHESS_TEST
-MENUITEM SEPARATOR
-MENUITEM "&Hash",                        MSG_CHESS_HASH
-MENUITEM "&Both",                        MSG_CHESS_BOTH
-MENUITEM "Boo&k",                        MSG_CHESS_BOOK
-MENUITEM SEPARATOR
-MENUITEM "&A Window...",                 MSG_CHESS_AWIN
-MENUITEM "&B Window...",                 MSG_CHESS_BWIN
-MENUITEM "&Contemp...",                  MSG_CHESS_CONTEMP
+    MENUITEM "&Tone", MSG_CHESS_BEEP
+    MENUITEM "C&oordinates",                MSG_CHESS_COORD
+    MENUITEM "&Search Stats",               MSG_CHESS_POST
+    MENUITEM "T&est Speed",                 MSG_CHESS_TEST
+    MENUITEM SEPARATOR
+    MENUITEM "&Hash",                        MSG_CHESS_HASH
+    MENUITEM "&Both",                        MSG_CHESS_BOTH
+    MENUITEM "Boo&k",                        MSG_CHESS_BOOK
+    MENUITEM SEPARATOR
+    MENUITEM "&A Window...",                 MSG_CHESS_AWIN
+    MENUITEM "&B Window...",                 MSG_CHESS_BWIN
+    MENUITEM "&Contemp...",                  MSG_CHESS_CONTEMP
 END
-
 POPUP "&Skill"
-                BEGIN             
-                  MENUITEM "&Time...",                    IDM_TIMECONTROL
-                  MENUITEM SEPARATOR                      
-                  MENUITEM "&Random",                     MSG_CHESS_RANDOM
-                  MENUITEM "&Easy",                       MSG_CHESS_EASY
-                  MENUITEM "&Depth...",                   MSG_CHESS_DEPTH
-              END
-
-        POPUP "S&ide"
-              BEGIN
-                  MENUITEM "&Reverse",                    MSG_CHESS_REVERSE
-                  MENUITEM "&Switch",                     MSG_CHESS_SWITCH
-                  MENUITEM "&Black",                      MSG_CHESS_BLACK
-                  MENUITEM "&White",                      MSG_CHESS_WHITE
-              END
-
+BEGIN
+    MENUITEM "&Time...",                    IDM_TIMECONTROL
+    MENUITEM SEPARATOR
+    MENUITEM "&Random",                     MSG_CHESS_RANDOM
+    MENUITEM "&Easy",                       MSG_CHESS_EASY
+    MENUITEM "&Depth...",                   MSG_CHESS_DEPTH
+END
+POPUP "S&ide"
+BEGIN
+    MENUITEM "&Reverse",                    MSG_CHESS_REVERSE
+    MENUITEM "&Switch",                     MSG_CHESS_SWITCH
+    MENUITEM "&Black",                      MSG_CHESS_BLACK
+    MENUITEM "&White",                      MSG_CHESS_WHITE
+END
 POPUP "&Colors"
 BEGIN
-MENUITEM "Window Background",   IDM_BACKGROUND
-                        MENUITEM "Black Squares",       IDM_BLACKSQUARE
-                        MENUITEM "White Squares",       IDM_WHITESQUARE
-                        MENUITEM "Black Pieces",        IDM_BLACKPIECE
-                        MENUITEM "White Pieces",        IDM_WHITEPIECE
-                        MENUITEM "Text Color",          IDM_TEXT
-                        MENUITEM SEPARATOR
-MENUITEM "Default Colors",      IDM_DEFAULT
+    MENUITEM "Window Background",   IDM_BACKGROUND
+    MENUITEM "Black Squares",       IDM_BLACKSQUARE
+    MENUITEM "White Squares",       IDM_WHITESQUARE
+    MENUITEM "Black Pieces",        IDM_BLACKPIECE
+    MENUITEM "White Pieces",        IDM_WHITEPIECE
+    MENUITEM "Text Color",          IDM_TEXT
+    MENUITEM SEPARATOR
+    MENUITEM "Default Colors",      IDM_DEFAULT
 END
-MENUITEM "Hi&nt",                                 MSG_CHESS_HINT
-
+MENUITEM "Hi&nt",               MSG_CHESS_HINT
 POPUP "&Help"
 BEGIN
-MENUITEM "&Index\tF1",           MSG_HELP_INDEX
-MENUITEM "Using &Help",          MSG_HELP_HELP
-MENUITEM SEPARATOR
-MENUITEM "A&bout Chess...",      MSG_CHESS_ABOUT
+    MENUITEM "&Index\tF1",      MSG_HELP_INDEX
+    MENUITEM "Using &Help",     MSG_HELP_HELP
+    MENUITEM SEPARATOR
+    MENUITEM "A&bout Chess...", MSG_CHESS_ABOUT
 END
 END
 
 STRINGTABLE
 BEGIN
-        IDS_CHESS,         "Chess"
-        IDS_ILLEGALMOVE,   "Illegal move"
-        IDS_AMBIGUOUSMOVE, "Ambiguous move"
-        IDS_OBAE,          "Warning: Opening book too large"
-        IDS_OBNF,          "Warning: Opening book not found"
-        IDS_UNABLESAVE,    "Unable to save game"
-        IDS_UNABLELIST,    "Unable to list game"
-        IDS_DRAWGAME,      "Draw Game"
-        IDS_YOUWIN,        "Opponent mates"
-        IDS_COMPUTERWIN,   "Computer mates"
-        IDS_MATESOON,      "Oppenent will soon mate"
-        IDS_COMPMATE,      "Computer will soon mate"
-        IDS_TTABLEAF,      "ttable Allocation Failed"
-        IDS_SQDATAAF,      "sqdata Allocation Failed"
-        IDS_HISTORYAF,     "History Allocation Failed"
-        IDS_TREEAF,        "Tree Allocation Failed"
-        IDS_GAMEAF,        "Game List Allocation Failed"
-        IDS_LOADFAILED,    "Loading saved game failed"
-        IDS_SETAWIN,       "Set A Window"
-        IDS_SETBWIN,       "Set B Window"
-        IDS_SETCONTEMPT,   "Set Contempt"
-        IDS_MAXSEARCH,     "Set maximun search depth"
-        IDS_INITERROR,     "Initialization error"
+    IDS_CHESS,         "Chess"
+    IDS_ILLEGALMOVE,   "Illegal move"
+    IDS_AMBIGUOUSMOVE, "Ambiguous move"
+    IDS_OBAE,          "Warning: Opening book too large"
+    IDS_OBNF,          "Warning: Opening book not found"
+    IDS_UNABLESAVE,    "Unable to save game"
+    IDS_UNABLELIST,    "Unable to list game"
+    IDS_DRAWGAME,      "Draw Game"
+    IDS_YOUWIN,        "Opponent mates"
+    IDS_COMPUTERWIN,   "Computer mates"
+    IDS_MATESOON,      "Oppenent will soon mate"
+    IDS_COMPMATE,      "Computer will soon mate"
+    IDS_TTABLEAF,      "ttable Allocation Failed"
+    IDS_SQDATAAF,      "sqdata Allocation Failed"
+    IDS_HISTORYAF,     "History Allocation Failed"
+    IDS_TREEAF,        "Tree Allocation Failed"
+    IDS_GAMEAF,        "Game List Allocation Failed"
+    IDS_LOADFAILED,    "Loading saved game failed"
+    IDS_SETAWIN,       "Set A Window"
+    IDS_SETBWIN,       "Set B Window"
+    IDS_SETCONTEMPT,   "Set Contempt"
+    IDS_MAXSEARCH,     "Set maximun search depth"
+    IDS_INITERROR,     "Initialization error"
+    IDS_UNKNOWNERR,    "Unknown error"
+    IDS_ALLOCMEM,      "Cannot allocate memory"
 END
 
 Chess ACCELERATORS

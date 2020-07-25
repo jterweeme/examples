@@ -22,6 +22,7 @@
 */
 
 #include "chess.h"
+#include "resource.h"
 
 #define IDD_INT 0x10
 #define IDD_CHAR 0x11

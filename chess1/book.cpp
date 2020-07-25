@@ -24,43 +24,34 @@
   notice must be preserved on all copies.
 */
 
-#include <cstdio>
 #include "resource.h"
+#include "protos.h"
 #include "gnuchess.h"
-#include "defs.h"
-#include "chess.h"
 #include "globals.h"
-#include <time.h>
-#include <stdlib.h>
 
 #define MAX_BOOK_SIZE (32*1024)
 
-static unsigned int book_used = 0;
-static char far * xBook;
+static DWORD book_used = 0;
+static char *xBook;
 
 void FreeBook(void)
 {
-   GlobalUnlock(hBook);
-   GlobalFree(hBook);
-   hBook = 0;
-   book_used = 0;
+    GlobalUnlock(hBook);
+    GlobalFree(hBook);
+    hBook = 0;
+    book_used = 0;
 }
 
-static void *Book_alloc ( unsigned int size )
+static void *Book_alloc(DWORD size)
 {
-    char far * temp;
-    if ( book_used+size >= MAX_BOOK_SIZE ) return (void far *)0;
-    temp = xBook+book_used;
+    if (book_used + size >= MAX_BOOK_SIZE)
+        return (void *)0;
+
+    char *temp = xBook + book_used;
     book_used += size;
     return temp;
 }
 
-#ifndef BOOK
-#define BOOK "/usr/games/lib/gnuchess.book"
-#endif   
-
-
-     
 /*
    Read in the Opening Book file and parse the algebraic notation for a move
    into an unsigned integer format indicating the from and to square. Create
@@ -69,76 +60,74 @@ static void *Book_alloc ( unsigned int size )
    moves. More Opening lines of up to 256 half moves may be added to
    gnuchess.book.
 */
-void GetOpenings(HWND hWnd)
+void GetOpenings(HINSTANCE hInstance)
 {
     FILE *fd;
     int c, i, j, side;
     struct BookEntry *entry;
     WORD mv, *mp, tmp[100];
-    TCHAR lpFile[_MAX_FNAME+_MAX_EXT+_MAX_DRIVE+_MAX_DIR+1];
-    char sFname[_MAX_FNAME], sExt[_MAX_EXT], sDrive[_MAX_DRIVE], sDir[_MAX_DIR];
-    GetModuleFileName(hInst, lpFile, sizeof(lpFile));
-#ifndef UNICODE
-    _splitpath( lpFile, sDrive, sDir, sFname, sExt);
-    _makepath( lpFile, sDrive, sDir, "gnuchess", "boo");
-#endif
-#ifndef UNICODE
+    CHAR lpFile[_MAX_FNAME+_MAX_EXT+_MAX_DRIVE+_MAX_DIR+1];
+    ::GetModuleFileNameA(hInstance, lpFile, sizeof(lpFile));
+    CHAR sFname[_MAX_FNAME], sExt[_MAX_EXT], sDrive[_MAX_DRIVE], sDir[_MAX_DIR];
+    _splitpath(lpFile, sDrive, sDir, sFname, sExt);
+    _makepath(lpFile, sDrive, sDir, "gnuchess", "boo");
     fd = fopen(lpFile, "r");
-#endif
-/*  if ((fd = fopen (BOOK, "r")) == NULL)
-    fd = fopen ("gnuchess.book", "r"); */
+
     if (fd != NULL)
     {
-      hBook = GlobalAlloc ( GMEM_MOVEABLE | GMEM_ZEROINIT,
-                            (long) (MAX_BOOK_SIZE * sizeof (char)) );
+        hBook = ::GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, MAX_BOOK_SIZE * sizeof(char));
 
-      if( hBook == NULL )
+        if (hBook == NULL)
         {
-           Book = NULL;
-           SMessageBox (hWnd, IDS_OBAE, IDS_CHESS);
-           return;
+            Book = NULL;
+            throw TEXT("Opening Book allocation error");
         }
-      xBook = (char *)(GlobalLock (hBook));
 
-      Book = NULL;
-      i = 0;
-      side = white;
-      while ((c = parse (fd, &mv, side)) >= 0)
-        if (c == 1)
-          {
-            tmp[++i] = mv;
-            side = otherside[side];
-          }
-        else if (c == 0 && i > 0)
-          {
-            entry = (struct BookEntry far *) Book_alloc ( sizeof (struct BookEntry));
-            mp = (unsigned short far *) Book_alloc ( (i + 1) * sizeof (unsigned short));
-            if ( (entry == 0 ) || (mp == 0) )
-              {
-                Book = NULL;
-                SMessageBox (hWnd, IDS_OBAE, IDS_CHESS);
-                GlobalUnlock ( hBook );
-                GlobalFree ( hBook);
-                return;
-              }
-            entry->mv = mp;
-            entry->next = Book;
-            Book = entry;
-            for (j = 1; j <= i; j++)
-              *(mp++) = tmp[j];
-            *mp = 0;
-            i = 0;
-            side = white;
-          }
+        xBook = (char *)(GlobalLock(hBook));
 
-      fclose (fd);
+        Book = NULL;
+        i = 0;
+        side = white;
+
+        while ((c = parse(fd, &mv, side)) >= 0)
+        {
+            if (c == 1)
+            {
+                tmp[++i] = mv;
+                side = otherside[side];
+            }
+            else if (c == 0 && i > 0)
+            {
+                entry = (struct BookEntry *)(Book_alloc(sizeof(struct BookEntry)));
+                mp = LPWORD(Book_alloc((i + 1) * sizeof(WORD)));
+
+                if ( (entry == 0 ) || (mp == 0) )
+                {
+                    Book = NULL;
+                    GlobalUnlock(hBook);
+                    GlobalFree(hBook);
+                    throw TEXT("Opening book allocation error");
+                }
+                entry->mv = mp;
+                entry->next = Book;
+                Book = entry;
+
+                for (j = 1; j <= i; j++)
+                    *(mp++) = tmp[j];
+
+                *mp = 0;
+                i = 0;
+                side = white;
+            }
+        }
+
+        fclose(fd);
     }
-  else
-    SMessageBox (hWnd, IDS_OBNF, IDS_CHESS);
+    else
+    {
+        throw UINT(IDS_OBNF);
+    }
 }
-
-void
-OpeningBook (unsigned short *hint)
 
 /*
   Go thru each of the opening lines of play and check for a match with the
@@ -148,18 +137,19 @@ OpeningBook (unsigned short *hint)
   candidate move is put at the top of the Tree[] array and will be played by
   the program. Note that the program does not handle book transpositions.
 */
-
+void OpeningBook(WORD *hint)
 {
-  short j, pnt;
-  unsigned short m, far *mp;
-  unsigned r, r0;
-  struct BookEntry far *p;
+    short j, pnt;
+    WORD m, far *mp;
+    DWORD r, r0;
+    struct BookEntry far *p;
 #if 0
-  srand ((unsigned int) time ((long *) 0));
+    srand((unsigned int) time ((long *) 0));
 #endif
-  r0 = m = 0;
-  p = Book;
-  while (p != NULL)
+    r0 = m = 0;
+    p = Book;
+
+    while (p != NULL)
     {
       mp = p->mv;
       for (j = 1; j <= GameCnt; j++)

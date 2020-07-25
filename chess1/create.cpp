@@ -21,7 +21,7 @@
   notice must be preserved on all copies.
 */
 
-#include "defs.h"
+#include "protos.h"
 #include "chess.h"
 #include "globals.h"
 

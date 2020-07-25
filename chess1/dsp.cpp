@@ -24,12 +24,11 @@
   notice must be preserved on all copies.
 */
 
-#include <cstdio>
-#include "gnuchess.h"
-#include "defs.h"
+#include "protos.h"
 #include "chess.h"
 #include "resource.h"
 #include "globals.h"
+#include "gnuchess.h"
 #include <ctime>
 
 #if 0
@@ -72,28 +71,6 @@ void Die(int)
 {
 }
 
-#ifdef UNICODE
-#ifndef _tcscat
-#define _tcscat wcscat
-#endif
-#ifndef _tcscpy
-#define _tcscpy wcscpy
-#endif
-#ifndef _tcscmp
-#define _tcscmp wcscmp
-#endif
-#else
-#ifndef _tcscat
-#define _tcscat strcat
-#endif
-#ifndef _tcscpy
-#define _tcscpy strcpy
-#endif
-#ifndef _tcscmp
-#define _tcscmp strcmp
-#endif
-#endif
-
 void TerminateSearch(int)
 {
     flag.timeout = true;
@@ -105,9 +82,9 @@ void TerminateSearch(int)
 */
 void algbr(short int f, short int t, short int flag)
 {
-  int m3p;
+    int m3p;
 
-  if (f != t)
+    if (f != t)
     {
       /* algebraic notation */
       mvstr[0][0] = (char) ('a'+column (f));
@@ -146,37 +123,38 @@ void algbr(short int f, short int t, short int flag)
           mvstr[2][2] = mvstr[1][1] = mvstr[0][2];      /* to column */
           mvstr[2][3] = mvstr[1][2] = mvstr[0][3];      /* to row */
           mvstr[2][4] = mvstr[1][3] = '\0';
-          _tcscpy(mvstr[3], mvstr[2]);
+          lstrcpy(mvstr[3], mvstr[2]);
           mvstr[3][1] = mvstr[0][0];
           if (flag & cstlmask)
             {
               if (t > f)
                 {
-                  _tcscpy (mvstr[1], TEXT("o-o"));
-                  _tcscpy (mvstr[2], TEXT("O-O"));
+                  lstrcpy(mvstr[1], TEXT("o-o"));
+                  lstrcpy(mvstr[2], TEXT("O-O"));
                 }
               else
                 {
-                  _tcscpy (mvstr[1], TEXT("o-o-o"));
-                  _tcscpy (mvstr[2], TEXT("O-O-O"));
+                  lstrcpy(mvstr[1], TEXT("o-o-o"));
+                  lstrcpy(mvstr[2], TEXT("O-O-O"));
                 }
             }
         }
     }
-  else
-    mvstr[0][0] = mvstr[1][0] = mvstr[2][0] = mvstr[3][0] = '\0';
+    else
+    {
+        mvstr[0][0] = mvstr[1][0] = mvstr[2][0] = mvstr[3][0] = '\0';
+    }
 }
 
 /*
    Compare the string 's' to the list of legal moves available for the
    opponent. If a match is found, make the move on the board.
 */
-int
-VerifyMove(HWND hWnd, TCHAR *s, short int iop, WORD *mv)
+int VerifyMove(HWND hWnd, TCHAR *s, short iop, WORD *mv)
 {
     static short pnt, tempb, tempc, tempsf, tempst, cnt;
     static struct leaf xnode;
-    struct leaf  far *node;
+    struct leaf *node;
 
     *mv = 0;
 
@@ -186,28 +164,29 @@ VerifyMove(HWND hWnd, TCHAR *s, short int iop, WORD *mv)
         return (false);
     }
     cnt = 0;
-    MoveList (opponent, 2);
+    MoveList(opponent, 2);
     pnt = TrPnt[2];
 
     while (pnt < TrPnt[3])
     {
-      node = &Tree[pnt++];
-      algbr (node->f, node->t, (short) node->flags);
+        node = &Tree[pnt++];
+        algbr (node->f, node->t, (short) node->flags);
 
-      if (_tcscmp(s, mvstr[0]) == 0 || _tcscmp(s, mvstr[1]) == 0 ||
-          _tcscmp (s, mvstr[2]) == 0 || _tcscmp (s, mvstr[3]) == 0)
+        if (lstrcmp(s, mvstr[0]) == 0 || lstrcmp(s, mvstr[1]) == 0 ||
+            lstrcmp(s, mvstr[2]) == 0 || lstrcmp(s, mvstr[3]) == 0)
         {
           cnt++;
           xnode = *node;
         }
     }
-  if (cnt == 1)
+
+    if (cnt == 1)
     {
       MakeMove (opponent, &xnode, &tempb, &tempc, &tempsf, &tempst, &INCscore);
       if (SqAtakd (PieceList[opponent][0], computer))
         {
           UnmakeMove (opponent, &xnode, &tempb, &tempc, &tempsf, &tempst);
-          SMessageBox (hWnd, IDS_ILLEGALMOVE, IDS_CHESS);
+          SMessageBox(hInst, hWnd, IDS_ILLEGALMOVE, IDS_CHESS);
           return (false);
         }
       else
@@ -235,7 +214,7 @@ VerifyMove(HWND hWnd, TCHAR *s, short int iop, WORD *mv)
     }
 
     if (cnt > 1)
-        SMessageBox (hWnd, IDS_AMBIGUOUSMOVE, IDS_CHESS);
+        SMessageBox(hInst, hWnd, IDS_AMBIGUOUSMOVE, IDS_CHESS);
 
     return false;
 }
@@ -282,19 +261,19 @@ void ElapsedTime(short int iop)
 
 void SetTimeControl()
 {
-  if (TCflag)
+    if (TCflag)
     {
       TimeControl.moves[white] = TimeControl.moves[black] = TCmoves;
       TimeControl.clock[white] = TimeControl.clock[black] = 60 * (long) TCminutes;
     }
-  else
+    else
     {
       TimeControl.moves[white] = TimeControl.moves[black] = 0;
       TimeControl.clock[white] = TimeControl.clock[black] = 0;
       Level = 60 * (long) TCminutes;
     }
-  et = 0;
-  ElapsedTime (1);
+    et = 0;
+    ElapsedTime(1);
 }
 
 void GetGame (HWND hWnd, char *fname)
@@ -306,32 +285,33 @@ void GetGame (HWND hWnd, char *fname)
 
     struct GameRec tmp_rec;
 
-    if ((fd = fopen (fname, "r")) == NULL)
+    if ((fd = fopen(fname, "r")) == NULL)
     {
-        SMessageBox (hWnd, IDS_LOADFAILED, IDS_CHESS);
+        SMessageBox(hInst, hWnd, IDS_LOADFAILED, IDS_CHESS);
         return;
     }
 
-    fscanf (fd, "%hd%hd%hd", &computer, &opponent, &Game50);
-    fscanf (fd, "%hd%hd", &castld[white], &castld[black]);
-    fscanf (fd, "%hd%hd", &TCflag, &OperatorTime);
-    fscanf (fd, "%ld%ld%hd%hd",
+    fscanf(fd, "%hd%hd%hd", &computer, &opponent, &Game50);
+    fscanf(fd, "%hd%hd", &castld[white], &castld[black]);
+    fscanf(fd, "%hd%hd", &TCflag, &OperatorTime);
+    fscanf(fd, "%ld%ld%hd%hd",
           &TimeControl.clock[white], &TimeControl.clock[black],
           &TimeControl.moves[white], &TimeControl.moves[black]);
 
     for (sq = 0; sq < 64; sq++)
     {
-      fscanf (fd, "%hd%hd", &m, &Mvboard[sq]);
-      board[sq] = (m >> 8);
-      color[sq] = (m & 0xFF);
-      if (color[sq] == 0)
-        color[sq] = neutral;
-      else
-        --color[sq];
+        fscanf (fd, "%hd%hd", &m, &Mvboard[sq]);
+        board[sq] = (m >> 8);
+        color[sq] = (m & 0xFF);
+
+        if (color[sq] == 0)
+            color[sq] = neutral;
+        else
+            --color[sq];
     }
-  GameCnt = 0;
-  c = '?';
-  while (c != EOF)
+    GameCnt = 0;
+    c = '?';
+    while (c != EOF)
     {
       ++GameCnt;
       c = fscanf (fd, "%hd%hd%hd%ld%hd%hd%hd", &tmp_rec.gmove,
@@ -345,17 +325,19 @@ void GetGame (HWND hWnd, char *fname)
         --GameList[GameCnt].color;
     }
 
-  GameCnt--;
-  if (TimeControl.clock[white] > 0)
-    TCflag = true;
-  computer--;
-  opponent--;
+    GameCnt--;
 
-  fclose (fd);
+    if (TimeControl.clock[white] > 0)
+        TCflag = true;
 
-  InitializeStats ();
-  Sdepth = 0;
-  UpdateDisplay (hWnd, 0, 0, 1, 0);
+    computer--;
+    opponent--;
+
+    fclose(fd);
+
+    InitializeStats();
+    Sdepth = 0;
+    UpdateDisplay(hWnd, 0, 0, 1, 0);
 }
 
 void SaveGame (HWND hWnd, char *fname)

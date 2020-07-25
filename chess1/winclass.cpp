@@ -19,3 +19,12 @@ void WinClass::registerClass()
     if (!::RegisterClass(&_wc))
         throw TEXT("Error registering class");
 }
+
+HINSTANCE WinClass::hInstance() const
+{
+    if (_wc.hInstance == NULL)
+        throw TEXT("No hInstance!");
+
+    return _wc.hInstance;
+}
+

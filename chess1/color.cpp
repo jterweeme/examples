@@ -26,8 +26,6 @@
 #include "chess.h"
 #include "globals.h"
 #include <tchar.h>
-#include <string.h>
-#include <stdio.h>
 
 #define CBLACK     RGB(0,0,0)
 #define BLUE      RGB(0,0,255)
@@ -94,37 +92,37 @@ void GetStartupColors(LPCTSTR appname)
     GetPrivateProfileString(appname, lpBackGround, lpDefault,
                             istring, sizeof(istring), lpChessini);
 
-    if (_tcscmp(istring, lpDefault) != 0)
+    if (lstrcmp(istring, lpDefault) != 0)
         _stscanf(istring, np08lX, &clrBackGround);
 
     GetPrivateProfileString(appname, lpBlackSquare, lpDefault,
                             istring, sizeof(istring), lpChessini);
 
-    if (_tcscmp(istring, lpDefault) != 0)
+    if (lstrcmp(istring, lpDefault) != 0)
         _stscanf(istring, np08lX, &clrBlackSquare);
 
     GetPrivateProfileString(appname, lpWhiteSquare, lpDefault,
                             istring, sizeof(istring), lpChessini);
 
-    if (_tcscmp(istring, lpDefault) != 0)
+    if (lstrcmp(istring, lpDefault) != 0)
         _stscanf(istring, np08lX, &clrWhiteSquare);
 
     GetPrivateProfileString(appname, lpBlackPiece, lpDefault,istring,
                              sizeof(istring), lpChessini);
 
-    if (_tcscmp(istring, lpDefault) != 0)
+    if (lstrcmp(istring, lpDefault) != 0)
         _stscanf(istring, np08lX, &clrBlackPiece);
 
     GetPrivateProfileString(appname, lpWhitePiece,lpDefault,istring,
                              sizeof(istring), lpChessini);
 
-    if (_tcscmp(istring, lpDefault) != 0)
+    if (lstrcmp(istring, lpDefault) != 0)
         _stscanf(istring, np08lX, &clrWhitePiece);
 
     GetPrivateProfileString(appname, lpText, lpDefault,
                             istring, sizeof(istring), lpChessini);
 
-    if (_tcscmp(istring, lpDefault) != 0)
+    if (lstrcmp(istring, lpDefault) != 0)
         _stscanf(istring, np08lX, &clrText);
 #endif
 }

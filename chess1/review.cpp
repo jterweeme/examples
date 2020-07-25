@@ -21,11 +21,10 @@
   notice must be preserved on all copies.
 */
 
-#include "gnuchess.h"
-#include "defs.h"
+#include "protos.h"
 #include "chess.h"
 #include "globals.h"
-#include <windows.h>
+#include "resource.h"
 
 static INT_PTR CALLBACK
 ReviewDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
@@ -43,34 +42,32 @@ ReviewDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
             algbr (f, t, false);
 
             wsprintf(tmp, TEXT("%4d-%c\t%5s\t%-5d\t%-2d\t%-5d"),
-               (i+1)/2, (i%2 ? 'w' : 'b'),
-               (char far *)mvstr[0],
-               GameList[i].score, GameList[i].depth,
-               GameList[i].time);
-            SendDlgItemMessage(hDlg, 100, LB_ADDSTRING, 0, (LPARAM)(tmp));
+                    (i+1)/2, i % 2 ? 'w' : 'b', (char *)mvstr[0],
+                    GameList[i].score, GameList[i].depth,
+                    GameList[i].time);
+
+            SendDlgItemMessage(hDlg, 100, LB_ADDSTRING, 0, LPARAM(tmp));
         }
         SendDlgItemMessage(hDlg, 100, WM_SETREDRAW, TRUE, 0);
         return TRUE;
     case WM_SYSCOMMAND:
-        if ((wParam&0xfff0) == SC_CLOSE)
+        if ((wParam & 0xfff0) == SC_CLOSE)
 		{
-   		      EndDialog(hDlg, NULL);
-	   	      return TRUE;
-         }
-         break;
-
-
-	   case WM_COMMAND:		      /* message: received a command */
-         switch (wParam)
-		 {
-            case IDOK:
-		         EndDialog(hDlg, 1);
-		         return TRUE;
-         }
-	     break;
+            EndDialog(hDlg, NULL);
+            return TRUE;
+        }
+        break;
+    case WM_COMMAND:
+        switch (wParam)
+        {
+        case IDOK:
+            EndDialog(hDlg, 1);
+            return TRUE;
+        }
+        break;
     }
 
-    return (FALSE);
+    return FALSE;
 }
 
 int ReviewDialog(HWND hWnd, HINSTANCE hInst)

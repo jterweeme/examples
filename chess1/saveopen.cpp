@@ -22,62 +22,8 @@
   notice must be preserved on all copies.
 */
 
-/*
-   File open/save dialog box routines
-   
-   int FAR DoFileOpenDlg ( hInst, hWnd, szFileSpecIn, szDefExtIn, wFileAttrIn,
-                           szFileNameOut, pofIn)
-
-   int FAR DoWildFileOpenDlg ( hInst, hWnd, szFileSpecIn, szDefExtIn, wFileAttrIn,
-                           szFileNameOut, pofIn)
-
-   int FAR DoFileSaveDlg ( hInst, hWnd, szFileSpecIn, szDefExtIn, pwStatusOut,
-                           szFileNameOut, pofIn)
-
-
-   DoWildFileOpenDlg Allows a wildcard to be returned.
-
-   to use:
-   in rc file:
-      #rcinclude "saveopen.dlg"
-
-   in def file:
-      Exports
-         FileOpenDlgProc
-         FileSaveDlgProc
-         WildFileOpenDlgProc
-
-   in source:
-   #include "saveopen.h"
-   ...
-   if ( !DoFileSaveDlg ( hInst, hWnd, "chess.chs", ".chs", &Status,
-                               FileName, &pof) ) break;
-               if ( Status == 1 ) {
-                  strcpy ( str, "Replace Existing ");
-                  strcat ( str, FileName);
-                  if ( MessageBox ( hWnd, str, szAppName, MB_YESNO | MB_ICONQUESTION) == IDNO)
-                     break;
-                  
-               } else OpenFile (FileName, pof, OF_PARSE);
- 
-               SaveGame ( pof->szPathName );
-
-   if ( !DoFileOpenDlg ( hInst, hWnd, "*.chs", ".chs", 0x0, FileName, &pof))
-                  break;
-
-               if ( (hFile=OpenFile(FileName, pof, OF_READ|OF_REOPEN)) == -1) {
-                  strcpy ( str, "Cannot open file: ");
-                  strcat ( str, FileName);
-                  MessageBox (hWnd, str, szAppName, MB_OK);
-                  break;
-               }
-               _lclose ( hFile );
-               GetGame ( pof->szPathName );
-*/
-
 #include "resource.h"
-#include "defs.h"
-#include <string.h>
+#include "protos.h"
 
 #define IDD_FNAME    0x10
 #define IDD_FPATH    0x11
@@ -101,7 +47,6 @@ static BOOL DlgDirSelect(HWND, LPCTSTR, int)
 }
 #endif
 
-#ifndef WINCE
 static INT_PTR CALLBACK
 FileOpenDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
@@ -111,10 +56,10 @@ FileOpenDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
     switch (iMessage)
     {
     case WM_INITDIALOG:
-        SendDlgItemMessage(hDlg, IDD_FNAME, EM_LIMITTEXT, 80, 0L);
-        DlgDirList(hDlg, szFileSpec, IDD_FLIST, IDD_FPATH, wFileAttr);
-        DlgDirList(hDlg, szFileSpec, IDD_DLIST, NULL, 0x4010|0x8000);
-        SetDlgItemText(hDlg, IDD_FNAME, szFileSpec);
+        ::SendDlgItemMessage(hDlg, IDD_FNAME, EM_LIMITTEXT, 80, 0L);
+        ::DlgDirList(hDlg, szFileSpec, IDD_FLIST, IDD_FPATH, wFileAttr);
+        ::DlgDirList(hDlg, szFileSpec, IDD_DLIST, NULL, 0x4010|0x8000);
+        ::SetDlgItemText(hDlg, IDD_FNAME, szFileSpec);
         return TRUE;
     case WM_COMMAND:
         switch (wParam)
@@ -225,7 +170,6 @@ FileOpenDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
    }
    return TRUE;
 }
-#endif
 
 #ifndef WINCE
 int DoFileOpenDlg(HINSTANCE hInst, HWND hWnd, LPCTSTR szFileSpecIn,
@@ -252,10 +196,8 @@ WildFileOpenDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
     {
     case WM_INITDIALOG:
         ::SendDlgItemMessage(hDlg, IDD_FNAME, EM_LIMITTEXT, 80, 0L);
-#ifndef WINCE
         ::DlgDirList(hDlg, szFileSpec, IDD_FLIST, IDD_FPATH, wFileAttr);
         ::DlgDirList(hDlg, szFileSpec, IDD_DLIST, NULL, 0x4010|0x8000);
-#endif
         ::SetDlgItemText(hDlg, IDD_FNAME, szFileSpec);
         return TRUE;
     case WM_COMMAND:
@@ -273,11 +215,9 @@ WildFileOpenDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
             case LBN_DBLCLK:
                 if (DlgDirSelect (hDlg, szFileName, IDD_FLIST))
                 {
-                    lstrcat(szFileName, szFileSpec);
-#ifndef WINCE
+                    ::lstrcat(szFileName, szFileSpec);
                     DlgDirList(hDlg, szFileName, IDD_FLIST, IDD_FPATH, wFileAttr);
-#endif
-                    SetDlgItemText(hDlg, IDD_FNAME, szFileName);
+                    ::SetDlgItemText(hDlg, IDD_FNAME, szFileName);
                 }
                 else
                 {
@@ -294,10 +234,8 @@ WildFileOpenDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
                 if ( DlgDirSelect(hDlg, szFileName, IDD_DLIST))
                 {
                         lstrcat(szFileName, szFileSpec);
-#ifndef WINCE
                         DlgDirList(hDlg, szFileName, IDD_FLIST, IDD_FPATH, wFileAttr);
                         DlgDirList(hDlg, szFileName, IDD_DLIST, NULL, 0x4010|0x8000);
-#endif
                         SetDlgItemText(hDlg, IDD_FNAME, szFileName);
                 }
                 break;

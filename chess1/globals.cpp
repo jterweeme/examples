@@ -25,19 +25,13 @@
 */
 
 #include "globals.h"
-#include <stdio.h>
 
 struct BookEntry *Book;
-
-#if ttblsz
 DWORD hashkey, hashbd;
-struct hashval far *hashcode;
-struct hashentry far *ttable;
-#endif
-
+struct hashval *hashcode;
+struct hashentry *ttable;
 FILE *hashfile;
 struct leaf *Tree, *root;
-
 short TrPnt[maxdepth];
 short PieceList[2][16], PawnCnt[2][8];
 short castld[2], Mvboard[64];
@@ -80,31 +74,7 @@ short board[64], color[64];
 BYTE *nextpos;
 BYTE *nextdir;
 
-
 const short otherside[3] = {1, 0, 2};
-
-#if ttblsz
-#if HASHFILE
-/*
-  In a networked enviroment gnuchess might be compiled on different
-  hosts with different random number generators, that is not acceptable
-  if they are going to share the same transposition table.
-*/
-static unsigned long int next = 1;
-
-unsigned int urand (void)
-{
-  next *= 1103515245;
-  next += 12345;
-  return ((unsigned int) (next >> 16) & 0xFFFF);
-}
-
-void srand (unsigned int seed)
-{
-  next = seed;
-}
-#endif /*HASHFILE*/
-#endif /*ttblsz*/
 
 HWND hComputerColor;
 HWND hComputerMove;

@@ -24,11 +24,9 @@
   notice must be preserved on all copies.
 */
 
-#include "gnuchess.h"
-#include "defs.h"
+#include "protos.h"
 #include "globals.h"
-#include <time.h>
-#include <stdlib.h>
+#include "gnuchess.h"
 
 static short rank7[3] = {6, 1, 0};
 static short kingP[3] = {4, 60, 0};
@@ -40,7 +38,7 @@ static short ptype[2][8] = {
   {no_piece, pawn, knight, bishop, rook, queen, king, no_piece},
   {no_piece, bpawn, knight, bishop, rook, queen, king, no_piece}};
 
-static short control[7] = {0, ctlP, ctlN, ctlB, ctlR, ctlQ, ctlK};
+static short control[7] = {0, CTLP, CTLN, CTLB, ctlR, ctlQ, ctlK};
 
 /* ............    MOVE GENERATION & SEARCH ROUTINES    .............. */
 
@@ -50,17 +48,17 @@ static short control[7] = {0, ctlP, ctlN, ctlB, ctlR, ctlQ, ctlK};
   Find the best move in the tree between indexes p1 and p2. Swap the best
   move into the p1 element.
 */
-void pick(short int p1, short int p2)
+void pick(short p1, short p2)
 {
-    short p, s;
-    short p0, s0;
     struct leaf temp;
+    short s0 = Tree[p1].score;
+    short p0 = p1;
 
-    s0 = Tree[p1].score;
-    p0 = p1;
-    for (p = p1 + 1; p <= p2; p++)
+    for (short p = p1 + 1; p <= p2; p++)
     {
-        if ((s = Tree[p].score) > s0)
+        short s = Tree[p].score;
+
+        if (s > s0)
         {
             s0 = s;
             p0 = p;
@@ -85,21 +83,27 @@ void pick(short int p1, short int p2)
 */
 void SelectMove(HWND hWnd, short int side, short int iop)
 {
-  static short i, tempb, tempc, tempsf, tempst, xside, rpt;
-  static short alpha, beta, score;
+    static short i, tempb, tempc, tempsf, tempst, xside, rpt;
+    static short alpha, beta, score;
 
-  flag.timeout = false;
-  xside = otherside[side];
-  if (iop != 2)
-    player = side;
-  if (TCflag)
+    flag.timeout = false;
+    xside = otherside[side];
+
+    if (iop != 2)
+        player = side;
+
+    if (TCflag)
     {
       if ((TimeControl.moves[side] + 3) != 0)
+      {
         ResponseTime = (TimeControl.clock[side]) /
           (TimeControl.moves[side] + 3) -
           OperatorTime;
+      }
       else
+      {
         ResponseTime = 0;
+      }
       ResponseTime += (ResponseTime * TimeControl.moves[side]) / (2 * TCmoves + 1);
     }
   else
@@ -116,11 +120,11 @@ void SelectMove(HWND hWnd, short int side, short int iop)
   /* Pscore[0] = -score; */
   ShowSidetoMove ();
 
-  if (Sdepth == 0)
+    if (Sdepth == 0)
     {
-#if ttblsz
+#if TTBLSZ
       /* ZeroTTable (); */
-#endif /* ttblsz */
+#endif
       SearchStartStuff (side);
 #ifdef NOMEMSET
       for (i = 0; i < 8192; i++)
@@ -131,7 +135,7 @@ void SelectMove(HWND hWnd, short int side, short int iop)
 #if 0
       _fmemset ( history, 0, 8192 * sizeof (char));
 #endif
-#endif /* NOMEMSET */
+#endif
       FROMsquare = TOsquare = -1;
       PV = 0;
       if (iop != 2)
@@ -236,7 +240,7 @@ void SelectMove(HWND hWnd, short int side, short int iop)
       || (root->flags & cstlmask))
     {
       Game50 = GameCnt;
-      ZeroRPT ();
+      ZeroRPT();
     }
   GameList[GameCnt].score = score;
   GameList[GameCnt].nodes = NodeCnt;
@@ -296,13 +300,10 @@ parse (FILE *fd, short unsigned int *mv, short int side)
   return (1);
 }
 
-inline void
-repetition (short int *cnt)
-
 /*
   Check for draw by threefold repetition.
 */
-
+inline void repetition(short *cnt)
 {
   short i, c, f, t;
   short b[64];
@@ -335,15 +336,7 @@ repetition (short int *cnt)
     }
 }
 
-int
-search (HWND hWnd,
-        short int side,
-        short int ply,
-        short int depth,
-        short int alpha,
-        short int beta,
-        short unsigned int *bstline,
-        short int *rpt)
+
 
 /*
   Perform an alpha-beta search to determine the score for the current board
@@ -377,20 +370,137 @@ search (HWND hWnd,
                     ChkFlag[ply-2] && ChkFlag[ply-4] &&\
                     ChkFlag[ply-2] != ChkFlag[ply-4])
 
+
+
+
+/*
+  hashbd contains a 32 bit "signature" of the board position. hashkey
+  contains a 16 bit code used to address the hash table. When a move is
+  made, XOR'ing the hashcode of moved piece on the from and to squares with
+  the hashbd and hashkey values keeps things current.
+*/
+#if TTBLSZ
+#define UpdateHashbd(side, piece, f, t) \
+{\
+  if ((f) >= 0)\
+    {\
+      hashbd ^= (hashcode+(side)*7*64+(piece)*64+f)->bd;\
+      hashkey ^= (hashcode+(side)*7*64+(piece)*64+f)->key;\
+    }\
+  if ((t) >= 0)\
+    {\
+      hashbd ^= (hashcode+(side)*7*64+(piece)*64+t)->bd;\
+      hashkey ^= (hashcode+(side)*7*64+(piece)*64+t)->key;\
+    }\
+}
+
+#define CB(i) (unsigned char) ((color[2 * (i)] ? 0x80 : 0)\
+               | (board[2 * (i)] << 4)\
+               | (color[2 * (i) + 1] ? 0x8 : 0)\
+               | (board[2 * (i) + 1]))
+
+/*
+  Look for the current board position in the transposition table.
+*/
+int
+ProbeTTable(short side, short depth, short *alpha, short *beta, short *score)
 {
-  short j, pnt;
-  short best, tempb, tempc, tempsf, tempst;
-  short xside, pbst, d, e, cf, score, rcnt, slk, InChk;
-  unsigned short mv, nxtline[maxdepth];
-  struct leaf far *node, tmp;
+    struct hashentry *ptbl;
+    WORD i;
+    ptbl = ttable + side * 2 + (hashkey & (TTBLSZ - 1));
 
-  NodeCnt++;
-  xside = otherside[side];
+    /* rehash max rehash times */
+    for (i = 1; ptbl->hashbd != hashbd && i <= rehash; i++)
+        ptbl = ttable+side*2+((hashkey + i) & (TTBLSZ - 1));
 
-  if ((ply <= Sdepth + 3) && rpthash[side][hashkey & 0xFF] > 0)
-    repetition (rpt);
-  else
-    *rpt = 0;
+    if ((short) ptbl->depth >= depth && ptbl->hashbd == hashbd)
+    {
+      HashCnt++;
+#ifdef HASHTEST
+      for (i = 0; i < 32; i++)
+        {
+          if (ptbl->bd[i] != CB(i))
+            {
+              HashCol++;
+              ShowMessage("ttable collision detected");
+              break;
+            }
+        }
+#endif /* HASHTEST */
+
+      PV = ptbl->mv;
+      if (ptbl->flags & TRUESCORE)
+        {
+          *score = ptbl->score;
+          *beta = -20000;
+        }
+#if 0 /* commented out, why? */
+      else if (ptbl->flags & upperbound)
+        {
+          if (ptbl->score < *beta) *beta = ptbl->score+1;
+        }
+#endif
+      else if (ptbl->flags & LOWERBOUND)
+        {
+          if (ptbl->score > *alpha)
+            *alpha = ptbl->score - 1;
+        }
+      return(true);
+    }
+  return(false);
+}
+
+//Store the current board position in the transposition table.
+void PutInTTable(short side, short score, short depth, short alpha,
+             short beta, WORD mv)
+{
+    struct hashentry *ptbl;
+    WORD i;
+    ptbl = ttable + side * 2 + (hashkey & (TTBLSZ - 1));
+
+    /* rehash max rehash times */
+    for (i = 1; depth < ptbl->depth && ptbl->hashbd != hashbd && i <= rehash; i++)
+        ptbl = ttable+side*2+((hashkey + i) & (TTBLSZ - 1));
+
+    if (depth >= ptbl->depth || ptbl->hashbd != hashbd)
+    {
+        ptbl->hashbd = hashbd;
+        ptbl->depth = (unsigned char) depth;
+        ptbl->score = score;
+        ptbl->mv = mv;
+        ptbl->flags = 0;
+
+        if (score < alpha)
+            ptbl->flags |= UPPERBOUND;
+        else if (score > beta)
+            ptbl->flags |= LOWERBOUND;
+        else
+            ptbl->flags |= TRUESCORE;
+#ifdef HASHTEST
+        for (i = 0; i < 32; i++)
+        {
+          ptbl->bd[i] = CB(i);
+        }
+#endif
+    }
+}
+
+int search(HWND hWnd, short side, short ply, short depth,
+        short alpha, short beta, WORD *bstline, short *rpt)
+{
+    short j, pnt;
+    short best, tempb, tempc, tempsf, tempst;
+    short xside, pbst, d, e, cf, score, rcnt, slk, InChk;
+    WORD mv, nxtline[maxdepth];
+    struct leaf *node, tmp;
+    NodeCnt++;
+    xside = otherside[side];
+
+    if ((ply <= Sdepth + 3) && rpthash[side][hashkey & 0xFF] > 0)
+        repetition (rpt);
+    else
+        *rpt = 0;
+
   /* Detect repetitions a bit earlier. SMC. 12/89 */
   if (*rpt == 1 && ply > 1)
     return (0);
@@ -431,24 +541,26 @@ search (HWND hWnd,
 
    /* end of changed section      J.Birmingham.          */
 
-#if ttblsz
-  if (depth > 0 && flag.hash && ply > 1)
+#if TTBLSZ
+    if (depth > 0 && flag.hash && ply > 1)
     {
       if (ProbeTTable (side, depth, &alpha, &beta, &score) == false)
-#ifdef HASHFILE 
+      {
+#ifdef HASHFILE
         if (hashfile && (depth > 5) && (GameCnt < 12))
           ProbeFTable (side, depth, &alpha, &beta, &score);
-#else
-      /* do nothing */;
-#endif /* HASHFILE */      
-      bstline[ply] = PV;
+#endif
+        bstline[ply] = PV;
+      }
       bstline[ply + 1] = 0;
+
       if (beta == -20000)
         return (score);
+
       if (alpha > beta)
         return (alpha);
     }
-#endif /* ttblsz */
+#endif
   if (Sdepth == 1)
     d = 7;
   else
@@ -574,19 +686,19 @@ search (HWND hWnd,
         return (-Tscore[ply - 1]);
     }
 
-  node = &Tree[pbst];
-  mv = (node->f << 8) | node->t;
-#if ttblsz
-  if (flag.hash && ply <= Sdepth && *rpt == 0 && best == alpha)
+    node = &Tree[pbst];
+    mv = (node->f << 8) | node->t;
+#if TTBLSZ
+    if (flag.hash && ply <= Sdepth && *rpt == 0 && best == alpha)
     {
-      PutInTTable (side, best, depth, alpha, beta, mv);
-#ifdef HASHFILE      
-      if (hashfile && (depth > 5) && (GameCnt < 12))
-        PutInFTable (side, best, depth, alpha, beta, node->f, node->t);
-#endif /* HASHFILE */      
+        PutInTTable(side, best, depth, alpha, beta, mv);
+#ifdef HASHFILE
+        if (hashfile && (depth > 5) && (GameCnt < 12))
+            PutInFTable(side, best, depth, alpha, beta, node->f, node->t);
+#endif
     }
-#endif /* ttblsz */
-  if (depth > 0)
+#endif
+    if (depth > 0)
     {
       j = (node->f << 6) | node->t;
       if (side == black)
@@ -610,200 +722,69 @@ search (HWND hWnd,
       else
         killr0[ply] = 0;
     }
-  return (best);
+    return (best);
 }
 
-#if ttblsz
-/*
-  hashbd contains a 32 bit "signature" of the board position. hashkey
-  contains a 16 bit code used to address the hash table. When a move is
-  made, XOR'ing the hashcode of moved piece on the from and to squares with
-  the hashbd and hashkey values keeps things current.
-*/
-#define UpdateHashbd(side, piece, f, t) \
-{\
-  if ((f) >= 0)\
-    {\
-      hashbd ^= (hashcode+(side)*7*64+(piece)*64+f)->bd;\
-      hashkey ^= (hashcode+(side)*7*64+(piece)*64+f)->key;\
-    }\
-  if ((t) >= 0)\
-    {\
-      hashbd ^= (hashcode+(side)*7*64+(piece)*64+t)->bd;\
-      hashkey ^= (hashcode+(side)*7*64+(piece)*64+t)->key;\
-    }\
-}
-
-#define CB(i) (unsigned char) ((color[2 * (i)] ? 0x80 : 0)\
-               | (board[2 * (i)] << 4)\
-               | (color[2 * (i) + 1] ? 0x8 : 0)\
-               | (board[2 * (i) + 1]))
-
-/*
-  Look for the current board position in the transposition table.
-*/
-int
-ProbeTTable(short int side,
-             short int depth,
-             short int *alpha,
-             short int *beta,
-             short int *score)
+void ZeroTTable()
 {
-  struct hashentry far *ptbl;
-  unsigned short i;
+    if (!flag.hash)
+        return;
 
-/*  ptbl = &ttable[side][hashkey & (ttblsz - 1)]; */
-   ptbl = ttable+side*2+(hashkey & (ttblsz - 1));
-
-  /* rehash max rehash times */
-  for (i = 1; ptbl->hashbd != hashbd && i <= rehash; i++)
-/*    ptbl = &ttable[side][(hashkey + i) & (ttblsz - 1)]; */
-    ptbl = ttable+side*2+((hashkey + i) & (ttblsz - 1));
-  if ((short) ptbl->depth >= depth && ptbl->hashbd == hashbd)
-    {
-      HashCnt++;
-#ifdef HASHTEST
-      for (i = 0; i < 32; i++)
-        {
-          if (ptbl->bd[i] != CB(i))
-            {
-              HashCol++;
-              ShowMessage("ttable collision detected");
-              break;
-            }
-        }
-#endif /* HASHTEST */
-
-      PV = ptbl->mv;
-      if (ptbl->flags & truescore)
-        {
-          *score = ptbl->score;
-          *beta = -20000;
-        }
-#if 0 /* commented out, why? */
-      else if (ptbl->flags & upperbound)
-        {
-          if (ptbl->score < *beta) *beta = ptbl->score+1;
-        }
-#endif
-      else if (ptbl->flags & lowerbound)
-        {
-          if (ptbl->score > *alpha)
-            *alpha = ptbl->score - 1;
-        }
-      return(true);
-    }
-  return(false);
+    for (int side = white; side <= black; side++)
+        for (int i = 0; i < TTBLSZ; i++)
+            (ttable + side * 2 + i)->depth = 0;
 }
-
-
-
-/*
-  Store the current board position in the transposition table.
-*/
-void
-PutInTTable (short int side,
-             short int score,
-             short int depth,
-             short int alpha,
-             short int beta,
-             short unsigned int mv)
-{
-  struct hashentry far *ptbl;
-  unsigned short i;
-
-/*  ptbl = &ttable[side][hashkey & (ttblsz - 1)]; */
-  ptbl = ttable+side*2+(hashkey & (ttblsz - 1));
-
-  /* rehash max rehash times */
-  for (i = 1; depth < ptbl->depth && ptbl->hashbd != hashbd && i <= rehash; i++)
-/*    ptbl = &ttable[side][(hashkey + i) & (ttblsz - 1)]; */
-    ptbl = ttable+side*2+((hashkey + i) & (ttblsz - 1));
-  if (depth >= ptbl->depth || ptbl->hashbd != hashbd)
-    {
-      ptbl->hashbd = hashbd;
-      ptbl->depth = (unsigned char) depth;
-      ptbl->score = score;
-      ptbl->mv = mv;
-      ptbl->flags = 0;
-      if (score < alpha)
-        ptbl->flags |= upperbound;
-      else if (score > beta)
-        ptbl->flags |= lowerbound;
-      else
-        ptbl->flags |= truescore;
-#ifdef HASHTEST
-      for (i = 0; i < 32; i++)
-        {
-          ptbl->bd[i] = CB(i);
-        }
-#endif /* HASHTEST */
-    }
-}
-
-void ZeroTTable (void)
-{
-  int side, i;
-
-  if (flag.hash)
-    for (side = white; side <= black; side++)
-      for (i = 0; i < ttblsz; i++)
-/*        ttable[side][i].depth = 0; */
-        (ttable+side*2+i)->depth = 0;
-}
-
-#ifdef HASHFILE
-int
-ProbeFTable(short int side,
-            short int depth,
-            short int *alpha,
-            short int *beta,
-            short int *score)
 
 /*
   Look for the current board position in the persistent transposition table.
 */
-
+int ProbeFTable(short side, short depth, short *alpha, short *beta, short *score)
 {
-  register unsigned short i, j;
-  unsigned long hashix;
-  short s;
-  struct fileentry new, t;
+    WORD i, j;
+    DWORD hashix;
+    short s;
+    struct fileentry xnew, t;
 
-  if (side == white)
-    hashix = hashkey & 0xFFFFFFFE & (filesz - 1);
-  else
-    hashix = hashkey | 1 & (filesz - 1);
+    if (side == white)
+        hashix = hashkey & 0xFFFFFFFE & (filesz - 1);
+    else
+        hashix = hashkey | (1 & (filesz - 1));
 
-  for (i = 0; i < 32; i++)
-    new.bd[i] = CB(i);
-  new.flags = 0;
-  if ((Mvboard[kingP[side]] == 0) && (Mvboard[qrook[side]] == 0))
-    new.flags |= queencastle;
-  if ((Mvboard[kingP[side]] == 0) && (Mvboard[krook[side]] == 0))
-    new.flags |= kingcastle;
+    for (i = 0; i < 32; i++)
+        xnew.bd[i] = CB(i);
 
-  for (i = 0; i < frehash; i++)
+    xnew.flags = 0;
+
+    //wat is qrook en krook?
+#if 0
+    if ((Mvboard[kingP[side]] == 0) && (Mvboard[qrook[side]] == 0))
+        xnew.flags |= queencastle;
+
+    if ((Mvboard[kingP[side]] == 0) && (Mvboard[krook[side]] == 0))
+        xnew.flags |= KINGCASTLE;
+#endif
+
+    for (i = 0; i < frehash; i++)
     {
       fseek(hashfile,
             sizeof(struct fileentry) * ((hashix + 2 * i) & (filesz - 1)),
             SEEK_SET);
       fread(&t, sizeof(struct fileentry), 1, hashfile);
       for (j = 0; j < 32; j++)
-        if (t.bd[j] != new.bd[j])
+        if (t.bd[j] != xnew.bd[j])
           break;
-      if (((short) t.depth >= depth) && (j >= 32)
-          && (new.flags == (t.flags & (kingcastle | queencastle))))
+
+      if ((short(t.depth) >= depth) && (j >= 32) && (xnew.flags == (t.flags & (KINGCASTLE | QUEENCASTLE))))
         {
           FHashCnt++;
           PV = (t.f << 8) | t.t;
           s = (t.sh << 8) | t.sl;
-          if (t.flags & truescore)
+          if (t.flags & TRUESCORE)
             {
               *score = s;
               *beta = -20000;
             }
-          else if (t.flags & lowerbound)
+          else if (t.flags & LOWERBOUND)
             {
               if (s > *alpha)
                 *alpha = s - 1;
@@ -811,69 +792,66 @@ ProbeFTable(short int side,
           return(true);
         }
     }
-  return(false);
+    return false;
 }
-
-void
-PutInFTable (short int side,
-             short int score,
-             short int depth,
-             short int alpha,
-             short int beta,
-             short unsigned int f,
-             short unsigned int t)
 
 /*
   Store the current board position in the persistent transposition table.
 */
-
+#ifdef HASHFILE
+static void PutInFTable(short side, short score, short depth, short alpha,
+    short beta, WORD f, WORD t)
 {
-  register unsigned short i;
-  unsigned long hashix;
-  struct fileentry new, tmp;
+    WORD i;
+    DWORD hashix;
+    struct fileentry xnew, tmp;
 
-  if (side == white)
-    hashix = hashkey & 0xFFFFFFFE & (filesz - 1);
-  else
-    hashix = hashkey | 1 & (filesz - 1);
+    if (side == white)
+        hashix = hashkey & 0xFFFFFFFE & (filesz - 1);
+    else
+        hashix = hashkey | 1 & (filesz - 1);
 
-  for (i = 0; i < 32; i++)
-    new.bd[i] = CB(i);
-  new.f = (unsigned char) f;
-  new.t = (unsigned char) t;
-  new.flags = 0;
-  if (score < alpha)
-    new.flags |= upperbound;
-  else if (score > beta)
-    new.flags |= lowerbound;
-  else
-    new.flags |= truescore;
-  if ((Mvboard[kingP[side]] == 0) && (Mvboard[qrook[side]] == 0))
-    new.flags |= queencastle;
-  if ((Mvboard[kingP[side]] == 0) && (Mvboard[krook[side]] == 0))
-    new.flags |= kingcastle;
-  new.depth = (unsigned char) depth;
-  new.sh = (unsigned char) (score >> 8);
-  new.sl = (unsigned char) (score & 0xFF);
+    for (i = 0; i < 32; i++)
+        xnew.bd[i] = CB(i);
 
-  for (i = 0; i < frehash; i++)
+    xnew.f = BYTE(f);
+    xnew.t = BYTE(t);
+    xnew.flags = 0;
+
+    if (score < alpha)
+        xnew.flags |= upperbound;
+    else if (score > beta)
+        xnew.flags |= LOWERBOUND;
+    else
+        xnew.flags |= TRUESCORE;
+
+    //wat is qrook en krook?
+#if 0
+    if ((Mvboard[kingP[side]] == 0) && (Mvboard[qrook[side]] == 0))
+        xnew.flags |= queencastle;
+
+    if ((Mvboard[kingP[side]] == 0) && (Mvboard[krook[side]] == 0))
+        xnew.flags |= KINGCASTLE;
+#endif
+    xnew.depth = BYTE(depth);
+    xnew.sh = BYTE(score >> 8);
+    xnew.sl = BYTE(score & 0xFF);
+
+    for (i = 0; i < frehash; i++)
     {
-      fseek(hashfile,
-            sizeof(struct fileentry) * ((hashix + 2 * i) & (filesz - 1)),
-            SEEK_SET);
-      fread(&tmp, sizeof(struct fileentry), 1, hashfile);
-      if ((short) tmp.depth <= depth)
+        fseek(hashfile, sizeof(struct fileentry) * ((hashix + 2 * i) & (filesz - 1)), SEEK_SET);
+        fread(&tmp, sizeof(struct fileentry), 1, hashfile);
+
+        if ((short)tmp.depth <= depth)
         {
-          fseek(hashfile,
-                sizeof(struct fileentry) * ((hashix + 2 * i) & (filesz - 1)),
-                SEEK_SET);
-          fwrite (&new, sizeof(struct fileentry), 1, hashfile);
-          break;
+            fseek(hashfile, sizeof(struct fileentry) * ((hashix + 2 * i) & (filesz - 1)), SEEK_SET);
+            fwrite(&xnew, sizeof(struct fileentry), 1, hashfile);
+            break;
         }
     }
 }
-#endif /* HASHFILE */
-#endif /* ttblsz */
+#endif
+#endif
 
 void ZeroRPT()
 {
@@ -904,8 +882,7 @@ void ZeroRPT()
   5. "history" killers
 */
 static inline void
-LinkMove (short int ply, short int f, short int t,
-          short int flag, short int xside)
+LinkMove(short ply, short f, short t, short flag, short xside)
 {
   short s, z;
   unsigned short mv;
@@ -1129,27 +1106,24 @@ CaptureList (short int side, short int ply)
     }
 }
 
-
-int
-castle (short int side, short int kf, short int kt, short int iop)
-
-/* Make or Unmake a castling move. */
-
+//Make or Unmake a castling move.
+int castle(short side, short kf, short kt, short iop)
 {
-  short rf, rt, t0, xside;
+    short rf, rt, t0, xside;
+    xside = otherside[side];
 
-  xside = otherside[side];
-  if (kt > kf)
+    if (kt > kf)
     {
       rf = kf + 3;
       rt = kt - 1;
     }
-  else
+    else
     {
       rf = kf - 4;
       rt = kt + 1;
     }
-  if (iop == 0)
+
+    if (iop == 0)
     {
       if (kf != kingP[side] ||
           board[kf] != king ||
@@ -1196,17 +1170,17 @@ castle (short int side, short int kf, short int kt, short int iop)
       color[rf] = neutral;
       PieceList[side][Pindex[kt]] = kt;
       PieceList[side][Pindex[rt]] = rt;
-#if ttblsz
-      UpdateHashbd (side, king, kf, kt);
-      UpdateHashbd (side, rook, rf, rt);
-#endif /* ttblsz */
+#if TTBLSZ
+      UpdateHashbd(side, king, kf, kt);
+      UpdateHashbd(side, rook, rf, rt);
+#endif
     }
   return (true);
 }
 
 //Make or unmake an en passant move.
 static inline void
-EnPassant (short int xside, short int f, short int t, short int iop)
+EnPassant(short xside, short f, short t, short iop)
 {
     short l;
 
@@ -1217,13 +1191,13 @@ EnPassant (short int xside, short int f, short int t, short int iop)
 
     if (iop == 1)
     {
-      board[l] = no_piece;
-      color[l] = neutral;
+        board[l] = no_piece;
+        color[l] = neutral;
     }
     else
     {
-      board[l] = pawn;
-      color[l] = xside;
+        board[l] = pawn;
+        color[l] = xside;
     }
     InitializeStats();
 }
@@ -1232,20 +1206,18 @@ EnPassant (short int xside, short int f, short int t, short int iop)
   Update the PieceList and Pindex arrays when a piece is captured or when a
   capture is unmade.
 */
-static inline void
-UpdatePieceList (short int side, short int sq, short int iop)
+static inline void UpdatePieceList (short side, short sq, short iop)
 {
-  short i;
-  if (iop == 1)
+    if (iop == 1)
     {
-      PieceCnt[side]--;
-      for (i = Pindex[sq]; i <= PieceCnt[side]; i++)
+        PieceCnt[side]--;
+        for (short i = Pindex[sq]; i <= PieceCnt[side]; i++)
         {
           PieceList[side][i] = PieceList[side][i + 1];
           Pindex[PieceList[side][i]] = i;
         }
     }
-  else
+    else
     {
       PieceCnt[side]++;
       PieceList[side][PieceCnt[side]] = sq;
@@ -1258,27 +1230,21 @@ UpdatePieceList (short int side, short int sq, short int iop)
   position obtained after making the move pointed to by node. Also update
   miscellaneous stuff that changes when a move is made.
 */
-void
-MakeMove (short int side,
-          struct leaf far * node,
-          short int *tempb,
-          short int *tempc,
-          short int *tempsf,
-          short int *tempst,
-          short int *INCscore)
+void MakeMove(short side, struct leaf *node, short *tempb,
+          short *tempc, short *tempsf, short *tempst, short *INCscore)
 {
-  short f, t, xside, ct, cf;
+    short f, t, ct, cf;
+    short xside = otherside[side];
+    GameCnt++;
+    f = node->f;
+    t = node->t;
+    epsquare = -1;
+    FROMsquare = f;
+    TOsquare = t;
+    *INCscore = 0;
+    GameList[GameCnt].gmove = (f << 8) | t;
 
-  xside = otherside[side];
-  GameCnt++;
-  f = node->f;
-  t = node->t;
-  epsquare = -1;
-  FROMsquare = f;
-  TOsquare = t;
-  *INCscore = 0;
-  GameList[GameCnt].gmove = (f << 8) | t;
-  if (node->flags & cstlmask)
+    if (node->flags & cstlmask)
     {
       GameList[GameCnt].piece = no_piece;
       GameList[GameCnt].color = side;
@@ -1315,9 +1281,9 @@ MakeMove (short int side,
           mtl[xside] -= value[*tempb];
           if (*tempb == pawn)
             pmtl[xside] -= valueP;
-#if ttblsz
+#if TTBLSZ
           UpdateHashbd (xside, *tempb, -1, t);
-#endif /* ttblsz */
+#endif
           *INCscore += *tempst;
           Mvboard[t]++;
         }
@@ -1351,36 +1317,30 @@ MakeMove (short int side,
           --PawnCnt[side][column (t)];
           mtl[side] += value[board[t]] - valueP;
           pmtl[side] -= valueP;
-#if ttblsz
+#if TTBLSZ
           UpdateHashbd (side, pawn, f, -1);
           UpdateHashbd (side, board[t], f, -1);
-#endif /* ttblsz */
+#endif
           *INCscore -= *tempsf;
         }
       if (node->flags & epmask)
         EnPassant (xside, f, t, 1);
       else
-#if ttblsz
+#if TTBLSZ
         UpdateHashbd (side, board[t], f, t);
 #else
         /* NOOP */;     
-#endif /* ttblsz */
+#endif
       Mvboard[f]++;
     }
 }
 
-void
-UnmakeMove (short int side,
-            struct leaf far * node,
-            short int *tempb,
-            short int *tempc,
-            short int *tempsf,
-            short int *tempst)
-
 /*
   Take back a move.
 */
-
+void
+UnmakeMove(short side, struct leaf *node, short *tempb,
+            short *tempc, short *tempsf, short *tempst)
 {
   short f, t, xside;
 
@@ -1407,10 +1367,10 @@ UnmakeMove (short int side,
           ++PawnCnt[side][column (t)];
           mtl[side] += valueP - value[node->flags & pmask];
           pmtl[side] += valueP;
-#if ttblsz
+#if TTBLSZ
           UpdateHashbd (side, (short) node->flags & pmask, -1, t);
           UpdateHashbd (side, pawn, -1, t);
-#endif /* ttblsz */
+#endif
         }
       if (*tempc != neutral)
         {
@@ -1425,28 +1385,24 @@ UnmakeMove (short int side,
           mtl[xside] += value[*tempb];
           if (*tempb == pawn)
             pmtl[xside] += valueP;
-#if ttblsz
+#if TTBLSZ
           UpdateHashbd (xside, *tempb, -1, t);
-#endif /* ttblsz */
+#endif
           Mvboard[t]--;
         }
       if (node->flags & epmask)
         EnPassant (xside, f, t, 2);
       else
-#if ttblsz
+#if TTBLSZ
         UpdateHashbd (side, board[f], f, t);
 #else
       /* NOOP */;
-#endif /* ttblsz */
-      Mvboard[f]--;
-      if (!(node->flags & capture) && (board[f] != pawn))
-        rpthash[side][hashkey & 0xFF]--;
+#endif
+        Mvboard[f]--;
+        if (!(node->flags & capture) && (board[f] != pawn))
+            rpthash[side][hashkey & 0xFF]--;
     }
 }
-
-
-void
-InitializeStats (void)
 
 /*
   Scan thru the board seeing what's on each square. If a piece is found,
@@ -1457,18 +1413,19 @@ InitializeStats (void)
   side. Array Pindex[sq] contains the indx into PieceList for a given
   square.
 */
-
+void InitializeStats()
 {
-  short i, sq;
-  
-  epsquare = -1;
-  for (i = 0; i < 8; i++)
-    PawnCnt[white][i] = PawnCnt[black][i] = 0;
-  mtl[white] = mtl[black] = pmtl[white] = pmtl[black] = 0;
-  PieceCnt[white] = PieceCnt[black] = 0;
-#if ttblsz
-  hashbd = hashkey = 0;
-#endif /* ttblsz */
+    short i, sq;
+    epsquare = -1;
+
+    for (i = 0; i < 8; i++)
+        PawnCnt[white][i] = PawnCnt[black][i] = 0;
+
+    mtl[white] = mtl[black] = pmtl[white] = pmtl[black] = 0;
+    PieceCnt[white] = PieceCnt[black] = 0;
+#if TTBLSZ
+    hashbd = hashkey = 0;
+#endif
   for (sq = 0; sq < 64; sq++)
     if (color[sq] != neutral)
       {
@@ -1483,47 +1440,51 @@ InitializeStats (void)
         else
           Pindex[sq] = ++PieceCnt[color[sq]];
         PieceList[color[sq]][Pindex[sq]] = sq;
-#if ttblsz
+#if TTBLSZ
         hashbd ^= (hashcode+color[sq]*7*64+board[sq]*64+sq)->bd;
         hashkey ^= (hashcode+color[sq]*7*64+board[sq]*64+sq)->key;
-#endif /* ttblsz */
+#endif
       }
 }
-
-
-
 
 /*
   See if any piece with color 'side' ataks sq.  First check pawns then Queen,
   Bishop, Rook and King and last Knight.
 */
-int SqAtakd (short int sq, short int side)
+int SqAtakd(short sq, short side)
 {
-  unsigned char *ppos, *pdir;
+    BYTE *ppos, *pdir;
+    short xside = otherside[side];
+    pdir = nextdir+ptype[xside][pawn]*64*64+sq*64;
+    short u = pdir[sq];         /* follow captures thread */
 
-  short xside = otherside[side];
-  pdir = nextdir+ptype[xside][pawn]*64*64+sq*64;
-  short u = pdir[sq];         /* follow captures thread */
-  if (u != sq)
+    if (u != sq)
     {
-      if (board[u] == pawn && color[u] == side)
-        return (true);
-      u = pdir[u];
-      if (u != sq && board[u] == pawn && color[u] == side)
-        return (true);
+        if (board[u] == pawn && color[u] == side)
+            return true;
+
+        u = pdir[u];
+
+        if (u != sq && board[u] == pawn && color[u] == side)
+            return (true);
     }
-  /* king capture */
-  if (distance (sq, PieceList[side][0]) == 1)
-    return (true);
-  /* try a queen bishop capture */
-  ppos = nextpos+bishop*64*64+sq*64;
-  pdir = nextdir+bishop*64*64+sq*64;
-  u = ppos[sq];
-  do
+
+    /* king capture */
+    if (distance(sq, PieceList[side][0]) == 1)
+        return (true);
+
+    /* try a queen bishop capture */
+    ppos = nextpos+bishop*64*64+sq*64;
+    pdir = nextdir+bishop*64*64+sq*64;
+    u = ppos[sq];
+
+    do
     {
-      if (color[u] == neutral)
-        u = ppos[u];
-      else
+        if (color[u] == neutral)
+        {
+            u = ppos[u];
+        }
+        else
         {
           if (color[u] == side &&
               (board[u] == queen || board[u] == bishop))
@@ -1564,20 +1525,19 @@ int SqAtakd (short int sq, short int side)
   if the piece (king..pawn) ataks the square.  Bits 0-7 contain a count of
   total ataks to the square.
 */
-void
-ataks (short int side, short int *a)
+void ataks(short int side, short int *a)
 {
-  short u, c, sq;
-  unsigned char far *ppos, far *pdir;
-  short i, piece, *PL;
-
+    short u, c, sq;
+    BYTE *ppos, *pdir;
+    short i, piece, *PL;
 #ifdef NOMEMSET
-  for (u = 64; u; a[--u] = 0) ;
+    for (u = 64; u; a[--u] = 0) ;
 #else
-  memset ((char *) a, 0, 64 * sizeof (a[0]));
-#endif /* NOMEMSET */
-  PL = PieceList[side];
-  for (i = PieceCnt[side]; i >= 0; i--)
+    memset ((char *) a, 0, 64 * sizeof (a[0]));
+#endif
+    PL = PieceList[side];
+
+    for (i = PieceCnt[side]; i >= 0; i--)
     {
       sq = PL[i];
       piece = board[sq];
@@ -1595,7 +1555,7 @@ ataks (short int side, short int *a)
         }
       else
         {
-          pdir = nextdir+ptype[side][piece]*64*64+sq*64;
+          pdir = nextdir + ptype[side][piece]*64*64+sq*64;
           u = pdir[sq]; /* follow captures thread for pawns */
           do
             {

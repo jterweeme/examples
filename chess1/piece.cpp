@@ -26,19 +26,14 @@
 
 
 #include "chess.h"
-#include "defs.h"
+#include "protos.h"
 #include "globals.h"
-#include <windows.h>
-#include <stdio.h>
 
 #define PIECE_XAXIS 32
 #define PIECE_YAXIS 32
 
 static short ConvertCoordToIndex(short x, short y);
-static void PieceOriginFromCenter(POINT *pptl);
-static void QuerySqPieceOrigin(short x, short y, POINT *pptl);
 static void DrawOnePiece(HDC hDC, short x, short y, struct PIECEBITMAP *piece, DWORD color);
-static void ShowPiece(HDC hDC, POINT *pptl, struct PIECEBITMAP *Piece_bitmap, DWORD Color);
 
 static void QuerySqCenter(short x, short y, POINT *pptl)
 {
@@ -103,10 +98,9 @@ static short ConvertCoordToIndex(short x, short y)
 
 static void DrawOnePiece ( HDC hDC, short x, short y, struct PIECEBITMAP *piece, DWORD color)
 {
-   POINT origin;
-
-   QuerySqPieceOrigin ( x, y, &origin );
-   ShowPiece ( hDC, &origin, piece, color);
+    POINT origin;
+    QuerySqPieceOrigin(x, y, &origin);
+    ShowPiece(hDC, &origin, piece, color);
 }
 
 void DrawAllPieces(HDC hDC, int reverse, short *pbrd, short *color,
