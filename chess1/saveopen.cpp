@@ -171,22 +171,20 @@ FileOpenDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
    return TRUE;
 }
 
-#ifndef WINCE
 int DoFileOpenDlg(HINSTANCE hInst, HWND hWnd, LPCTSTR szFileSpecIn,
                        LPCTSTR szDefExtIn, WORD wFileAttrIn,
                        LPTSTR szFileNameOut, POFSTRUCT pofIn)
 {
-    lstrcpy(szFileSpec, szFileSpecIn);
-    lstrcpy(szDefExt, szDefExtIn);
+    ::lstrcpy(szFileSpec, szFileSpecIn);
+    ::lstrcpy(szDefExt, szDefExtIn);
     wFileAttr = wFileAttrIn;
     pof = pofIn;
-    int iReturn = DialogBox(hInst, MAKEINTRESOURCE(FILEOPEN), hWnd, FileOpenDlgProc);
-    lstrcpy(szFileNameOut, szFileName);
+    int iReturn = ::DialogBox(hInst, MAKEINTRESOURCE(FILEOPEN), hWnd, FileOpenDlgProc);
+    ::lstrcpy(szFileNameOut, szFileName);
     return iReturn;
 }
-#endif
 
-static INT_PTR
+static INT_PTR CALLBACK
 WildFileOpenDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     char cLastChar;
@@ -357,32 +355,28 @@ WildFileOpenDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
    return TRUE;
 }
 
-#ifndef WINCE
 int DoWildFileOpenDlg(HINSTANCE hInst, HWND hWnd, LPCTSTR szFileSpecIn,
                            LPCTSTR szDefExtIn, WORD wFileAttrIn,
                            LPTSTR szFileNameOut, POFSTRUCT pofIn)
 {
-    lstrcpy(szFileSpec, szFileSpecIn);
-    lstrcpy(szDefExt, szDefExtIn);
+    ::lstrcpy(szFileSpec, szFileSpecIn);
+    ::lstrcpy(szDefExt, szDefExtIn);
     wFileAttr = wFileAttrIn;
     pof = pofIn;
     int iReturn = DialogBox(hInst, MAKEINTRESOURCE(WILDFILEOPEN), hWnd, WildFileOpenDlgProc);
-    lstrcpy(szFileNameOut, szFileName);
+    ::lstrcpy(szFileNameOut, szFileName);
     return iReturn;
 }
-#endif
 
-static INT_PTR
+static INT_PTR CALLBACK
 FileSaveDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     switch (iMessage)
     {
     case WM_INITDIALOG:
-        SendDlgItemMessage(hDlg, IDD_FNAME, EM_LIMITTEXT, 80, 0L);
-#ifndef WINCE
-        DlgDirList(hDlg, szFileSpec, 0, IDD_FPATH, 0);
-#endif
-        SetDlgItemText(hDlg, IDD_FNAME, szFileSpec);
+        ::SendDlgItemMessage(hDlg, IDD_FNAME, EM_LIMITTEXT, 80, 0L);
+        ::DlgDirList(hDlg, szFileSpec, 0, IDD_FPATH, 0);
+        ::SetDlgItemText(hDlg, IDD_FNAME, szFileSpec);
         return TRUE;
     case WM_COMMAND:
         switch (wParam)
@@ -390,8 +384,8 @@ FileSaveDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
         case IDD_FNAME:
             if (HIWORD(lParam) == EN_CHANGE)
             {
-                EnableWindow ( GetDlgItem(hDlg, IDOK),
-                     (BOOL) SendMessageA(HWND(LOWORD(lParam)), WM_GETTEXTLENGTH,0,0L));
+                ::EnableWindow(::GetDlgItem(hDlg, IDOK),
+                     BOOL(SendMessageA(HWND(LOWORD(lParam)), WM_GETTEXTLENGTH, 0, 0L)));
             }
             break;
         case IDOK:

@@ -195,7 +195,7 @@ static int ColorToIndex(DWORD color)
    return CNT_WHITE;
 }
 
-static LRESULT CALLBACK
+static INT_PTR CALLBACK
 ColorDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     char *pchHeading;
@@ -283,9 +283,7 @@ ColorDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 int ColorDialog(HWND hWnd, HINSTANCE hInst, WPARAM Param)
 {
     int status;
-#ifndef WINCE
-    status = DialogBoxParamA(hInst, MAKEINTRESOURCEA(COLOR), hWnd, ColorDlgProc, Param);
-#endif
+    status = DialogBoxParam(hInst, MAKEINTRESOURCE(COLOR), hWnd, ColorDlgProc, Param);
     return status;
 }
 
