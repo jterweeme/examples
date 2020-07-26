@@ -1,9 +1,7 @@
-//{{NO_DEPENDENCIES}}
-// Microsoft Visual C++ generated include file.
-// Used by Property.rc
-// Copyright 1993 - 2000 Microsoft Corporation. All rights reserved
-#define IDD_ABOUT_DIALOG                101
-#define IDR_MAIN_MENU                   102
+#ifndef RESOURCE_H
+#define RESOURCE_H
+#define IDD_ABOUT_DIALOG 101
+#define IDR_MAIN_MENU 102
 #define IDI_BACKCOLOR                   103
 #define IDD_BUTTONS                     105
 #define IDD_COMBOBOXES                  106
@@ -23,14 +21,8 @@
 #define IDM_WIZARD                      2004
 #define IDM_ABOUT                       2005
 #define IDC_STATIC                      -1
+#define IDS_INITERROR 2006
+#define IDS_UNKNOWNERR 2007
+#define IDS_ALLOCMEM 2008
+#endif
 
-// Next default values for new objects
-// 
-#ifdef APSTUDIO_INVOKED
-#ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        107
-#define _APS_NEXT_COMMAND_VALUE         2006
-#define _APS_NEXT_CONTROL_VALUE         1015
-#define _APS_NEXT_SYMED_VALUE           101
-#endif
-#endif
