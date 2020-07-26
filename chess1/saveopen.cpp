@@ -69,58 +69,57 @@ FileOpenDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
             {
             case LBN_SELCHANGE:
                 if (DlgDirSelect(hDlg, szFileName, IDD_FLIST))
-                    lstrcat(szFileName, szFileSpec);
+                    ::lstrcat(szFileName, szFileSpec);
 
-                SetDlgItemText(hDlg, IDD_FNAME, szFileName);
+                ::SetDlgItemText(hDlg, IDD_FNAME, szFileName);
                 break;
             case LBN_DBLCLK:
-                     if (DlgDirSelect (hDlg, szFileName, IDD_FLIST))
-                     {
-                        lstrcat(szFileName, szFileSpec);
-                        DlgDirList(hDlg, szFileName, IDD_FLIST, IDD_FPATH, wFileAttr);
-                        SetDlgItemText(hDlg, IDD_FNAME, szFileName);
-                     }
-                     else
-                     {
-                        SetDlgItemText(hDlg, IDD_FNAME, szFileName);
-                        SendMessage(hDlg, WM_COMMAND, IDOK, 0L);
-                     }
-                     break;
-               }
-               break;
-
-            case IDD_DLIST:
-               switch (HIWORD(lParam))
-               {
-                  case LBN_DBLCLK:
-                     if ( DlgDirSelect (hDlg, szFileName, IDD_DLIST))
-                     {
-                        lstrcat(szFileName, szFileSpec);
-                        DlgDirList(hDlg, szFileName, IDD_FLIST, IDD_FPATH, wFileAttr);
-                        DlgDirList(hDlg, szFileName, IDD_DLIST, NULL, 0x4010|0x8000);
-                        SetDlgItemText(hDlg, IDD_FNAME, szFileName);
-                     }
-                     break;
-               }
-               break;
-            case IDD_FNAME:
-               if (HIWORD (lParam) == EN_CHANGE )
-               {
-                  EnableWindow ( GetDlgItem(hDlg,IDOK),
-                     (BOOL) SendMessage(HWND(LOWORD(lParam)), WM_GETTEXTLENGTH, 0,0L));
-               }
-               break;
-            case IDOK:
-               GetDlgItemText(hDlg, IDD_FNAME, szFileName, 80);
-               nEditLen = lstrlen(szFileName);
+                if (DlgDirSelect (hDlg, szFileName, IDD_FLIST))
+                {
+                    ::lstrcat(szFileName, szFileSpec);
+                    ::DlgDirList(hDlg, szFileName, IDD_FLIST, IDD_FPATH, wFileAttr);
+                    ::SetDlgItemText(hDlg, IDD_FNAME, szFileName);
+                }
+                else
+                {
+                    ::SetDlgItemText(hDlg, IDD_FNAME, szFileName);
+                    ::SendMessage(hDlg, WM_COMMAND, IDOK, 0L);
+                }
+                break;
+            }
+            break;
+        case IDD_DLIST:
+            switch (HIWORD(lParam))
+            {
+            case LBN_DBLCLK:
+                if (::DlgDirSelect(hDlg, szFileName, IDD_DLIST))
+                {
+                    ::lstrcat(szFileName, szFileSpec);
+                    ::DlgDirList(hDlg, szFileName, IDD_FLIST, IDD_FPATH, wFileAttr);
+                    ::DlgDirList(hDlg, szFileName, IDD_DLIST, NULL, 0x4010|0x8000);
+                    ::SetDlgItemText(hDlg, IDD_FNAME, szFileName);
+                }
+                break;
+            }
+            break;
+        case IDD_FNAME:
+            if (HIWORD(lParam) == EN_CHANGE)
+            {
+                    ::EnableWindow(::GetDlgItem(hDlg, IDOK),
+                            BOOL(SendMessage(HWND(LOWORD(lParam)), WM_GETTEXTLENGTH, 0,0L)));
+            }
+            break;
+        case IDOK:
+            ::GetDlgItemText(hDlg, IDD_FNAME, szFileName, 80);
+            nEditLen = lstrlen(szFileName);
 #ifndef UNICODE
-               cLastChar = *AnsiPrev(szFileName, szFileName+nEditLen);
+            cLastChar = *AnsiPrev(szFileName, szFileName+nEditLen);
 
-               if (cLastChar == '\\' || cLastChar == ':')
-                  lstrcat( szFileName, szFileSpec);
+            if (cLastChar == '\\' || cLastChar == ':')
+                ::lstrcat( szFileName, szFileSpec);
 
-               if (strchr(szFileName, '*') || strchr(szFileName, '?') )
-               {
+            if (strchr(szFileName, '*') || strchr(szFileName, '?') )
+            {
                   if (DlgDirList(hDlg, szFileName, IDD_FLIST, IDD_FPATH, wFileAttr))
                   {
                      lstrcpy(szFileSpec, szFileName);
@@ -131,44 +130,44 @@ FileOpenDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
                      MessageBeep(0);
                   }
                   break;
-               }
-               lstrcat(lstrcat(szFileName, TEXT("\\")), szFileSpec);
+            }
+            ::lstrcat(::lstrcat(szFileName, TEXT("\\")), szFileSpec);
 
-               if (DlgDirList(hDlg, szFileName, IDD_FLIST,
-                                                  IDD_FPATH,wFileAttr))
-               {
+            if (DlgDirList(hDlg, szFileName, IDD_FLIST, IDD_FPATH,wFileAttr))
+            {
                   lstrcpy( szFileSpec, szFileName);
                   SetDlgItemText(hDlg, IDD_FNAME, szFileSpec);
                   break;
-               }
+            }
 
-               szFileName[nEditLen] = '\0';
+            szFileName[nEditLen] = '\0';
 
-               if (OpenFile(szFileName, pof, OF_READ|OF_EXIST) == -1)
-               {
-                  lstrcat(szFileName, szDefExt);
+            if (OpenFile(szFileName, pof, OF_READ|OF_EXIST) == -1)
+            {
+                lstrcat(szFileName, szDefExt);
 
                   if (OpenFile(szFileName, pof, OF_READ|OF_EXIST) == -1)
                   {
                      MessageBeep(0);
                      break;
                   }
-               }
-               lstrcpy(szFileName, AnsiNext(strrchr(pof->szPathName,'\\')));
-               OemToAnsi(szFileName, szFileName);
+            }
+            ::lstrcpy(szFileName, AnsiNext(strrchr(pof->szPathName,'\\')));
+            ::OemToAnsi(szFileName, szFileName);
 #endif
-               ::EndDialog(hDlg, TRUE);
-               break;
-            case IDCANCEL:
-               ::EndDialog (hDlg, FALSE);
-               break;
-            default:
-               return FALSE;
-         }
-      default:
-         return FALSE;
-   }
-   return TRUE;
+            ::EndDialog(hDlg, TRUE);
+            break;
+        case IDCANCEL:
+            ::EndDialog (hDlg, FALSE);
+            break;
+        default:
+            return FALSE;
+        }
+        return FALSE;
+    default:
+        return FALSE;
+    }
+    return TRUE;
 }
 
 int DoFileOpenDlg(HINSTANCE hInst, HWND hWnd, LPCTSTR szFileSpecIn,
@@ -348,11 +347,12 @@ WildFileOpenDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
                break;
             default:
                return FALSE;
-         }
-      default:
-         return FALSE;
-   }
-   return TRUE;
+        }
+        return FALSE;
+    default:
+        return FALSE;
+    }
+    return TRUE;
 }
 
 int DoWildFileOpenDlg(HINSTANCE hInst, HWND hWnd, LPCTSTR szFileSpecIn,

@@ -230,20 +230,24 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam, LPCTSTR appName)
     }
         break;
     case MSG_CHESS_GET:
+    {
           if (!DoFileOpenDlg(hInstance(), hWnd, TEXT("*.chs"), TEXT(".chs"), 0x0, FileName, &pof))
              break;
 #ifndef UNICODE
+          HFILE hFile;
+
           if ((hFile = OpenFile(FileName, &pof, OF_READ|OF_REOPEN)) == -1)
           {
              lstrcpy(str, "Cannot open file: ");
              lstrcat(str, FileName);
-             ::MessageBox(hWnd, str, szAppName, MB_OK | MB_APPLMODAL | MB_ICONQUESTION);
+             ::MessageBox(hWnd, str, appName, MB_OK | MB_APPLMODAL | MB_ICONQUESTION);
              break;
           }
 
           _lclose(hFile);
 #endif
           GetGame(hWnd, pof.szPathName);
+    }
           break;
     case MSG_CHESS_NEW:
         NewGame(hWnd);
@@ -552,7 +556,7 @@ void MainWindow::_userMoveProc(HWND hwnd)
     }
 }
 
-void MainWindow::_createProc(HWND hWnd, LPCWSTR appName)
+void MainWindow::_createProc(HWND hWnd, LPCTSTR appName)
 {
     int xchar, ychar;
     GetStartupColors(appName);

@@ -17,7 +17,7 @@ private:
     void MakeHelpPathName(TCHAR *szFileName);
     static MainWindow *_instance;
     LRESULT _wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-    void _createProc(HWND hwnd, LPCWSTR appName);
+    void _createProc(HWND hwnd, LPCTSTR appName);
     void _paintProc(HWND hwnd) const;
     void _userMoveProc(HWND hwnd);
     void _commandProc(HWND hwnd, WPARAM wParam, LPCTSTR appName);

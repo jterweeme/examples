@@ -57,5 +57,5 @@ OTHER_FILES += chess.rc\
     rookm.bmp\
     rooko.bmp
 
-#DEFINES -= UNICODE _UNICODE
+DEFINES -= UNICODE _UNICODE
 LIBS += -lgdi32
