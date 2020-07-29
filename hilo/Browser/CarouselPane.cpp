@@ -8,7 +8,7 @@
 //===================================================================================
 
 
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "resource.h"
 #include "CarouselPane.h"
 #include "CarouselAnimation.h"
@@ -392,8 +392,9 @@ HRESULT CarouselPaneMessageHandler::DrawClientArea()
         // Begin drawing
         m_renderTarget->BeginDraw();
         m_renderTarget->SetTransform(Matrix3x2F::Identity());
+#if 0
         m_renderTarget->FillRectangle(RectF(0, 0, size.width, size.height), m_backgroundLinearGradientBrush);
-
+#endif
         // Draw back button
         if (m_carouselHistoryItems.size() > 1 && m_isHistoryExpanded == false)
         {
@@ -469,12 +470,14 @@ void CarouselPaneMessageHandler::DrawHistoryItems()
 
         if (SUCCEEDED(hr))
         {
+#if 0
             m_radialGradientBrush->SetCenter(orbit.point);
             m_radialGradientBrush->SetRadiusX(orbit.radiusX);
             m_radialGradientBrush->SetRadiusY(orbit.radiusY);
             m_radialGradientBrush->SetOpacity(static_cast<float>(opacity));
 
             m_renderTarget->FillEllipse(orbit, m_radialGradientBrush);
+#endif
         }
     }
 
@@ -798,7 +801,9 @@ HRESULT CarouselPaneMessageHandler::OnSize(unsigned int width, unsigned int heig
             if (m_updatingFolder == false)
             {
                 hr = ResetOrbitValues();
+#if 0
                 OnRender();
+#endif
             }
             else
             {

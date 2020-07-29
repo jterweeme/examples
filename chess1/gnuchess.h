@@ -31,7 +31,6 @@
   Setting TTBLSZ 0 removes the transposition tables.
 */
 #define TTBLSZ (1 << 16)
-#define huge
 #define white 0
 #define black 1
 #define neutral 2
@@ -44,7 +43,7 @@
 #define king 6
 #define bpawn 7
 #define pmask 0x0007
-#define promote 0x0008
+#define PROMOTE 0x0008
 #define cstlmask 0x0010
 #define epmask 0x0020
 #define exact 0x0040
@@ -69,11 +68,7 @@
 #define ctlRQ 0x0600
 #define CTLNN 0x2000
 
-#define TRUESCORE 0x0001
-#define LOWERBOUND 0x0002
-#define UPPERBOUND 0x0004
-#define KINGCASTLE 0x0008
-#define QUEENCASTLE 0x0010
+
 
 /*
   persistent transposition table.

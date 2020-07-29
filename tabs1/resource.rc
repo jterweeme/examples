@@ -1,0 +1,17 @@
+#include "resource.h"
+#include <windows.h>
+
+IDD_MAANDAG DIALOG 50, 31, 173, 130
+STYLE WS_CHILD
+FONT 8, "MS Shell Dlg"
+BEGIN
+    PUSHBUTTON "Dinges", IDC_DINGES, 0, 0, 100, 30
+END
+
+STRINGTABLE
+BEGIN
+    IDS_INITERROR,     "Initialization error"
+    IDS_UNKNOWNERR,    "Unknown error"
+    IDS_ALLOCMEM,      "Cannot allocate memory"
+END
+

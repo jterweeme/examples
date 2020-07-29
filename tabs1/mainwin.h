@@ -12,6 +12,7 @@ private:
     HWND _hwndTab;
     TabControl _tc;
     void _createProc(HWND hwnd);
+    void _onSelChanged(HWND hwnd);
 public:
     MainWin(WinClass *wc);
     void create();

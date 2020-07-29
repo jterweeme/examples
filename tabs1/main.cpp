@@ -1,5 +1,7 @@
 #include "winclass.h"
 #include "mainwin.h"
+#include "toolbox.h"
+#include "resource.h"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
                    LPSTR lpCmdLine, int nCmdShow)
@@ -18,13 +20,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     }
     catch (LPCSTR err)
     {
-        MessageBoxA(0, err, "Error", 0);
+        Toolbox().errorBoxA(0, err);
+        return -1;
+    }
+    catch (LPCWSTR err)
+    {
+        Toolbox().errorBoxW(0, err);
+        return -1;
     }
     catch (...)
     {
-        MessageBoxW(0, L"Unkown Error", L"Error", 0);
+        Toolbox().errorBox(hInstance, 0, IDS_UNKNOWNERR);
+        return -1;
     }
-
 
     MSG msg;
     while (GetMessage(&msg, NULL, 0, 0))

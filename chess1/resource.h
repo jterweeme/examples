@@ -28,6 +28,12 @@
 #define IDD_OK       201
 #define IDD_CANCEL   202
 
+#define IDD_FNAME 0x10
+#define IDD_FPATH 0x11
+#define IDD_FLIST 0x12
+#define IDD_DLIST 0x13
+#define IDD_BROWSE 0x14
+
 #define BSTLINETEXT    103
 #define DEPTHTEXT      105
 #define NODESECTEXT    112

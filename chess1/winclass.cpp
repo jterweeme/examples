@@ -20,6 +20,11 @@ void WinClass::registerClass()
         throw TEXT("Error registering class");
 }
 
+LPCTSTR WinClass::className() const
+{
+    return _wc.lpszClassName;
+}
+
 HINSTANCE WinClass::hInstance() const
 {
     if (_wc.hInstance == NULL)

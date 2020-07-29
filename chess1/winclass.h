@@ -10,6 +10,7 @@ private:
 public:
     WinClass(HINSTANCE hInstance, WNDPROC wndProc, LPCTSTR className);
     HINSTANCE hInstance() const;
+    LPCTSTR className() const;
     void registerClass();
 };
 

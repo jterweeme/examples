@@ -1,0 +1,9 @@
+#ifndef RESOURCE_H
+#define RESOURCE_H
+#define IDS_INITERROR 100
+#define IDS_UNKNOWNERR 101
+#define IDS_ALLOCMEM 102
+#define IDD_MAANDAG 103
+#define IDC_DINGES 104
+#endif
+

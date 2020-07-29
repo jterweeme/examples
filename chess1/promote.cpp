@@ -32,32 +32,32 @@ PromoteDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
 {
     switch (message)
     {
-        case WM_INITDIALOG:
-            xstatus = 5;
-            CheckRadioButton(hDlg, 100, 103, 103);
+    case WM_INITDIALOG:
+        xstatus = 5;
+        CheckRadioButton(hDlg, 100, 103, 103);
+        return TRUE;
+    case WM_SYSCOMMAND:
+        if ((wParam & 0xfff0) == SC_CLOSE)
+        {
+            EndDialog(hDlg, xstatus);
+            return xstatus;
+        }
+        break;
+    case WM_COMMAND:
+        switch (wParam)
+        {
+        case IDOK:
+            EndDialog(hDlg, xstatus);
             return TRUE;
-        case WM_SYSCOMMAND:
-            if ((wParam&0xfff0) == SC_CLOSE)
-            {
-                EndDialog(hDlg, xstatus);
-                return xstatus;
-            }
+        case 100:
+        case 101:
+        case 102:
+        case 103:
+            xstatus = 2 + wParam - 100;
+            CheckRadioButton(hDlg, 100, 103, wParam);
             break;
-        case WM_COMMAND:
-            switch (wParam)
-            {
-                case IDOK:
-                    EndDialog(hDlg, xstatus);
-                    return TRUE;
-                case 100:
-                case 101:
-                case 102:
-                case 103:
-                    xstatus = 2 + wParam - 100;
-                    CheckRadioButton(hDlg, 100, 103, wParam);
-                    break;
-            }
-            break;
+        }
+        break;
     }
 
     return FALSE;

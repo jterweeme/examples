@@ -638,16 +638,15 @@ HRESULT Direct2DUtility::DecodeImageFromThumbCache(
             0.f,
             WICBitmapPaletteTypeMedianCut);
     }
-
+#if 0
     if (SUCCEEDED(hr))
     {
         // Create a D2D bitmap from the WIC bitmap
-        hr = renderTarget->CreateBitmapFromWicBitmap(
-            converter,
-            nullptr,
-            bitmap);
-    }
 
+        hr = renderTarget->CreateBitmapFromWicBitmap(converter, nullptr, bitmap);
+
+    }
+#endif
     return hr;
 }
 

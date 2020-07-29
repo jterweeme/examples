@@ -14,6 +14,7 @@ public:
     void create(LPCTSTR caption);
     void show(int nCmdShow);
     void update();
+    HINSTANCE hInstance() const;
 };
 
 #endif

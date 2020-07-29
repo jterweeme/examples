@@ -42,40 +42,22 @@ long ResponseTime, ExtraTime, Level, et, et0, time0, ft;
 long NodeCnt, ETnodes, EvalNodes, HashCnt, FHashCnt, HashCol;
 short player, xwndw, rehash;
 struct GameRec *GameList;
-short Sdepth, GameCnt, Game50, MaxSearchDepth;
-short epsquare, contempt;
+short Sdepth, GameCnt, Game50, MaxSearchDepth, epsquare, contempt;
 struct TimeControlRec TimeControl;
 short TCflag, TCmoves, TCminutes, OperatorTime;
 WORD hint, PrVar[maxdepth];
-short Pindex[64];
-short PieceCnt[2];
-short c1, c2, *atk1, *atk2, *PC1, *PC2, atak[2][64];
-short mtl[2], pmtl[2], emtl[2], hung[2];
-short FROMsquare, TOsquare, Zscore, zwndw;
+short Pindex[64], PieceCnt[2];
+short c1, c2, *atk1, *atk2, *PC1, atak[2][64];
+short mtl[2], pmtl[2], emtl[2], hung[2], TOsquare;
 short HasKnight[2], HasBishop[2], HasRook[2], HasQueen[2];
 short ChkFlag[maxdepth], CptrFlag[maxdepth], PawnThreat[maxdepth];
 short Pscore[maxdepth], Tscore[maxdepth];
 WORD killr0[maxdepth], killr1[maxdepth], killr2[maxdepth], killr3[maxdepth];
-WORD PV, Swag0, Swag1, Swag2, Swag3, Swag4;
 BYTE *history;
-
-short rpthash[2][256];
-short Mwpawn[64], Mbpawn[64], Mknight[2][64], Mbishop[2][64];
-short Mking[2][64], Kfield[2][64];
-short KNIGHTPOST, KNIGHTSTRONG, BISHOPSTRONG, KATAK;
-short PEDRNK2B, PWEAKH, PADVNCM, PADVNCI, PAWNSHIELD, PDOUBLED, PBLOK;
-short RHOPN, RHOPNX, KHOPN, KHOPNX, KSFTY;
-short ATAKD, HUNGP, HUNGX, KCASTLD, KMOVD, XRAY, PINVAL;
 short stage, stage2, Developed[2];
-short PawnBonus, BishopBonus, RookBonus;
-short *distdata, *taxidata;
-
-short board[64], color[64];
-BYTE *nextpos;
-BYTE *nextdir;
-
+short *distdata, *taxidata, board[64], color[64];
+BYTE *nextpos, *nextdir;
 const short otherside[3] = {1, 0, 2};
-
 HWND hComputerColor;
 HWND hComputerMove;
 HWND hWhosTurn;
@@ -84,22 +66,15 @@ HWND hClockHuman;
 HWND hMsgComputer;
 HWND hMsgHuman;
 HWND hStats;
-
 GLOBALHANDLE hBook = 0;
-COLORREF clrBackGround;
-DWORD clrBlackSquare;
-DWORD clrWhiteSquare;
-DWORD clrBlackPiece;
-DWORD clrWhitePiece;
-DWORD clrText;
+COLORREF clrBackGround, clrBlackSquare, clrWhiteSquare;
+COLORREF clrBlackPiece;
+COLORREF clrWhitePiece;
+COLORREF clrText;
 HINSTANCE hInst;
 HACCEL hAccel;
-
 TCHAR mvstr[4][6];
 long evrate;
-int coords = 1;
-
 struct PIECEBITMAP pieces[7];
+short boarddraw[64], colordraw[64];
 
-short boarddraw[64];
-short colordraw[64];

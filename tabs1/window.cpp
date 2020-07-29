@@ -29,3 +29,8 @@ void Window::update()
 {
     ::UpdateWindow(hwnd());
 }
+
+HINSTANCE Window::hInstance() const
+{
+    return _wc->hInstance();
+}

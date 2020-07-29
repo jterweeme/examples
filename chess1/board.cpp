@@ -25,6 +25,7 @@
 */
 
 #include "protos.h"
+#include "board.h"
 
 /* All units defined in pixels */
 
@@ -39,6 +40,11 @@
 static void DrawOneSquare(HDC hDC, short x, short y);
 static int HilitSq;
 
+Board::Board()
+{
+
+}
+
 void QueryBoardSize(POINT *pptl)
 {
     pptl->x = 2*BRD_HORZMARGIN + 8*BRD_HORZFRONT;
@@ -51,7 +57,7 @@ void QuerySqSize(POINT *pptl)
     pptl->y = BRD_VERT;
 }
 
-void QuerySqOrigin ( short x, short y, POINT *pptl)
+void QuerySqOrigin(short x, short y, POINT *pptl)
 {
    pptl->x = BRD_HORZMARGIN + y * (BRD_HORZFRONT-BRD_HORZBACK)/2 +
              x * (y*BRD_HORZBACK + (8-y)*BRD_HORZFRONT)/8;
@@ -66,20 +72,18 @@ void QuerySqCoords(short x, short y, POINT aptl[])
     QuerySqOrigin(x,  y+1,aptl+3);
 }
 
-static void DrawOneSquare ( HDC hDC, short x, short y)
+static void DrawOneSquare(HDC hDC, short x, short y)
 {
-   POINT aptl[4];
-
-   QuerySqCoords ( x,y, aptl);
-   Polygon( hDC, aptl, 4);
+    POINT aptl[4];
+    QuerySqCoords(x, y, aptl);
+    ::Polygon(hDC, aptl, 4);
 }
 
 /*
    Draw the board.  Pass the routine the upper left connor and the
    colors to draw the squares.
 */
-
-void Draw_Board(HDC hDC, int reverse, DWORD DarkColor, DWORD LightColor )
+void Board::Draw_Board(HDC hDC, int reverse, COLORREF DarkColor, COLORREF LightColor)
 {
     POINT aptl[4];
 
@@ -126,30 +130,28 @@ void Draw_Board(HDC hDC, int reverse, DWORD DarkColor, DWORD LightColor )
     DeleteObject(hBrush_dk);
 }
 
-void DrawCoords(HDC hDC, int reverse, DWORD clrBackGround, DWORD clrText)
+void Board::DrawCoords(HDC hDC, int reverse, DWORD clrBackGround, DWORD clrText)
 {
-    int i;
-    POINT pt;
-    TEXTMETRIC tm;
-
     HFONT hFont = ::CreateFont(13, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
                         ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
                         DEFAULT_QUALITY, FIXED_PITCH | FF_SWISS, TEXT("Helv"));
 
     HFONT hOldFont = HFONT(::SelectObject(hDC, hFont));
-    DWORD OldBkColor = SetBkColor(hDC, clrBackGround);
-    int OldBkMode = SetBkMode(hDC, TRANSPARENT);
-    DWORD OldTextColor = SetTextColor(hDC, clrText);
+    DWORD OldBkColor = ::SetBkColor(hDC, clrBackGround);
+    int OldBkMode = ::SetBkMode(hDC, TRANSPARENT);
+    DWORD OldTextColor = ::SetTextColor(hDC, clrText);
+    TEXTMETRIC tm;
     ::GetTextMetrics(hDC, &tm);
     short xchar = tm.tmMaxCharWidth;
     short ychar = tm.tmHeight;
 
-    for (i = 0; i < 8; i++)
+    for (int i = 0; i < 8; i++)
     {
+        POINT pt;
         QuerySqOrigin(0, i, &pt);
 
         TextOut(hDC, pt.x-xchar, pt.y-BRD_VERT/2-ychar/2,
-              (reverse ? TEXT("87654321") + i : TEXT("12345678") +i) ,1);
+              (reverse ? TEXT("87654321") + i : TEXT("12345678") +i),1);
 
         QuerySqOrigin(i, 0, &pt);
 
@@ -203,13 +205,9 @@ void UnHiliteSquare(HWND hWnd, int Square)
     x = Square % 8;
 
     QuerySqCoords(x,y, aptl+0);
-#ifndef WINCE
     hRgn = CreatePolygonRgn( aptl, 4, WINDING);
-#endif
     hDC = GetDC(hWnd);
-#ifndef WINCE
     InvertRgn(hDC, hRgn);
-#endif
     ReleaseDC(hWnd, hDC);
     DeleteObject(hRgn);
     HilitSq = -1;

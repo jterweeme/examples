@@ -4,34 +4,36 @@ SOURCES += about.cpp\
     board.cpp\
     book.cpp\
     color.cpp\
-    create.cpp\
     dsp.cpp\
     eval.cpp\
     globals.cpp\
     hittest.cpp\
-    initiali.cpp\
     main.cpp\
     mainwin.cpp\
     manual.cpp\
     mswdsp.cpp\
     numdlg.cpp\
+    palette.cpp\
     piece.cpp\
     promote.cpp\
     review.cpp\
-    saveopen.cpp\
     search.cpp\
+    sim.cpp\
     stats.cpp\
     test.cpp\
     timecnt.cpp\
     toolbox.cpp\
     winclass.cpp
 
-HEADERS += chess.h\
+HEADERS += board.h\
+    chess.h\
     globals.h\
     gnuchess.h\
     mainwin.h\
+    palette.h\
     protos.h\
     resource.h\
+    sim.h\
     toolbox.h\
     winclass.h
 

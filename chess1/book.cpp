@@ -63,7 +63,7 @@ static void *Book_alloc(DWORD size)
 void GetOpenings(HINSTANCE hInstance)
 {
     FILE *fd;
-    int c, i, j, side;
+    int c;
     struct BookEntry *entry;
     WORD mv, *mp, tmp[100];
     CHAR lpFile[_MAX_FNAME+_MAX_EXT+_MAX_DRIVE+_MAX_DIR+1];
@@ -73,60 +73,56 @@ void GetOpenings(HINSTANCE hInstance)
     _makepath(lpFile, sDrive, sDir, "gnuchess", "boo");
     fd = fopen(lpFile, "r");
 
-    if (fd != NULL)
-    {
-        hBook = ::GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, MAX_BOOK_SIZE * sizeof(char));
-
-        if (hBook == NULL)
-        {
-            Book = NULL;
-            throw TEXT("Opening Book allocation error");
-        }
-
-        xBook = (char *)(GlobalLock(hBook));
-
-        Book = NULL;
-        i = 0;
-        side = white;
-
-        while ((c = parse(fd, &mv, side)) >= 0)
-        {
-            if (c == 1)
-            {
-                tmp[++i] = mv;
-                side = otherside[side];
-            }
-            else if (c == 0 && i > 0)
-            {
-                entry = (struct BookEntry *)(Book_alloc(sizeof(struct BookEntry)));
-                mp = LPWORD(Book_alloc((i + 1) * sizeof(WORD)));
-
-                if ( (entry == 0 ) || (mp == 0) )
-                {
-                    Book = NULL;
-                    GlobalUnlock(hBook);
-                    GlobalFree(hBook);
-                    throw TEXT("Opening book allocation error");
-                }
-                entry->mv = mp;
-                entry->next = Book;
-                Book = entry;
-
-                for (j = 1; j <= i; j++)
-                    *(mp++) = tmp[j];
-
-                *mp = 0;
-                i = 0;
-                side = white;
-            }
-        }
-
-        fclose(fd);
-    }
-    else
-    {
+    if (fd == NULL)
         throw UINT(IDS_OBNF);
+
+    hBook = ::GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, MAX_BOOK_SIZE * sizeof(char));
+
+    if (hBook == NULL)
+    {
+        Book = NULL;
+        throw TEXT("Opening Book allocation error");
     }
+
+    xBook = (char *)(GlobalLock(hBook));
+    Book = NULL;
+    int i = 0;
+    int side = white;
+
+    while ((c = parse(fd, &mv, side)) >= 0)
+    {
+        if (c == 1)
+        {
+            tmp[++i] = mv;
+            side = otherside[side];
+        }
+        else if (c == 0 && i > 0)
+        {
+            entry = (struct BookEntry *)(Book_alloc(sizeof(struct BookEntry)));
+            mp = LPWORD(Book_alloc((i + 1) * sizeof(WORD)));
+
+            if (entry == 0 || mp == 0)
+            {
+                Book = NULL;
+                GlobalUnlock(hBook);
+                GlobalFree(hBook);
+                throw TEXT("Opening book allocation error");
+            }
+
+            entry->mv = mp;
+            entry->next = Book;
+            Book = entry;
+
+            for (int j = 1; j <= i; j++)
+                *(mp++) = tmp[j];
+
+            *mp = 0;
+            i = 0;
+            side = white;
+        }
+    }
+
+    fclose(fd);
 }
 
 /*

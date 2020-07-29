@@ -31,44 +31,16 @@
 #include "gnuchess.h"
 #include <ctime>
 
-#if 0
-static short Stboard[64] =
-{rook, knight, bishop, queen, king, bishop, knight, rook,
- pawn, pawn, pawn, pawn, pawn, pawn, pawn, pawn,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- pawn, pawn, pawn, pawn, pawn, pawn, pawn, pawn,
- rook, knight, bishop, queen, king, bishop, knight, rook};
-
-static short Stcolor[64] =
-{white, white, white, white, white, white, white, white,
- white, white, white, white, white, white, white, white,
- 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
- 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
- black, black, black, black, black, black, black, black,
- black, black, black, black, black, black, black, black};
-#endif
-
-int mycntl1, mycntl2;
-int PositionFlag = 0;
+static int mycntl1, mycntl2;
 
 #define pxx " PNBRQK"
 #define qxx " pnbrqk"
 
-void TerminateSearch (int), Die (int);
+void TerminateSearch(int);
 
-void Initialize (void)
+void Initialize()
 {
     mycntl1 = mycntl2 = 0;
-}
-
-void ExitChess (void)
-{
-
-}
-
-void Die(int)
-{
 }
 
 void TerminateSearch(int)
@@ -80,62 +52,64 @@ void TerminateSearch(int)
 /*
    Generate move strings in different formats.
 */
-void algbr(short int f, short int t, short int flag)
+void algbr(short f, short t, short flag)
 {
     int m3p;
 
     if (f != t)
     {
-      /* algebraic notation */
-      mvstr[0][0] = (char) ('a'+column (f));
-      mvstr[0][1] = (char) ('1'+row (f));
-      mvstr[0][2] = (char) ('a'+column (t));
-      mvstr[0][3] = (char) ('1'+row (t));
-      mvstr[0][4] = mvstr[3][0] = '\0';
-      if ((mvstr[1][0] = pxx[board[f]]) == 'P')
+        /* algebraic notation */
+        mvstr[0][0] = char('a'+column (f));
+        mvstr[0][1] = char('1'+row (f));
+        mvstr[0][2] = char('a'+column (t));
+        mvstr[0][3] = char('1'+row (t));
+        mvstr[0][4] = mvstr[3][0] = '\0';
+
+        if ((mvstr[1][0] = pxx[board[f]]) == 'P')
         {
-          if (mvstr[0][0] == mvstr[0][2])       /* pawn did not eat */
+            if (mvstr[0][0] == mvstr[0][2])       /* pawn did not eat */
             {
-              mvstr[2][0] = mvstr[1][0] = mvstr[0][2];  /* to column */
-              mvstr[2][1] = mvstr[1][1] = mvstr[0][3];  /* to row */
-              m3p = 2;
+                mvstr[2][0] = mvstr[1][0] = mvstr[0][2];  /* to column */
+                mvstr[2][1] = mvstr[1][1] = mvstr[0][3];  /* to row */
+                m3p = 2;
             }
-          else
-            /* pawn ate */
+            else    /* pawn ate */
             {
-              mvstr[2][0] = mvstr[1][0] = mvstr[0][0];  /* from column */
-              mvstr[2][1] = mvstr[1][1] = mvstr[0][2];  /* to column */
-              mvstr[2][2] = mvstr[0][3];
-              m3p = 3;          /* to row */
+                mvstr[2][0] = mvstr[1][0] = mvstr[0][0];  /* from column */
+                mvstr[2][1] = mvstr[1][1] = mvstr[0][2];  /* to column */
+                mvstr[2][2] = mvstr[0][3];
+                m3p = 3;          /* to row */
             }
-          mvstr[2][m3p] = mvstr[1][2] = '\0';
-          if (flag & promote)
+
+            mvstr[2][m3p] = mvstr[1][2] = '\0';
+
+            if (flag & PROMOTE)
             {
-              mvstr[0][4] = mvstr[1][2] = mvstr[2][m3p] = qxx[flag & pmask];
-              mvstr[1][3] = mvstr[2][m3p + 1] = mvstr[0][5] = '\0';
+                mvstr[0][4] = mvstr[1][2] = mvstr[2][m3p] = qxx[flag & pmask];
+                mvstr[1][3] = mvstr[2][m3p + 1] = mvstr[0][5] = '\0';
             }
         }
-      else
-        /* not a pawn */
+        else    /* not a pawn */
         {
-          mvstr[2][0] = mvstr[1][0];
-          mvstr[2][1] = mvstr[0][1];
-          mvstr[2][2] = mvstr[1][1] = mvstr[0][2];      /* to column */
-          mvstr[2][3] = mvstr[1][2] = mvstr[0][3];      /* to row */
-          mvstr[2][4] = mvstr[1][3] = '\0';
-          lstrcpy(mvstr[3], mvstr[2]);
-          mvstr[3][1] = mvstr[0][0];
-          if (flag & cstlmask)
+            mvstr[2][0] = mvstr[1][0];
+            mvstr[2][1] = mvstr[0][1];
+            mvstr[2][2] = mvstr[1][1] = mvstr[0][2];      /* to column */
+            mvstr[2][3] = mvstr[1][2] = mvstr[0][3];      /* to row */
+            mvstr[2][4] = mvstr[1][3] = '\0';
+            ::lstrcpy(mvstr[3], mvstr[2]);
+            mvstr[3][1] = mvstr[0][0];
+
+            if (flag & cstlmask)
             {
-              if (t > f)
+                if (t > f)
                 {
-                  lstrcpy(mvstr[1], TEXT("o-o"));
-                  lstrcpy(mvstr[2], TEXT("O-O"));
+                    ::lstrcpy(mvstr[1], TEXT("o-o"));
+                    ::lstrcpy(mvstr[2], TEXT("O-O"));
                 }
-              else
+                else
                 {
-                  lstrcpy(mvstr[1], TEXT("o-o-o"));
-                  lstrcpy(mvstr[2], TEXT("O-O-O"));
+                    ::lstrcpy(mvstr[1], TEXT("o-o-o"));
+                    ::lstrcpy(mvstr[2], TEXT("O-O-O"));
                 }
             }
         }
@@ -170,47 +144,46 @@ int VerifyMove(HWND hWnd, TCHAR *s, short iop, WORD *mv)
     while (pnt < TrPnt[3])
     {
         node = &Tree[pnt++];
-        algbr (node->f, node->t, (short) node->flags);
+        algbr(node->f, node->t, (short) node->flags);
 
         if (lstrcmp(s, mvstr[0]) == 0 || lstrcmp(s, mvstr[1]) == 0 ||
             lstrcmp(s, mvstr[2]) == 0 || lstrcmp(s, mvstr[3]) == 0)
         {
-          cnt++;
-          xnode = *node;
+            cnt++;
+            xnode = *node;
         }
     }
 
     if (cnt == 1)
     {
-      MakeMove (opponent, &xnode, &tempb, &tempc, &tempsf, &tempst, &INCscore);
-      if (SqAtakd (PieceList[opponent][0], computer))
+        MakeMove(opponent, &xnode, &tempb, &tempc, &tempsf, &tempst, &INCscore);
+
+        if (SqAtakd(PieceList[opponent][0], computer))
         {
-          UnmakeMove (opponent, &xnode, &tempb, &tempc, &tempsf, &tempst);
-          SMessageBox(hInst, hWnd, IDS_ILLEGALMOVE, IDS_CHESS);
-          return (false);
+            UnmakeMove(opponent, &xnode, &tempb, &tempc, &tempsf, &tempst);
+            SMessageBox(hInst, hWnd, IDS_ILLEGALMOVE, IDS_CHESS);
+            return false;
         }
-      else
+
+        if (iop == 1)
+            return true;
+
+        UpdateDisplay(hWnd, xnode.f, xnode.t, 0, (short) xnode.flags);
+
+        if (board[xnode.t] == pawn || xnode.flags & capture || xnode.flags & cstlmask)
         {
-          if (iop == 1)
-            return (true);
-          UpdateDisplay (hWnd, xnode.f, xnode.t, 0, (short) xnode.flags);
-          if ((board[xnode.t] == pawn)
-              || (xnode.flags & capture)
-              || (xnode.flags & cstlmask))
-            {
-              Game50 = GameCnt;
-              ZeroRPT ();
-            }
-          GameList[GameCnt].depth = GameList[GameCnt].score = 0;
-          GameList[GameCnt].nodes = 0;
-          ElapsedTime (1);
-          GameList[GameCnt].time = (short) et;
-          TimeControl.clock[opponent] -= et;
-          --TimeControl.moves[opponent];
-          *mv = (xnode.f << 8) | xnode.t;
-          algbr (xnode.f, xnode.t, false);
-          return (true);
+            Game50 = GameCnt;
+            ZeroRPT ();
         }
+        GameList[GameCnt].depth = GameList[GameCnt].score = 0;
+        GameList[GameCnt].nodes = 0;
+        ElapsedTime (1);
+        GameList[GameCnt].time = (short) et;
+        TimeControl.clock[opponent] -= et;
+        --TimeControl.moves[opponent];
+        *mv = xnode.f << 8 | xnode.t;
+        algbr(xnode.f, xnode.t, false);
+        return true;
     }
 
     if (cnt > 1)
@@ -224,11 +197,9 @@ int VerifyMove(HWND hWnd, TCHAR *s, short iop, WORD *mv)
   the elapsed time exceeds the target (ResponseTime+ExtraTime) then set
   timeout to true which will terminate the search.
 */
-void ElapsedTime(short int iop)
+void ElapsedTime(short iop)
 {
-#ifndef WINCE
     et = ::time(0) - time0;
-#endif
 
     if (et < 0)
         et = 0;
@@ -244,18 +215,21 @@ void ElapsedTime(short int iop)
 
         if (iop == 1)
         {
-#ifndef WINCE
-            time0 = time(0);
-#endif
+            time0 = ::time(0);
             et0 = 0;
         }
-      if (et > 0)
-        /* evrate used to be Nodes / cputime I dont` know why */
-        evrate = NodeCnt / (et + ft);
-      else
-        evrate = 0;
-      ETnodes = NodeCnt + 50;
-      UpdateClocks ();
+
+        if (et > 0)
+        {
+            /* evrate used to be Nodes / cputime I dont` know why */
+            evrate = NodeCnt / (et + ft);
+        }
+        else
+        {
+            evrate = 0;
+        }
+        ETnodes = NodeCnt + 50;
+        UpdateClocks();
     }
 }
 
@@ -263,44 +237,41 @@ void SetTimeControl()
 {
     if (TCflag)
     {
-      TimeControl.moves[white] = TimeControl.moves[black] = TCmoves;
-      TimeControl.clock[white] = TimeControl.clock[black] = 60 * (long) TCminutes;
+        TimeControl.moves[white] = TimeControl.moves[black] = TCmoves;
+        TimeControl.clock[white] = TimeControl.clock[black] = 60 * (long) TCminutes;
     }
     else
     {
-      TimeControl.moves[white] = TimeControl.moves[black] = 0;
-      TimeControl.clock[white] = TimeControl.clock[black] = 0;
-      Level = 60 * (long) TCminutes;
+        TimeControl.moves[white] = TimeControl.moves[black] = 0;
+        TimeControl.clock[white] = TimeControl.clock[black] = 0;
+        Level = 60 * (long) TCminutes;
     }
     et = 0;
     ElapsedTime(1);
 }
 
-void GetGame (HWND hWnd, char *fname)
+void GetGame(HWND hWnd, char *fname)
 {
-    FILE *fd;
     int c;
     short sq;
-    unsigned short m;
-
+    WORD m;
     struct GameRec tmp_rec;
+    FILE *fd = fopen(fname, "r");
 
-    if ((fd = fopen(fname, "r")) == NULL)
-    {
-        SMessageBox(hInst, hWnd, IDS_LOADFAILED, IDS_CHESS);
-        return;
-    }
+    if (fd == NULL)
+        throw IDS_LOADFAILED;
 
     fscanf(fd, "%hd%hd%hd", &computer, &opponent, &Game50);
     fscanf(fd, "%hd%hd", &castld[white], &castld[black]);
     fscanf(fd, "%hd%hd", &TCflag, &OperatorTime);
+
     fscanf(fd, "%ld%ld%hd%hd",
           &TimeControl.clock[white], &TimeControl.clock[black],
           &TimeControl.moves[white], &TimeControl.moves[black]);
 
     for (sq = 0; sq < 64; sq++)
     {
-        fscanf (fd, "%hd%hd", &m, &Mvboard[sq]);
+        ::fscanf(fd, "%hd%hd", &m, &Mvboard[sq]);
         board[sq] = (m >> 8);
         color[sq] = (m & 0xFF);
 
@@ -309,20 +280,24 @@ void GetGame (HWND hWnd, char *fname)
         else
             --color[sq];
     }
+
     GameCnt = 0;
     c = '?';
+
     while (c != EOF)
     {
-      ++GameCnt;
-      c = fscanf (fd, "%hd%hd%hd%ld%hd%hd%hd", &tmp_rec.gmove,
+        ++GameCnt;
+        c = fscanf (fd, "%hd%hd%hd%ld%hd%hd%hd", &tmp_rec.gmove,
                   &tmp_rec.score, &tmp_rec.depth,
                   &tmp_rec.nodes, &tmp_rec.time,
                   &tmp_rec.piece, &tmp_rec.color);
-      GameList[GameCnt] = tmp_rec;
-      if (GameList[GameCnt].color == 0)
-        GameList[GameCnt].color = neutral;
-      else
-        --GameList[GameCnt].color;
+
+        GameList[GameCnt] = tmp_rec;
+
+        if (GameList[GameCnt].color == 0)
+            GameList[GameCnt].color = neutral;
+        else
+            --GameList[GameCnt].color;
     }
 
     GameCnt--;
@@ -340,78 +315,69 @@ void GetGame (HWND hWnd, char *fname)
     UpdateDisplay(hWnd, 0, 0, 1, 0);
 }
 
-void SaveGame (HWND hWnd, char *fname)
+void SaveGame(HWND, char *fname)
 {
-    FILE *fd;
-    short sq, i, c;
+    FILE *fd = ::fopen(fname, "w");
 
-    if (NULL == (fd = fopen (fname, "w")))
-    {
-        ShowMessage(hWnd, TEXT("Not saved"));
-        return;
-    }
+    if (fd == NULL)
+        throw TEXT("Not saved");
 
-    fprintf(fd, "%d %d %d\n", computer + 1, opponent + 1, Game50);
-    fprintf(fd, "%d %d\n", castld[white], castld[black]);
-    fprintf(fd, "%d %d\n", TCflag, OperatorTime);
+    ::fprintf(fd, "%d %d %d\n", computer + 1, opponent + 1, Game50);
+    ::fprintf(fd, "%d %d\n", castld[white], castld[black]);
+    ::fprintf(fd, "%d %d\n", TCflag, OperatorTime);
 
-    fprintf(fd, "%ld %ld %d %d\n",
+    ::fprintf(fd, "%ld %ld %d %d\n",
            TimeControl.clock[white], TimeControl.clock[black],
            TimeControl.moves[white], TimeControl.moves[black]);
 
-    for (sq = 0; sq < 64; sq++)
+    for (short sq = 0; sq < 64; sq++)
     {
-      if (color[sq] == neutral)
-        c = 0;
-      else
-        c = color[sq] + 1;
-      fprintf (fd, "%d %d\n", 256 * board[sq] + c, Mvboard[sq]);
+        short c = color[sq] == neutral ? 0 : color[sq] + 1;
+        ::fprintf(fd, "%d %d\n", 256 * board[sq] + c, Mvboard[sq]);
     }
-  for (i = 1; i <= GameCnt; i++)
+
+    for (short i = 1; i <= GameCnt; i++)
     {
-      if (GameList[i].color == neutral)
-        c = 0;
-      else
-        c = GameList[i].color + 1;
-      fprintf (fd, "%d %d %d %ld %d %d %d\n",
+        short c = GameList[i].color == neutral ? 0 : GameList[i].color + 1;
+
+        fprintf (fd, "%d %d %d %ld %d %d %d\n",
                GameList[i].gmove, GameList[i].score, GameList[i].depth,
                GameList[i].nodes, GameList[i].time,
                GameList[i].piece, c);
     }
-  fclose (fd);
+
+    ::fclose(fd);
 }
 
-void
-ListGame (HWND hWnd, char *fname)
+void ListGame(char *fname)
 {
-  FILE *fd;
-  short i, f, t;
+    FILE *fd = fopen(fname, "w");
 
-  if ( (fd = fopen (fname, "w")) == NULL) {
-      ShowMessage(hWnd, TEXT("Cannot write chess.lst"));
-      return;
-  }
+    if (fd == NULL)
+        throw TEXT("Cannot write chess.lst");
 
-  fprintf (fd, "\n");
-  fprintf (fd, "       score  depth   nodes  time         ");
-  fprintf (fd, "       score  depth   nodes  time\n");
-  for (i = 1; i <= GameCnt; i++)
+    ::fprintf(fd, "\n");
+    ::fprintf(fd, "       score  depth   nodes  time         ");
+    ::fprintf(fd, "       score  depth   nodes  time\n");
+
+    for (short i = 1; i <= GameCnt; i++)
     {
-      f = GameList[i].gmove >> 8;
-      t = (GameList[i].gmove & 0xFF);
-      algbr (f, t, false);
-      fprintf (fd, "%5s  %5d     %2d %7ld %5d", mvstr[0],
+        short f = GameList[i].gmove >> 8;
+        short t = GameList[i].gmove & 0xFF;
+        algbr(f, t, false);
+
+        fprintf(fd, "%5s  %5d     %2d %7ld %5d", mvstr[0],
                GameList[i].score, GameList[i].depth,
                GameList[i].nodes, GameList[i].time);
 
-      if ((i % 2) == 0)
-        fprintf (fd, "\n");
-      else
-        fprintf (fd, "         ");
-
+        if (i % 2 == 0)
+            fprintf(fd, "\n");
+        else
+            fprintf(fd, "         ");
     }
-  fprintf (fd, "\n\n");
-  fclose (fd);
+
+    ::fprintf(fd, "\n\n");
+    ::fclose(fd);
 }
 
 /*
@@ -428,33 +394,41 @@ void Undo(HWND hWnd)
     }
     else
     {
-      /* Check for promotion: */
-      if ((color[t] == white && row (f) == 6 && row (t) == 7)
+        /* Check for promotion: */
+        if ((color[t] == white && row (f) == 6 && row (t) == 7)
           || (color[t] == black && row (f) == 1 && row (t) == 0))
         {
-          int g, from = f;
-          for (g = GameCnt - 1; g > 0; g--)
-            if (GameList[g].gmove & (0xFF == from))
-              from = GameList[g].gmove >> 8;
-          if ((color[t] == white && row (from) == 1)
+            int g, from = f;
+
+            for (g = GameCnt - 1; g > 0; g--)
+                if (GameList[g].gmove & (0xFF == from))
+                    from = GameList[g].gmove >> 8;
+
+            if ((color[t] == white && row (from) == 1)
               || (color[t] == black && row (from) == 6))
-            board[t] = pawn;
+            {
+                board[t] = pawn;
+            }
         }
-      board[f] = board[t];
-      color[f] = color[t];
-      board[t] = GameList[GameCnt].piece;
-      color[t] = GameList[GameCnt].color;
-      if (color[t] != neutral)
-        Mvboard[t]--;
-      Mvboard[f]--;
+        board[f] = board[t];
+        color[f] = color[t];
+        board[t] = GameList[GameCnt].piece;
+        color[t] = GameList[GameCnt].color;
+
+        if (color[t] != neutral)
+            Mvboard[t]--;
+
+        Mvboard[f]--;
     }
-  if (TCflag)
-    ++TimeControl.moves[color[f]];
-  GameCnt--;
-  computer = otherside[computer];
-  opponent = otherside[opponent];
-  flag.mate = false;
-  Sdepth = 0;
-  UpdateDisplay (hWnd, 0, 0, 1, 0);
-  InitializeStats ();
+
+    if (TCflag)
+        ++TimeControl.moves[color[f]];
+
+    GameCnt--;
+    computer = otherside[computer];
+    opponent = otherside[opponent];
+    flag.mate = false;
+    Sdepth = 0;
+    UpdateDisplay(hWnd, 0, 0, 1, 0);
+    InitializeStats();
 }

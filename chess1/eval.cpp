@@ -55,24 +55,24 @@ static short KingEnding[64] = {
      0, 6, 12, 18, 18, 12, 6, 0};
 
 static short DyingKing[64] = {
-     0,  8, 16, 24, 24, 16, 8, 0,
-     8, 32, 40, 48, 48, 40, 32, 8,
+     0,  8, 16, 24, 24, 16,  8,  0,
+     8, 32, 40, 48, 48, 40, 32,  8,
     16, 40, 56, 64, 64, 56, 40, 16,
     24, 48, 64, 72, 72, 64, 48, 24,
     24, 48, 64, 72, 72, 64, 48, 24,
     16, 40, 56, 64, 64, 56, 40, 16,
-     8, 32, 40, 48, 48, 40, 32, 8,
-     0,  8, 16, 24, 24, 16, 8, 0};
+     8, 32, 40, 48, 48, 40, 32,  8,
+     0,  8, 16, 24, 24, 16,  8,  0};
 
-static short KBNK[64] =
-{99, 90, 80, 70, 60, 50, 40, 40,
- 90, 80, 60, 50, 40, 30, 20, 40,
- 80, 60, 40, 30, 20, 10, 30, 50,
- 70, 50, 30, 10, 0, 20, 40, 60,
- 60, 40, 20, 0, 10, 30, 50, 70,
- 50, 30, 10, 20, 30, 40, 60, 80,
- 40, 20, 30, 40, 50, 60, 80, 90,
- 40, 40, 50, 60, 70, 80, 90, 99};
+static short KBNK[64] = {
+    99, 90, 80, 70, 60, 50, 40, 40,
+    90, 80, 60, 50, 40, 30, 20, 40,
+    80, 60, 40, 30, 20, 10, 30, 50,
+    70, 50, 30, 10,  0, 20, 40, 60,
+    60, 40, 20,  0, 10, 30, 50, 70,
+    50, 30, 10, 20, 30, 40, 60, 80,
+    40, 20, 30, 40, 50, 60, 80, 90,
+    40, 40, 50, 60, 70, 80, 90, 99};
 
 static short pknight[64] =
 {0, 4, 8, 10, 10, 8, 4, 0,
@@ -84,30 +84,25 @@ static short pknight[64] =
  4, 8, 16, 20, 20, 16, 8, 4,
  0, 4, 8, 10, 10, 8, 4, 0};
 
-static short pbishop[64] =
-{14, 14, 14, 14, 14, 14, 14, 14,
- 14, 22, 18, 18, 18, 18, 22, 14,
- 14, 18, 22, 22, 22, 22, 18, 14,
- 14, 18, 22, 22, 22, 22, 18, 14,
- 14, 18, 22, 22, 22, 22, 18, 14,
- 14, 18, 22, 22, 22, 22, 18, 14,
- 14, 22, 18, 18, 18, 18, 22, 14,
- 14, 14, 14, 14, 14, 14, 14, 14};
+static short pbishop[64] = {
+    14, 14, 14, 14, 14, 14, 14, 14,
+    14, 22, 18, 18, 18, 18, 22, 14,
+    14, 18, 22, 22, 22, 22, 18, 14,
+    14, 18, 22, 22, 22, 22, 18, 14,
+    14, 18, 22, 22, 22, 22, 18, 14,
+    14, 18, 22, 22, 22, 22, 18, 14,
+    14, 22, 18, 18, 18, 18, 22, 14,
+    14, 14, 14, 14, 14, 14, 14, 14};
 
-static short PawnAdvance[64] =
-{0, 0, 0, 0, 0, 0, 0, 0,
- 4, 4, 4, 0, 0, 4, 4, 4,
- 6, 8, 2, 10, 10, 2, 8, 6,
- 6, 8, 12, 16, 16, 12, 8, 6,
- 8, 12, 16, 24, 24, 16, 12, 8,
- 12, 16, 24, 32, 32, 24, 16, 12,
- 12, 16, 24, 32, 32, 24, 16, 12,
- 0, 0, 0, 0, 0, 0, 0, 0};
-
-#if 0
-static short value[7] =
-{0, valueP, valueN, valueB, valueR, valueQ, valueK};
-#endif
+static short PawnAdvance[64] = {
+     0,  0,  0,  0,  0,  0,  0,  0,
+     4,  4,  4,  0,  0,  4,  4,  4,
+     6,  8,  2, 10, 10,  2,  8,  6,
+     6,  8, 12, 16, 16, 12,  8,  6,
+     8, 12, 16, 24, 24, 16, 12,  8,
+    12, 16, 24, 32, 32, 24, 16, 12,
+    12, 16, 24, 32, 32, 24, 16, 12,
+     0,  0,  0,  0,  0,  0,  0,  0};
 
 static short control[7] =
 {0, CTLP, CTLN, CTLB, ctlR, ctlQ, ctlK};
@@ -127,21 +122,20 @@ static short PassedPawn3[8] =
 static short ISOLANI[8] =
 {-12, -16, -20, -24, -24, -20, -16, -12};
 
-static short BACKWARD[16] =
-{-6, -10, -15, -21, -28, -28, -28, -28,
- -28, -28, -28, -28, -28, -28, -28, -28};
+static short BACKWARD[16] = {
+     -6, -10, -15, -21, -28, -28, -28, -28,
+    -28, -28, -28, -28, -28, -28, -28, -28};
 
-static short BMBLTY[14] =
-{-2, 0, 2, 4, 6, 8, 10, 12, 13, 14, 15, 16, 16, 16};
+static short BMBLTY[14] = {
+    -2, 0, 2, 4, 6, 8, 10, 12, 13, 14, 15, 16, 16, 16};
 
 static short RMBLTY[15] =
 {0, 2, 4, 6, 8, 10, 11, 12, 13, 14, 14, 14, 14, 14, 14};
 
-static short KTHRT[36] =
-{
-    0, -8, -20, -36, -52, -68, -80, -80, -80, -80, -80, -80,
- -80, -80, -80, -80, -80, -80, -80, -80, -80, -80, -80, -80,
- -80, -80, -80, -80, -80, -80, -80, -80, -80, -80, -80, -80
+static short KTHRT[36] = {
+      0,  -8, -20, -36, -52, -68, -80, -80, -80, -80, -80, -80,
+    -80, -80, -80, -80, -80, -80, -80, -80, -80, -80, -80, -80,
+    -80, -80, -80, -80, -80, -80, -80, -80, -80, -80, -80, -80
 };
 
 /*
@@ -156,20 +150,6 @@ static short ptype[2][8] =
   {no_piece, bpawn, knight, bishop, rook, queen, king, no_piece}};
 
 #if 0
-static short direc[8][8] =
-{
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {10, 9, 11, 0, 0, 0, 0, 0},
-  {8, -8, 12, -12, 19, -19, 21, -21},
-  {9, 11, -9, -11, 0, 0, 0, 0},
-  {1, 10, -1, -10, 0, 0, 0, 0},
-  {1, 10, -1, -10, 9, 11, -9, -11},
-  {1, 10, -1, -10, 9, 11, -9, -11},
-  {-10, -9, -11, 0, 0, 0, 0, 0}};
-
-static short max_steps[8] =
-{0, 2, 1, 7, 7, 7, 1, 2};
-
 static short nunmap[120] =
 {
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -190,19 +170,23 @@ static short qrook[3] = {0, 56, 0};
 static short krook[3] = {7, 63, 0};
 #endif
 
-static short kingP[3] = {4, 60, 0};
 
-static short rank7[3] = {6, 1, 0};
-
-#if 0
-static short sweep[8] =
-{false, false, false, true, true, true, false, false};
-#endif
 
 /* ............    POSITIONAL EVALUATION ROUTINES    ............ */
 
 #define Patak(c, u) (atak[c][u] > CTLP)
 #define Anyatak(c, u) (atak[c][u] > 0)
+
+static short RHOPN, RHOPNX, KHOPN, KHOPNX, KSFTY;
+static short ATAKD, HUNGP, HUNGX, KCASTLD, KMOVD, XRAY, PINVAL;
+static short PEDRNK2B, PWEAKH, PADVNCM, PADVNCI, PAWNSHIELD, PDOUBLED, PBLOK;
+static short KNIGHTPOST, KNIGHTSTRONG, BISHOPSTRONG, KATAK;
+static short Mwpawn[64], Mbpawn[64], Mknight[2][64], Mbishop[2][64];
+static short Mking[2][64], Kfield[2][64];
+static short kingP[3] = {4, 60, 0};
+static short rank7[3] = {6, 1, 0};
+static short PawnBonus, BishopBonus, RookBonus;
+static short *PC2;
 
 /*
   Compute an estimate of the score by adding the positional score from the
@@ -213,14 +197,12 @@ static short sweep[8] =
   only a king and the other either has no pawns or no pieces then the
   function ScoreLoneKing() is called.
 */
-int
-evaluate(short side, short ply, short alpha, short beta,
+int evaluate(short side, short ply, short alpha, short beta,
           short INCscore, short *slk, short *InChk)
 {
-    short evflag, xside;
-    short s;
-    xside = otherside[side];
-    s = -Pscore[ply - 1] + mtl[side] - mtl[xside] - INCscore;
+    short evflag;
+    short xside = otherside[side];
+    short s = -Pscore[ply - 1] + mtl[side] - mtl[xside] - INCscore;
     hung[white] = hung[black] = 0;
 
     *slk = ((mtl[white] == valueK && (pmtl[black] == 0 || emtl[black] == 0)) ||
@@ -238,31 +220,37 @@ evaluate(short side, short ply, short alpha, short beta,
        (ply > Sdepth + 2 && s >= alpha - 25 && s <= beta + 25));
     }
 
-  if (evflag)
+    if (evflag)
     {
-      EvalNodes++;
-      ataks (side, atak[side]);
-      if (Anyatak (side, PieceList[xside][0]))
-        return (10001 - ply);
-      ataks (xside, atak[xside]);
-      *InChk = Anyatak (xside, PieceList[side][0]);
-      ScorePosition (side, &s);
+        EvalNodes++;
+        ataks(side, atak[side]);
+
+        if (Anyatak(side, PieceList[xside][0]))
+            return 10001 - ply;
+
+        ataks(xside, atak[xside]);
+        *InChk = Anyatak(xside, PieceList[side][0]);
+        ScorePosition(side, &s);
     }
-  else
+    else
     {
-      if (SqAtakd (PieceList[xside][0], side))
-        return (10001 - ply);
-      *InChk = SqAtakd (PieceList[side][0], xside);
-      if (*slk)
-        ScoreLoneKing (side, &s);
+        if (SqAtakd(PieceList[xside][0], side))
+            return 10001 - ply;
+
+        *InChk = SqAtakd (PieceList[side][0], xside);
+
+        if (*slk)
+            ScoreLoneKing(side, &s);
     }
 
-  Pscore[ply] = s - mtl[side] + mtl[xside];
-  if (*InChk)
-    ChkFlag[ply - 1] = Pindex[TOsquare];
-  else
-    ChkFlag[ply - 1] = 0;
-  return (s);
+    Pscore[ply] = s - mtl[side] + mtl[xside];
+
+    if (*InChk)
+        ChkFlag[ply - 1] = Pindex[TOsquare];
+    else
+        ChkFlag[ply - 1] = 0;
+
+    return s;
 }
 
 /*
@@ -281,38 +269,41 @@ ScoreKPK(short side, short winner, short loser,
 
     if (winner == white)
     {
-      if (side == loser)
-        r = row (sq) - 1;
-      else
-        r = row (sq);
-      if (row (king2) >= r && distance (sq, king2) < 8 - r)
-        s += 10 * row (sq);
-      else
-        s = 500 + 50 * row (sq);
-      if (row (sq) < 6)
-        sq += 16;
-      else
-        if (row(sq) == 6)
-          sq += 8;
+        if (side == loser)
+            r = row(sq) - 1;
+        else
+            r = row(sq);
+
+        if (row(king2) >= r && distance(sq, king2) < 8 - r)
+            s += 10 * row (sq);
+        else
+            s = 500 + 50 * row (sq);
+
+        if (row(sq) < 6)
+            sq += 16;
+        else if (row(sq) == 6)
+            sq += 8;
     }
-  else
+    else
     {
-      if (side == loser)
-        r = row (sq) + 1;
-      else
-        r = row (sq);
-      if (row (king2) <= r && distance (sq, king2) < r + 1)
-        s += 10 * (7 - row (sq));
-      else
-        s = 500 + 50 * (7 - row (sq));
-      if (row (sq) > 1)
-        sq -= 16;
-      else
-        if (row(sq) == 1)
-          sq -= 8;
+        if (side == loser)
+            r = row (sq) + 1;
+        else
+            r = row (sq);
+
+        if (row (king2) <= r && distance (sq, king2) < r + 1)
+            s += 10 * (7 - row (sq));
+        else
+            s = 500 + 50 * (7 - row (sq));
+
+        if (row (sq) > 1)
+            sq -= 16;
+        else if (row(sq) == 1)
+            sq -= 8;
     }
-  s += 8 * (taxicab (king2, sq) - taxicab (king1, sq));
-  return (s);
+
+    s += 8 * (taxicab (king2, sq) - taxicab (king1, sq));
+    return s;
 }
 
 /*
@@ -341,9 +332,9 @@ static inline int ScoreKBNK(short winner, short king1, short king2)
     else
         s += KBNK[locn (row (king2), 7 - column (king2))];
 
-    s -= taxicab (king1, king2);
-    s -= distance (PieceList[winner][1], king2);
-    s -= distance (PieceList[winner][2], king2);
+    s -= taxicab(king1, king2);
+    s -= distance(PieceList[winner][1], king2);
+    s -= distance(PieceList[winner][2], king2);
     return s;
 }
 
@@ -367,61 +358,67 @@ void ScoreLoneKing(short int side, short int *score)
     s = 0;
 
     if (pmtl[winner] > 0)
+    {
         for (i = 1; i <= PieceCnt[winner]; i++)
             s += ScoreKPK (side, winner, loser, king1, king2, PieceList[winner][i]);
+    }
+    else if (emtl[winner] == valueB + valueN)
+    {
+        s = ScoreKBNK(winner, king1, king2);
+    }
+    else if (emtl[winner] > valueB)
+    {
+        s = 500 + emtl[winner] - DyingKing[king2] - 2 * distance(king1, king2);
+    }
 
-  else if (emtl[winner] == valueB + valueN)
-    s = ScoreKBNK (winner, king1, king2);
-
-  else if (emtl[winner] > valueB)
-    s = 500 + emtl[winner] - DyingKing[king2] - 2 * distance (king1, king2);
-
-  if (side == winner)
-    *score = s;
-  else
-    *score = -s;
+    if (side == winner)
+        *score = s;
+    else
+        *score = -s;
 }
 
 /*
   Find Bishop and Rook mobility, XRAY attacks, and pins. Increment the
   hung[] array if a pin is found.
 */
-static inline void
-BRscan (short int sq, short int *s, short int *mob)
+static inline void BRscan(short sq, short *s, short *mob)
 {
-  short u, piece, pin;
-  unsigned char far *ppos, far *pdir;
-  short *Kf;
+    short *Kf = Kfield[c1];
+    *mob = 0;
+    short piece = board[sq];
+    BYTE *ppos = nextpos + piece * 64 * 64 + sq * 64;
+    BYTE *pdir = nextdir + piece * 64 * 64 + sq * 64;
+    short u = ppos[sq];
+    short pin = -1;                     /* start new direction */
 
-  Kf = Kfield[c1];
-  *mob = 0;
-  piece = board[sq];
-  ppos = nextpos+piece*64*64+sq*64;
-  pdir = nextdir+piece*64*64+sq*64;
-  u = ppos[sq];
-  pin = -1;                     /* start new direction */
-  do
+    do
     {
-      *s += Kf[u];
-      if (color[u] == neutral)
+        *s += Kf[u];
+
+        if (color[u] == neutral)
         {
-          (*mob)++;
-          if (ppos[u] == pdir[u])
-            pin = -1;           /* oops new direction */
-          u = ppos[u];
+            (*mob)++;
+
+            if (ppos[u] == pdir[u])
+                pin = -1;           /* oops new direction */
+
+            u = ppos[u];
         }
-      else if (pin < 0)
+        else if (pin < 0)
         {
-          if (board[u] == pawn || board[u] == king)
-            u = pdir[u];
-          else
+            if (board[u] == pawn || board[u] == king)
             {
-              if (ppos[u] != pdir[u])
-                pin = u;        /* not on the edge and on to find a pin */
-              u = ppos[u];
+                u = pdir[u];
+            }
+            else
+            {
+                if (ppos[u] != pdir[u])
+                    pin = u;        /* not on the edge and on to find a pin */
+
+                u = ppos[u];
             }
         }
-      else
+        else
         {
           if (color[u] == c2 && (board[u] > piece || atk2[u] == 0))
             {
@@ -453,7 +450,6 @@ BRscan (short int sq, short int *s, short int *mob)
   c1 == color[sq]
   c2 == otherside[c1]
 */
-
 void ScoreThreat2(short u, short &cnt, short *s)
 {
     if (::color[u] == ::c2)
@@ -468,14 +464,13 @@ void ScoreThreat2(short u, short &cnt, short *s)
 static inline void KingScan(short sq, short *s)
 {
     short u;
-    unsigned char far *ppos, far *pdir;
-    short ok;
+    BYTE *ppos, *pdir;
     short cnt = 0;
 
     if (HasBishop[c2] || HasQueen[c2])
     {
-        ppos = nextpos+bishop*64*64+sq*64;
-        pdir = nextdir+bishop*64*64+sq*64;
+        ppos = nextpos + bishop * 64 * 64 + sq * 64;
+        pdir = nextdir + bishop * 64 * 64 + sq * 64;
         u = ppos[sq];
 
         do
@@ -519,9 +514,10 @@ static inline void KingScan(short sq, short *s)
     *s += (KSFTY * KTHRT[cnt]) / 16;
 
     cnt = 0;
-    ok = false;
-    pdir = nextpos+king*64*64+sq*64;
+    short ok = false;
+    pdir = nextpos + king * 64 * 64 + sq * 64;
     u = pdir[sq];
+
     do
     {
         if (board[u] == pawn)
@@ -534,12 +530,15 @@ static inline void KingScan(short sq, short *s)
             if (atk2[u] > ctlQ + 1 && atk1[u] < ctlQ)
               *s -= 4 * KSFTY;
         }
-      u = pdir[u];
-  } while (u != sq);
-  if (!ok)
-    *s -= KSFTY;
-  if (cnt > 1)
-    *s -= KSFTY;
+        u = pdir[u];
+    }
+    while (u != sq);
+
+    if (!ok)
+        *s -= KSFTY;
+
+    if (cnt > 1)
+        *s -= KSFTY;
 }
 
 /*
@@ -550,45 +549,52 @@ static inline void KingScan(short sq, short *s)
 */
 static inline int trapped(short sq)
 {
-    short u;
     short piece = board[sq];
     BYTE *ppos = nextpos+(ptype[c1][piece]*64*64)+sq*64;
     BYTE *pdir = nextdir+(ptype[c1][piece]*64*64)+sq*64;
 
     if (piece == pawn)
     {
-      u = ppos[sq];     /* follow no captures thread */
-      if (color[u] == neutral)
-        {
-          if (atk1[u] >= atk2[u])
-            return false;
+        short u = ppos[sq];     /* follow no captures thread */
 
-          if (atk2[u] < CTLP)
+        if (color[u] == neutral)
+        {
+            if (atk1[u] >= atk2[u])
+                return false;
+
+            if (atk2[u] < CTLP)
             {
-              u = ppos[u];
-              if (color[u] == neutral && atk1[u] >= atk2[u])
-                return (false);
+                u = ppos[u];
+
+                if (color[u] == neutral && atk1[u] >= atk2[u])
+                    return false;
             }
         }
-      u = pdir[sq];     /* follow captures thread */
-      if (color[u] == c2)
-        return (false);
-      u = pdir[u];
-      if (color[u] == c2)
-        return (false);
+        u = pdir[sq];     /* follow captures thread */
+
+        if (color[u] == c2)
+            return false;
+
+        u = pdir[u];
+
+        if (color[u] == c2)
+            return false;
     }
-  else
+    else
     {
-      u = ppos[sq];
-      do
+        short u = ppos[sq];
+
+        do
         {
-          if (color[u] != c1)
-            if (atk2[u] == 0 || board[u] >= piece)
-              return (false);
-          u = (color[u] == neutral) ? ppos[u] : pdir[u];
-      } while (u != sq);
+            if (color[u] != c1)
+                if (atk2[u] == 0 || board[u] >= piece)
+                    return false;
+
+            u = color[u] == neutral ? ppos[u] : pdir[u];
+        }
+        while (u != sq);
     }
-  return (true);
+    return true;
 }
 
 /*
@@ -1006,7 +1012,7 @@ void ScorePosition(short side, short *score)
 
 
 static inline void
-BlendBoard (const short int a[64], const short int far b[64], short int c[64])
+BlendBoard(const short a[64], const short b[64], short c[64])
 {
     for (int sq = 0; sq < 64; sq++)
         c[sq] = (a[sq] * (10 - stage) + b[sq] * stage) / 10;
@@ -1023,54 +1029,68 @@ static inline void CopyBoard(const short a[64], short b[64])
   Mwpawn, Mbpawn, Mknight, Mbishop, Mking which are used in the
   SqValue() function to determine the positional value of each piece.
 */
-void ExaminePosition(void)
+void ExaminePosition()
 {
-  short i, sq;
-  short wpadv, bpadv, wstrong, bstrong, z, side, pp, j, k, val, Pd, fyle, rank;
-  static short PawnStorm = false;
+    short i, sq;
+    short wpadv, bpadv, wstrong, bstrong, z, side, pp, j, k, val, Pd, fyle, rank;
+    static short PawnStorm = false;
 
-  ataks(white, atak[white]);
-  ataks(black, atak[black]);
-  UpdateWeights();
-  HasKnight[white] = HasKnight[black] = 0;
-  HasBishop[white] = HasBishop[black] = 0;
-  HasRook[white] = HasRook[black] = 0;
-  HasQueen[white] = HasQueen[black] = 0;
-  for (side = white; side <= black; side++)
-    for (i = PieceCnt[side]; i >= 0; i--)
-      switch (board[PieceList[side][i]])
+    ataks(white, atak[white]);
+    ataks(black, atak[black]);
+    UpdateWeights();
+    HasKnight[white] = HasKnight[black] = 0;
+    HasBishop[white] = HasBishop[black] = 0;
+    HasRook[white] = HasRook[black] = 0;
+    HasQueen[white] = HasQueen[black] = 0;
+
+    for (side = white; side <= black; side++)
+    {
+        for (i = PieceCnt[side]; i >= 0; i--)
         {
-        case knight:
-          ++HasKnight[side];
-          break;
-        case bishop:
-          ++HasBishop[side];
-          break;
-        case rook:
-          ++HasRook[side];
-          break;
-        case queen:
-          ++HasQueen[side];
-          break;
+            switch (board[PieceList[side][i]])
+            {
+            case knight:
+                ++HasKnight[side];
+                break;
+            case bishop:
+                ++HasBishop[side];
+                break;
+            case rook:
+                ++HasRook[side];
+                break;
+            case queen:
+                ++HasQueen[side];
+                break;
+            }
         }
-  if (!Developed[white])
-    Developed[white] = (board[1] != knight && board[2] != bishop &&
-                        board[5] != bishop && board[6] != knight);
-  if (!Developed[black])
-    Developed[black] = (board[57] != knight && board[58] != bishop &&
-                        board[61] != bishop && board[62] != knight);
-  if (!PawnStorm && stage < 5)
-    PawnStorm = ((column (wking) < 3 && column (bking) > 4) ||
-                 (column (wking) > 4 && column (bking) < 3));
+    }
 
-  CopyBoard (pknight, Mknight[white]);
-  CopyBoard (pknight, Mknight[black]);
-  CopyBoard (pbishop, Mbishop[white]);
-  CopyBoard (pbishop, Mbishop[black]);
-  BlendBoard (KingOpening, KingEnding, Mking[white]);
-  BlendBoard (KingOpening, KingEnding, Mking[black]);
+    if (!Developed[white])
+    {
+        Developed[white] = (board[1] != knight && board[2] != bishop &&
+                            board[5] != bishop && board[6] != knight);
+    }
 
-  for (sq = 0; sq < 64; sq++)
+    if (!Developed[black])
+    {
+        Developed[black] = (board[57] != knight && board[58] != bishop &&
+                            board[61] != bishop && board[62] != knight);
+    }
+
+    if (!PawnStorm && stage < 5)
+    {
+        PawnStorm = ((column (wking) < 3 && column (bking) > 4) ||
+                     (column (wking) > 4 && column (bking) < 3));
+    }
+
+    CopyBoard(pknight, Mknight[white]);
+    CopyBoard(pknight, Mknight[black]);
+    CopyBoard(pbishop, Mbishop[white]);
+    CopyBoard(pbishop, Mbishop[black]);
+    BlendBoard(KingOpening, KingEnding, Mking[white]);
+    BlendBoard(KingOpening, KingEnding, Mking[black]);
+
+    for (sq = 0; sq < 64; sq++)
     {
       fyle = column (sq);
       rank = row (sq);
@@ -1225,11 +1245,10 @@ void ExaminePosition(void)
 */
 void UpdateWeights()
 {
-    short tmtl, s1;
     emtl[white] = mtl[white] - pmtl[white] - valueK;
     emtl[black] = mtl[black] - pmtl[black] - valueK;
-    tmtl = emtl[white] + emtl[black];
-    s1 = tmtl > 6600 ? 0 : ((tmtl < 1400) ? 10 : (6600 - tmtl) / 520);
+    short tmtl = emtl[white] + emtl[black];
+    short s1 = tmtl > 6600 ? 0 : ((tmtl < 1400) ? 10 : (6600 - tmtl) / 520);
 
     if (s1 != stage)
     {

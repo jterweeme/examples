@@ -46,7 +46,7 @@ NumberDlgDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM)
         case IDOK:
             temp = GetDlgItemInt(hDlg, IDD_INT, &Ier, TRUE);
 
-            if ( Ier != 0 )
+            if (Ier != 0)
             {
                   NumberDlgInt = temp;
                   EndDialog ( hDlg, TRUE);
@@ -63,8 +63,8 @@ NumberDlgDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM)
 
 int DoGetNumberDlg(HINSTANCE hInst, HWND hWnd, TCHAR *szPrompt, int def)
 {
-    lstrcpy(::NumberDlgChar, szPrompt);
+    ::lstrcpy(::NumberDlgChar, szPrompt);
     ::NumberDlgInt = def;
-    DialogBox(hInst, MAKEINTRESOURCE(NUMBERDLG), hWnd, NumberDlgDlgProc);
+    ::DialogBox(hInst, MAKEINTRESOURCE(NUMBERDLG), hWnd, NumberDlgDlgProc);
     return ::NumberDlgInt;
 }

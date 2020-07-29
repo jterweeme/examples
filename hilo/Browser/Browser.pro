@@ -41,6 +41,7 @@ HEADERS += Animation.h\
     FlickrUploader.h\
     FlyerAnimation.h\
     ImageThumbnailControl.h\
-    LineAnimation.h
+    LineAnimation.h\
+    resource.h
 
 

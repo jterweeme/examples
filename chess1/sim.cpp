@@ -1,37 +1,54 @@
-/*
-  C source for GNU CHESS
-
-  Revision: 1990-09-30
-
-  Modified by Daryl Baker for use in MS WINDOWS environment
-
-  Copyright (C) 1986, 1987, 1988, 1989, 1990 Free Software Foundation, Inc.
-  Copyright (c) 1988, 1989, 1990  John Stanback
-
-  This file is part of CHESS.
-
-  CHESS is distributed in the hope that it will be useful, but WITHOUT ANY
-  WARRANTY.  No author or distributor accepts responsibility to anyone for
-  the consequences of using it or for whether it serves any particular
-  purpose or works at all, unless he says so in writing.  Refer to the CHESS
-  General Public License for full details.
-
-  Everyone is granted permission to copy, modify and redistribute CHESS, but
-  only under the conditions described in the CHESS General Public License.
-  A copy of this license is supposed to have been given to you along with
-  CHESS so you can know your rights and responsibilities.  It should be in a
-  file named COPYING.  Among other things, the copyright notice and this
-  notice must be preserved on all copies.
-*/
-
+#include "sim.h"
 #include "globals.h"
-#include "protos.h"
 #include "gnuchess.h"
-#include "toolbox.h"
+#include "protos.h"
 #include "resource.h"
 #include <ctime>
 
-void Initialize_dist()
+Sim::Sim()
+{
+
+}
+
+static HGLOBAL xalloc(SIZE_T n)
+{
+    HGLOBAL ret = ::GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, n);
+
+    if (ret == NULL)
+        throw UINT(IDS_ALLOCMEM);
+
+    return ret;
+}
+
+void Sim::init_main()
+{
+    hHistory = xalloc(8192);
+    history = LPBYTE(GlobalLock(hHistory));
+    hnextdir = xalloc(64 * 64 * 8);
+    nextdir = LPBYTE(GlobalLock(hnextdir));
+    hnextpos = xalloc(64 * 64 * 8);
+    nextpos = LPBYTE(GlobalLock(hnextpos));
+    hdistdata = xalloc(64 * 64 * sizeof(short));
+    distdata = (short *)(GlobalLock(hdistdata));
+    htaxidata = xalloc(64 * 64 * sizeof(short));
+    taxidata = (short *)(GlobalLock(htaxidata));
+    hHashCode = xalloc(2 * 7 * 64 * sizeof(struct hashval));
+    hashcode = (struct hashval *)GlobalLock(hHashCode);
+    hTree = xalloc(2000 * sizeof(struct leaf));
+    Tree = (struct leaf *)GlobalLock(hTree);
+    hGameList = xalloc(512 * sizeof(struct GameRec));
+    GameList = (struct GameRec *)GlobalLock(hGameList);
+    hTTable = xalloc(2 * TTBLSZ * sizeof(struct hashentry));
+    ttable = (struct hashentry *)GlobalLock(hTTable);
+    Level = 0;
+    TCflag = false;
+    OperatorTime = 0;
+    Initialize();
+    Initialize_dist();
+    Initialize_moves();
+}
+
+void Sim::Initialize_dist()
 {
     for (short a = 0; a < 64; a++)
     {
@@ -45,6 +62,61 @@ void Initialize_dist()
     }
 }
 
+void Sim::FreeGlobals()
+{
+    if (hHistory)
+    {
+        ::GlobalUnlock(hHistory);
+        ::GlobalFree(hHistory);
+    }
+
+    if (hnextdir)
+    {
+        ::GlobalUnlock (hnextdir);
+        ::GlobalFree   (hnextdir);
+    }
+
+    if (hGameList)
+    {
+        ::GlobalUnlock(hGameList);
+        ::GlobalFree(hGameList);
+    }
+
+    if (hTTable)
+    {
+        GlobalUnlock(hTTable);
+        GlobalFree(hTTable);
+    }
+
+    if (hTree)
+    {
+        GlobalUnlock(hTree);
+        GlobalFree(hTree);
+    }
+
+   if ( hHashCode ) {
+      GlobalUnlock (hHashCode);
+      GlobalFree   (hHashCode);
+   }
+
+   if ( htaxidata ) {
+      GlobalUnlock (htaxidata);
+      GlobalFree   (htaxidata);
+   }
+
+    if (hdistdata)
+    {
+        ::GlobalUnlock(hdistdata);
+        ::GlobalFree(hdistdata);
+    }
+
+    if (hnextpos)
+    {
+        ::GlobalUnlock(hnextpos);
+        ::GlobalFree(hnextpos);
+    }
+}
+
 static short Stboard[64] =
 {rook, knight, bishop, queen, king, bishop, knight, rook,
  pawn, pawn, pawn, pawn, pawn, pawn, pawn, pawn,
@@ -53,37 +125,23 @@ static short Stboard[64] =
  pawn, pawn, pawn, pawn, pawn, pawn, pawn, pawn,
  rook, knight, bishop, queen, king, bishop, knight, rook};
 
-static short Stcolor[64] =
-{white, white, white, white, white, white, white, white,
- white, white, white, white, white, white, white, white,
- 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
- 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
- black, black, black, black, black, black, black, black,
- black, black, black, black, black, black, black, black};
+static short Stcolor[64] = {
+    white, white, white, white, white, white, white, white,
+    white, white, white, white, white, white, white, white,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    black, black, black, black, black, black, black, black,
+    black, black, black, black, black, black, black, black};
 
-/*
-  ptype is used to separate white and black pawns, like this;
-  ptyp = ptype[side][piece]
-  piece can be used directly in nextpos/nextdir when generating moves
-  for pieces that are not black pawns.
-*/
-#if 0
-static short ptype[2][8] =
-{
-  {no_piece, pawn, knight, bishop, rook, queen, king, no_piece},
-  {no_piece, bpawn, knight, bishop, rook, queen, king, no_piece}};
-#endif
-
-static short direc[8][8] =
-{
-  {0, 0, 0, 0, 0, 0, 0, 0},
-  {10, 9, 11, 0, 0, 0, 0, 0},
-  {8, -8, 12, -12, 19, -19, 21, -21},
-  {9, 11, -9, -11, 0, 0, 0, 0},
-  {1, 10, -1, -10, 0, 0, 0, 0},
-  {1, 10, -1, -10, 9, 11, -9, -11},
-  {1, 10, -1, -10, 9, 11, -9, -11},
-  {-10, -9, -11, 0, 0, 0, 0, 0}};
+static short direc[8][8] = {
+    {  0,  0,   0,   0,  0,   0,  0,   0},
+    { 10,  9,  11,   0,  0,   0,  0,   0},
+    {  8, -8,  12, -12, 19, -19, 21, -21},
+    {  9, 11,  -9, -11,  0,   0,  0,   0},
+    {  1, 10,  -1, -10,  0,   0,  0,   0},
+    {  1, 10,  -1, -10,  9,  11, -9, -11},
+    {  1, 10,  -1, -10,  9,  11, -9, -11},
+    {-10, -9, -11,   0,  0,   0,  0,   0}};
 
 static short max_steps[8] =
 {0, 2, 1, 7, 7, 7, 1, 2};
@@ -109,7 +167,7 @@ static short nunmap[120] =
   This data is stored in nextpos/nextdir and used later in the move generation
   routines.
 */
-void Initialize_moves()
+void Sim::Initialize_moves()
 {
     short po, p0, d, di, s, delta;
     BYTE *ppos, *pdir;
@@ -224,135 +282,14 @@ void Initialize_moves()
   }
 }
 
-static GLOBALHANDLE hGameList, hTree, hHistory, hTTable, hHashCode, hdistdata;
-static GLOBALHANDLE htaxidata, hnextdir, hnextpos;
-
-static HGLOBAL xalloc(SIZE_T n)
-{
-    HGLOBAL ret = ::GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, n);
-
-    if (ret == NULL)
-        throw UINT(IDS_ALLOCMEM);
-
-    return ret;
-}
-
-/* hmm.... shouldn`t main be moved to the interface routines */
-int init_main(HWND hWnd)
-{
-    short int ahead = true, hash = true;
-    hHistory = xalloc(8192);
-    history = LPBYTE(GlobalLock(hHistory));
-    hnextdir = xalloc(64 * 64 * 8);
-    nextdir = LPBYTE(GlobalLock(hnextdir));
-    hnextpos = xalloc(64 * 64 * 8);
-    nextpos = LPBYTE(GlobalLock(hnextpos));
-    hdistdata = xalloc(64 * 64 * sizeof(short));
-    distdata = (short *)(GlobalLock(hdistdata));
-    htaxidata = xalloc(64 * 64 * sizeof(short));
-    taxidata = (short *)(GlobalLock(htaxidata));
-    hHashCode = xalloc(2 * 7 * 64 * sizeof(struct hashval));
-    hashcode = (struct hashval *)GlobalLock(hHashCode);
-    hTree = xalloc(2000 * sizeof(struct leaf));
-    Tree = (struct leaf *)GlobalLock(hTree);
-    hGameList = xalloc(512 * sizeof(struct GameRec));
-    GameList = (struct GameRec *)GlobalLock(hGameList);
-    hTTable = xalloc(2 * TTBLSZ * sizeof(struct hashentry));
-    ttable = (struct hashentry *)GlobalLock(hTTable);
-    Level = 0;
-    TCflag = false;
-    OperatorTime = 0;
-    Initialize();
-    Initialize_dist();
-    Initialize_moves();
-    NewGame(hWnd);
-
-    try
-    {
-        GetOpenings(hInst);
-    }
-    catch (UINT errId)
-    {
-        Toolbox().messageBox(hInst, 0, errId, IDS_CHESS);
-    }
-    catch (LPCWSTR err)
-    {
-        ::MessageBoxW(0, err, L"Error", 0);
-    }
-    catch (...)
-    {
-        Toolbox().messageBox(hInst, 0, IDS_UNKNOWNERR, IDS_CHESS);
-    }
-
-    flag.easy = ahead;
-    flag.hash = hash;
-    hashfile = NULL;
-    return 0;
-}
-
-void FreeGlobals()
-{
-    if (hHistory)
-    {
-        ::GlobalUnlock(hHistory);
-        ::GlobalFree(hHistory);
-    }
-
-    if (hnextdir)
-    {
-        ::GlobalUnlock (hnextdir);
-        ::GlobalFree   (hnextdir);
-    }
-
-    if (hGameList)
-    {
-        ::GlobalUnlock(hGameList);
-        ::GlobalFree(hGameList);
-    }
-
-    if (hTTable)
-    {
-        GlobalUnlock(hTTable);
-        GlobalFree(hTTable);
-    }
-
-    if (hTree)
-    {
-        GlobalUnlock(hTree);
-        GlobalFree(hTree);
-    }
-
-   if ( hHashCode ) {
-      GlobalUnlock (hHashCode);
-      GlobalFree   (hHashCode);
-   }
-
-   if ( htaxidata ) {
-      GlobalUnlock (htaxidata);
-      GlobalFree   (htaxidata);
-   }
-
-   if ( hdistdata ) {
-      GlobalUnlock (hdistdata);
-      GlobalFree   (hdistdata);
-   }
-
-   if ( hnextpos ) {
-      GlobalUnlock (hnextpos);
-      GlobalFree   (hnextpos);
-   }
-
-}
-
 /*
   Reset the board and other variables to start a new game.
 */
-void NewGame(HWND hWnd)
+void Sim::NewGame(HWND hWnd)
 {
-    short l, c, p;
     stage = stage2 = -1;          /* the game is not yet started */
 
-    if ( flag.post )
+    if (flag.post)
     {
         ::SendMessage(hStats, WM_SYSCOMMAND, SC_CLOSE, 0);
         flag.post = false;
@@ -380,23 +317,28 @@ void NewGame(HWND hWnd)
     opponent = white;
     computer = black;
 
-    for (l = 0; l < 2000; l++)
+    for (short l = 0; l < 2000; l++)
         (Tree+l)->f = (Tree+l)->t = 0;
 #if TTBLSZ
     rehash = 6;
     ZeroTTable();
-    srand ((unsigned int) 1);
-    for (c = white; c <= black; c++)
-    for (p = pawn; p <= king; p++)
-      for (l = 0; l < 64; l++)
+    ::srand((DWORD)1);
+
+    for (short c = white; c <= black; c++)
+    {
+        for (short p = pawn; p <= king; p++)
         {
-          (hashcode+c*7*64+p*64+l)->key = (((unsigned long) urand ()));
-          (hashcode+c*7*64+p*64+l)->key += (((unsigned long) urand ()) << 16);
-          (hashcode+c*7*64+p*64+l)->bd = (((unsigned long) urand ()));
-          (hashcode+c*7*64+p*64+l)->bd += (((unsigned long) urand ()) << 16);
+            for (short l = 0; l < 64; l++)
+            {
+                (hashcode+c*7*64+p*64+l)->key = DWORD(urand());
+                (hashcode+c*7*64+p*64+l)->key += DWORD(urand()) << 16;
+                (hashcode+c*7*64+p*64+l)->bd = DWORD(urand());
+                (hashcode+c*7*64+p*64+l)->bd += DWORD(urand()) << 16;
+            }
         }
+    }
 #endif
-    for (l = 0; l < 64; l++)
+    for (short l = 0; l < 64; l++)
     {
         board[l] = Stboard[l];
         color[l] = Stcolor[l];

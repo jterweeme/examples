@@ -5,7 +5,6 @@ char Toolbox::nibble(BYTE n)
     return n <= 9 ? '0' + char(n) : 'A' + char(n - 10);
 }
 
-#ifdef STL
 std::string Toolbox::hex8(BYTE b)
 {
     std::string ret;
@@ -84,7 +83,28 @@ void Toolbox::hexdump(std::ostream &os, BYTE *data, DWORD len)
         os << "\r\n";
     }
 }
-#endif
+
+void Toolbox::errorBoxA(HWND hwnd, LPCSTR err)
+{
+    ::MessageBoxA(hwnd, err, "Error", MB_OK | MB_ICONEXCLAMATION);
+}
+
+void Toolbox::errorBoxW(HWND hwnd, LPCWSTR err)
+{
+    ::MessageBoxW(hwnd, err, L"Error", MB_OK | MB_ICONEXCLAMATION);
+}
+
+void Toolbox::errorBox(HWND hwnd, LPCTSTR err)
+{
+    ::MessageBox(hwnd, err, TEXT("Error"), MB_OK | MB_ICONEXCLAMATION);
+}
+
+void Toolbox::errorBox(HINSTANCE hInstance, HWND hwnd, UINT errId)
+{
+    TCHAR err[80];
+    ::LoadString(hInstance, errId, err, sizeof(err));
+    errorBox(hwnd, err);
+}
 
 void Toolbox::messageBox(HINSTANCE hInstance, HWND hwnd, UINT errId, UINT captionId)
 {
@@ -93,4 +113,5 @@ void Toolbox::messageBox(HINSTANCE hInstance, HWND hwnd, UINT errId, UINT captio
     ::LoadString(hInstance, captionId, caption, sizeof(caption));
     ::MessageBox(hwnd, err, caption, MB_OK | MB_ICONEXCLAMATION | MB_APPLMODAL);
 }
+
 
