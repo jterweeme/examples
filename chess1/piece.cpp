@@ -33,7 +33,6 @@
 #define PIECE_YAXIS 32
 
 static short ConvertCoordToIndex(short x, short y);
-static void DrawOnePiece(HDC hDC, short x, short y, struct PIECEBITMAP *piece, DWORD color);
 
 static void QuerySqCenter(short x, short y, POINT *pptl)
 {
@@ -45,8 +44,8 @@ static void QuerySqCenter(short x, short y, POINT *pptl)
 
 static void PieceOriginFromCenter ( POINT *pptl)
 {
-   pptl->x -= PIECE_XAXIS / 2;
-   pptl->y -= PIECE_YAXIS / 2;
+    pptl->x -= PIECE_XAXIS / 2;
+    pptl->y -= PIECE_YAXIS / 2;
 }
 
 static void QuerySqPieceOrigin ( short x, short y, POINT *pptl)
@@ -64,19 +63,18 @@ static void QuerySqPieceOrigin ( short x, short y, POINT *pptl)
 static void
 ShowPiece(HDC hDC, POINT *pptl, struct PIECEBITMAP *Piece_bitmap, DWORD Color)
 {
-    HBRUSH hOldBrush = HBRUSH(SelectObject ( hDC, GetStockObject (BLACK_BRUSH) ));
-    HPEN hOldPen = HPEN(SelectObject ( hDC, GetStockObject ( BLACK_PEN) ));
-   
-    HDC hMemDC = CreateCompatibleDC ( hDC);
+    HBRUSH hOldBrush = HBRUSH(SelectObject(hDC, GetStockObject(BLACK_BRUSH)));
+    HPEN hOldPen = HPEN(SelectObject(hDC, GetStockObject(BLACK_PEN)));
+    HDC hMemDC = ::CreateCompatibleDC(hDC);
 
     /* Write the mask to clear the space */
-    SelectObject ( hMemDC, Piece_bitmap->mask);
-    BitBlt(hDC, pptl->x, pptl->y, PIECE_XAXIS, PIECE_YAXIS, hMemDC, 0, 0,SRCAND);
+    ::SelectObject(hMemDC, Piece_bitmap->mask);
+    ::BitBlt(hDC, pptl->x, pptl->y, PIECE_XAXIS, PIECE_YAXIS, hMemDC, 0, 0,SRCAND);
 
     /* Write out the piece with an OR */
     HBRUSH hBrush = CreateSolidBrush ( Color );
-    SelectObject ( hDC, hBrush );
-    SelectObject ( hMemDC, Piece_bitmap->piece);
+    SelectObject(hDC, hBrush);
+    SelectObject(hMemDC, Piece_bitmap->piece);
     BitBlt(hDC, pptl->x, pptl->y, PIECE_XAXIS, PIECE_YAXIS, hMemDC, 0, 0,0xB80746L);
 
     /* The draw the outline */
@@ -87,7 +85,7 @@ ShowPiece(HDC hDC, POINT *pptl, struct PIECEBITMAP *Piece_bitmap, DWORD Color)
     SelectObject(hDC, hOldPen);
     DeleteObject(hBrush);
 
-   if ( DeleteDC(hMemDC)==0)
+   if (DeleteDC(hMemDC) == 0)
        MessageBeep(0);
 }
 
@@ -96,7 +94,7 @@ static short ConvertCoordToIndex(short x, short y)
     return y * 8 + x;
 }
 
-static void DrawOnePiece ( HDC hDC, short x, short y, struct PIECEBITMAP *piece, DWORD color)
+static void DrawOnePiece(HDC hDC, short x, short y, PIECEBITMAP *piece, DWORD color)
 {
     POINT origin;
     QuerySqPieceOrigin(x, y, &origin);
@@ -112,7 +110,7 @@ void DrawAllPieces(HDC hDC, int reverse, short *pbrd, short *color,
         {
             short i = ConvertCoordToIndex(x, y);
 
-            if ( *(color+i) != NETURAL )
+            if (*(color+i) != NETURAL)
             {
                 if (reverse == 0)
                     DrawOnePiece(hDC, x, y, pieces+*(pbrd+i), (*(color+i)==BLACK) ? clrblack : clrwhite );

@@ -30,9 +30,9 @@
 #define WHITE 2
 
 #define NETURAL 2
-#define maxdepth 30
+#define MAXDEPTH 30
 
-struct flags
+struct Flags
 {
     short mate;         /* the game is over */
     short post;         /* show principle variation */
@@ -60,7 +60,7 @@ struct TimeControlRec
     long clock[2];
 };
 
-struct leaf
+struct Leaf
 {
     short f, t, score, reply;
     WORD flags;
@@ -79,9 +79,10 @@ struct BookEntry
     WORD *mv;
 };
 
-struct hashval
+struct HashVal
 {
-    DWORD key,bd;
+    DWORD key;
+    DWORD bd;
 };
 
 struct hashentry

@@ -27,6 +27,7 @@
 #include "protos.h"
 #include "globals.h"
 #include "gnuchess.h"
+#include "resource.h"
 
 /*
   Perform an alpha-beta search to determine the score for the current board
@@ -37,47 +38,20 @@
   the nominal search depth.
 */
 
-#define TRUESCORE 0x0001
-#define LOWERBOUND 0x0002
-#define UPPERBOUND 0x0004
-#define KINGCASTLE 0x0008
-#define QUEENCASTLE 0x0010
-
-#define UpdateSearchStatus \
-{\
-   if (flag.post) ShowCurrentMove(pnt,node->f,node->t);\
-     if (pnt > TrPnt[1])\
-       {\
-          d = best-Zscore; e = best-node->score;\
-            if (best < alpha) ExtraTime = 10*ResponseTime;\
-            else if (d > -zwndw && e > 4*zwndw) ExtraTime = -ResponseTime/3;\
-            else if (d > -zwndw) ExtraTime = 0;\
-            else if (d > -3*zwndw) ExtraTime = ResponseTime;\
-            else if (d > -9*zwndw) ExtraTime = 3*ResponseTime;\
-            else ExtraTime = 5*ResponseTime;\
-            }\
-            }
-
-#define prune (cf && score+node->score < alpha)
-#define ReCapture (flag.rcptr && score > alpha && score < beta &&\
-                   ply > 2 && CptrFlag[ply-1] && CptrFlag[ply-2])
-
-#define Parry (hung[side] > 1 && ply == Sdepth+1)
-#define MateThreat (ply < Sdepth+4 && ply > 4 &&\
-                    ChkFlag[ply-2] && ChkFlag[ply-4] &&\
-                    ChkFlag[ply-2] != ChkFlag[ply-4])
-
 static short rpthash[2][256];
 static short rank7[3] = {6, 1, 0};
 static short kingP[3] = {4, 60, 0};
 static short value[7] = {0, valueP, valueN, valueB, valueR, valueQ, valueK};
 static short Zscore, FROMsquare, zwndw;
+static long HashCol;
+static Leaf *root;
+static WORD killr0[MAXDEPTH], killr1[MAXDEPTH], killr2[MAXDEPTH], killr3[MAXDEPTH];
 
 static short sweep[8] = {false, false, false, true, true, true, false, false};
 
 static short ptype[2][8] = {
-  {no_piece, pawn, knight, bishop, rook, queen, king, no_piece},
-  {no_piece, bpawn, knight, bishop, rook, queen, king, no_piece}};
+    {no_piece, pawn, knight, bishop, rook, queen, king, no_piece},
+    {no_piece, bpawn, knight, bishop, rook, queen, king, no_piece}};
 
 static short control[7] = {0, CTLP, CTLN, CTLB, ctlR, ctlQ, ctlK};
 
@@ -93,7 +67,7 @@ static WORD PV, Swag0, Swag1, Swag2, Swag3, Swag4;
 */
 void pick(short p1, short p2)
 {
-    struct leaf temp;
+    Leaf temp;
     short s0 = Tree[p1].score;
     short p0 = p1;
 
@@ -116,6 +90,12 @@ void pick(short p1, short p2)
     }
 }
 
+#define TRUESCORE 0x0001
+#define LOWERBOUND 0x0002
+#define UPPERBOUND 0x0004
+#define KINGCASTLE 0x0008
+#define QUEENCASTLE 0x0010
+
 /*
   Look for the current board position in the transposition table.
 */
@@ -132,29 +112,30 @@ ProbeTTable(short side, short depth, short *alpha, short *beta, short *score)
 
     if ((short) ptbl->depth >= depth && ptbl->hashbd == hashbd)
     {
-      HashCnt++;
+        HashCnt++;
 #ifdef HASHTEST
-      for (i = 0; i < 32; i++)
+        for (i = 0; i < 32; i++)
         {
-          if (ptbl->bd[i] != CB(i))
+            if (ptbl->bd[i] != CB(i))
             {
-              HashCol++;
-              ::MessageBox(0, TEXT("ttable collision detected"), TEXT("Chess"), MB_OK);
-              break;
+                HashCol++;
+                ::MessageBox(0, TEXT("ttable collision detected"), TEXT("Chess"), MB_OK);
+                break;
             }
         }
 #endif
+        PV = ptbl->mv;
 
-      PV = ptbl->mv;
-      if (ptbl->flags & TRUESCORE)
+        if (ptbl->flags & TRUESCORE)
         {
-          *score = ptbl->score;
-          *beta = -20000;
+            *score = ptbl->score;
+            *beta = -20000;
         }
 #if 0 /* commented out, why? */
-      else if (ptbl->flags & upperbound)
+        else if (ptbl->flags & upperbound)
         {
-          if (ptbl->score < *beta) *beta = ptbl->score+1;
+            if (ptbl->score < *beta)
+                *beta = ptbl->score+1;
         }
 #endif
         else if (ptbl->flags & LOWERBOUND)
@@ -177,7 +158,7 @@ void PutInTTable(short side, short score, short depth, short alpha,
 
     /* rehash max rehash times */
     for (i = 1; depth < ptbl->depth && ptbl->hashbd != hashbd && i <= rehash; i++)
-        ptbl = ttable+side*2+((hashkey + i) & (TTBLSZ - 1));
+        ptbl = ttable + side * 2 + ((hashkey + i) & (TTBLSZ - 1));
 
     if (depth >= ptbl->depth || ptbl->hashbd != hashbd)
     {
@@ -202,16 +183,75 @@ void PutInTTable(short side, short score, short depth, short alpha,
     }
 }
 
+static void ShowScore(HWND hwnd, short score)
+{
+    TCHAR tmp[30];
+
+    if (hwnd)
+    {
+        ::wsprintf(tmp, TEXT("%d"), score);
+        ::SetDlgItemText(hwnd, SCORETEXT, tmp);
+    }
+}
+
+static void ShowResults(HWND hwnd, short score, PWORD bstline, char ch)
+{
+    if (!flag.post)
+        return;
+
+    ShowDepth(ch);
+    ShowScore(hwnd, score);
+    int s = 0;
+    TCHAR str[300];
+
+    for (BYTE ply = 1; bstline[ply] > 0; ply++)
+    {
+        algbr(short(bstline[ply]) >> 8, short(bstline[ply]) & 0xFF, false);
+
+        if (ply == 5 || ply == 9 || ply == 13 || ply == 17)
+            s += wsprintf(str + s, TEXT("\n"));
+
+        s += ::wsprintf(str + s, TEXT("%-5s "), LPTSTR(mvstr[0]));
+    }
+    ::SetDlgItemText(hwnd, BSTLINETEXT, LPTSTR(str));
+}
+
+static void updateSearchStatus(short &d, short pnt, short f, short t, short best, short alpha, short score)
+{
+    if (flag.post)
+        ShowCurrentMove(hStats, pnt, f, t);
+
+    if (pnt <= TrPnt[1])
+        return;
+
+    d = best - Zscore;
+    short e = best - score;
+
+    if (best < alpha)
+        ExtraTime = 10 * ResponseTime;
+    else if (d > -zwndw && e > 4 * zwndw)
+        ExtraTime = -ResponseTime / 3;
+    else if (d > -zwndw)
+        ExtraTime = 0;
+    else if (d > -3 * zwndw)
+        ExtraTime = ResponseTime;
+    else if (d > -9 * zwndw)
+        ExtraTime = 3 * ResponseTime;
+    else
+        ExtraTime = 5 * ResponseTime;
+}
+
+static bool mateThreat(short ply)
+{
+    return ply < Sdepth + 4 && ply > 4 && ChkFlag[ply - 2] &&
+            ChkFlag[ply - 4] && ChkFlag[ply - 2] != ChkFlag[ply - 4];
+}
+
 static int search(HWND hWnd, short side, short ply, short depth,
         short alpha, short beta, WORD *bstline, short *rpt)
 {
-    short j, pnt;
-    short best, tempb, tempc, tempsf, tempst;
-    short xside, pbst, d, e, cf, score, rcnt, slk, InChk;
-    WORD mv, nxtline[maxdepth];
-    struct leaf *node, tmp;
     NodeCnt++;
-    xside = otherside[side];
+    short xside = otherside[side];
 
     if ((ply <= Sdepth + 3) && rpthash[side][hashkey & 0xFF] > 0)
         repetition(rpt);
@@ -222,7 +262,8 @@ static int search(HWND hWnd, short side, short ply, short depth,
     if (*rpt == 1 && ply > 1)
         return (0);
 
-    score = evaluate(side, ply, alpha, beta, INCscore, &slk, &InChk);
+    short slk, InChk;
+    short score = evaluate(side, ply, alpha, beta, INCscore, &slk, &InChk);
 
     if (score > 9000)
     {
@@ -239,6 +280,10 @@ static int search(HWND hWnd, short side, short ply, short depth,
      in the mate example.
                              J.Birmingham.
     */
+
+#define ReCapture (flag.rcptr && score > alpha && score < beta &&\
+                   ply > 2 && CptrFlag[ply-1] && CptrFlag[ply-2])
+
     if (depth > 0)
     {
         /* Allow opponent a chance to check again */
@@ -249,9 +294,9 @@ static int search(HWND hWnd, short side, short ply, short depth,
     }
     else
     {
-        if (score >= alpha && (InChk || PawnThreat[ply - 1] || Parry))
+        if (score >= alpha && (InChk || PawnThreat[ply - 1] || (hung[side] > 1 && ply == Sdepth+1)))
             ++depth;           /* this was depth=1 in original ?bug? */
-        else if (score <= beta && MateThreat)
+        else if (score <= beta && mateThreat(ply))
             ++depth;           /* this was also set to depth=1  ?bug? */
     }
 
@@ -278,38 +323,27 @@ static int search(HWND hWnd, short side, short ply, short depth,
             return alpha;
     }
 #endif
-    if (Sdepth == 1)
-        d = 7;
-    else
-        d = 11;
+    short d = Sdepth == 1 ? 7 : 11;
 
     if (ply > Sdepth + d || (depth < 1 && score > beta))
-        return (score);
+        return score;
 
     if (ply > 1)
     {
-        if (depth > 0)
-            MoveList (side, ply);
-        else
-            CaptureList (side, ply);
+        depth > 0 ? MoveList(side, ply) : CaptureList(side, ply);
     }
 
     if (TrPnt[ply] == TrPnt[ply + 1])
         return (score);
 
-    cf = (depth < 1 && ply > Sdepth + 1 && !ChkFlag[ply - 2] && !slk);
-
-    if (depth > 0)
-        best = -12000;
-    else
-        best = score;
+    short cf = depth < 1 && ply > Sdepth + 1 && !ChkFlag[ply - 2] && !slk;
+    short best = depth > 0 ? -12000 : score;
 
     if (best > alpha)
         alpha = best;
 
-    for (pnt = pbst = TrPnt[ply];
-       pnt < TrPnt[ply + 1] && best <= beta;
-       pnt++)
+    short pnt, pbst;
+    for (pnt = pbst = TrPnt[ply]; pnt < TrPnt[ply + 1] && best <= beta; pnt++)
     {
         /* Little code segment to allow cooperative multitasking */
         {
@@ -329,25 +363,28 @@ static int search(HWND hWnd, short side, short ply, short depth,
         if (ply > 1)
             pick(pnt, TrPnt[ply + 1] - 1);
 
-        node = &Tree[pnt];
-        mv = (node->f << 8) | node->t;
+        Leaf *node = &Tree[pnt];
+        WORD mv = (node->f << 8) | node->t;
+        WORD nxtline[MAXDEPTH];
         nxtline[ply + 1] = 0;
 
-        if (prune)
+        if (cf && score+node->score < alpha)
             break;
 
         if (ply == 1)
-            UpdateSearchStatus;
+            updateSearchStatus(d, pnt, node->f, node->t, best, alpha, node->score);
 
         if (!(node->flags & exact))
         {
+            short tempst, tempsf, tempc, tempb;
             MakeMove(side, node, &tempb, &tempc, &tempsf, &tempst, &INCscore);
             CptrFlag[ply] = (node->flags & capture);
             PawnThreat[ply] = (node->flags & pwnthrt);
             Tscore[ply] = node->score;
             PV = node->reply;
 
-            node->score = -search (hWnd, xside, ply + 1,
+            short rcnt;
+            node->score = -search(hWnd, xside, ply + 1,
                                  (depth > 0) ? depth - 1 : 0,
                                  -beta, -alpha,
                                  nxtline, &rcnt);
@@ -358,7 +395,7 @@ static int search(HWND hWnd, short side, short ply, short depth,
                 node->score /= 2;
 
             if (rcnt >= 2 || GameCnt - Game50 > 99 ||
-              (node->score == 9999 - ply && !ChkFlag[ply]))
+                (node->score == 9999 - ply && !ChkFlag[ply]))
             {
                 node->flags |= draw;
                 node->flags |= exact;
@@ -385,6 +422,7 @@ static int search(HWND hWnd, short side, short ply, short depth,
             if (best > alpha)
                 alpha = best;
 
+            short j;
             for (j = ply + 1; nxtline[j] > 0; j++)
                 bstline[j] = nxtline[j];
 
@@ -395,24 +433,27 @@ static int search(HWND hWnd, short side, short ply, short depth,
             {
                 if (best > root->score)
                 {
-                  tmp = Tree[pnt];
-                  for (j = pnt - 1; j >= 0; j--)
-                    Tree[j + 1] = Tree[j];
-                  Tree[0] = tmp;
-                  pbst = 0;
+                    Leaf tmp = Tree[pnt];
+
+                    for (j = pnt - 1; j >= 0; j--)
+                        Tree[j + 1] = Tree[j];
+
+                    Tree[0] = tmp;
+                    pbst = 0;
                 }
 
-              if (Sdepth > 2)
-              {
-                if (best > beta)
-                  ShowResults (best, bstline, '\xab' /*'+'*/);
-                else if (best < alpha)
-                  ShowResults (best, bstline, '\xbb' /* '-'*/);
-                else
-                  ShowResults (best, bstline, '\xb1' /*'&'*/);
-              }
+                if (Sdepth > 2)
+                {
+                    if (best > beta)
+                        ShowResults(hStats, best, bstline, '\xab' /*'+'*/);
+                    else if (best < alpha)
+                        ShowResults(hStats, best, bstline, '\xbb' /* '-'*/);
+                    else
+                        ShowResults(hStats, best, bstline, '\xb1' /*'&'*/);
+                }
             }
         }
+
         if (NodeCnt > ETnodes)
             ElapsedTime(0);
 
@@ -420,8 +461,8 @@ static int search(HWND hWnd, short side, short ply, short depth,
             return (-Tscore[ply - 1]);
     }
 
-    node = &Tree[pbst];
-    mv = (node->f << 8) | node->t;
+    Leaf *node = &Tree[pbst];
+    WORD mv = (node->f << 8) | node->t;
 #if TTBLSZ
     if (flag.hash && ply <= Sdepth && *rpt == 0 && best == alpha)
     {
@@ -434,13 +475,13 @@ static int search(HWND hWnd, short side, short ply, short depth,
 #endif
     if (depth > 0)
     {
-        j = (node->f << 6) | node->t;
+        short j = node->f << 6 | node->t;
 
         if (side == black)
             j |= 0x1000;
 
-        if (*(history+j) < 150)
-            *(history+j) += BYTE(2) * depth;
+        if (*(history + j) < 150)
+            *(history + j) += BYTE(2) * depth;
 
         if (node->t != (GameList[GameCnt].gmove & 0xFF))
         {
@@ -455,12 +496,31 @@ static int search(HWND hWnd, short side, short ply, short depth,
             }
         }
 
-        if (best > 9000)
-            killr0[ply] = mv;
-        else
-            killr0[ply] = 0;
+        killr0[ply] = best > 9000 ? mv : 0;
     }
     return best;
+}
+
+static void OutputMove(HWND hWnd, Leaf *node)
+{
+    TCHAR tmp[30];
+    UpdateDisplay(hWnd, node->f, node->t, 0, (short) node->flags);
+    ::wsprintf(tmp, TEXT("My move is %s"), (char *)mvstr[0]);
+    ::SetWindowText(hComputerMove, tmp);
+
+    if (node->flags & draw)
+        SMessageBox(hInst, hWnd, IDS_DRAWGAME,IDS_CHESS);
+    else if (node->score == -9999)
+        SMessageBox(hInst, hWnd, IDS_YOUWIN, IDS_CHESS);
+    else if (node->score == 9998)
+        SMessageBox(hInst, hWnd, IDS_COMPUTERWIN,IDS_CHESS);
+    else if (node->score < -9000)
+        SMessageBox(hInst, hWnd, IDS_MATESOON,IDS_CHESS);
+    else if (node->score > 9000)
+        SMessageBox(hInst, hWnd, IDS_COMPMATE,IDS_CHESS);
+
+    if (flag.post)
+        ShowNodeCnt(NodeCnt, evrate);
 }
 
 /*
@@ -473,11 +533,11 @@ static int search(HWND hWnd, short side, short ply, short depth,
 */
 void SelectMove(HWND hWnd, short side, short iop)
 {
-    static short i, tempb, tempc, tempsf, tempst, xside, rpt;
+    static short i, tempb, tempc, tempsf, tempst, rpt;
     static short alpha, beta, score;
 
     flag.timeout = false;
-    xside = otherside[side];
+    short xside = otherside[side];
 
     if (iop != 2)
         player = side;
@@ -509,21 +569,21 @@ void SelectMove(HWND hWnd, short side, short iop)
         ResponseTime = 1;
 
     ExtraTime = 0;
-    ExaminePosition ();
-    ScorePosition (side, &score);
-    ShowSidetoMove ();
+    ExaminePosition();
+    ScorePosition(side, &score);
+    ShowSidetoMove();
 
     if (Sdepth == 0)
     {
         SearchStartStuff(side);
-        memset(history, 0, 8192 * sizeof (char));
+        ::memset(history, 0, 8192 * sizeof(char));
         FROMsquare = TOsquare = -1;
         PV = 0;
 
         if (iop != 2)
             hint = 0;
 
-        for (i = 0; i < maxdepth; i++)
+        for (i = 0; i < MAXDEPTH; i++)
             PrVar[i] = killr0[i] = killr1[i] = killr2[i] = killr3[i] = 0;
 
         alpha = score - 90;
@@ -531,7 +591,7 @@ void SelectMove(HWND hWnd, short side, short iop)
         rpt = 0;
         TrPnt[1] = 0;
         root = &Tree[0];
-        MoveList (side, 1);
+        MoveList(side, 1);
 
         for (i = TrPnt[1]; i < TrPnt[2]; i++)
             pick(i, TrPnt[2] - 1);
@@ -550,7 +610,7 @@ void SelectMove(HWND hWnd, short side, short iop)
     while (!flag.timeout && Sdepth < MaxSearchDepth)
     {
         Sdepth++;
-        ShowDepth (' ');
+        ShowDepth(' ');
         score = search(hWnd, side, 1, Sdepth, alpha, beta, PrVar, &rpt);
 
         for (i = 1; i <= Sdepth; i++)
@@ -578,35 +638,40 @@ void SelectMove(HWND hWnd, short side, short iop)
             for (i = TrPnt[1] + 1; i < TrPnt[2]; i++)
                 pick (i, TrPnt[2] - 1);
 
-      ShowResults (score, PrVar, '\xb7' /*'.'*/);
-      for (i = 1; i <= Sdepth; i++)
-        killr0[i] = PrVar[i];
-      if (score > Zscore - zwndw && score > Tree[1].score + 250)
-        ExtraTime = 0;
-      else if (score > Zscore - 3 * zwndw)
-        ExtraTime = ResponseTime;
-      else
-        ExtraTime = 3 * ResponseTime;
-      if (root->flags & exact)
-        flag.timeout = true;
-      if (Tree[1].score < -9000)
-        flag.timeout = true;
-      if (4 * et > 2 * ResponseTime + ExtraTime)
-        flag.timeout = true;
-      if (!flag.timeout)
+        ShowResults(hStats, score, PrVar, '\xb7' /*'.'*/);
+
+        for (i = 1; i <= Sdepth; i++)
+            killr0[i] = PrVar[i];
+
+        if (score > Zscore - zwndw && score > Tree[1].score + 250)
+            ExtraTime = 0;
+        else if (score > Zscore - 3 * zwndw)
+            ExtraTime = ResponseTime;
+        else
+            ExtraTime = 3 * ResponseTime;
+
+        if (root->flags & exact)
+            flag.timeout = true;
+
+        if (Tree[1].score < -9000)
+            flag.timeout = true;
+
+        if (4 * et > 2 * ResponseTime + ExtraTime)
+            flag.timeout = true;
+
+        if (!flag.timeout)
         {
-          Tscore[0] = score;
-          if (Zscore == 0)
-            Zscore = score;
-          else
-            Zscore = (Zscore + score) / 2;
+            Tscore[0] = score;
+            Zscore = Zscore == 0 ? score : (Zscore + score) / 2;
         }
-      zwndw = 20 + abs (Zscore / 12);
-      beta = score + Bwindow;
-      if (Zscore < score)
-        alpha = Zscore - Awindow - zwndw;
-      else
-        alpha = score - Awindow - zwndw;
+
+        zwndw = 20 + abs (Zscore / 12);
+        beta = score + Bwindow;
+
+        if (Zscore < score)
+            alpha = Zscore - Awindow - zwndw;
+        else
+            alpha = score - Awindow - zwndw;
     }
 
     score = root->score;
@@ -632,17 +697,18 @@ void SelectMove(HWND hWnd, short side, short iop)
         algbr(0, 0, 0);
     }
 
-  OutputMove (hWnd);
-  if (score == -9999 || score == 9998)
-    flag.mate = true;
-  if (flag.mate)
-    hint = 0;
-  if ((board[root->t] == pawn)
-      || (root->flags & capture)
-      || (root->flags & cstlmask))
+    OutputMove(hWnd, root);
+
+    if (score == -9999 || score == 9998)
+        flag.mate = true;
+
+    if (flag.mate)
+        hint = 0;
+
+    if ((board[root->t] == pawn) || (root->flags & capture) || (root->flags & cstlmask))
     {
-      Game50 = GameCnt;
-      ZeroRPT();
+        Game50 = GameCnt;
+        ZeroRPT();
     }
 
     GameList[GameCnt].score = score;
@@ -658,7 +724,7 @@ void SelectMove(HWND hWnd, short side, short iop)
             SetTimeControl();
     }
 
-    if ((root->flags & draw) && flag.bothsides)
+    if (root->flags & draw && flag.bothsides)
         flag.mate = true;
 
     if (GameCnt > 470)
@@ -672,7 +738,7 @@ int parse(FILE *fd, WORD *mv, short side)
 {
     int c, r1, r2, c1, c2;
     char s[100];
-    while ((c = getc (fd)) == ' ');
+    while ((c = getc(fd)) == ' ');
     int i = 0;
     s[0] = char(c);
 
@@ -708,7 +774,7 @@ int parse(FILE *fd, WORD *mv, short side)
       r1 = s[1] - '1';
       c2 = s[2] - 'a';
       r2 = s[3] - '1';
-      *mv = (locn (r1, c1) << 8) | locn (r2, c2);
+      *mv = locn(r1, c1) << 8 | locn(r2, c2);
     }
 
     return 1;
@@ -719,19 +785,19 @@ int parse(FILE *fd, WORD *mv, short side)
 */
 inline void repetition(short *cnt)
 {
-    short c, f, t;
+    short c = 0;
     short b[64];
-    *cnt = c = 0;
+    *cnt = 0;
 
     if (GameCnt > Game50 + 3)
     {
-        memset((char *)b, 0, sizeof (b));
+        ::memset((char *)b, 0, sizeof (b));
 
         for (short i = GameCnt; i > Game50; i--)
         {
             WORD m = GameList[i].gmove;
-            f = m >> 8;
-            t = m & 0xFF;
+            short f = m >> 8;
+            short t = m & 0xFF;
 
             if (++b[f] == 0)
                 c--;
@@ -790,7 +856,7 @@ void ZeroTTable()
 */
 int ProbeFTable(short side, short depth, short *alpha, short *beta, short *score)
 {
-    WORD i, j;
+    WORD j;
     DWORD hashix;
     short s;
     struct fileentry xnew, t;
@@ -800,7 +866,7 @@ int ProbeFTable(short side, short depth, short *alpha, short *beta, short *score
     else
         hashix = hashkey | (1 & (filesz - 1));
 
-    for (i = 0; i < 32; i++)
+    for (WORD i = 0; i < 32; i++)
         xnew.bd[i] = CB(i);
 
     xnew.flags = 0;
@@ -814,32 +880,36 @@ int ProbeFTable(short side, short depth, short *alpha, short *beta, short *score
         xnew.flags |= KINGCASTLE;
 #endif
 
-    for (i = 0; i < frehash; i++)
+    for (WORD i = 0; i < frehash; i++)
     {
-      fseek(hashfile,
+        fseek(hashfile,
             sizeof(struct fileentry) * ((hashix + 2 * i) & (filesz - 1)),
             SEEK_SET);
-      fread(&t, sizeof(struct fileentry), 1, hashfile);
-      for (j = 0; j < 32; j++)
-        if (t.bd[j] != xnew.bd[j])
-          break;
 
-      if ((short(t.depth) >= depth) && (j >= 32) && (xnew.flags == (t.flags & (KINGCASTLE | QUEENCASTLE))))
+        fread(&t, sizeof(struct fileentry), 1, hashfile);
+
+        for (j = 0; j < 32; j++)
+            if (t.bd[j] != xnew.bd[j])
+                break;
+
+        if ((short(t.depth) >= depth) && (j >= 32) && (xnew.flags == (t.flags & (KINGCASTLE | QUEENCASTLE))))
         {
-          FHashCnt++;
-          PV = (t.f << 8) | t.t;
-          s = (t.sh << 8) | t.sl;
-          if (t.flags & TRUESCORE)
+            FHashCnt++;
+            PV = (t.f << 8) | t.t;
+            s = (t.sh << 8) | t.sl;
+
+            if (t.flags & TRUESCORE)
             {
-              *score = s;
-              *beta = -20000;
+                *score = s;
+                *beta = -20000;
             }
-          else if (t.flags & LOWERBOUND)
+            else if (t.flags & LOWERBOUND)
             {
-              if (s > *alpha)
-                *alpha = s - 1;
+                if (s > *alpha)
+                    *alpha = s - 1;
             }
-          return(true);
+
+            return true;
         }
     }
     return false;
@@ -934,56 +1004,57 @@ void ZeroRPT()
 static inline void
 LinkMove(short ply, short f, short t, short flag, short xside)
 {
-  short s, z;
-  unsigned short mv;
+    Leaf *node = &Tree[TrPnt[ply + 1]];
+    WORD mv = (f << 8) | t;
+    short s = 0;
 
-  struct leaf *node = &Tree[TrPnt[ply + 1]];
-  mv = (f << 8) | t;
-  s = 0;
-  if (mv == Swag0)
-    s = 2000;
-  else if (mv == Swag1)
-    s = 60;
-  else if (mv == Swag2)
-    s = 50;
-  else if (mv == Swag3)
-    s = 40;
-  else if (mv == Swag4)
-    s = 30;
-  z = (f << 6) | t;
-  if (xside == white)
-    z |= 0x1000;
-/*  s += history[z]; */
-  s += *(history+z);
+    if (mv == Swag0)
+        s = 2000;
+    else if (mv == Swag1)
+        s = 60;
+    else if (mv == Swag2)
+        s = 50;
+    else if (mv == Swag3)
+        s = 40;
+    else if (mv == Swag4)
+        s = 30;
+
+    short z = (f << 6) | t;
+
+    if (xside == white)
+        z |= 0x1000;
+
+    s += *(history+z);
 
     if (color[t] != neutral)
     {
-      if (t == TOsquare)
-        s += 500;
-      s += value[board[t]] - board[f];
+        if (t == TOsquare)
+            s += 500;
+
+        s += value[board[t]] - board[f];
     }
 
     if (board[f] == pawn)
     {
-      if (row (t) == 0 || row (t) == 7)
-      {
-        flag |= PROMOTE;
-        s += 800;
-        Link (f, t, flag | queen, s - 20000);
-        s -= 200;
-        Link (f, t, flag | knight, s - 20000);
-        s -= 50;
-        Link (f, t, flag | rook, s - 20000);
-        flag |= bishop;
-        s -= 50;
-      }
-      else if (row (t) == 1 || row (t) == 6)
-      {
-        flag |= pwnthrt;
-        s += 600;
-      }
+        if (row(t) == 0 || row(t) == 7)
+        {
+            flag |= PROMOTE;
+            s += 800;
+            Link (f, t, flag | queen, s - 20000);
+            s -= 200;
+            Link (f, t, flag | knight, s - 20000);
+            s -= 50;
+            Link (f, t, flag | rook, s - 20000);
+            flag |= bishop;
+            s -= 50;
+        }
+        else if (row (t) == 1 || row (t) == 6)
+        {
+            flag |= pwnthrt;
+            s += 600;
+        }
     }
-  Link (f, t, flag, s - 20000);
+    Link(f, t, flag, s - 20000);
 }
 
 /*
@@ -992,54 +1063,59 @@ LinkMove(short ply, short f, short t, short flag, short xside)
   nextpos else from nextdir.
 */
 static inline void
-GenMoves(short int ply, short int sq, short int side, short int xside)
+GenMoves(short ply, short sq, short side, short xside)
 {
-    short u;
-    unsigned char far *ppos, far *pdir;
     short piece = board[sq];
-    ppos = nextpos+ptype[side][piece]*64*64+sq*64;
-    pdir = nextdir+ptype[side][piece]*64*64+sq*64;
+    BYTE *ppos = nextpos + ptype[side][piece] * 64 * 64 + sq * 64;
+    BYTE *pdir = nextdir + ptype[side][piece] * 64 * 64 + sq * 64;
 
     if (piece == pawn)
     {
-      u = ppos[sq];     /* follow no captures thread */
-      if (color[u] == neutral)
+        short u = ppos[sq];     /* follow no captures thread */
+
+        if (color[u] == neutral)
         {
-          LinkMove (ply, sq, u, 0, xside);
-          u = ppos[u];
-          if (color[u] == neutral)
-            LinkMove (ply, sq, u, 0, xside);
+            LinkMove(ply, sq, u, 0, xside);
+            u = ppos[u];
+
+            if (color[u] == neutral)
+                LinkMove(ply, sq, u, 0, xside);
         }
-      u = pdir[sq];     /* follow captures thread */
-      if (color[u] == xside)
-        LinkMove (ply, sq, u, capture, xside);
-      else
-        if (u == epsquare)
-          LinkMove (ply, sq, u, capture | epmask, xside);
-      u = pdir[u];
-      if (color[u] == xside)
-        LinkMove (ply, sq, u, capture, xside);
-      else
-        if (u == epsquare)
-          LinkMove (ply, sq, u, capture | epmask, xside);
+
+        u = pdir[sq];     /* follow captures thread */
+
+        if (color[u] == xside)
+            LinkMove(ply, sq, u, capture, xside);
+        else if (u == epsquare)
+            LinkMove(ply, sq, u, capture | epmask, xside);
+
+        u = pdir[u];
+
+        if (color[u] == xside)
+            LinkMove(ply, sq, u, capture, xside);
+        else if (u == epsquare)
+            LinkMove(ply, sq, u, capture | epmask, xside);
     }
-  else
+    else
     {
-      u = ppos[sq];
-      do
+        short u = ppos[sq];
+
+        do
         {
-          if (color[u] == neutral)
+            if (color[u] == neutral)
             {
-              LinkMove (ply, sq, u, 0, xside);
-              u = ppos[u];
+                LinkMove(ply, sq, u, 0, xside);
+                u = ppos[u];
             }
-          else
+            else
             {
-              if (color[u] == xside)
-                LinkMove (ply, sq, u, capture, xside);
-              u = pdir[u];
+                if (color[u] == xside)
+                    LinkMove(ply, sq, u, capture, xside);
+
+                u = pdir[u];
             }
-      } while (u != sq);
+        }
+        while (u != sq);
     }
 }
 
@@ -1047,42 +1123,28 @@ GenMoves(short int ply, short int sq, short int side, short int xside)
   Fill the array Tree[] with all available moves for side to play. Array
   TrPnt[ply] contains the index into Tree[] of the first move at a ply.
 */
-void MoveList (short side, short ply)
+void MoveList(short side, short ply)
 {
-    short i, f;
     short xside = otherside[side];
     TrPnt[ply + 1] = TrPnt[ply];
-
-    if (PV == 0)
-        Swag0 = killr0[ply];
-    else
-        Swag0 = PV;
-
+    Swag0 = PV == 0 ? killr0[ply] : PV;
     Swag1 = killr1[ply];
     Swag2 = killr2[ply];
     Swag3 = killr3[ply];
+    Swag4 = ply > 2 ? killr1[ply - 2] : 0;
 
-    if (ply > 2)
-        Swag4 = killr1[ply - 2];
-    else
-        Swag4 = 0;
-
-    for (i = PieceCnt[side]; i >= 0; i--)
+    for (short i = PieceCnt[side]; i >= 0; i--)
         GenMoves(ply, PieceList[side][i], side, xside);
 
     if (!castld[side])
     {
-        f = PieceList[side][0];
+        short f = PieceList[side][0];
 
         if (castle(side, f, f + 2, 0))
-        {
             LinkMove(ply, f, f + 2, cstlmask, xside);
-        }
 
         if (castle(side, f, f - 2, 0))
-        {
             LinkMove(ply, f, f - 2, cstlmask, xside);
-        }
     }
 }
 
@@ -1091,69 +1153,77 @@ void MoveList (short side, short ply)
   side to play. Array TrPnt[ply] contains the index into Tree[]
   of the first move at a ply.
 */
-void
-CaptureList (short int side, short int ply)
+void CaptureList(short side, short ply)
 {
-  short u, sq, xside;
-  struct leaf far *node;
-  unsigned char far *ppos, far *pdir;
-  short i, piece, *PL, r7;
+    short u;
+    BYTE *ppos;
+    short xside = otherside[side];
+    TrPnt[ply + 1] = TrPnt[ply];
+    Leaf *node = &Tree[TrPnt[ply]];
+    short r7 = rank7[side];
+    short *PL = PieceList[side];
 
-  xside = otherside[side];
-  TrPnt[ply + 1] = TrPnt[ply];
-  node = &Tree[TrPnt[ply]];
-  r7 = rank7[side];
-  PL = PieceList[side];
-  for (i = 0; i <= PieceCnt[side]; i++)
+    for (short i = 0; i <= PieceCnt[side]; i++)
     {
-      sq = PL[i];
-      piece = board[sq];
-      if (sweep[piece])
-        {
-          ppos = nextpos+piece*64*64+sq*64;
-          pdir = nextdir+piece*64*64+sq*64;
-          u = ppos[sq];
-          do
-            {
-              if (color[u] == neutral)
-                u = ppos[u];
-              else
-                {
-                  if (color[u] == xside)
-                    Link (sq, u, capture,
-                          value[board[u]] + svalue[board[u]] - piece);
-                  u = pdir[u];
-                }
-          } while (u != sq);
-        }
-      else
-        {
-          pdir = nextdir+ptype[side][piece]*64*64+sq*64;
-          if (piece == pawn && row (sq) == r7)
-            {
-              u = pdir[sq];
-              if (color[u] == xside)
-                Link (sq, u, capture | PROMOTE | queen, valueQ);
-              u = pdir[u];
+        short sq = PL[i];
+        short piece = board[sq];
 
-              if (color[u] == xside)
+        if (sweep[piece])
+        {
+            ppos = nextpos + piece * 64 * 64 + sq * 64;
+            BYTE *pdir = nextdir + piece * 64 * 64 + sq * 64;
+            u = ppos[sq];
+
+            do
+            {
+                if (color[u] == neutral)
+                {
+                    u = ppos[u];
+                }
+                else
+                {
+                    if (color[u] == xside)
+                        Link(sq, u, capture, value[board[u]] + svalue[board[u]] - piece);
+
+                    u = pdir[u];
+                }
+            }
+            while (u != sq);
+        }
+        else
+        {
+            BYTE *pdir = nextdir + ptype[side][piece] * 64 * 64 + sq * 64;
+
+            if (piece == pawn && row (sq) == r7)
+            {
+                u = pdir[sq];
+
+                if (color[u] == xside)
+                    Link (sq, u, capture | PROMOTE | queen, valueQ);
+
+                u = pdir[u];
+
+                if (color[u] == xside)
                     Link(sq, u, capture | PROMOTE | queen, valueQ);
 
-              ppos = nextpos+ptype[side][piece]*64*64+sq*64;
-              u = ppos[sq]; /* also generate non capture promote */
+                ppos = nextpos+ptype[side][piece]*64*64+sq*64;
+                u = ppos[sq]; /* also generate non capture promote */
 
-              if (color[u] == neutral)
-                Link (sq, u, PROMOTE | queen, valueQ);
+                if (color[u] == neutral)
+                    Link (sq, u, PROMOTE | queen, valueQ);
             }
-          else
+            else
             {
-              u = pdir[sq];
-              do
+                u = pdir[sq];
+
+                do
                 {
-                  if (color[u] == xside)
+                    if (color[u] == xside)
                         Link(sq, u, capture, value[board[u]] + svalue[board[u]] - piece);
-                  u = pdir[u];
-              } while (u != sq);
+
+                    u = pdir[u];
+                }
+                while (u != sq);
             }
         }
     }
@@ -1195,54 +1265,49 @@ int castle(short side, short kf, short kt, short iop)
     }
     else
     {
-      if (iop == 1)
+        if (iop == 1)
         {
-          castld[side] = true;
-          Mvboard[kf]++;
-          Mvboard[rf]++;
+            castld[side] = true;
+            Mvboard[kf]++;
+            Mvboard[rf]++;
         }
-      else
+        else
         {
-          castld[side] = false;
-          Mvboard[kf]--;
-          Mvboard[rf]--;
-          t0 = kt;
-          kt = kf;
-          kf = t0;
-          t0 = rt;
-          rt = rf;
-          rf = t0;
+            castld[side] = false;
+            Mvboard[kf]--;
+            Mvboard[rf]--;
+            t0 = kt;
+            kt = kf;
+            kf = t0;
+            t0 = rt;
+            rt = rf;
+            rf = t0;
         }
-      board[kt] = king;
-      color[kt] = side;
-      Pindex[kt] = 0;
-      board[kf] = no_piece;
-      color[kf] = neutral;
-      board[rt] = rook;
-      color[rt] = side;
-      Pindex[rt] = Pindex[rf];
-      board[rf] = no_piece;
-      color[rf] = neutral;
-      PieceList[side][Pindex[kt]] = kt;
-      PieceList[side][Pindex[rt]] = rt;
+
+        board[kt] = king;
+        color[kt] = side;
+        Pindex[kt] = 0;
+        board[kf] = no_piece;
+        color[kf] = neutral;
+        board[rt] = rook;
+        color[rt] = side;
+        Pindex[rt] = Pindex[rf];
+        board[rf] = no_piece;
+        color[rf] = neutral;
+        PieceList[side][Pindex[kt]] = kt;
+        PieceList[side][Pindex[rt]] = rt;
 #if TTBLSZ
-      UpdateHashbd(side, king, kf, kt);
-      UpdateHashbd(side, rook, rf, rt);
+        UpdateHashbd(side, king, kf, kt);
+        UpdateHashbd(side, rook, rf, rt);
 #endif
     }
-  return (true);
+    return true;
 }
 
 //Make or unmake an en passant move.
-static inline void
-EnPassant(short xside, short f, short t, short iop)
-{
-    short l;
-
-    if (t > f)
-        l = t - 8;
-    else
-        l = t + 8;
+static inline void EnPassant(short xside, short f, short t, short iop)
+{    
+    short l = t > f ? t - 8 : t + 8;
 
     if (iop == 1)
     {
@@ -1261,22 +1326,22 @@ EnPassant(short xside, short f, short t, short iop)
   Update the PieceList and Pindex arrays when a piece is captured or when a
   capture is unmade.
 */
-static inline void UpdatePieceList (short side, short sq, short iop)
+static inline void UpdatePieceList(short side, short sq, short iop)
 {
     if (iop == 1)
     {
         PieceCnt[side]--;
         for (short i = Pindex[sq]; i <= PieceCnt[side]; i++)
         {
-          PieceList[side][i] = PieceList[side][i + 1];
-          Pindex[PieceList[side][i]] = i;
+            PieceList[side][i] = PieceList[side][i + 1];
+            Pindex[PieceList[side][i]] = i;
         }
     }
     else
     {
-      PieceCnt[side]++;
-      PieceList[side][PieceCnt[side]] = sq;
-      Pindex[sq] = PieceCnt[side];
+        PieceCnt[side]++;
+        PieceList[side][PieceCnt[side]] = sq;
+        Pindex[sq] = PieceCnt[side];
     }
 }
 
@@ -1285,14 +1350,14 @@ static inline void UpdatePieceList (short side, short sq, short iop)
   position obtained after making the move pointed to by node. Also update
   miscellaneous stuff that changes when a move is made.
 */
-void MakeMove(short side, struct leaf *node, short *tempb,
+void MakeMove(short side, Leaf *node, short *tempb,
           short *tempc, short *tempsf, short *tempst, short *INCscore)
 {
-    short f, t, ct, cf;
+    short ct, cf;
     short xside = otherside[side];
     GameCnt++;
-    f = node->f;
-    t = node->t;
+    short f = node->f;
+    short t = node->t;
     epsquare = -1;
     FROMsquare = f;
     TOsquare = t;
@@ -1301,21 +1366,23 @@ void MakeMove(short side, struct leaf *node, short *tempb,
 
     if (node->flags & cstlmask)
     {
-      GameList[GameCnt].piece = no_piece;
-      GameList[GameCnt].color = side;
-      (void) castle (side, f, t, 1);
+        GameList[GameCnt].piece = no_piece;
+        GameList[GameCnt].color = side;
+        (void)castle(side, f, t, 1);
     }
-  else
+    else
     {
-      if (!(node->flags & capture) && (board[f] != pawn))
-        rpthash[side][hashkey & 0xFF]++;
-      *tempc = color[t];
-      *tempb = board[t];
-      *tempsf = svalue[f];
-      *tempst = svalue[t];
-      GameList[GameCnt].piece = *tempb;
-      GameList[GameCnt].color = *tempc;
-      if (*tempc != neutral)
+        if (!(node->flags & capture) && (board[f] != pawn))
+            rpthash[side][hashkey & 0xFF]++;
+
+        *tempc = color[t];
+        *tempb = board[t];
+        *tempsf = svalue[f];
+        *tempst = svalue[t];
+        GameList[GameCnt].piece = *tempb;
+        GameList[GameCnt].color = *tempc;
+
+        if (*tempc != neutral)
         {
           UpdatePieceList (*tempc, t, 1);
           if (*tempb == pawn)
@@ -1378,29 +1445,28 @@ void MakeMove(short side, struct leaf *node, short *tempb,
 #endif
           *INCscore -= *tempsf;
         }
-      if (node->flags & epmask)
-        EnPassant (xside, f, t, 1);
-      else
+
+        if (node->flags & epmask)
+            EnPassant(xside, f, t, 1);
+        else
 #if TTBLSZ
-        UpdateHashbd (side, board[t], f, t);
+            UpdateHashbd(side, board[t], f, t);
 #else
         /* NOOP */;     
 #endif
-      Mvboard[f]++;
+        Mvboard[f]++;
     }
 }
 
 /*
   Take back a move.
 */
-void
-UnmakeMove(short side, struct leaf *node, short *tempb,
+void UnmakeMove(short side, Leaf *node, short *tempb,
             short *tempc, short *tempsf, short *tempst)
 {
-    short f, t, xside;
-    xside = otherside[side];
-    f = node->f;
-    t = node->t;
+    short xside = otherside[side];
+    short f = node->f;
+    short t = node->t;
     epsquare = -1;
     GameCnt--;
 
@@ -1419,7 +1485,7 @@ UnmakeMove(short side, struct leaf *node, short *tempb,
         board[t] = *tempb;
         svalue[t] = *tempst;
 
-      if (node->flags & PROMOTE)
+        if (node->flags & PROMOTE)
         {
           board[f] = pawn;
           ++PawnCnt[side][column (t)];
@@ -1511,9 +1577,9 @@ void InitializeStats()
 */
 int SqAtakd(short sq, short side)
 {
-    BYTE *ppos, *pdir;
+    BYTE *ppos;
     short xside = otherside[side];
-    pdir = nextdir+ptype[xside][pawn]*64*64+sq*64;
+    BYTE *pdir = nextdir + ptype[xside][pawn] * 64 * 64 + sq * 64;
     short u = pdir[sq];         /* follow captures thread */
 
     if (u != sq)
@@ -1524,7 +1590,7 @@ int SqAtakd(short sq, short side)
         u = pdir[u];
 
         if (u != sq && board[u] == pawn && color[u] == side)
-            return (true);
+            return true;
     }
 
     /* king capture */
@@ -1532,8 +1598,8 @@ int SqAtakd(short sq, short side)
         return (true);
 
     /* try a queen bishop capture */
-    ppos = nextpos+bishop*64*64+sq*64;
-    pdir = nextdir+bishop*64*64+sq*64;
+    ppos = nextpos + bishop * 64 * 64 + sq * 64;
+    pdir = nextdir + bishop * 64 * 64 + sq * 64;
     u = ppos[sq];
 
     do
@@ -1549,7 +1615,8 @@ int SqAtakd(short sq, short side)
 
             u = pdir[u];
         }
-    } while (u != sq);
+    }
+    while (u != sq);
 
     /* try a queen rook capture */
     ppos = nextpos+rook*64*64+sq*64;
@@ -1558,16 +1625,19 @@ int SqAtakd(short sq, short side)
 
     do
     {
-      if (color[u] == neutral)
-        u = ppos[u];
-      else
+        if (color[u] == neutral)
         {
-          if (color[u] == side &&
-              (board[u] == queen || board[u] == rook))
-            return (true);
-          u = pdir[u];
+            u = ppos[u];
         }
-    } while (u != sq);
+        else
+        {
+            if (color[u] == side && (board[u] == queen || board[u] == rook))
+                return true;
+
+            u = pdir[u];
+        }
+    }
+    while (u != sq);
 
     /* try a knight capture */
     pdir = nextdir+knight*64*64+sq*64;

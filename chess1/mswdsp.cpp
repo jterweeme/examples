@@ -30,12 +30,10 @@
 #include "gnuchess.h"
 #include "toolbox.h"
 
-static LPCTSTR ColorStr[2] = {TEXT("White"), TEXT("Black")};
-
 void ShowPlayers()
 {
     /* display in the status line what color the computer is playing */
-    ::SetWindowText(hComputerColor, (computer == black) ? TEXT("Computer is black") : TEXT("Computer is white"));
+    ::SetWindowText(hComputerColor, computer == black ? TEXT("Computer is black") : TEXT("Computer is white"));
 }
 
 void ShowDepth(char ch)
@@ -49,17 +47,6 @@ void ShowDepth(char ch)
     }
 }
 
-void ShowScore(short score)
-{
-    TCHAR tmp[30];
-
-    if (hStats)
-    {
-        ::wsprintf(tmp, TEXT("%d"), score);
-        ::SetDlgItemText(hStats, SCORETEXT, tmp);
-    }
-}
-
 void SMessageBox(HINSTANCE hInstance, HWND hWnd, int str_num, int str1_num )
 {
     TCHAR str[80], str1[20];
@@ -68,22 +55,24 @@ void SMessageBox(HINSTANCE hInstance, HWND hWnd, int str_num, int str1_num )
     ::MessageBox(hWnd, str, str1, MB_OK | MB_ICONEXCLAMATION | MB_APPLMODAL );
 }
 
-void ShowCurrentMove(short pnt, short f, short t)
+void ShowCurrentMove(HWND hwnd, short pnt, short f, short t)
 {
     TCHAR tmp[30];
 
-    if (hStats)
+    if (hwnd)
     {
         algbr(f, t, false);
         ::wsprintf(tmp, TEXT("(%2d) %4s"), pnt, (TCHAR *)mvstr[0]);
-        ::SetDlgItemText(hStats, POSITIONTEXT, tmp);
+        ::SetDlgItemText(hwnd, POSITIONTEXT, tmp);
     }
 }
+
+static LPCTSTR ColorStr[2] = {TEXT("White"), TEXT("Black")};
 
 void ShowSidetoMove()
 {
     TCHAR tmp[30];
-    ::wsprintf(tmp, TEXT("It is %s's turn"), (TCHAR *)(ColorStr[player]));
+    ::wsprintf(tmp, TEXT("It is %s's turn"), ColorStr[player]);
     ::SetWindowText(hWhosTurn, (LPTSTR)tmp);
 }
 
@@ -98,62 +87,10 @@ void ShowNodeCnt(long NodeCnt, long evrate)
         ::wsprintf(tmp, TEXT("%-5ld"), evrate);
         ::SetDlgItemText(hStats, NODESECTEXT, tmp);
     }
-}  
-
-void ShowResults(short int score, PWORD bstline, char ch)
-{
-    BYTE ply;
-    TCHAR str[300];
-
-    if (flag.post)
-    {
-        ShowDepth(ch);
-        ShowScore(score);
-        int s = 0;
-
-        for (ply = 1; bstline[ply] > 0; ply++)
-        {
-            algbr(short(bstline[ply]) >> 8, short(bstline[ply]) & 0xFF, false);
-
-            if (ply==5 || ply==9 || ply==13 || ply==17)
-                s += wsprintf(str + s, TEXT("\n"));
-
-            s += ::wsprintf(str + s, TEXT("%-5s "), (TCHAR *)(mvstr[0]));
-        }
-        ::SetDlgItemText(hStats, BSTLINETEXT, (LPTSTR) str);
-    }
 }
 
 void SearchStartStuff(short int)
 {
-}
-
-void OutputMove(HWND hWnd)
-{
-    TCHAR tmp[30];
-    UpdateDisplay(hWnd, root->f, root->t, 0, (short) root->flags);
-    ::wsprintf(tmp, TEXT("My move is %s"), (char *)mvstr[0]);
-    ::SetWindowText(hComputerMove, tmp);
-
-    if (root->flags & draw)
-        SMessageBox(hInst, hWnd, IDS_DRAWGAME,IDS_CHESS);
-    else if (root->score == -9999)
-        SMessageBox(hInst, hWnd, IDS_YOUWIN, IDS_CHESS);
-    else if (root->score == 9998)
-        SMessageBox(hInst, hWnd, IDS_COMPUTERWIN,IDS_CHESS);
-    else if (root->score < -9000)
-        SMessageBox(hInst, hWnd, IDS_MATESOON,IDS_CHESS);
-    else if (root->score > 9000)
-        SMessageBox(hInst, hWnd, IDS_COMPMATE,IDS_CHESS);
-
-    if (flag.post)
-    {
-        ShowNodeCnt(NodeCnt, evrate);
-/*
-      for (i = 1999; i >= 0 && Tree[i].f == 0 && Tree[i].t == 0; i--);
-      printz ("Max Tree= %5d", i);
-*/
-    }
 }
 
 void UpdateClocks()
@@ -177,31 +114,18 @@ void UpdateClocks()
         ShowNodeCnt(NodeCnt, evrate);
 }
 
-void DrawPiece(HWND hWnd, short int f)
+void DrawPiece(HWND hWnd, short f)
 {
+    int x = flag.reverse ? 7 - f % 8 : f % 8;
+    int y = flag.reverse ? 7 - f / 8 : f / 8;
     POINT aptl[4];
-    HRGN hRgn;
-    int x,y;
-
-    if (flag.reverse)
-    {
-        x = 7-(f%8);
-        y = 7-(f/8);
-    }
-    else
-    {
-        x = f % 8;
-        y = f / 8;
-    }
-
     QuerySqCoords(x, y, aptl + 0);
-    hRgn = ::CreatePolygonRgn(aptl, 4, WINDING);
+    HRGN hRgn = ::CreatePolygonRgn(aptl, 4, WINDING);
     ::InvalidateRgn(hWnd, hRgn, FALSE );
     ::DeleteObject(hRgn);
 }
 
-void
-UpdateDisplay(HWND hWnd, short f, short t, short redraw, short isspec)
+void UpdateDisplay(HWND hWnd, short f, short t, short redraw, short isspec)
 {
     for (short sq = 0; sq < 64; sq++)
     {

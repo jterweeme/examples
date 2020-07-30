@@ -136,7 +136,7 @@ void GetOpenings(HINSTANCE hInstance)
 void OpeningBook(WORD *hint)
 {
     short j, pnt;
-    WORD m, far *mp;
+    WORD m, *mp;
     DWORD r, r0;
     struct BookEntry far *p;
 #if 0
@@ -147,26 +147,34 @@ void OpeningBook(WORD *hint)
 
     while (p != NULL)
     {
-      mp = p->mv;
-      for (j = 1; j <= GameCnt; j++)
-        if (GameList[j].gmove != *(mp++))
-          break;
-      if (j > GameCnt)
-        if ((r = urand ()) > r0)
-          {
-            r0 = r;
-            m = *mp;
-            *hint = *(++mp);
-          }
-      p = p->next;
+        mp = p->mv;
+
+        for (j = 1; j <= GameCnt; j++)
+            if (GameList[j].gmove != *(mp++))
+                break;
+
+        if (j > GameCnt)
+        {
+            if ((r = urand()) > r0)
+            {
+                r0 = r;
+                m = *mp;
+                *hint = *(++mp);
+            }
+        }
+
+        p = p->next;
     }
 
-  for (pnt = TrPnt[1]; pnt < TrPnt[2]; pnt++)
-    if (((Tree[pnt].f << 8) | Tree[pnt].t) == m)
-      Tree[pnt].score = 0;
-  pick (TrPnt[1], TrPnt[2] - 1);
-  if (Tree[TrPnt[1]].score < 0) {
-   FreeBook ();
-   Book = NULL;
-  }
+    for (pnt = TrPnt[1]; pnt < TrPnt[2]; pnt++)
+        if (((Tree[pnt].f << 8) | Tree[pnt].t) == m)
+            Tree[pnt].score = 0;
+
+    pick (TrPnt[1], TrPnt[2] - 1);
+
+    if (Tree[TrPnt[1]].score < 0)
+    {
+        FreeBook();
+        Book = NULL;
+    }
 }

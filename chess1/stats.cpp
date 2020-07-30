@@ -38,7 +38,7 @@ StatDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
         SetDlgItemText(hDlg, NODESECTEXT,  TEXT(" "));
         return (TRUE);
     case WM_SYSCOMMAND:
-        if ((wParam&0xfff0) == SC_CLOSE)
+        if ((wParam & 0xfff0) == SC_CLOSE)
         {
             ::DestroyWindow(hDlg);
             return TRUE;
@@ -53,10 +53,8 @@ StatDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
     return FALSE;
 }
 
-int StatDialog(HWND hWnd, HINSTANCE hInst)
+void StatDialog(HWND hWnd, HINSTANCE hInst)
 {
     CreateDialog(hInst, MAKEINTRESOURCE(STATS), hWnd, StatDlgProc);
-	return 0;
-    //return hStats;
 }
 

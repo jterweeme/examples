@@ -32,18 +32,17 @@ void Sim::init_main()
     distdata = (short *)(GlobalLock(hdistdata));
     htaxidata = xalloc(64 * 64 * sizeof(short));
     taxidata = (short *)(GlobalLock(htaxidata));
-    hHashCode = xalloc(2 * 7 * 64 * sizeof(struct hashval));
-    hashcode = (struct hashval *)GlobalLock(hHashCode);
-    hTree = xalloc(2000 * sizeof(struct leaf));
-    Tree = (struct leaf *)GlobalLock(hTree);
-    hGameList = xalloc(512 * sizeof(struct GameRec));
-    GameList = (struct GameRec *)GlobalLock(hGameList);
-    hTTable = xalloc(2 * TTBLSZ * sizeof(struct hashentry));
-    ttable = (struct hashentry *)GlobalLock(hTTable);
+    hHashCode = xalloc(2 * 7 * 64 * sizeof(HashVal));
+    hashcode = (HashVal *)GlobalLock(hHashCode);
+    hTree = xalloc(2000 * sizeof(Leaf));
+    Tree = (Leaf *)GlobalLock(hTree);
+    hGameList = xalloc(512 * sizeof(GameRec));
+    GameList = (GameRec *)GlobalLock(hGameList);
+    hTTable = xalloc(2 * TTBLSZ * sizeof(hashentry));
+    ttable = (hashentry *)GlobalLock(hTTable);
     Level = 0;
     TCflag = false;
     OperatorTime = 0;
-    Initialize();
     Initialize_dist();
     Initialize_moves();
 }
@@ -56,8 +55,8 @@ void Sim::Initialize_dist()
         {
             short d = ::abs(column(a) - column(b));
             short di = ::abs(row(a) - row(b));
-            *(taxidata+a*64+b) = d + di;
-            *(distdata+a*64+b) = (d > di ? d : di);
+            *(taxidata + a * 64 + b) = d + di;
+            *(distdata + a * 64 + b) = d > di ? d : di;
         }
     }
 }
@@ -72,8 +71,8 @@ void Sim::FreeGlobals()
 
     if (hnextdir)
     {
-        ::GlobalUnlock (hnextdir);
-        ::GlobalFree   (hnextdir);
+        ::GlobalUnlock(hnextdir);
+        ::GlobalFree(hnextdir);
     }
 
     if (hGameList)
@@ -94,15 +93,17 @@ void Sim::FreeGlobals()
         GlobalFree(hTree);
     }
 
-   if ( hHashCode ) {
-      GlobalUnlock (hHashCode);
-      GlobalFree   (hHashCode);
-   }
+    if (hHashCode)
+    {
+        GlobalUnlock(hHashCode);
+        GlobalFree(hHashCode);
+    }
 
-   if ( htaxidata ) {
-      GlobalUnlock (htaxidata);
-      GlobalFree   (htaxidata);
-   }
+    if (htaxidata)
+    {
+        GlobalUnlock(htaxidata);
+        GlobalFree(htaxidata);
+    }
 
     if (hdistdata)
     {
@@ -117,13 +118,13 @@ void Sim::FreeGlobals()
     }
 }
 
-static short Stboard[64] =
-{rook, knight, bishop, queen, king, bishop, knight, rook,
- pawn, pawn, pawn, pawn, pawn, pawn, pawn, pawn,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- pawn, pawn, pawn, pawn, pawn, pawn, pawn, pawn,
- rook, knight, bishop, queen, king, bishop, knight, rook};
+static short Stboard[64] = {
+    rook, knight, bishop, queen, king, bishop, knight, rook,
+    pawn, pawn, pawn, pawn, pawn, pawn, pawn, pawn,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    pawn, pawn, pawn, pawn, pawn, pawn, pawn, pawn,
+    rook, knight, bishop, queen, king, bishop, knight, rook};
 
 static short Stcolor[64] = {
     white, white, white, white, white, white, white, white,
@@ -143,11 +144,9 @@ static short direc[8][8] = {
     {  1, 10,  -1, -10,  9,  11, -9, -11},
     {-10, -9, -11,   0,  0,   0,  0,   0}};
 
-static short max_steps[8] =
-{0, 2, 1, 7, 7, 7, 1, 2};
+static short max_steps[8] = {0, 2, 1, 7, 7, 7, 1, 2};
 
-static short nunmap[120] =
-{
+static short nunmap[120] = {
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1,  0,  1,  2,  3,  4,  5,  6,  7, -1,
@@ -161,7 +160,6 @@ static short nunmap[120] =
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 
-
 /*
   This procedure pre-calculates all moves for every piece from every square.
   This data is stored in nextpos/nextdir and used later in the move generation
@@ -169,117 +167,123 @@ static short nunmap[120] =
 */
 void Sim::Initialize_moves()
 {
-    short po, p0, d, di, s, delta;
-    BYTE *ppos, *pdir;
-    short dest[8][8];
-    short steps[8];
-    short sorted[8];
+    short p0, d, di, delta;
 
     for (short ptyp = 0; ptyp < 8; ptyp++)
     {
-        for (po = 0; po < 64; po++)
+        for (short po = 0; po < 64; po++)
         {
             for (p0 = 0; p0 < 64; p0++)
             {
-                *(nextpos+ptyp*64*64+po*64+p0) = BYTE(po);
-                *(nextdir+ptyp*64*64+po*64+p0) = BYTE(po);
+                *(nextpos + ptyp * 64 * 64 + po * 64 + p0) = BYTE(po);
+                *(nextdir + ptyp * 64 * 64 + po * 64 + p0) = BYTE(po);
             }
         }
     }
 
+    short dest[8][8];
+    short steps[8];
+    short sorted[8];
+    short s;
+
     for (short ptyp = 1; ptyp < 8; ptyp++)
     {
-      for (po = 21; po < 99; po++)
-      {
-        if (nunmap[po] >= 0)
+        for (short po = 21; po < 99; po++)
         {
-          ppos = nextpos+ptyp*64*64+nunmap[po]*64;
-          pdir = nextdir+ptyp*64*64+nunmap[po]*64;
-          /* dest is a function of direction and steps */
-          for (d = 0; d < 8; d++)
-          {
-              dest[d][0] = nunmap[po];
-              delta = direc[ptyp][d];
-              if (delta != 0)
-              {
-                  p0 = po;
-                  for (s = 0; s < max_steps[ptyp]; s++)
-                  {
-                      p0 = p0 + delta;
-                      /*
-                        break if (off board) or
-                        (pawns only move two steps from home square)
-                      */
-                      if (nunmap[p0] < 0 || ((ptyp == pawn || ptyp == bpawn) && s > 0 && (d > 0 || Stboard[nunmap[po]] != pawn)))
-                      {
-                          break;
-                      }
-                      else
-                      {
-                          dest[d][s] = nunmap[p0];
-                      }
-                  }
-              }
-              else
-              {
-                  s = 0;
-              }
+            if (nunmap[po] < 0)
+                continue;
 
-              /*
-                sort dest in number of steps order
-                currently no sort is done due to compability with
-                the move generation order in old gnu chess
-              */
-              steps[d] = s;
-              for (di = d; s > 0 && di > 0; di--)
-              {
-                  if (steps[sorted[di - 1]] == 0) /* should be: < s */
-                      sorted[di] = sorted[di - 1];
-                  else
-                      break;
-              }
-              sorted[di] = d;
+            BYTE *ppos = nextpos + ptyp * 64 * 64 + nunmap[po] * 64;
+            BYTE *pdir = nextdir + ptyp * 64 * 64 + nunmap[po] * 64;
+
+            for (d = 0; d < 8; d++)
+            {
+                dest[d][0] = nunmap[po];
+                delta = direc[ptyp][d];
+
+                if (delta != 0)
+                {
+                    p0 = po;
+                    for (s = 0; s < max_steps[ptyp]; s++)
+                    {
+                        p0 = p0 + delta;
+                        /*
+                          break if (off board) or
+                          (pawns only move two steps from home square)
+                        */
+                        if (nunmap[p0] < 0 || ((ptyp == pawn || ptyp == bpawn) && s > 0 && (d > 0 || Stboard[nunmap[po]] != pawn)))
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            dest[d][s] = nunmap[p0];
+                        }
+                    }
+                }
+                else
+                {
+                    s = 0;
+                }
+
+                /*
+                  sort dest in number of steps order
+                  currently no sort is done due to compability with
+                  the move generation order in old gnu chess
+                */
+                steps[d] = s;
+
+                for (di = d; s > 0 && di > 0; di--)
+                {
+                    if (steps[sorted[di - 1]] == 0) /* should be: < s */
+                        sorted[di] = sorted[di - 1];
+                    else
+                        break;
+                }
+                sorted[di] = d;
             }
 
-          /*
-            update nextpos/nextdir,
-            pawns have two threads (capture and no capture)
-          */
-          p0 = nunmap[po];
-          if (ptyp == pawn || ptyp == bpawn)
+            /*
+              update nextpos/nextdir,
+              pawns have two threads (capture and no capture)
+            */
+            p0 = nunmap[po];
+
+            if (ptyp == pawn || ptyp == bpawn)
             {
-              for (s = 0; s < steps[0]; s++)
+                for (s = 0; s < steps[0]; s++)
                 {
-                  ppos[p0] = (unsigned char) dest[0][s];
-                  p0 = dest[0][s];
+                    ppos[p0] = (unsigned char) dest[0][s];
+                    p0 = dest[0][s];
                 }
-              p0 = nunmap[po];
-              for (d = 1; d < 3; d++)
+
+                p0 = nunmap[po];
+
+                for (d = 1; d < 3; d++)
                 {
-                  pdir[p0] = (unsigned char) dest[d][0];
-                  p0 = dest[d][0];
+                    pdir[p0] = (unsigned char) dest[d][0];
+                    p0 = dest[d][0];
                 }
             }
             else
             {
-              pdir[p0] = BYTE(dest[sorted[0]][0]);
+                pdir[p0] = BYTE(dest[sorted[0]][0]);
 
-              for (d = 0; d < 8; d++)
-              {
-                  for (s = 0; s < steps[sorted[d]]; s++)
-                  {
-                      ppos[p0] = BYTE(dest[sorted[d]][s]);
-                      p0 = dest[sorted[d]][s];
+                for (d = 0; d < 8; d++)
+                {
+                    for (s = 0; s < steps[sorted[d]]; s++)
+                    {
+                        ppos[p0] = BYTE(dest[sorted[d]][s]);
+                        p0 = dest[sorted[d]][s];
 
-                      if (d < 7)
-                          pdir[p0] = BYTE(dest[sorted[d + 1]][0]);
-                      /* else is already initialized */
-                  }
-              }
+                        if (d < 7)
+                            pdir[p0] = BYTE(dest[sorted[d + 1]][0]);
+                        /* else is already initialized */
+                    }
+                }
             }
         }
     }
-  }
 }
 
 /*

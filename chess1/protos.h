@@ -44,10 +44,10 @@ extern void MoveList(short int side, short int ply);
 extern void CaptureList(short int side, short int ply);
 extern int castle(short int side, short int kf, short int kt, short int iop);
 
-extern void MakeMove(short side, struct leaf *node, short *tempb,
+extern void MakeMove(short side, Leaf *node, short *tempb,
               short *tempc, short *tempsf, short *tempst, short *INCscore);
 
-extern void UnmakeMove(short side, struct leaf *node, short *tempb,
+extern void UnmakeMove(short side, Leaf *node, short *tempb,
                        short *tempc, short *tempsf, short *tempst);
 
 extern void InitializeStats();
@@ -60,7 +60,6 @@ extern void ScoreLoneKing(short side, short *score);
 extern void ScorePosition(short side, short *score);
 extern void ExaminePosition(void);
 extern void UpdateWeights(void);
-extern void Initialize();
 extern void InputCommand();
 extern void ClrScreen();
 extern void SetTimeControl();
@@ -70,10 +69,9 @@ extern void ElapsedTime(short int iop);
 extern void ShowSidetoMove(void);
 extern void SearchStartStuff(short int side);
 extern void ShowDepth(char ch);
-extern void ShowResults(short score, WORD *bstline, char ch);
-extern void algbr(short int f, short int t, short int flag);
-extern void OutputMove(HWND hWnd);
-extern void ShowCurrentMove(short int pnt, short int f, short int t);
+extern void algbr(short f, short t, short flag);
+extern void ShowNodeCnt(long NodeCnt, long evrate);
+extern void ShowCurrentMove(HWND hwnd, short pnt, short f, short t);
 extern void ClrScreen();
 extern void gotoXY(short x, short y);
 extern void ClrEoln();
@@ -105,7 +103,7 @@ extern INT_PTR CALLBACK About(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 extern void FreeBook();
 extern void DrawCoords(HDC hDC, int reverse, DWORD clrBackGround, DWORD clrText);
 extern int TestDialog(HWND hWnd, HINSTANCE hInst);
-extern int StatDialog(HWND hWnd, HINSTANCE hInst);
+extern void StatDialog(HWND hWnd, HINSTANCE hInst);
 extern int PromoteDialog(HWND hWnd, HINSTANCE hInst);
 extern void pick(short p1, short p2);
 extern void SMessageBox(HINSTANCE hInstance, HWND hWnd, int str_num, int str1_num );

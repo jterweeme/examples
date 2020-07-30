@@ -31,24 +31,6 @@
 #include "gnuchess.h"
 #include <ctime>
 
-static int mycntl1, mycntl2;
-
-#define pxx " PNBRQK"
-#define qxx " pnbrqk"
-
-void TerminateSearch(int);
-
-void Initialize()
-{
-    mycntl1 = mycntl2 = 0;
-}
-
-void TerminateSearch(int)
-{
-    flag.timeout = true;
-    flag.bothsides = false;
-}
-
 /*
    Generate move strings in different formats.
 */
@@ -59,13 +41,13 @@ void algbr(short f, short t, short flag)
     if (f != t)
     {
         /* algebraic notation */
-        mvstr[0][0] = char('a'+column (f));
-        mvstr[0][1] = char('1'+row (f));
-        mvstr[0][2] = char('a'+column (t));
-        mvstr[0][3] = char('1'+row (t));
+        mvstr[0][0] = char('a' + column(f));
+        mvstr[0][1] = char('1' + row(f));
+        mvstr[0][2] = char('a' + column(t));
+        mvstr[0][3] = char('1' + row(t));
         mvstr[0][4] = mvstr[3][0] = '\0';
 
-        if ((mvstr[1][0] = pxx[board[f]]) == 'P')
+        if ((mvstr[1][0] = " PNBRQK"[board[f]]) == 'P')
         {
             if (mvstr[0][0] == mvstr[0][2])       /* pawn did not eat */
             {
@@ -85,7 +67,7 @@ void algbr(short f, short t, short flag)
 
             if (flag & PROMOTE)
             {
-                mvstr[0][4] = mvstr[1][2] = mvstr[2][m3p] = qxx[flag & pmask];
+                mvstr[0][4] = mvstr[1][2] = mvstr[2][m3p] = " pnbrqk"[flag & pmask];
                 mvstr[1][3] = mvstr[2][m3p + 1] = mvstr[0][5] = '\0';
             }
         }
@@ -127,8 +109,8 @@ void algbr(short f, short t, short flag)
 int VerifyMove(HWND hWnd, TCHAR *s, short iop, WORD *mv)
 {
     static short pnt, tempb, tempc, tempsf, tempst, cnt;
-    static struct leaf xnode;
-    struct leaf *node;
+    static Leaf xnode;
+    struct Leaf *node;
 
     *mv = 0;
 
@@ -252,7 +234,6 @@ void SetTimeControl()
 
 void GetGame(HWND hWnd, char *fname)
 {
-    int c;
     short sq;
     WORD m;
     struct GameRec tmp_rec;
@@ -282,7 +263,7 @@ void GetGame(HWND hWnd, char *fname)
     }
 
     GameCnt = 0;
-    c = '?';
+    int c = '?';
 
     while (c != EOF)
     {
@@ -307,9 +288,7 @@ void GetGame(HWND hWnd, char *fname)
 
     computer--;
     opponent--;
-
-    fclose(fd);
-
+    ::fclose(fd);
     InitializeStats();
     Sdepth = 0;
     UpdateDisplay(hWnd, 0, 0, 1, 0);
@@ -366,7 +345,7 @@ void ListGame(char *fname)
         short t = GameList[i].gmove & 0xFF;
         algbr(f, t, false);
 
-        fprintf(fd, "%5s  %5d     %2d %7ld %5d", mvstr[0],
+        ::fprintf(fd, "%5s  %5d     %2d %7ld %5d", mvstr[0],
                GameList[i].score, GameList[i].depth,
                GameList[i].nodes, GameList[i].time);
 
