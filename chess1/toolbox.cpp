@@ -5,7 +5,6 @@ char Toolbox::nibble(BYTE n)
     return n <= 9 ? '0' + char(n) : 'A' + char(n - 10);
 }
 
-#ifdef STL
 std::string Toolbox::hex8(BYTE b)
 {
     std::string ret;
@@ -84,7 +83,6 @@ void Toolbox::hexdump(std::ostream &os, BYTE *data, DWORD len)
         os << "\r\n";
     }
 }
-#endif
 
 void Toolbox::messageBox(HINSTANCE hInstance, HWND hwnd, UINT errId, UINT captionId)
 {

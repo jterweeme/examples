@@ -28,8 +28,9 @@
 #include "chess.h"
 #include "resource.h"
 #include "globals.h"
-#include "gnuchess.h"
+#include "toolbox.h"
 #include <ctime>
+#include <iostream>
 
 /*
    Generate move strings in different formats.
@@ -42,9 +43,9 @@ void algbr(short f, short t, short flag)
     {
         /* algebraic notation */
         mvstr[0][0] = char('a' + column(f));
-        mvstr[0][1] = char('1' + row(f));
+        mvstr[0][1] = char('1' + (f >> 3));
         mvstr[0][2] = char('a' + column(t));
-        mvstr[0][3] = char('1' + row(t));
+        mvstr[0][3] = char('1' + (t >> 3));
         mvstr[0][4] = mvstr[3][0] = '\0';
 
         if ((mvstr[1][0] = " PNBRQK"[board[f]]) == 'P')
@@ -81,7 +82,7 @@ void algbr(short f, short t, short flag)
             ::lstrcpy(mvstr[3], mvstr[2]);
             mvstr[3][1] = mvstr[0][0];
 
-            if (flag & cstlmask)
+            if (flag & CSTLMASK)
             {
                 if (t > f)
                 {
@@ -100,78 +101,9 @@ void algbr(short f, short t, short flag)
     {
         mvstr[0][0] = mvstr[1][0] = mvstr[2][0] = mvstr[3][0] = '\0';
     }
-}
 
-/*
-   Compare the string 's' to the list of legal moves available for the
-   opponent. If a match is found, make the move on the board.
-*/
-int VerifyMove(HWND hWnd, TCHAR *s, short iop, WORD *mv)
-{
-    static short pnt, tempb, tempc, tempsf, tempst, cnt;
-    static Leaf xnode;
-    struct Leaf *node;
-
-    *mv = 0;
-
-    if (iop == 2)
-    {
-        UnmakeMove(opponent, &xnode, &tempb, &tempc, &tempsf, &tempst);
-        return (false);
-    }
-    cnt = 0;
-    MoveList(opponent, 2);
-    pnt = TrPnt[2];
-
-    while (pnt < TrPnt[3])
-    {
-        node = &Tree[pnt++];
-        algbr(node->f, node->t, (short) node->flags);
-
-        if (lstrcmp(s, mvstr[0]) == 0 || lstrcmp(s, mvstr[1]) == 0 ||
-            lstrcmp(s, mvstr[2]) == 0 || lstrcmp(s, mvstr[3]) == 0)
-        {
-            cnt++;
-            xnode = *node;
-        }
-    }
-
-    if (cnt == 1)
-    {
-        MakeMove(opponent, &xnode, &tempb, &tempc, &tempsf, &tempst, &INCscore);
-
-        if (SqAtakd(PieceList[opponent][0], computer))
-        {
-            UnmakeMove(opponent, &xnode, &tempb, &tempc, &tempsf, &tempst);
-            SMessageBox(hInst, hWnd, IDS_ILLEGALMOVE, IDS_CHESS);
-            return false;
-        }
-
-        if (iop == 1)
-            return true;
-
-        UpdateDisplay(hWnd, xnode.f, xnode.t, 0, (short) xnode.flags);
-
-        if (board[xnode.t] == pawn || xnode.flags & capture || xnode.flags & cstlmask)
-        {
-            Game50 = GameCnt;
-            ZeroRPT ();
-        }
-        GameList[GameCnt].depth = GameList[GameCnt].score = 0;
-        GameList[GameCnt].nodes = 0;
-        ElapsedTime (1);
-        GameList[GameCnt].time = (short) et;
-        TimeControl.clock[opponent] -= et;
-        --TimeControl.moves[opponent];
-        *mv = xnode.f << 8 | xnode.t;
-        algbr(xnode.f, xnode.t, false);
-        return true;
-    }
-
-    if (cnt > 1)
-        SMessageBox(hInst, hWnd, IDS_AMBIGUOUSMOVE, IDS_CHESS);
-
-    return false;
+    std::cout << mvstr[0] << " " << mvstr[1] << " " << mvstr[2] << "\r\n";
+    std::cout.flush();
 }
 
 /*
@@ -179,7 +111,7 @@ int VerifyMove(HWND hWnd, TCHAR *s, short iop, WORD *mv)
   the elapsed time exceeds the target (ResponseTime+ExtraTime) then set
   timeout to true which will terminate the search.
 */
-void ElapsedTime(short iop)
+void ElapsedTime(short iop, long extra)
 {
     et = ::time(0) - time0;
 
@@ -190,7 +122,7 @@ void ElapsedTime(short iop)
 
     if (et > et0 || iop == 1)
     {
-        if (et > ResponseTime + ExtraTime && Sdepth > 1)
+        if (et > ResponseTime + extra && Sdepth > 1)
             flag.timeout = true;
 
         et0 = et;
@@ -229,7 +161,7 @@ void SetTimeControl()
         Level = 60 * (long) TCminutes;
     }
     et = 0;
-    ElapsedTime(1);
+    ElapsedTime(1, ExtraTime);
 }
 
 void GetGame(HWND hWnd, char *fname)
@@ -291,7 +223,7 @@ void GetGame(HWND hWnd, char *fname)
     ::fclose(fd);
     InitializeStats();
     Sdepth = 0;
-    UpdateDisplay(hWnd, 0, 0, 1, 0);
+    UpdateDisplay(hWnd, 0, 0, 1, 0, flag.reverse);
 }
 
 void SaveGame(HWND, char *fname)
@@ -367,15 +299,15 @@ void Undo(HWND hWnd)
     short f = GameList[GameCnt].gmove >> 8;
     short t = GameList[GameCnt].gmove & 0xFF;
 
-    if (board[t] == king && distance (t, f) > 1)
+    if (board[t] == king && *(distdata + t * 64 + f) > 1)
     {
         (void)castle(GameList[GameCnt].color, f, t, 2);
     }
     else
     {
         /* Check for promotion: */
-        if ((color[t] == white && row (f) == 6 && row (t) == 7)
-          || (color[t] == black && row (f) == 1 && row (t) == 0))
+        if ((color[t] == white && (f >> 3) == 6 && (t >> 3) == 7)
+          || (color[t] == black && (f >> 3) == 1 && (t >> 3) == 0))
         {
             int g, from = f;
 
@@ -383,8 +315,7 @@ void Undo(HWND hWnd)
                 if (GameList[g].gmove & (0xFF == from))
                     from = GameList[g].gmove >> 8;
 
-            if ((color[t] == white && row (from) == 1)
-              || (color[t] == black && row (from) == 6))
+            if ((color[t] == white && (from >> 3) == 1) || (color[t] == black && (from >> 3) == 6))
             {
                 board[t] = pawn;
             }
@@ -408,6 +339,6 @@ void Undo(HWND hWnd)
     opponent = otherside[opponent];
     flag.mate = false;
     Sdepth = 0;
-    UpdateDisplay(hWnd, 0, 0, 1, 0);
+    UpdateDisplay(hWnd, 0, 0, 1, 0, flag.reverse);
     InitializeStats();
 }

@@ -1,10 +1,8 @@
 #ifndef TOOLBOX_H
 #define TOOLBOX_H
 
-#ifdef STL
 #include <string>
 #include <iostream>
-#endif
 #include <windows.h>
 
 template <class T> const T& myMax(const T &a, const T &b)
@@ -16,7 +14,6 @@ class Toolbox
 {
 public:
     static char nibble(BYTE n);
-#ifdef STL
     static std::string hex8(BYTE b);
     static void hex8(std::ostream &os, BYTE b);
     static std::string hex16(WORD w);
@@ -24,7 +21,6 @@ public:
     static std::string hex64(DWORD64 dw64);
     static std::wstring strtowstr(const std::string &s);
     static void hexdump(std::ostream &os, BYTE *data, DWORD len);
-#endif
     static void messageBox(HINSTANCE hInstance, HWND hwnd, UINT errId, UINT captionId);
 };
 #endif

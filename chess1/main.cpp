@@ -95,14 +95,14 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPXSTR lpCmdLine, int nCmd
     }
     catch (...)
     {
-        ::MessageBox(0, TEXT("Error"), TEXT("Unknown Error"), 0);
+        ::MessageBox(0, TEXT("Unknown Error"), TEXT("Error"), 0);
         sim.FreeGlobals();
         return -1;
     }
 
 
     MSG msg;
-    while (::GetMessage(&msg, NULL, NULL, NULL))
+    while (::GetMessage(&msg, NULL, 0, 0))
     {
         if (!TranslateAccelerator(win.hwnd(), hAccel, &msg) )
         {

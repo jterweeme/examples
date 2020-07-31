@@ -32,19 +32,54 @@
 #define NETURAL 2
 #define MAXDEPTH 30
 
+#define TTBLSZ (1 << 16)
+#define white 0
+#define black 1
+#define neutral 2
+#define no_piece 0
+#define pawn 1
+#define knight 2
+#define bishop 3
+#define rook 4
+#define queen 5
+#define king 6
+#define bpawn 7
+#define pmask 0x0007
+#define PROMOTE 0x0008
+#define CSTLMASK 0x0010
+#define EPMASK 0x0020
+#define capture 0x0200
+#define valueP 100
+#define valueN 350
+#define valueB 355
+#define valueR 550
+#define valueQ 1100
+#define valueK 1200
+#define CTLP 0x4000
+#define CTLN 0x2800
+#define CTLB 0x1800
+#define ctlR 0x0400
+#define ctlQ 0x0200
+#define ctlK 0x0100
+#define ctlBQ 0x1200
+#define CTLNN 0x2000
+#define urand rand
+#define column(a) ((a) & 7)
+#define locn(a,b) (((a) << 3) | (b))
+
 struct Flags
 {
-    short mate;         /* the game is over */
-    short post;         /* show principle variation */
-    short quit;         /* quit/exit gnuchess */
-    short reverse;      /* reverse board display */
-    short bothsides;    /* computer plays both sides */
-    short hash;         /* enable/disable transposition table */
-    short force;        /* enter moves */
-    short easy;         /* disable thinking on opponents time */
-    short beep;         /* enable/disable beep */
-    short timeout;      /* time to make a move */
-    short rcptr;        /* enable/disable recapture heuristics */
+    bool mate;         /* the game is over */
+    bool post;         /* show principle variation */
+    bool quit;         /* quit/exit gnuchess */
+    bool reverse;      /* reverse board display */
+    bool bothsides;    /* computer plays both sides */
+    bool hash;         /* enable/disable transposition table */
+    bool force;        /* enter moves */
+    bool easy;         /* disable thinking on opponents time */
+    bool beep;         /* enable/disable beep */
+    bool timeout;      /* time to make a move */
+    bool rcptr;        /* enable/disable recapture heuristics */
 };
 
 struct PIECEBITMAP
@@ -75,7 +110,7 @@ struct GameRec
 
 struct BookEntry
 {
-    struct BookEntry *next;
+    BookEntry *next;
     WORD *mv;
 };
 

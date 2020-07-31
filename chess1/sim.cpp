@@ -1,6 +1,5 @@
 #include "sim.h"
 #include "globals.h"
-#include "gnuchess.h"
 #include "protos.h"
 #include "resource.h"
 #include <ctime>
@@ -54,7 +53,7 @@ void Sim::Initialize_dist()
         for (short b = 0; b < 64; b++)
         {
             short d = ::abs(column(a) - column(b));
-            short di = ::abs(row(a) - row(b));
+            short di = ::abs((a >> 3) - (b >> 3));
             *(taxidata + a * 64 + b) = d + di;
             *(distdata + a * 64 + b) = d > di ? d : di;
         }
@@ -299,7 +298,8 @@ void Sim::NewGame(HWND hWnd)
         flag.post = false;
     }
 
-    flag.mate = flag.quit = flag.reverse = flag.bothsides = false;
+    flag.reverse = false;
+    flag.mate = flag.quit = flag.bothsides = false;
     flag.force = false;
     flag.hash = flag.easy = flag.beep = flag.rcptr = true;
     NodeCnt = et0 = epsquare = 0;
@@ -363,8 +363,8 @@ void Sim::NewGame(HWND hWnd)
     }
     InitializeStats();
     time0 = ::time(0);
-    ElapsedTime(1);
-    UpdateDisplay(hWnd, 0, 0, 1, 0);
+    ElapsedTime(1, ExtraTime);
+    UpdateDisplay(hWnd, 0, 0, 1, 0, flag.reverse);
 }
 
 

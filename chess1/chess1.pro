@@ -3,7 +3,7 @@ TEMPLATE = app
 SOURCES += about.cpp\
     board.cpp\
     book.cpp\
-    color.cpp\
+    colordlg.cpp\
     dsp.cpp\
     eval.cpp\
     globals.cpp\
@@ -27,8 +27,8 @@ SOURCES += about.cpp\
 
 HEADERS += board.h\
     chess.h\
+    colordlg.h\
     globals.h\
-    gnuchess.h\
     mainwin.h\
     palette.h\
     protos.h\

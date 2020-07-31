@@ -47,8 +47,8 @@ Board::Board()
 
 void QueryBoardSize(POINT *pptl)
 {
-    pptl->x = 2*BRD_HORZMARGIN + 8*BRD_HORZFRONT;
-    pptl->y = BRD_BACKMARGIN + 8*BRD_VERT + 2*BRD_FRONTMARGIN + 2*BRD_EDGE;
+    pptl->x = 2 * BRD_HORZMARGIN + 8 * BRD_HORZFRONT;
+    pptl->y = BRD_BACKMARGIN + 8 * BRD_VERT + 2 * BRD_FRONTMARGIN + 2 * BRD_EDGE;
 }
 
 void QuerySqSize(POINT *pptl)
@@ -59,17 +59,18 @@ void QuerySqSize(POINT *pptl)
 
 void QuerySqOrigin(short x, short y, POINT *pptl)
 {
-   pptl->x = BRD_HORZMARGIN + y * (BRD_HORZFRONT-BRD_HORZBACK)/2 +
+    pptl->x = BRD_HORZMARGIN + y * (BRD_HORZFRONT - BRD_HORZBACK) / 2 +
              x * (y*BRD_HORZBACK + (8-y)*BRD_HORZFRONT)/8;
-   pptl->y = (BRD_BACKMARGIN+8*BRD_VERT+BRD_FRONTMARGIN)  - y*BRD_VERT;
+
+    pptl->y = (BRD_BACKMARGIN+8*BRD_VERT+BRD_FRONTMARGIN)  - y*BRD_VERT;
 }
 
 void QuerySqCoords(short x, short y, POINT aptl[])
 {
-    QuerySqOrigin(x,  y,  aptl+0);
-    QuerySqOrigin(x+1,y,  aptl+1);
-    QuerySqOrigin(x+1,y+1,aptl+2);
-    QuerySqOrigin(x,  y+1,aptl+3);
+    QuerySqOrigin(x, y, aptl + 0);
+    QuerySqOrigin(x + 1, y, aptl + 1);
+    QuerySqOrigin(x + 1, y + 1, aptl + 2);
+    QuerySqOrigin(x, y + 1, aptl + 3);
 }
 
 static void DrawOneSquare(HDC hDC, short x, short y)
@@ -130,16 +131,16 @@ void Board::Draw_Board(HDC hDC, int reverse, COLORREF DarkColor, COLORREF LightC
     DeleteObject(hBrush_dk);
 }
 
-void Board::DrawCoords(HDC hDC, int reverse, DWORD clrBackGround, DWORD clrText)
+void Board::DrawCoords(HDC hDC, int reverse, COLORREF clrBackGround, COLORREF clrText)
 {
     HFONT hFont = ::CreateFont(13, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
                         ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
                         DEFAULT_QUALITY, FIXED_PITCH | FF_SWISS, TEXT("Helv"));
 
     HFONT hOldFont = HFONT(::SelectObject(hDC, hFont));
-    DWORD OldBkColor = ::SetBkColor(hDC, clrBackGround);
+    COLORREF OldBkColor = ::SetBkColor(hDC, clrBackGround);
     int OldBkMode = ::SetBkMode(hDC, TRANSPARENT);
-    DWORD OldTextColor = ::SetTextColor(hDC, clrText);
+    COLORREF OldTextColor = ::SetTextColor(hDC, clrText);
     TEXTMETRIC tm;
     ::GetTextMetrics(hDC, &tm);
     short xchar = tm.tmMaxCharWidth;
@@ -191,25 +192,23 @@ void HiliteSquare(HWND hWnd, int Square)
     HilitSq = Square;
 }
 
-void UnHiliteSquare(HWND hWnd, int Square)
+void UnHiliteSquare(HWND hWnd, int square)
 {
     HDC hDC;
-    int x,y;
     POINT aptl[4];
     HRGN hRgn;
 
     if (HilitSq == -1)
         return;
 
-    y = Square / 8;
-    x = Square % 8;
-
-    QuerySqCoords(x,y, aptl+0);
-    hRgn = CreatePolygonRgn( aptl, 4, WINDING);
-    hDC = GetDC(hWnd);
-    InvertRgn(hDC, hRgn);
-    ReleaseDC(hWnd, hDC);
-    DeleteObject(hRgn);
+    int y = square / 8;
+    int x = square % 8;
+    QuerySqCoords(x, y, aptl + 0);
+    hRgn = ::CreatePolygonRgn(aptl, 4, WINDING);
+    hDC = ::GetDC(hWnd);
+    ::InvertRgn(hDC, hRgn);
+    ::ReleaseDC(hWnd, hDC);
+    ::DeleteObject(hRgn);
     HilitSq = -1;
 }
 

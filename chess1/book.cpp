@@ -26,7 +26,6 @@
 
 #include "resource.h"
 #include "protos.h"
-#include "gnuchess.h"
 #include "globals.h"
 
 #define MAX_BOOK_SIZE (32*1024)

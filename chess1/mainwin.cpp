@@ -1,6 +1,5 @@
 #include "mainwin.h"
 #include "globals.h"
-#include "gnuchess.h"
 #include "protos.h"
 #include "resource.h"
 #include "sim.h"
@@ -8,6 +7,7 @@
 #include "toolbox.h"
 #include "palette.h"
 #include "board.h"
+#include "colordlg.h"
 #include <ctime>
 
 MainWindow *MainWindow::_instance = 0;
@@ -36,6 +36,80 @@ static void GiveHint(HWND hWnd)
     ::lstrcpy(s, TEXT("try "));
     ::lstrcat(s, mvstr[0]);
     ::MessageBox(hWnd, s, TEXT("Chess"), MB_OK);
+}
+
+/*
+   Compare the string 's' to the list of legal moves available for the
+   opponent. If a match is found, make the move on the board.
+*/
+static int
+VerifyMove(HINSTANCE hInstance, HWND hWnd, TCHAR *s, short iop, WORD *mv)
+{
+    static short tempb, tempc, tempsf, tempst;
+    static Leaf xnode;
+
+    *mv = 0;
+
+    if (iop == 2)
+    {
+        UnmakeMove(opponent, &xnode, &tempb, &tempc, &tempsf, &tempst);
+        return false;
+    }
+
+    short cnt = 0;
+    MoveList(opponent, 2);
+    short pnt = TrPnt[2];
+
+    while (pnt < TrPnt[3])
+    {
+        Leaf *node = &Tree[pnt++];
+        algbr(node->f, node->t, short(node->flags));
+
+        if (::lstrcmp(s, mvstr[0]) == 0 || ::lstrcmp(s, mvstr[1]) == 0 ||
+            ::lstrcmp(s, mvstr[2]) == 0 || ::lstrcmp(s, mvstr[3]) == 0)
+        {
+            cnt++;
+            xnode = *node;
+        }
+    }
+
+    if (cnt == 1)
+    {
+        MakeMove(opponent, &xnode, &tempb, &tempc, &tempsf, &tempst, &INCscore);
+
+        if (SqAtakd(PieceList[opponent][0], computer))
+        {
+            UnmakeMove(opponent, &xnode, &tempb, &tempc, &tempsf, &tempst);
+            Toolbox().messageBox(hInstance, hWnd, IDS_ILLEGALMOVE, IDS_CHESS);
+            return false;
+        }
+
+        if (iop == 1)
+            return true;
+
+        UpdateDisplay(hWnd, xnode.f, xnode.t, 0, (short)xnode.flags, flag.reverse);
+
+        if (board[xnode.t] == pawn || xnode.flags & capture || xnode.flags & CSTLMASK)
+        {
+            Game50 = GameCnt;
+            ZeroRPT ();
+        }
+
+        GameList[GameCnt].depth = GameList[GameCnt].score = 0;
+        GameList[GameCnt].nodes = 0;
+        ElapsedTime(1, ExtraTime);
+        GameList[GameCnt].time = short(et);
+        TimeControl.clock[opponent] -= et;
+        --TimeControl.moves[opponent];
+        *mv = xnode.f << 8 | xnode.t;
+        algbr(xnode.f, xnode.t, false);
+        return true;
+    }
+
+    if (cnt > 1)
+        Toolbox().messageBox(hInstance, hWnd, IDS_AMBIGUOUSMOVE, IDS_CHESS);
+
+    return false;
 }
 
 void MainWindow::create(LPCTSTR caption)
@@ -281,7 +355,7 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
         ZeroRPT ();
         Sdepth = 0;
         InitializeStats();
-        ::PostMessage(hWnd, MSG_USER_MOVE, NULL, (long)NULL);
+        ::PostMessage(hWnd, MSG_USER_MOVE, 0, 0);
         break;
     case MSG_CHESS_REVIEW:
         ReviewDialog(hWnd, hInstance());
@@ -297,13 +371,13 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
         break;
     case MSG_CHESS_COORD:
         coords = !coords;
-        UpdateDisplay(hWnd, 0, 0, 1, 0);
+        UpdateDisplay(hWnd, 0, 0, 1, 0, flag.reverse);
         break;
     case MSG_CHESS_BOTH:
         flag.bothsides = !flag.bothsides;
         flag.easy = true;
         Sdepth = 0;
-        ::PostMessage(hWnd, MSG_USER_MOVE, NULL, (long)NULL);
+        ::PostMessage(hWnd, MSG_USER_MOVE, 0, 0);
         break;
     case MSG_CHESS_BOOK:
 #if 0
@@ -339,125 +413,139 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
         ::LoadString(hInstance(), IDS_SETBWIN, str, sizeof(str));
         Bwindow = DoGetNumberDlg(hInstance(), hWnd, str, Bwindow);
     }
-            break;
-        case MSG_CHESS_CONTEMP:
+        break;
+    case MSG_CHESS_CONTEMP:
+    {
+        TCHAR str[40];
+        LoadString(hInstance(), IDS_SETCONTEMPT, str, sizeof(str));
+        contempt = DoGetNumberDlg(hInstance(), hWnd, str, contempt);
+    }
+        break;
+    case MSG_CHESS_UNDO:
+        if (GameCnt >0)
         {
-            TCHAR str[40];
-            LoadString(hInstance(), IDS_SETCONTEMPT, str, sizeof(str));
-            contempt = DoGetNumberDlg(hInstance(), hWnd, str, contempt);
-        }
-            break;
-       case MSG_CHESS_UNDO:
-            if (GameCnt >0)
-            {
-                Undo(hWnd);
-                player = opponent;
-                ShowSidetoMove();
-            }
-            break;
-       case MSG_CHESS_REMOVE:
-            if (GameCnt > 1)
-            {
-                Undo(hWnd);
-                Undo(hWnd);
-                ShowSidetoMove();
-            }
-            break;
-       case MSG_CHESS_FORCE:
-            flag.force = !flag.force;
+            Undo(hWnd);
             player = opponent;
-            ShowPlayers();
-            break;
-       case MSG_CHESS_RANDOM:
-            if (dither == 0)
-                dither = 6;
-            else
-                dither = 0;
-            break;
-       case MSG_CHESS_EASY:
-            flag.easy = !flag.easy;
-            break;
-       case MSG_CHESS_DEPTH:
-       {
-            TCHAR str[40];
-            LoadString(hInstance(), IDS_MAXSEARCH, str, sizeof(str));
-            MaxSearchDepth = DoGetNumberDlg(hInstance(), hWnd, str, MaxSearchDepth);
-       }
-            break;
-       case MSG_CHESS_REVERSE:
-            flag.reverse = !flag.reverse;
-            ShowPlayers();
-            UpdateDisplay(hWnd,0,0,1,0);
-            break;
-       case MSG_CHESS_SWITCH:
-            computer = otherside[computer];
-            opponent = otherside[opponent];
-            flag.force = false;
-            Sdepth = 0;
-            ShowPlayers();
-            ::PostMessage(hWnd, MSG_COMPUTER_MOVE, NULL, (long)NULL);
-            break;
-       case MSG_CHESS_BLACK:
-            computer = black;
-            opponent = white;
-            flag.force = false;
-            Sdepth = 0;
-            ShowPlayers();
-            ::PostMessage(hWnd, MSG_COMPUTER_MOVE, NULL, (long)NULL);
-            break;
-       case MSG_CHESS_WHITE:
-            computer = white;
-            opponent = black;
-            flag.force = false;
-            Sdepth = 0;
-            ShowPlayers();
-            ::PostMessage(hWnd, MSG_COMPUTER_MOVE, NULL, (long)NULL);
-            break;
-       case IDM_BACKGROUND:
-            if (ColorDialog(hWnd, hInstance(), wParam))
-            {
-                InvalidateRect (hWnd, NULL, TRUE);
-                DeleteObject(_hBrushBackGround);
-                _hBrushBackGround = ::CreateSolidBrush(clrBackGround);
-
-                /*Invalidate the text windows so they repaint */
-                InvalidateRect(hComputerColor, NULL, TRUE);
-                InvalidateRect(hComputerMove, NULL, TRUE);
-                InvalidateRect(hWhosTurn, NULL, TRUE);
-                InvalidateRect(hClockHuman, NULL, TRUE);
-                InvalidateRect(hClockComputer, NULL, TRUE);
-                InvalidateRect(hMsgComputer, NULL, TRUE);
-                InvalidateRect(hMsgHuman, NULL, TRUE);
-            }
-            break;
-        case IDM_BLACKSQUARE:
-            if (ColorDialog(hWnd, hInstance(), wParam))
-            {
-                ::InvalidateRect(hWnd, NULL, TRUE);
-            }
-            break;
-       case IDM_WHITESQUARE:
-            if (ColorDialog(hWnd, hInstance(), wParam))
-            {
-                ::InvalidateRect(hWnd, NULL, TRUE);
-            }
-            break;
-       case IDM_BLACKPIECE:
-            if (ColorDialog(hWnd, hInstance(), wParam))
-            {
-                ::InvalidateRect(hWnd, NULL, TRUE);
-            }
-          break;
-       case IDM_WHITEPIECE:
-            if (ColorDialog(hWnd, hInstance(), wParam))
-            {
-                ::InvalidateRect(hWnd, NULL, TRUE);
-            }
-            break;
-    case IDM_TEXT:
-        if (ColorDialog(hWnd, hInstance(), wParam))
+            ShowSidetoMove();
+        }
+        break;
+    case MSG_CHESS_REMOVE:
+        if (GameCnt > 1)
         {
+            Undo(hWnd);
+            Undo(hWnd);
+            ShowSidetoMove();
+        }
+        break;
+    case MSG_CHESS_FORCE:
+        flag.force = !flag.force;
+        player = opponent;
+        ShowPlayers();
+        break;
+    case MSG_CHESS_RANDOM:
+        if (dither == 0)
+            dither = 6;
+        else
+            dither = 0;
+        break;
+    case MSG_CHESS_EASY:
+        flag.easy = !flag.easy;
+        break;
+    case MSG_CHESS_DEPTH:
+    {
+        TCHAR str[40];
+        LoadString(hInstance(), IDS_MAXSEARCH, str, sizeof(str));
+        MaxSearchDepth = DoGetNumberDlg(hInstance(), hWnd, str, MaxSearchDepth);
+    }
+        break;
+    case MSG_CHESS_REVERSE:
+        flag.reverse = !flag.reverse;
+        ShowPlayers();
+        UpdateDisplay(hWnd,0,0,1,0, flag.reverse);
+        break;
+    case MSG_CHESS_SWITCH:
+        computer = otherside[computer];
+        opponent = otherside[opponent];
+        flag.force = false;
+        Sdepth = 0;
+        ShowPlayers();
+        ::PostMessage(hWnd, MSG_COMPUTER_MOVE, 0, 0);
+        break;
+    case MSG_CHESS_BLACK:
+        computer = black;
+        opponent = white;
+        flag.force = false;
+        Sdepth = 0;
+        ShowPlayers();
+        ::PostMessage(hWnd, MSG_COMPUTER_MOVE, 0, 0);
+        break;
+    case MSG_CHESS_WHITE:
+        computer = white;
+        opponent = black;
+        flag.force = false;
+        Sdepth = 0;
+        ShowPlayers();
+        ::PostMessage(hWnd, MSG_COMPUTER_MOVE, 0, 0);
+        break;
+    case IDM_BACKGROUND:
+    {
+        ColorDlg colorDlg(hInstance(), IDM_BACKGROUND);
+
+        if (colorDlg.run(hWnd, IDM_BACKGROUND))
+        {
+            InvalidateRect(hWnd, NULL, TRUE);
+            DeleteObject(_hBrushBackGround);
+            _hBrushBackGround = ::CreateSolidBrush(clrBackGround);
+
             /*Invalidate the text windows so they repaint */
+            InvalidateRect(hComputerColor, NULL, TRUE);
+            InvalidateRect(hComputerMove, NULL, TRUE);
+            InvalidateRect(hWhosTurn, NULL, TRUE);
+            InvalidateRect(hClockHuman, NULL, TRUE);
+            InvalidateRect(hClockComputer, NULL, TRUE);
+            InvalidateRect(hMsgComputer, NULL, TRUE);
+            InvalidateRect(hMsgHuman, NULL, TRUE);
+        }
+    }
+        break;
+    case IDM_BLACKSQUARE:
+    {
+        ColorDlg colorDlg(hInstance(), IDM_BLACKSQUARE);
+
+        if (colorDlg.run(hWnd, IDM_BLACKSQUARE))
+            ::InvalidateRect(hWnd, NULL, TRUE);
+    }
+        break;
+    case IDM_WHITESQUARE:
+    {
+        ColorDlg colorDlg(hInstance(), IDM_WHITESQUARE);
+
+        if (colorDlg.run(hWnd, IDM_WHITESQUARE))
+            ::InvalidateRect(hWnd, NULL, TRUE);
+    }
+        break;
+    case IDM_BLACKPIECE:
+    {
+        ColorDlg colorDlg(hInstance(), IDM_BLACKPIECE);
+
+        if (colorDlg.run(hWnd, IDM_BLACKPIECE))
+            ::InvalidateRect(hWnd, NULL, TRUE);
+    }
+        break;
+    case IDM_WHITEPIECE:
+    {
+        ColorDlg colorDlg(hInstance(), IDM_WHITEPIECE);
+
+        if (colorDlg.run(hWnd, IDM_WHITEPIECE))
+            ::InvalidateRect(hWnd, NULL, TRUE);
+    }
+        break;
+    case IDM_TEXT:
+    {
+        ColorDlg colorDlg(hInstance(), IDM_TEXT);
+
+        if (colorDlg.run(hWnd, IDM_TEXT))
+        {
             ::InvalidateRect(hWnd, NULL, TRUE);
             ::InvalidateRect(hComputerColor, NULL, TRUE);
             ::InvalidateRect(hComputerMove, NULL, TRUE);
@@ -467,6 +555,7 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
             ::InvalidateRect(hMsgComputer, NULL, TRUE);
             ::InvalidateRect(hMsgHuman, NULL, TRUE);
         }
+    }
         break;
     case IDM_DEFAULT:
         _setStandardColors();
@@ -515,7 +604,7 @@ void MainWindow::_userMoveProc(HWND hwnd)
         if (flag.beep)
             MessageBeep(0);
 
-        ::PostMessage(hwnd, MSG_COMPUTER_MOVE, NULL, (long)NULL);
+        ::PostMessage(hwnd, MSG_COMPUTER_MOVE, 0, 0);
     }
     else if (!flag.mate)
     {
@@ -536,10 +625,10 @@ void MainWindow::_userMoveProc(HWND hwnd)
             lstrcpy(s, mvstr[0]);
             tmp = epsquare;
 
-            if (VerifyMove(hwnd, s,1, &mv))
+            if (VerifyMove(hInstance(), hwnd, s,1, &mv))
             {
                 SelectMove(hwnd, computer, 2);
-                VerifyMove(hwnd, mvstr[0], 2, &mv);
+                VerifyMove(hInstance(), hwnd, mvstr[0], 2, &mv);
 
                 if (Sdepth > 0)
                     Sdepth --;
@@ -564,11 +653,11 @@ void MainWindow::_createProc(HWND hWnd)
     _hBrushBackGround = ::CreateSolidBrush(clrBackGround);
 
     //Dit is verwarrend: de bitmap resources hebben namelijk nummers
-    for (int i = pawn; i < pawn + 6; i++ )
+    for (int i = pawn; i < pawn + 6; ++i)
     {
-        pieces[i].piece = ::LoadBitmap(hInstance(), MAKEINTRESOURCE(PAWNBASE+i));
-        pieces[i].mask = ::LoadBitmap(hInstance(), MAKEINTRESOURCE(PAWNBASE+6+i));
-        pieces[i].outline = ::LoadBitmap(hInstance(), MAKEINTRESOURCE(PAWNBASE+12+i));
+        pieces[i].piece = ::LoadBitmap(hInstance(), MAKEINTRESOURCE(PAWNBASE + i));
+        pieces[i].mask = ::LoadBitmap(hInstance(), MAKEINTRESOURCE(PAWNBASE + 6 + i));
+        pieces[i].outline = ::LoadBitmap(hInstance(), MAKEINTRESOURCE(PAWNBASE + 12 + i));
     }
 
     HDC hDC = ::GetDC(hWnd);
@@ -582,8 +671,8 @@ void MainWindow::_createProc(HWND hWnd)
     QueryBoardSize(&point);
 
     ::SetWindowPos(hWnd, hWnd, 0,0,
-         point.x+GetSystemMetrics(SM_CXFRAME)*2+50,
-         point.y+GetSystemMetrics(SM_CYFRAME)*2+GetSystemMetrics(SM_CYMENU)+
+         point.x + GetSystemMetrics(SM_CXFRAME) * 2 + 50,
+         point.y + GetSystemMetrics(SM_CYFRAME) * 2 + GetSystemMetrics(SM_CYMENU) +
          GetSystemMetrics(SM_CYCAPTION) + ychar,
          SWP_NOMOVE | SWP_NOZORDER);
 
@@ -688,9 +777,9 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             _gotFirst = FALSE;
 
             if (EditActive == TRUE)
-                ::PostMessage(hWnd, MSG_EDITBOARD, _firstSq << 8 | Hit, NULL);
+                ::PostMessage(hWnd, MSG_EDITBOARD, _firstSq << 8 | Hit, 0);
             else if (User_Move == TRUE)
-                ::PostMessage(hWnd, MSG_USER_ENTERED_MOVE, _firstSq << 8 | Hit, NULL);
+                ::PostMessage(hWnd, MSG_USER_ENTERED_MOVE, _firstSq << 8 | Hit, 0);
 
             _firstSq = -1;
         }
@@ -698,7 +787,7 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             _gotFirst = TRUE;
             _firstSq = Hit;
-            HiliteSquare ( hWnd, Hit);
+            HiliteSquare(hWnd, Hit);
         }
     }
         break;
@@ -713,15 +802,15 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         else
         {
-            First = (wParam>>8) & 0xff;
-            Square  = wParam & 0xff;
+            First = wParam >> 8 & 0xff;
+            Square = wParam & 0xff;
         }
 
          board[Square] = board[First];
          color[Square] = color[First];
          board[First] = no_piece;
          color[First] = neutral;
-         UpdateDisplay(hWnd, First, Square, false, false);
+         UpdateDisplay(hWnd, First, Square, false, false, flag.reverse);
     }
         break;
     case MSG_USER_MOVE:
@@ -729,67 +818,78 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case MSG_USER_ENTERED_MOVE:
     {
-        int temp;
-        WORD mv;
-         int Square,First;
-         TCHAR str[10];
-         int algbr_flag;
-         User_Move = FALSE;
+        int Square, First;
+        int algbr_flag;
+        User_Move = FALSE;
 
-         /* Fix coord's if user "reversed" board */
-         if (flag.reverse)
-         {
-            First = 63 - ((wParam>>8) & 0xff);
+        /* Fix coord's if user "reversed" board */
+        if (flag.reverse)
+        {
+            First = 63 - (wParam >> 8 & 0xff);
             Square  = 63 - (wParam & 0xff);
-         } else {
-            First = (wParam>>8) & 0xff;
+        }
+        else
+        {
+            First = wParam >> 8 & 0xff;
             Square  = wParam & 0xff;
-         }
+        }
 
-         /* Logic to allow selection for pawn promotion */
-         if ((board[First] == pawn) && ((Square <8) || (Square>55)))
-         {
+        /* Logic to allow selection for pawn promotion */
+        if (board[First] == pawn && (Square < 8 || Square > 55))
+        {
             algbr_flag = PROMOTE + PromoteDialog(hWnd, hInstance());
-         }
-         else
-         {
-             algbr_flag = 0;
-         }
-         algbr( First, Square, algbr_flag);
+        }
+        else
+        {
+            algbr_flag = 0;
+        }
 
-      /* Entry point for manual entry of move */
-      case MSG_MANUAL_ENTRY_POINT:
-          ::lstrcpy(str, mvstr[0]);
+        algbr(First, Square, algbr_flag);
+    }
+        /*fallthrough*/
+    case MSG_MANUAL_ENTRY_POINT:
+    {
+        TCHAR str[10];
+        ::lstrcpy(str, mvstr[0]);
 
-            temp = VerifyMove(hWnd, str, 0, &mv);
-            if (!temp)
-                PostMessage(hWnd, MSG_USER_MOVE, NULL, (long)NULL);
-         else
-         {
-            ElapsedTime (1);
-            if ( flag.force ) {
-               computer = opponent;
-               opponent = otherside[computer];
+        WORD mv;
+        int temp = VerifyMove(hInstance(), hWnd, str, 0, &mv);
+
+        if (!temp)
+        {
+            ::PostMessage(hWnd, MSG_USER_MOVE, 0, 0);
+        }
+        else
+        {
+            ElapsedTime(1, ExtraTime);
+
+            if (flag.force)
+            {
+                computer = opponent;
+                opponent = otherside[computer];
             }
-            if ( mv != hint) {
-               Sdepth = 0;
-               ft = 0;
-               PostMessage ( hWnd, MSG_COMPUTER_MOVE, NULL, (long)NULL);
-            } else {
-               PostMessage ( hWnd, MSG_COMPUTER_MOVE, NULL, (long)NULL);
+            if (mv != hint)
+            {
+                Sdepth = 0;
+                ft = 0;
+                ::PostMessage(hWnd, MSG_COMPUTER_MOVE, 0, 0);
             }
-         }
-      }
-         break;
+            else
+            {
+                ::PostMessage(hWnd, MSG_COMPUTER_MOVE, 0, 0);
+            }
+        }
+    }
+        break;
     case MSG_COMPUTER_MOVE:
-        if ( !(flag.quit || flag.mate || flag.force) )
+        if (!(flag.quit || flag.mate || flag.force))
         {
             SelectMove(hWnd, computer, 1);
 
             if (flag.beep)
                 ::MessageBeep(0);
         }
-        ::PostMessage(hWnd, MSG_USER_MOVE, NULL, (long)NULL);
+        ::PostMessage(hWnd, MSG_USER_MOVE, 0, 0);
         break;
     case WM_CHAR:
         /* Allow Control C to abort bothsides (autoplay) mode */
@@ -866,7 +966,7 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     default:
         return ::DefWindowProc(hWnd, message, wParam, lParam);
     }
-    return NULL;
+    return 0;
 }
 
 LRESULT CALLBACK MainWindow::wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
