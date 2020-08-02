@@ -23,7 +23,7 @@
 
 #include "resource.h"
 
-AboutBox DIALOG LOADONCALL MOVEABLE DISCARDABLE 19, 18, 218, 107
+IDD_ABOUT DIALOG LOADONCALL MOVEABLE DISCARDABLE 19, 18, 218, 107
 CAPTION "GNU Chess 3.21 for Windows"
 STYLE WS_BORDER | WS_CAPTION | WS_DLGFRAME | WS_SYSMENU | DS_MODALFRAME | WS_POPUP
 BEGIN
@@ -43,68 +43,26 @@ END
 CHESS  ICON   "chess.ico"
 
 
-PAWN    BITMAP "pawn.bmp"
-ROOK    BITMAP "rook.bmp"
-KNIGHT  BITMAP "knight.bmp"
-BISHOP  BITMAP "bishop.bmp"
-QUEEN   BITMAP "queen.bmp"
-KING    BITMAP "king.bmp"
+IDB_PAWN    BITMAP "pawn.bmp"
+IDB_ROOK    BITMAP "rook.bmp"
+IDB_KNIGHT  BITMAP "knight.bmp"
+IDB_BISHOP  BITMAP "bishop.bmp"
+IDB_QUEEN   BITMAP "queen.bmp"
+IDB_KING    BITMAP "king.bmp"
 
-PAWNM   BITMAP "pawnm.bmp"
-ROOKM   BITMAP "rookm.bmp"
-KNIGHTM BITMAP "knightm.bmp"
-BISHOPM BITMAP "bishopm.bmp"
-QUEENM  BITMAP "queenm.bmp"
-KINGM   BITMAP "kingm.bmp"
+IDB_PAWNM   BITMAP "pawnm.bmp"
+IDB_ROOKM   BITMAP "rookm.bmp"
+IDB_KNIGHTM BITMAP "knightm.bmp"
+IDB_BISHOPM BITMAP "bishopm.bmp"
+IDB_QUEENM  BITMAP "queenm.bmp"
+IDB_KINGM   BITMAP "kingm.bmp"
 
-PAWNO   BITMAP "pawno.bmp"
-ROOKO   BITMAP "rooko.bmp"
-KNIGHTO BITMAP "knighto.bmp"
-BISHOPO BITMAP "bishopo.bmp"
-QUEENO  BITMAP "queeno.bmp"
-KINGO   BITMAP "kingo.bmp"
-
-FILESAVE DIALOG LOADONCALL MOVEABLE DISCARDABLE 10, 10, 180, 54
-STYLE WS_DLGFRAME | WS_POPUP
-BEGIN
-    CONTROL "Save File &Name As:", -1,        "static", SS_LEFT | WS_GROUP | WS_CHILD, 6, 4, 84, 12
-    CONTROL "",                    IDD_FPATH, "static", SS_LEFT | WS_GROUP | WS_CHILD, 90, 4, 78, 12
-    CONTROL "",                    IDD_FNAME, "edit",   ES_LEFT | ES_AUTOHSCROLL | WS_BORDER | WS_TABSTOP | WS_CHILD, 6, 20, 104, 12
-    CONTROL "OK",                  IDOK,      "button", BS_DEFPUSHBUTTON | WS_GROUP | WS_TABSTOP | WS_CHILD, 124, 20, 50, 14
-    CONTROL "Cancel",              IDCANCEL,  "button", BS_PUSHBUTTON | WS_GROUP | WS_TABSTOP | WS_CHILD, 124, 36, 50, 14
-END
-
-FILEOPEN DIALOG LOADONCALL MOVEABLE DISCARDABLE 6, 9, 219, 106
-STYLE WS_DLGFRAME | WS_POPUP
-BEGIN
-    CONTROL "Open File &Name:", -1,        "static",  SS_LEFT | WS_GROUP | WS_CHILD, 7, 4, 61, 10
-    CONTROL "",                 IDD_FNAME, "edit"  ,  ES_LEFT | ES_AUTOHSCROLL | WS_BORDER | WS_TABSTOP | WS_CHILD, 70, 3, 83, 12
-    CONTROL "&Files:",          -1,        "static",  SS_LEFT | WS_GROUP | WS_CHILD, 7, 24, 38, 10
-    CONTROL "",                 IDD_FPATH, "static",  SS_LEFT | WS_GROUP | WS_CHILD, 70, 24, 143, 12
-    CONTROL "",                 IDD_FLIST, "listbox", LBS_NOTIFY | LBS_SORT | LBS_STANDARD | WS_BORDER | WS_VSCROLL | WS_TABSTOP | WS_CHILD, 7, 36, 60, 65
-    CONTROL "&OK",              IDOK,      "button",  BS_DEFPUSHBUTTON | WS_GROUP | WS_TABSTOP | WS_CHILD, 160, 64, 50, 14
-    CONTROL "&Cancel",          IDCANCEL,  "button",  BS_PUSHBUTTON | WS_GROUP | WS_TABSTOP | WS_CHILD, 160, 87, 50, 14
-    CONTROL "",                 IDD_DLIST, "listbox", LBS_NOTIFY | LBS_SORT | LBS_STANDARD | WS_BORDER | WS_VSCROLL | WS_CHILD, 73, 52, 68, 49
-    CONTROL "&Directories:",    -1,        "static",  SS_LEFT | WS_CHILD, 73, 39, 53, 10
-END
-
-WILDFILEOPEN DIALOG LOADONCALL MOVEABLE DISCARDABLE 6, 9, 219, 106
-STYLE WS_DLGFRAME | WS_POPUP
-BEGIN
-    CONTROL "Open File &Name:", -1,        "static",  SS_LEFT | WS_GROUP | WS_CHILD, 7, 4, 61, 10
-    CONTROL "",                 IDD_FNAME, "edit"  ,  ES_LEFT | ES_AUTOHSCROLL | WS_BORDER | WS_TABSTOP | WS_CHILD, 70, 3, 83, 12
-    CONTROL "&Files:",          -1,        "static",  SS_LEFT | WS_GROUP | WS_CHILD, 7, 24, 38, 10
-    CONTROL "",                 IDD_FPATH, "static",  SS_LEFT | WS_GROUP | WS_CHILD, 70, 19, 143, 12
-    CONTROL "",                 IDD_FLIST, "listbox", LBS_NOTIFY | LBS_SORT | LBS_STANDARD | WS_BORDER | WS_VSCROLL | WS_TABSTOP | WS_CHILD, 7, 36, 60, 65
-    CONTROL "&Browse",          IDD_BROWSE,"button", BS_DEFPUSHBUTTON | WS_TABSTOP | WS_CHILD, 160, 41, 50, 14
-    CONTROL "&OK",              IDOK,      "button",  BS_PUSHBUTTON | WS_GROUP | WS_TABSTOP | WS_CHILD, 160, 64, 50, 14
-    CONTROL "&Cancel",          IDCANCEL,  "button",  BS_PUSHBUTTON | WS_GROUP | WS_TABSTOP | WS_CHILD, 160, 87, 50, 14
-    CONTROL "",                 IDD_DLIST, "listbox", LBS_NOTIFY | LBS_SORT | LBS_STANDARD | WS_BORDER | WS_VSCROLL | WS_CHILD, 73, 52, 68, 49
-    CONTROL "&Directories:",    -1,        "static",  SS_LEFT | WS_CHILD, 73, 39, 53, 10
-END
-
-#define IDD_INT 0x10
-#define IDD_CHAR 0x11
+IDB_PAWNO   BITMAP "pawno.bmp"
+IDB_ROOKO   BITMAP "rooko.bmp"
+IDB_KNIGHTO BITMAP "knighto.bmp"
+IDB_BISHOPO BITMAP "bishopo.bmp"
+IDB_QUEENO  BITMAP "queeno.bmp"
+IDB_KINGO   BITMAP "kingo.bmp"
 
 NUMBERDLG DIALOG LOADONCALL MOVEABLE DISCARDABLE 10,10,180,54
 STYLE WS_POPUP | WS_DLGFRAME
@@ -244,21 +202,21 @@ BEGIN
     MENUITEM "&Search Stats",               MSG_CHESS_POST
     MENUITEM "T&est Speed",                 MSG_CHESS_TEST
     MENUITEM SEPARATOR
-    MENUITEM "&Hash",                        MSG_CHESS_HASH
-    MENUITEM "&Both",                        MSG_CHESS_BOTH
-    MENUITEM "Boo&k",                        MSG_CHESS_BOOK
+    MENUITEM "&Hash", MSG_CHESS_HASH
+    MENUITEM "&Both", MSG_CHESS_BOTH
+    MENUITEM "Boo&k", MSG_CHESS_BOOK
     MENUITEM SEPARATOR
-    MENUITEM "&A Window...",                 MSG_CHESS_AWIN
-    MENUITEM "&B Window...",                 MSG_CHESS_BWIN
-    MENUITEM "&Contemp...",                  MSG_CHESS_CONTEMP
+    MENUITEM "&A Window...", MSG_CHESS_AWIN
+    MENUITEM "&B Window...", MSG_CHESS_BWIN
+    MENUITEM "&Contemp...", MSG_CHESS_CONTEMP
 END
 POPUP "&Skill"
 BEGIN
-    MENUITEM "&Time...",                    IDM_TIMECONTROL
+    MENUITEM "&Time...", IDM_TIMECONTROL
     MENUITEM SEPARATOR
-    MENUITEM "&Random",                     MSG_CHESS_RANDOM
-    MENUITEM "&Easy",                       MSG_CHESS_EASY
-    MENUITEM "&Depth...",                   MSG_CHESS_DEPTH
+    MENUITEM "&Random", MSG_CHESS_RANDOM
+    MENUITEM "&Easy", MSG_CHESS_EASY
+    MENUITEM "&Depth...", MSG_CHESS_DEPTH
 END
 POPUP "S&ide"
 BEGIN

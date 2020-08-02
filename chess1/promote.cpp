@@ -21,12 +21,67 @@
   notice must be preserved on all copies.
 */
 
-
+#include "promote.h"
 #include "chess.h"
 #include "resource.h"
 
 static int xstatus;
 
+PromoteDlg *PromoteDlg::_instance;
+
+PromoteDlg::PromoteDlg(HINSTANCE hInstance) : _hInstance(hInstance)
+{
+    _instance = this;
+}
+
+INT_PTR PromoteDlg::run(HWND hwnd)
+{
+    return DialogBox(_hInstance, MAKEINTRESOURCE(PAWNPROMOTE), hwnd, dlgProc);
+}
+
+INT_PTR CALLBACK
+PromoteDlg::dlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    return _instance->_dlgProc(hwnd, msg, wParam, lParam);
+}
+
+INT_PTR
+PromoteDlg::_dlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM)
+{
+    switch (msg)
+    {
+    case WM_INITDIALOG:
+        xstatus = 5;
+        CheckRadioButton(hwnd, 100, 103, 103);
+        return TRUE;
+    case WM_SYSCOMMAND:
+        if ((wParam & 0xfff0) == SC_CLOSE)
+        {
+            ::EndDialog(hwnd, xstatus);
+            return xstatus;
+        }
+        break;
+    case WM_COMMAND:
+        switch (wParam)
+        {
+        case IDOK:
+            ::EndDialog(hwnd, xstatus);
+            return TRUE;
+        case 100:
+        case 101:
+        case 102:
+        case 103:
+            xstatus = 2 + wParam - 100;
+            CheckRadioButton(hwnd, 100, 103, wParam);
+            break;
+        }
+        break;
+    }
+
+    return FALSE;
+}
+
+#if 0
 static INT_PTR CALLBACK
 PromoteDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
 {
@@ -39,7 +94,7 @@ PromoteDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
     case WM_SYSCOMMAND:
         if ((wParam & 0xfff0) == SC_CLOSE)
         {
-            EndDialog(hDlg, xstatus);
+            ::EndDialog(hDlg, xstatus);
             return xstatus;
         }
         break;
@@ -47,7 +102,7 @@ PromoteDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
         switch (wParam)
         {
         case IDOK:
-            EndDialog(hDlg, xstatus);
+            ::EndDialog(hDlg, xstatus);
             return TRUE;
         case 100:
         case 101:
@@ -68,4 +123,5 @@ int PromoteDialog(HWND hWnd, HINSTANCE hInst)
     int status = DialogBox(hInst, MAKEINTRESOURCE(PAWNPROMOTE), hWnd, PromoteDlgProc);
     return status;
 }
+#endif
 

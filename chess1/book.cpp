@@ -35,8 +35,8 @@ static char *xBook;
 
 void FreeBook(void)
 {
-    GlobalUnlock(hBook);
-    GlobalFree(hBook);
+    ::GlobalUnlock(hBook);
+    ::GlobalFree(hBook);
     hBook = 0;
     book_used = 0;
 }
@@ -65,7 +65,7 @@ void GetOpenings(HINSTANCE hInstance)
     int c;
     struct BookEntry *entry;
     WORD mv, *mp, tmp[100];
-    CHAR lpFile[_MAX_FNAME+_MAX_EXT+_MAX_DRIVE+_MAX_DIR+1];
+    CHAR lpFile[_MAX_FNAME + _MAX_EXT + _MAX_DRIVE + _MAX_DIR + 1];
     ::GetModuleFileNameA(hInstance, lpFile, sizeof(lpFile));
     CHAR sFname[_MAX_FNAME], sExt[_MAX_EXT], sDrive[_MAX_DRIVE], sDir[_MAX_DIR];
     _splitpath(lpFile, sDrive, sDir, sFname, sExt);
@@ -137,12 +137,11 @@ void OpeningBook(WORD *hint)
     short j, pnt;
     WORD m, *mp;
     DWORD r, r0;
-    struct BookEntry far *p;
 #if 0
     srand((unsigned int) time ((long *) 0));
 #endif
     r0 = m = 0;
-    p = Book;
+    BookEntry *p = Book;
 
     while (p != NULL)
     {
@@ -154,7 +153,7 @@ void OpeningBook(WORD *hint)
 
         if (j > GameCnt)
         {
-            if ((r = urand()) > r0)
+            if ((r = ::rand()) > r0)
             {
                 r0 = r;
                 m = *mp;

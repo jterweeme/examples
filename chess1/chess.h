@@ -25,47 +25,29 @@
 #include <windows.h>
 
 #define EXE_NAME_MAX_SIZE  128
-
 #define BLACK 1
 #define WHITE 2
-
-#define NETURAL 2
 #define MAXDEPTH 30
-
 #define TTBLSZ (1 << 16)
 #define white 0
 #define black 1
-#define neutral 2
-#define no_piece 0
-#define pawn 1
-#define knight 2
-#define bishop 3
-#define rook 4
-#define queen 5
-#define king 6
-#define bpawn 7
-#define pmask 0x0007
-#define PROMOTE 0x0008
-#define CSTLMASK 0x0010
-#define EPMASK 0x0020
-#define capture 0x0200
-#define valueP 100
-#define valueN 350
-#define valueB 355
-#define valueR 550
-#define valueQ 1100
-#define valueK 1200
-#define CTLP 0x4000
-#define CTLN 0x2800
-#define CTLB 0x1800
-#define ctlR 0x0400
-#define ctlQ 0x0200
-#define ctlK 0x0100
-#define ctlBQ 0x1200
-#define CTLNN 0x2000
-#define urand rand
-#define column(a) ((a) & 7)
-#define locn(a,b) (((a) << 3) | (b))
+
+static constexpr short VALUER = 550, VALUEB = 355, VALUEN = 350,
+    VALUEQ = 1100, VALUEK = 1200, BPAWN = 7, PMASK = 0x0007,
+    PROMOTE = 0x0008, NEUTRAL = 2,
+    NO_PIECE = 0, PAWN = 1, KNIGHT = 2, BISHOP = 3, ROOK = 4, QUEEN = 5, KING = 6;
+
+static constexpr WORD CSTLMASK = 0x0010, EPMASK = 0x0020, CAPTURE = 0x0200;
+
+constexpr int locn(int a, int b)
+{
+    return a << 3 | b;
+}
+
+constexpr short column(short a)
+{
+    return a & 7;
+}
 
 struct Flags
 {

@@ -29,21 +29,10 @@
 #include "globals.h"
 #include "toolbox.h"
 
-void ShowPlayers()
+void ShowPlayers(HWND hwnd)
 {
     /* display in the status line what color the computer is playing */
-    ::SetWindowText(hComputerColor, computer == black ? TEXT("Computer is black") : TEXT("Computer is white"));
-}
-
-void ShowDepth(char ch)
-{
-    TCHAR tmp[30];
-
-    if (hStats)
-    {
-        ::wsprintf(tmp, TEXT("%d%c"), Sdepth, ch);
-        ::SetDlgItemText(hStats, DEPTHTEXT, tmp);
-    }
+    ::SetWindowText(hwnd, computer == black ? TEXT("Computer is black") : TEXT("Computer is white"));
 }
 
 void SMessageBox(HINSTANCE hInstance, HWND hWnd, int str_num, int str1_num )
@@ -124,7 +113,7 @@ void DrawPiece(HWND hWnd, short f, bool reverse)
     ::DeleteObject(hRgn);
 }
 
-void UpdateDisplay(HWND hWnd, short f, short t, short redraw, short isspec, bool reverse)
+void UpdateDisplay(HWND hWnd, HWND compClr, short f, short t, short redraw, short isspec, bool reverse)
 {
     for (short sq = 0; sq < 64; sq++)
     {
@@ -135,13 +124,14 @@ void UpdateDisplay(HWND hWnd, short f, short t, short redraw, short isspec, bool
     if (redraw)
     {
         ::InvalidateRect(hWnd, NULL, TRUE);
-        ShowPlayers();
+        ShowPlayers(compClr);
         ::UpdateWindow(hWnd);
     }
     else
     {
         DrawPiece(hWnd, f, reverse);
         DrawPiece(hWnd, t, reverse);
+
         if (isspec & CSTLMASK)
         {
             if (t > f)

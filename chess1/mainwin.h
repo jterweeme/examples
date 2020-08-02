@@ -1,10 +1,12 @@
 #ifndef MAINWIN_H
 #define MAINWIN_H
+#include "chess.h"
 #include <windows.h>
 
 class Board;
 class Sim;
 class WinClass;
+class HitTest;
 
 class MainWindow
 {
@@ -26,15 +28,24 @@ private:
     void _userMoveProc(HWND hwnd);
     void _commandProc(HWND hwnd, WPARAM wParam);
     static void _initMenus(WPARAM wParam, LPARAM lParam);
-    static void _createChildren(HWND hWnd, HINSTANCE hInst, short xchar, short ychar);
-    static void _setStandardColors();
-    static void _getStartupColors();
+    void _createChildren(HWND hWnd, HINSTANCE hInst, short xchar, short ychar);
+    void _setStandardColors();
+    void _getStartupColors();
+    int _verifyMove(HINSTANCE hInstance, HWND hWnd, TCHAR *s, short iop, WORD *mv);
     HBRUSH _hBrushBackGround;
+    COLORREF _clrBackGround, _clrBlackSquare, _clrWhiteSquare;
+    COLORREF _clrBlackPiece, _clrWhitePiece, _clrText;
+    HACCEL _hAccel;
+    HitTest *_hitTest;
+    PIECEBITMAP *_pieces;
+    HWND _hComputerColor;
 public:
     MainWindow(WinClass *wc, Sim *sim);
     HWND hwnd() const;
+    HWND hComputerColor() const;
     void create(LPCTSTR caption);
     HINSTANCE hInstance() const;
+    HACCEL hAccel() const;
     void show(int nCmdShow);
     static LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 };

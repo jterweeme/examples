@@ -28,21 +28,21 @@
 #include "board.h"
 
 /* All units defined in pixels */
+static constexpr LONG BRD_HORZFRONT = 48, BRD_HORZBACK = 32, BRD_VERT = 32,
+    BRD_EDGE = 8, BRD_HORZMARGIN = 32, BRD_BACKMARGIN = 5, BRD_FRONTMARGIN = 5;
 
-#define BRD_HORZFRONT   48
-#define BRD_HORZBACK    32
-#define BRD_VERT        32
-#define BRD_EDGE        8
-#define BRD_HORZMARGIN  32
-#define BRD_BACKMARGIN  5
-#define BRD_FRONTMARGIN 5
-
-static void DrawOneSquare(HDC hDC, short x, short y);
 static int HilitSq;
 
 Board::Board()
 {
 
+}
+
+void Board::DrawOneSquare(HDC hdc, short x, short y)
+{
+    POINT aptl[4];
+    QuerySqCoords(x, y, aptl);
+    ::Polygon(hdc, aptl, 4);
 }
 
 void QueryBoardSize(POINT *pptl)
@@ -73,24 +73,15 @@ void QuerySqCoords(short x, short y, POINT aptl[])
     QuerySqOrigin(x, y + 1, aptl + 3);
 }
 
-static void DrawOneSquare(HDC hDC, short x, short y)
-{
-    POINT aptl[4];
-    QuerySqCoords(x, y, aptl);
-    ::Polygon(hDC, aptl, 4);
-}
-
 /*
    Draw the board.  Pass the routine the upper left connor and the
    colors to draw the squares.
 */
-void Board::Draw_Board(HDC hDC, int reverse, COLORREF DarkColor, COLORREF LightColor)
+void Board::Draw_Board(HDC hDC, int reverse, COLORREF darkColor, COLORREF lightColor)
 {
     POINT aptl[4];
-
-    HBRUSH hBrush_lt = ::CreateSolidBrush(LightColor);
-    HBRUSH hBrush_dk = ::CreateSolidBrush(DarkColor);
-
+    HBRUSH hBrush_lt = ::CreateSolidBrush(lightColor);
+    HBRUSH hBrush_dk = ::CreateSolidBrush(darkColor);
     HBRUSH hOldBrush = HBRUSH(::SelectObject(hDC, hBrush_lt));
     HPEN hOldPen = HPEN(::SelectObject(hDC, ::GetStockObject(BLACK_PEN)));
     int OldPolyMode = ::SetPolyFillMode(hDC, WINDING);
@@ -101,12 +92,12 @@ void Board::Draw_Board(HDC hDC, int reverse, COLORREF DarkColor, COLORREF LightC
         {
             if (reverse == 0)
             {
-                SelectObject(hDC, ((x+y)&1) ? hBrush_lt : hBrush_dk);
+                ::SelectObject(hDC, (x + y) & 1 ? hBrush_lt : hBrush_dk);
                 DrawOneSquare(hDC, x, y);
             }
             else
             {
-                SelectObject(hDC, (((7-x)+(7-y))&1) ? hBrush_lt : hBrush_dk);
+                ::SelectObject(hDC, (((7-x)+(7-y))&1) ? hBrush_lt : hBrush_dk);
                 DrawOneSquare(hDC, 7-x, 7-y);
             }
         }
@@ -120,15 +111,15 @@ void Board::Draw_Board(HDC hDC, int reverse, COLORREF DarkColor, COLORREF LightC
         aptl[2].y = aptl[1].y + BRD_EDGE;
         aptl[3].x = aptl[0].x;
         aptl[3].y = aptl[0].y + BRD_EDGE;
-        SelectObject(hDC, x & 1 ? hBrush_lt : hBrush_dk);
-        Polygon(hDC, aptl, 4);
+        ::SelectObject(hDC, x & 1 ? hBrush_lt : hBrush_dk);
+        ::Polygon(hDC, aptl, 4);
     }
 
-    SetPolyFillMode (hDC, OldPolyMode);
-    SelectObject(hDC, hOldPen);
-    SelectObject(hDC, hOldBrush);
-    DeleteObject(hBrush_lt);
-    DeleteObject(hBrush_dk);
+    ::SetPolyFillMode(hDC, OldPolyMode);
+    ::SelectObject(hDC, hOldPen);
+    ::SelectObject(hDC, hOldBrush);
+    ::DeleteObject(hBrush_lt);
+    ::DeleteObject(hBrush_dk);
 }
 
 void Board::DrawCoords(HDC hDC, int reverse, COLORREF clrBackGround, COLORREF clrText)
@@ -151,12 +142,12 @@ void Board::DrawCoords(HDC hDC, int reverse, COLORREF clrBackGround, COLORREF cl
         POINT pt;
         QuerySqOrigin(0, i, &pt);
 
-        TextOut(hDC, pt.x-xchar, pt.y-BRD_VERT/2-ychar/2,
+        TextOut(hDC, pt.x - xchar, pt.y - BRD_VERT / 2 - ychar / 2,
               (reverse ? TEXT("87654321") + i : TEXT("12345678") +i),1);
 
         QuerySqOrigin(i, 0, &pt);
 
-        TextOut(hDC, pt.x+BRD_HORZFRONT/2-xchar/2, pt.y+BRD_EDGE,
+        TextOut(hDC, pt.x + BRD_HORZFRONT / 2 - xchar / 2, pt.y + BRD_EDGE,
               (reverse ? TEXT("hgfedcba") + i : TEXT("abcdefgh") + i), 1);
     }
    
@@ -167,18 +158,7 @@ void Board::DrawCoords(HDC hDC, int reverse, COLORREF clrBackGround, COLORREF cl
     ::SetTextColor(hDC, OldTextColor);
 }
 
-void DrawWindowBackGround(HDC hDC, HWND hWnd, DWORD bkcolor)
-{
-    RECT rect;
-    HBRUSH hBrush = CreateSolidBrush(bkcolor);
-    HBRUSH hOldBrush = HBRUSH(SelectObject(hDC, hBrush));
-    GetClientRect(hWnd, &rect);
-    FillRect(hDC, &rect, hBrush);
-    SelectObject(hDC, hOldBrush);
-    DeleteObject(hBrush);
-}
-
-void HiliteSquare(HWND hWnd, int Square)
+void Board::HiliteSquare(HWND hWnd, int Square)
 {
     POINT aptl[4];
     int y = Square / 8;
@@ -192,7 +172,7 @@ void HiliteSquare(HWND hWnd, int Square)
     HilitSq = Square;
 }
 
-void UnHiliteSquare(HWND hWnd, int square)
+void Board::UnHiliteSquare(HWND hWnd, int square)
 {
     HDC hDC;
     POINT aptl[4];

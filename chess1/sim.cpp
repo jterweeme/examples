@@ -118,12 +118,12 @@ void Sim::FreeGlobals()
 }
 
 static short Stboard[64] = {
-    rook, knight, bishop, queen, king, bishop, knight, rook,
-    pawn, pawn, pawn, pawn, pawn, pawn, pawn, pawn,
+    ROOK, KNIGHT, BISHOP, QUEEN, KING, BISHOP, KNIGHT, ROOK,
+    PAWN, PAWN, PAWN, PAWN, PAWN, PAWN, PAWN, PAWN,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    pawn, pawn, pawn, pawn, pawn, pawn, pawn, pawn,
-    rook, knight, bishop, queen, king, bishop, knight, rook};
+    PAWN, PAWN, PAWN, PAWN, PAWN, PAWN, PAWN, PAWN,
+    ROOK, KNIGHT, BISHOP, QUEEN, KING, BISHOP, KNIGHT, ROOK};
 
 static short Stcolor[64] = {
     white, white, white, white, white, white, white, white,
@@ -210,7 +210,7 @@ void Sim::Initialize_moves()
                           break if (off board) or
                           (pawns only move two steps from home square)
                         */
-                        if (nunmap[p0] < 0 || ((ptyp == pawn || ptyp == bpawn) && s > 0 && (d > 0 || Stboard[nunmap[po]] != pawn)))
+                        if (nunmap[p0] < 0 || ((ptyp == PAWN || ptyp == BPAWN) && s > 0 && (d > 0 || Stboard[nunmap[po]] != PAWN)))
                         {
                             break;
                         }
@@ -248,7 +248,7 @@ void Sim::Initialize_moves()
             */
             p0 = nunmap[po];
 
-            if (ptyp == pawn || ptyp == bpawn)
+            if (ptyp == PAWN || ptyp == BPAWN)
             {
                 for (s = 0; s < steps[0]; s++)
                 {
@@ -285,10 +285,20 @@ void Sim::Initialize_moves()
     }
 }
 
+void Sim::maxSearchDepth(short n)
+{
+    _maxSearchDepth = n;
+}
+
+short Sim::maxSearchDepth() const
+{
+    return _maxSearchDepth;
+}
+
 /*
   Reset the board and other variables to start a new game.
 */
-void Sim::NewGame(HWND hWnd)
+void Sim::NewGame(HWND hWnd, HWND compClr)
 {
     stage = stage2 = -1;          /* the game is not yet started */
 
@@ -307,7 +317,7 @@ void Sim::NewGame(HWND hWnd)
     Awindow = 90;
     Bwindow = 90;
     xwndw = 90;
-    MaxSearchDepth = 29;
+    _maxSearchDepth = 29;
     contempt = 0;
     GameCnt = 0;
     Game50 = 1;
@@ -322,7 +332,7 @@ void Sim::NewGame(HWND hWnd)
     computer = black;
 
     for (short l = 0; l < 2000; l++)
-        (Tree+l)->f = (Tree+l)->t = 0;
+        (Tree + l)->f = (Tree + l)->t = 0;
 #if TTBLSZ
     rehash = 6;
     ZeroTTable();
@@ -330,14 +340,14 @@ void Sim::NewGame(HWND hWnd)
 
     for (short c = white; c <= black; c++)
     {
-        for (short p = pawn; p <= king; p++)
+        for (short p = 1; p <= 6; p++)
         {
             for (short l = 0; l < 64; l++)
             {
-                (hashcode+c*7*64+p*64+l)->key = DWORD(urand());
-                (hashcode+c*7*64+p*64+l)->key += DWORD(urand()) << 16;
-                (hashcode+c*7*64+p*64+l)->bd = DWORD(urand());
-                (hashcode+c*7*64+p*64+l)->bd += DWORD(urand()) << 16;
+                (hashcode + c * 7*64+p*64+l)->key = DWORD(::rand());
+                (hashcode + c * 7*64+p*64+l)->key += DWORD(::rand()) << 16;
+                (hashcode + c * 7*64+p*64+l)->bd = DWORD(::rand());
+                (hashcode + c * 7*64+p*64+l)->bd += DWORD(::rand()) << 16;
             }
         }
     }
@@ -351,7 +361,7 @@ void Sim::NewGame(HWND hWnd)
 
     if (TCflag)
     {
-        SetTimeControl ();
+        SetTimeControl();
     }
     else if (Level == 0)
     {
@@ -363,8 +373,8 @@ void Sim::NewGame(HWND hWnd)
     }
     InitializeStats();
     time0 = ::time(0);
-    ElapsedTime(1, ExtraTime);
-    UpdateDisplay(hWnd, 0, 0, 1, 0, flag.reverse);
+    ElapsedTime(1, ExtraTime, ResponseTime);
+    UpdateDisplay(hWnd, compClr, 0, 0, 1, 0, flag.reverse);
 }
 
 

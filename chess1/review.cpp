@@ -22,14 +22,13 @@
 */
 
 #include "protos.h"
-#include "chess.h"
 #include "globals.h"
 #include "resource.h"
 
 static INT_PTR CALLBACK
 ReviewDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
 {
-    int i,f,t;
+    int i, f, t;
     TCHAR tmp[50];
 
     switch (message)
@@ -39,7 +38,7 @@ ReviewDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
         {
             f = GameList[i].gmove >> 8;
             t = (GameList[i].gmove & 0xFF);
-            algbr (f, t, false);
+            algbr(f, t, false);
 
             wsprintf(tmp, TEXT("%4d-%c\t%5s\t%-5d\t%-2d\t%-5d"),
                     (i+1)/2, i % 2 ? 'w' : 'b', (char *)mvstr[0],

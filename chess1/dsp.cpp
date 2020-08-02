@@ -68,7 +68,7 @@ void algbr(short f, short t, short flag)
 
             if (flag & PROMOTE)
             {
-                mvstr[0][4] = mvstr[1][2] = mvstr[2][m3p] = " pnbrqk"[flag & pmask];
+                mvstr[0][4] = mvstr[1][2] = mvstr[2][m3p] = " pnbrqk"[flag & PMASK];
                 mvstr[1][3] = mvstr[2][m3p + 1] = mvstr[0][5] = '\0';
             }
         }
@@ -111,7 +111,7 @@ void algbr(short f, short t, short flag)
   the elapsed time exceeds the target (ResponseTime+ExtraTime) then set
   timeout to true which will terminate the search.
 */
-void ElapsedTime(short iop, long extra)
+void ElapsedTime(short iop, long extra, long responseTime)
 {
     et = ::time(0) - time0;
 
@@ -122,7 +122,7 @@ void ElapsedTime(short iop, long extra)
 
     if (et > et0 || iop == 1)
     {
-        if (et > ResponseTime + extra && Sdepth > 1)
+        if (et > responseTime + extra && Sdepth > 1)
             flag.timeout = true;
 
         et0 = et;
@@ -161,14 +161,13 @@ void SetTimeControl()
         Level = 60 * (long) TCminutes;
     }
     et = 0;
-    ElapsedTime(1, ExtraTime);
+    ElapsedTime(1, ExtraTime, ResponseTime);
 }
 
-void GetGame(HWND hWnd, char *fname)
+void GetGame(HWND hWnd, HWND compClr, char *fname)
 {
-    short sq;
     WORD m;
-    struct GameRec tmp_rec;
+    GameRec tmp_rec;
     FILE *fd = fopen(fname, "r");
 
     if (fd == NULL)
@@ -182,14 +181,14 @@ void GetGame(HWND hWnd, char *fname)
           &TimeControl.clock[white], &TimeControl.clock[black],
           &TimeControl.moves[white], &TimeControl.moves[black]);
 
-    for (sq = 0; sq < 64; sq++)
+    for (short sq = 0; sq < 64; sq++)
     {
         ::fscanf(fd, "%hd%hd", &m, &Mvboard[sq]);
         board[sq] = (m >> 8);
         color[sq] = (m & 0xFF);
 
         if (color[sq] == 0)
-            color[sq] = neutral;
+            color[sq] = NEUTRAL;
         else
             --color[sq];
     }
@@ -208,7 +207,7 @@ void GetGame(HWND hWnd, char *fname)
         GameList[GameCnt] = tmp_rec;
 
         if (GameList[GameCnt].color == 0)
-            GameList[GameCnt].color = neutral;
+            GameList[GameCnt].color = NEUTRAL;
         else
             --GameList[GameCnt].color;
     }
@@ -223,7 +222,7 @@ void GetGame(HWND hWnd, char *fname)
     ::fclose(fd);
     InitializeStats();
     Sdepth = 0;
-    UpdateDisplay(hWnd, 0, 0, 1, 0, flag.reverse);
+    UpdateDisplay(hWnd, compClr, 0, 0, 1, 0, flag.reverse);
 }
 
 void SaveGame(HWND, char *fname)
@@ -243,13 +242,13 @@ void SaveGame(HWND, char *fname)
 
     for (short sq = 0; sq < 64; sq++)
     {
-        short c = color[sq] == neutral ? 0 : color[sq] + 1;
+        short c = color[sq] == NEUTRAL ? 0 : color[sq] + 1;
         ::fprintf(fd, "%d %d\n", 256 * board[sq] + c, Mvboard[sq]);
     }
 
     for (short i = 1; i <= GameCnt; i++)
     {
-        short c = GameList[i].color == neutral ? 0 : GameList[i].color + 1;
+        short c = GameList[i].color == NEUTRAL ? 0 : GameList[i].color + 1;
 
         fprintf (fd, "%d %d %d %ld %d %d %d\n",
                GameList[i].gmove, GameList[i].score, GameList[i].depth,
@@ -294,20 +293,20 @@ void ListGame(char *fname)
 /*
   Undo the most recent half-move.
 */
-void Undo(HWND hWnd)
+void Undo(HWND hWnd, HWND compClr)
 {
     short f = GameList[GameCnt].gmove >> 8;
     short t = GameList[GameCnt].gmove & 0xFF;
 
-    if (board[t] == king && *(distdata + t * 64 + f) > 1)
+    if (board[t] == KING && *(distdata + t * 64 + f) > 1)
     {
         (void)castle(GameList[GameCnt].color, f, t, 2);
     }
     else
     {
         /* Check for promotion: */
-        if ((color[t] == white && (f >> 3) == 6 && (t >> 3) == 7)
-          || (color[t] == black && (f >> 3) == 1 && (t >> 3) == 0))
+        if ((color[t] == white && (f >> 3) == 6 && (t >> 3) == 7) ||
+            (color[t] == black && (f >> 3) == 1 && (t >> 3) == 0))
         {
             int g, from = f;
 
@@ -317,7 +316,7 @@ void Undo(HWND hWnd)
 
             if ((color[t] == white && (from >> 3) == 1) || (color[t] == black && (from >> 3) == 6))
             {
-                board[t] = pawn;
+                board[t] = PAWN;
             }
         }
         board[f] = board[t];
@@ -325,7 +324,7 @@ void Undo(HWND hWnd)
         board[t] = GameList[GameCnt].piece;
         color[t] = GameList[GameCnt].color;
 
-        if (color[t] != neutral)
+        if (color[t] != NEUTRAL)
             Mvboard[t]--;
 
         Mvboard[f]--;
@@ -339,6 +338,6 @@ void Undo(HWND hWnd)
     opponent = otherside[opponent];
     flag.mate = false;
     Sdepth = 0;
-    UpdateDisplay(hWnd, 0, 0, 1, 0, flag.reverse);
+    UpdateDisplay(hWnd, compClr, 0, 0, 1, 0, flag.reverse);
     InitializeStats();
 }

@@ -5,8 +5,8 @@
 
 ColorDlg *ColorDlg::_instance;
 
-ColorDlg::ColorDlg(HINSTANCE hInstance, UINT variant) :
-    _hInstance(hInstance), _variant(variant)
+ColorDlg::ColorDlg(HINSTANCE hInstance, UINT variant, COLORREF *item) :
+    _hInstance(hInstance), _variant(variant), _pclr(item)
 {
     _instance = this;
 }
@@ -23,9 +23,6 @@ static TCHAR lpBP[] = TEXT("Black piece color");
 static TCHAR lpWP[] = TEXT("White piece color");
 static TCHAR lpTX[] = TEXT("Text color");
 
-static COLORREF *pclr;
-static int index;
-
 void ColorDlg::_initDialogProc(HWND hwnd)
 {
     LPCTSTR pchHeading;
@@ -34,34 +31,28 @@ void ColorDlg::_initDialogProc(HWND hwnd)
     {
     default:
     case IDM_BACKGROUND:
-        pchHeading = LPCTSTR(lpWBGC);
-        pclr = &clrBackGround;
+        pchHeading = lpWBGC;
         break;
     case IDM_BLACKSQUARE:
-        pchHeading = LPCTSTR(lpBS);
-        pclr = &clrBlackSquare;
+        pchHeading = lpBS;
         break;
     case IDM_WHITESQUARE:
-        pchHeading = LPCTSTR(lpWS);
-        pclr = &clrWhiteSquare;
+        pchHeading = lpWS;
         break;
     case IDM_BLACKPIECE:
-        pchHeading = LPCTSTR(lpBP);
-        pclr = &clrBlackPiece;
+        pchHeading = lpBP;
         break;
     case IDM_WHITEPIECE:
-        pchHeading = LPCTSTR(lpWP);
-        pclr = &clrWhitePiece;
+        pchHeading = lpWP;
         break;
     case IDM_TEXT:
-        pchHeading = LPCTSTR(lpTX);
-        pclr = &clrText;
+        pchHeading = lpTX;
         break;
     }
 
     ::SetDlgItemText(hwnd, IDD_HEADING, pchHeading);
-    index = Palette::colorToIndex(*pclr);
-    ::CheckRadioButton(hwnd, CNT_BLACK, CNT_WHITE, index);
+    _index = Palette::colorToIndex(*_pclr);
+    ::CheckRadioButton(hwnd, CNT_BLACK, CNT_WHITE, _index);
 }
 
 INT_PTR ColorDlg::_commandProc(HWND hwnd, WPARAM wParam)
@@ -70,7 +61,7 @@ INT_PTR ColorDlg::_commandProc(HWND hwnd, WPARAM wParam)
     {
     case IDD_OK:
         ::EndDialog(hwnd, 1);
-        *pclr = Palette::indexToColor(index);
+        *_pclr = Palette::indexToColor(_index);
         return TRUE;
     case IDD_CANCEL:
         ::EndDialog(hwnd, NULL);
@@ -91,8 +82,8 @@ INT_PTR ColorDlg::_commandProc(HWND hwnd, WPARAM wParam)
     case CNT_DARKPINK:
     case CNT_BROWN:
     case CNT_WHITE:
-        index = wParam;
-        ::CheckRadioButton(hwnd, CNT_BLACK, CNT_WHITE, index);
+        _index = wParam;
+        ::CheckRadioButton(hwnd, CNT_BLACK, CNT_WHITE, _index);
         break;
     }
 

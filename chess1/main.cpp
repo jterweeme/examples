@@ -39,17 +39,17 @@
 #define LPXSTR LPSTR
 #endif
 
-static void start_main(HWND hwnd, Sim *sim)
+static void start_main(HINSTANCE hInstance, HWND hwnd, HWND compClr, Sim *sim)
 {
-    sim->NewGame(hwnd);
+    sim->NewGame(hwnd, compClr);
 
     try
     {
-        GetOpenings(hInst);
+        GetOpenings(hInstance);
     }
     catch (UINT errId)
     {
-        Toolbox().messageBox(hInst, 0, errId, IDS_CHESS);
+        Toolbox().messageBox(hInstance, 0, errId, IDS_CHESS);
     }
     catch (LPCWSTR err)
     {
@@ -57,7 +57,7 @@ static void start_main(HWND hwnd, Sim *sim)
     }
     catch (...)
     {
-        Toolbox().messageBox(hInst, 0, IDS_UNKNOWNERR, IDS_CHESS);
+        Toolbox().messageBox(hInstance, 0, IDS_UNKNOWNERR, IDS_CHESS);
     }
 
     flag.easy = true;
@@ -70,7 +70,6 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPXSTR lpCmdLine, int nCmd
 {
     (void)lpCmdLine;
     (void)hPrevInstance;
-    hInst = hInstance;
     Sim sim;
     WinClass wc(hInstance, MainWindow::wndProc, TEXT("Chess"));
     MainWindow win(&wc, &sim);
@@ -81,9 +80,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPXSTR lpCmdLine, int nCmd
         win.create(TEXT("Chess"));
         win.show(nCmdShow);
         sim.init_main();
-        start_main(win.hwnd(), &sim);
+        start_main(hInstance, win.hwnd(), win.hComputerColor(), &sim);
         UpdateWindow(win.hwnd());
-        hAccel = ::LoadAccelerators(hInstance, TEXT("Chess"));
         player = opponent;
         ShowSidetoMove();
     }
@@ -104,7 +102,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPXSTR lpCmdLine, int nCmd
     MSG msg;
     while (::GetMessage(&msg, NULL, 0, 0))
     {
-        if (!TranslateAccelerator(win.hwnd(), hAccel, &msg) )
+        if (!TranslateAccelerator(win.hwnd(), win.hAccel(), &msg) )
         {
             ::TranslateMessage(&msg);
             ::DispatchMessage(&msg);

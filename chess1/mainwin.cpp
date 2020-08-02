@@ -8,6 +8,8 @@
 #include "palette.h"
 #include "board.h"
 #include "colordlg.h"
+#include "hittest.h"
+#include "promote.h"
 #include <ctime>
 
 MainWindow *MainWindow::_instance = 0;
@@ -21,13 +23,12 @@ MainWindow::MainWindow(WinClass *wc, Sim *sim) : _wc(wc), _sim(sim)
     User_Move = TRUE;
 }
 
-static int coords = 1;
+HWND MainWindow::hComputerColor() const
+{
+    return _hComputerColor;
+}
 
-#ifdef WINCE
-#define WINSTYLE WS_CLIPCHILDREN
-#else
-#define WINSTYLE WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN
-#endif
+static int coords = 1;
 
 static void GiveHint(HWND hWnd)
 {
@@ -42,8 +43,7 @@ static void GiveHint(HWND hWnd)
    Compare the string 's' to the list of legal moves available for the
    opponent. If a match is found, make the move on the board.
 */
-static int
-VerifyMove(HINSTANCE hInstance, HWND hWnd, TCHAR *s, short iop, WORD *mv)
+int MainWindow::_verifyMove(HINSTANCE hInstance, HWND hWnd, TCHAR *s, short iop, WORD *mv)
 {
     static short tempb, tempc, tempsf, tempst;
     static Leaf xnode;
@@ -87,17 +87,17 @@ VerifyMove(HINSTANCE hInstance, HWND hWnd, TCHAR *s, short iop, WORD *mv)
         if (iop == 1)
             return true;
 
-        UpdateDisplay(hWnd, xnode.f, xnode.t, 0, (short)xnode.flags, flag.reverse);
+        UpdateDisplay(hWnd, _hComputerColor, xnode.f, xnode.t, 0, short(xnode.flags), flag.reverse);
 
-        if (board[xnode.t] == pawn || xnode.flags & capture || xnode.flags & CSTLMASK)
+        if (board[xnode.t] == PAWN || xnode.flags & CAPTURE || xnode.flags & CSTLMASK)
         {
             Game50 = GameCnt;
-            ZeroRPT ();
+            ZeroRPT();
         }
 
         GameList[GameCnt].depth = GameList[GameCnt].score = 0;
         GameList[GameCnt].nodes = 0;
-        ElapsedTime(1, ExtraTime);
+        ElapsedTime(1, ExtraTime, ResponseTime);
         GameList[GameCnt].time = short(et);
         TimeControl.clock[opponent] -= et;
         --TimeControl.moves[opponent];
@@ -112,6 +112,12 @@ VerifyMove(HINSTANCE hInstance, HWND hWnd, TCHAR *s, short iop, WORD *mv)
     return false;
 }
 
+#ifdef WINCE
+static constexpr DWORD WINSTYLE = WS_CLIPCHILDREN;
+#else
+static constexpr DWORD WINSTYLE = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN;
+#endif
+
 void MainWindow::create(LPCTSTR caption)
 {
     _hwnd = CreateWindow(_wc->className(), caption, WINSTYLE,
@@ -121,6 +127,8 @@ void MainWindow::create(LPCTSTR caption)
 
     if (!_hwnd)
         throw TEXT("Cannot create main window");
+
+    _hAccel = ::LoadAccelerators(hInstance(), TEXT("Chess"));
 }
 
 void MainWindow::_createChildren(HWND hWnd, HINSTANCE hInst, short xchar, short ychar)
@@ -131,45 +139,38 @@ void MainWindow::_createChildren(HWND hWnd, HINSTANCE hInst, short xchar, short 
     /* Get the location of lower left conor of client area */
     QueryBoardSize(&pt);
 
-    hComputerColor = CreateWindow(lpStatic, NULL, WS_CHILD | SS_CENTER | WS_VISIBLE,
+    _hComputerColor = CreateWindow(lpStatic, NULL, WS_CHILD | SS_CENTER | WS_VISIBLE,
                          0, pt.y, 10 * xchar, ychar, hWnd, HMENU(1000), hInst, NULL);
 
     hWhosTurn = CreateWindow(lpStatic, NULL, WS_CHILD | SS_CENTER | WS_VISIBLE,
-                        10*xchar, pt.y, 10*xchar, ychar, hWnd, HMENU(1001), hInst, NULL);
+                         10 * xchar, pt.y, 10*xchar, ychar, hWnd, HMENU(1001), hInst, NULL);
 
-    hComputerMove = CreateWindow(lpStatic, NULL,
-                        WS_CHILD | SS_LEFT | WS_VISIBLE,
-                        375 /*0*/,
-                        10 /*pt.y+(3*ychar)/2*/,
-                        10*xchar,
-                        ychar,
-                        hWnd, HMENU(1003), hInst, NULL);
+    hComputerMove = CreateWindow(lpStatic, NULL, WS_CHILD | SS_LEFT | WS_VISIBLE,
+                         375, 10, 10 * xchar, ychar, hWnd, HMENU(1003), hInst, NULL);
 
+    hClockComputer = CreateWindow(lpStatic, NULL, WS_CHILD | SS_CENTER | WS_VISIBLE,
+                         390, 55, 6 * xchar, ychar, hWnd, HMENU(1010), hInst, NULL);
 
-    hClockComputer = CreateWindow(lpStatic, NULL,
-                        WS_CHILD | SS_CENTER | WS_VISIBLE,
-                        390, 55, 6*xchar, ychar, hWnd,
-                        HMENU(1010), hInst, NULL);
+    hClockHuman =  CreateWindow(lpStatic, NULL, WS_CHILD | SS_CENTER | WS_VISIBLE,
+                         390, 55+3*ychar, 6*xchar, ychar, hWnd, HMENU(1011), hInst, NULL);
 
-    hClockHuman =  CreateWindow(lpStatic, NULL,
-                        WS_CHILD | SS_CENTER | WS_VISIBLE,
-                        390, 55+3*ychar, 6*xchar, ychar, hWnd,
-                        HMENU(1011), hInst, NULL);
+    hMsgComputer = CreateWindow(lpStatic, TEXT("Black:"), WS_CHILD | SS_CENTER | WS_VISIBLE,
+                         390, 55 - 3 * ychar / 2, 6 * xchar, ychar, hWnd, HMENU(1020), hInst, NULL);
 
-    hMsgComputer = CreateWindow(lpStatic, TEXT("Black:"),
-                        WS_CHILD | SS_CENTER | WS_VISIBLE,
-                        390, 55-3*ychar/2, 6*xchar, ychar, hWnd,
-                        HMENU(1020), hInst, NULL);
-
-    hMsgHuman    = CreateWindow(lpStatic, TEXT("White:"),
-                        WS_CHILD | SS_CENTER | WS_VISIBLE,
-                        390, 55+3*ychar/2, 6*xchar, ychar, hWnd,
-                        HMENU(1021), hInst, NULL);
+    hMsgHuman = CreateWindow(lpStatic, TEXT("White:"),
+                         WS_CHILD | SS_CENTER | WS_VISIBLE,
+                         390, 55 + 3 * ychar / 2, 6 * xchar, ychar,
+                         hWnd, HMENU(1021), hInst, NULL);
 }
 
 HWND MainWindow::hwnd() const
 {
     return _hwnd;
+}
+
+HACCEL MainWindow::hAccel() const
+{
+    return _hAccel;
 }
 
 void MainWindow::show(int nCmdShow)
@@ -277,34 +278,36 @@ void MainWindow::_paintProc(HWND hWnd) const
         RECT rect;
         QuerySqOrigin(_firstSq % 8, _firstSq / 8, &pt);
         rect.left = pt.x;
-        rect.right=pt.x+48;
-        rect.top = pt.y-48;
+        rect.right=pt.x + 48;
+        rect.top = pt.y - 48;
         rect.bottom = pt.y;
         InvalidateRect(hWnd, &rect, FALSE);
     }
 
     PAINTSTRUCT ps;
     HDC hDC = ::BeginPaint(hWnd, &ps);
-    _board->Draw_Board(hDC, flag.reverse, clrBlackSquare, clrWhiteSquare);
+    _board->Draw_Board(hDC, flag.reverse, _clrBlackSquare, _clrWhiteSquare);
 
     if (coords)
-        _board->DrawCoords(hDC, flag.reverse, clrBackGround, clrText);
+        _board->DrawCoords(hDC, flag.reverse, _clrBackGround, _clrText);
 
-    DrawAllPieces(hDC, flag.reverse, boarddraw, colordraw, clrBlackPiece, clrWhitePiece);
+    DrawAllPieces(hDC, _pieces, flag.reverse, boarddraw,
+                  colordraw, _clrBlackPiece, _clrWhitePiece);
+
     ::EndPaint(hWnd, &ps);
 
     if (_firstSq != -1)
-        HiliteSquare(hWnd, _firstSq);
+        _board->HiliteSquare(hWnd, _firstSq);
 }
 
 void MainWindow::_setStandardColors()
 {
-    clrBackGround = Palette::BROWN;
-    clrBlackSquare = Palette::DARKGREEN;
-    clrWhiteSquare = Palette::PALEGRAY;
-    clrBlackPiece = Palette::RED;
-    clrWhitePiece = Palette::CWHITE;
-    clrText = Palette::CBLACK;
+    _clrBackGround = Palette::BROWN;
+    _clrBlackSquare = Palette::DARKGREEN;
+    _clrWhiteSquare = Palette::PALEGRAY;
+    _clrBlackPiece = Palette::RED;
+    _clrWhitePiece = Palette::CWHITE;
+    _clrText = Palette::CBLACK;
 }
 
 void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
@@ -326,7 +329,7 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
     case MSG_CHESS_GET:
         break;
     case MSG_CHESS_NEW:
-        _sim->NewGame(hWnd);
+        _sim->NewGame(hWnd, _hComputerColor);
 
         if (hBook)
             FreeBook();
@@ -334,14 +337,14 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
         GetOpenings(hInstance());
         break;
     case MSG_CHESS_ABOUT:
-        DialogBox(hInstance(), MAKEINTRESOURCE(AboutBox), hWnd, About);
+        ::DialogBox(hInstance(), MAKEINTRESOURCE(IDD_ABOUT), hWnd, About);
         break;
     case MSG_CHESS_EDIT:
         EditActive = TRUE;
         hMenu = CreateMenu();
-        AppendMenu(hMenu, MF_STRING, MSG_CHESS_EDITDONE, TEXT("&Done"));
+        ::AppendMenu(hMenu, MF_STRING, MSG_CHESS_EDITDONE, TEXT("&Done"));
         hMainMenu = GetMenu(hWnd);
-        SetMenu(hWnd, hMenu);
+        ::SetMenu(hWnd, hMenu);
         DrawMenuBar(hWnd);
         break;
     case MSG_CHESS_EDITDONE:
@@ -371,7 +374,7 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
         break;
     case MSG_CHESS_COORD:
         coords = !coords;
-        UpdateDisplay(hWnd, 0, 0, 1, 0, flag.reverse);
+        UpdateDisplay(hWnd, _hComputerColor, 0, 0, 1, 0, flag.reverse);
         break;
     case MSG_CHESS_BOTH:
         flag.bothsides = !flag.bothsides;
@@ -424,7 +427,7 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
     case MSG_CHESS_UNDO:
         if (GameCnt >0)
         {
-            Undo(hWnd);
+            Undo(hWnd, _hComputerColor);
             player = opponent;
             ShowSidetoMove();
         }
@@ -432,15 +435,15 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
     case MSG_CHESS_REMOVE:
         if (GameCnt > 1)
         {
-            Undo(hWnd);
-            Undo(hWnd);
+            Undo(hWnd, _hComputerColor);
+            Undo(hWnd, _hComputerColor);
             ShowSidetoMove();
         }
         break;
     case MSG_CHESS_FORCE:
         flag.force = !flag.force;
         player = opponent;
-        ShowPlayers();
+        ShowPlayers(_hComputerColor);
         break;
     case MSG_CHESS_RANDOM:
         if (dither == 0)
@@ -454,21 +457,21 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
     case MSG_CHESS_DEPTH:
     {
         TCHAR str[40];
-        LoadString(hInstance(), IDS_MAXSEARCH, str, sizeof(str));
-        MaxSearchDepth = DoGetNumberDlg(hInstance(), hWnd, str, MaxSearchDepth);
+        ::LoadString(hInstance(), IDS_MAXSEARCH, str, sizeof(str));
+        _sim->maxSearchDepth(DoGetNumberDlg(hInstance(), hWnd, str, _sim->maxSearchDepth()));
     }
         break;
     case MSG_CHESS_REVERSE:
         flag.reverse = !flag.reverse;
-        ShowPlayers();
-        UpdateDisplay(hWnd,0,0,1,0, flag.reverse);
+        ShowPlayers(_hComputerColor);
+        UpdateDisplay(hWnd, _hComputerColor, 0, 0, 1, 0, flag.reverse);
         break;
     case MSG_CHESS_SWITCH:
         computer = otherside[computer];
         opponent = otherside[opponent];
         flag.force = false;
         Sdepth = 0;
-        ShowPlayers();
+        ShowPlayers(_hComputerColor);
         ::PostMessage(hWnd, MSG_COMPUTER_MOVE, 0, 0);
         break;
     case MSG_CHESS_BLACK:
@@ -476,7 +479,7 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
         opponent = white;
         flag.force = false;
         Sdepth = 0;
-        ShowPlayers();
+        ShowPlayers(_hComputerColor);
         ::PostMessage(hWnd, MSG_COMPUTER_MOVE, 0, 0);
         break;
     case MSG_CHESS_WHITE:
@@ -484,33 +487,31 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
         opponent = black;
         flag.force = false;
         Sdepth = 0;
-        ShowPlayers();
+        ShowPlayers(_hComputerColor);
         ::PostMessage(hWnd, MSG_COMPUTER_MOVE, 0, 0);
         break;
     case IDM_BACKGROUND:
     {
-        ColorDlg colorDlg(hInstance(), IDM_BACKGROUND);
+        ColorDlg colorDlg(hInstance(), IDM_BACKGROUND, &_clrBackGround);
 
         if (colorDlg.run(hWnd, IDM_BACKGROUND))
         {
-            InvalidateRect(hWnd, NULL, TRUE);
-            DeleteObject(_hBrushBackGround);
-            _hBrushBackGround = ::CreateSolidBrush(clrBackGround);
-
-            /*Invalidate the text windows so they repaint */
-            InvalidateRect(hComputerColor, NULL, TRUE);
-            InvalidateRect(hComputerMove, NULL, TRUE);
-            InvalidateRect(hWhosTurn, NULL, TRUE);
-            InvalidateRect(hClockHuman, NULL, TRUE);
-            InvalidateRect(hClockComputer, NULL, TRUE);
-            InvalidateRect(hMsgComputer, NULL, TRUE);
-            InvalidateRect(hMsgHuman, NULL, TRUE);
+            ::InvalidateRect(hWnd, NULL, TRUE);
+            ::DeleteObject(_hBrushBackGround);
+            _hBrushBackGround = ::CreateSolidBrush(_clrBackGround);
+            ::InvalidateRect(_hComputerColor, NULL, TRUE);
+            ::InvalidateRect(hComputerMove, NULL, TRUE);
+            ::InvalidateRect(hWhosTurn, NULL, TRUE);
+            ::InvalidateRect(hClockHuman, NULL, TRUE);
+            ::InvalidateRect(hClockComputer, NULL, TRUE);
+            ::InvalidateRect(hMsgComputer, NULL, TRUE);
+            ::InvalidateRect(hMsgHuman, NULL, TRUE);
         }
     }
         break;
     case IDM_BLACKSQUARE:
     {
-        ColorDlg colorDlg(hInstance(), IDM_BLACKSQUARE);
+        ColorDlg colorDlg(hInstance(), IDM_BLACKSQUARE, &_clrBlackSquare);
 
         if (colorDlg.run(hWnd, IDM_BLACKSQUARE))
             ::InvalidateRect(hWnd, NULL, TRUE);
@@ -518,7 +519,7 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
         break;
     case IDM_WHITESQUARE:
     {
-        ColorDlg colorDlg(hInstance(), IDM_WHITESQUARE);
+        ColorDlg colorDlg(hInstance(), IDM_WHITESQUARE, &_clrWhiteSquare);
 
         if (colorDlg.run(hWnd, IDM_WHITESQUARE))
             ::InvalidateRect(hWnd, NULL, TRUE);
@@ -526,7 +527,7 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
         break;
     case IDM_BLACKPIECE:
     {
-        ColorDlg colorDlg(hInstance(), IDM_BLACKPIECE);
+        ColorDlg colorDlg(hInstance(), IDM_BLACKPIECE, &_clrBlackPiece);
 
         if (colorDlg.run(hWnd, IDM_BLACKPIECE))
             ::InvalidateRect(hWnd, NULL, TRUE);
@@ -534,7 +535,7 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
         break;
     case IDM_WHITEPIECE:
     {
-        ColorDlg colorDlg(hInstance(), IDM_WHITEPIECE);
+        ColorDlg colorDlg(hInstance(), IDM_WHITEPIECE, &_clrWhitePiece);
 
         if (colorDlg.run(hWnd, IDM_WHITEPIECE))
             ::InvalidateRect(hWnd, NULL, TRUE);
@@ -542,12 +543,12 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
         break;
     case IDM_TEXT:
     {
-        ColorDlg colorDlg(hInstance(), IDM_TEXT);
+        ColorDlg colorDlg(hInstance(), IDM_TEXT, &_clrText);
 
         if (colorDlg.run(hWnd, IDM_TEXT))
         {
             ::InvalidateRect(hWnd, NULL, TRUE);
-            ::InvalidateRect(hComputerColor, NULL, TRUE);
+            ::InvalidateRect(_hComputerColor, NULL, TRUE);
             ::InvalidateRect(hComputerMove, NULL, TRUE);
             ::InvalidateRect(hWhosTurn, NULL, TRUE);
             ::InvalidateRect(hClockHuman, NULL, TRUE);
@@ -561,10 +562,8 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
         _setStandardColors();
         ::InvalidateRect(hWnd, NULL, TRUE);
         ::DeleteObject(_hBrushBackGround);
-        _hBrushBackGround = ::CreateSolidBrush(clrBackGround);
-
-        /*Invalidate the text windows so they repaint */
-        ::InvalidateRect(hComputerColor, NULL, TRUE);
+        _hBrushBackGround = ::CreateSolidBrush(_clrBackGround);
+        ::InvalidateRect(_hComputerColor, NULL, TRUE);
         ::InvalidateRect(hComputerMove, NULL, TRUE);
         ::InvalidateRect(hWhosTurn, NULL, TRUE);
         ::InvalidateRect(hClockHuman, NULL, TRUE);
@@ -600,7 +599,7 @@ void MainWindow::_userMoveProc(HWND hwnd)
 {
     if (flag.bothsides && !flag.mate)
     {
-        SelectMove(hwnd, opponent, 1);
+        SelectMove(hInstance(), hwnd, _hComputerColor, opponent, 1, _sim->maxSearchDepth(), hAccel());
         if (flag.beep)
             MessageBeep(0);
 
@@ -615,23 +614,25 @@ void MainWindow::_userMoveProc(HWND hwnd)
 
         /* Set up to allow computer to think while user takes move*/
         int tmp;
-        unsigned short mv;
+        WORD mv;
         TCHAR s[10];
 
         if (hint > 0 && !flag.easy /*&& Book == NULL*/ )
         {
             time0 = time(NULL);
-            algbr ( hint>>8, hint&0xff, false);
-            lstrcpy(s, mvstr[0]);
+            algbr(hint >> 8, hint & 0xff, false);
+            ::lstrcpy(s, mvstr[0]);
             tmp = epsquare;
 
-            if (VerifyMove(hInstance(), hwnd, s,1, &mv))
+            if (_verifyMove(hInstance(), hwnd, s,1, &mv))
             {
-                SelectMove(hwnd, computer, 2);
-                VerifyMove(hInstance(), hwnd, mvstr[0], 2, &mv);
+                SelectMove(hInstance(), hwnd, _hComputerColor, computer,
+                           2, _sim->maxSearchDepth(), hAccel());
+
+                _verifyMove(hInstance(), hwnd, mvstr[0], 2, &mv);
 
                 if (Sdepth > 0)
-                    Sdepth --;
+                    Sdepth--;
             }
             ft = time(NULL) - time0;
             epsquare = tmp;
@@ -649,15 +650,16 @@ void MainWindow::_getStartupColors()
 void MainWindow::_createProc(HWND hWnd)
 {
     _board = new Board;
+    _pieces = new PIECEBITMAP[7];
     _getStartupColors();
-    _hBrushBackGround = ::CreateSolidBrush(clrBackGround);
+    _hBrushBackGround = ::CreateSolidBrush(_clrBackGround);
 
     //Dit is verwarrend: de bitmap resources hebben namelijk nummers
-    for (int i = pawn; i < pawn + 6; ++i)
+    for (int i = PAWN; i < PAWN + 6; ++i)
     {
-        pieces[i].piece = ::LoadBitmap(hInstance(), MAKEINTRESOURCE(PAWNBASE + i));
-        pieces[i].mask = ::LoadBitmap(hInstance(), MAKEINTRESOURCE(PAWNBASE + 6 + i));
-        pieces[i].outline = ::LoadBitmap(hInstance(), MAKEINTRESOURCE(PAWNBASE + 12 + i));
+        _pieces[i].piece = ::LoadBitmap(hInstance(), MAKEINTRESOURCE(PAWNBASE + i));
+        _pieces[i].mask = ::LoadBitmap(hInstance(), MAKEINTRESOURCE(PAWNBASE + 6 + i));
+        _pieces[i].outline = ::LoadBitmap(hInstance(), MAKEINTRESOURCE(PAWNBASE + 12 + i));
     }
 
     HDC hDC = ::GetDC(hWnd);
@@ -677,7 +679,8 @@ void MainWindow::_createProc(HWND hWnd)
          SWP_NOMOVE | SWP_NOZORDER);
 
     ::ReleaseDC(hWnd, hDC);
-    InitHitTest();
+    _hitTest = new HitTest();
+    _hitTest->init();
     _createChildren(hWnd, hInstance(), xchar, ychar);
 }
 
@@ -700,7 +703,8 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         _makeHelpPathName(szHelpFileName);
         ::WinHelp(hWnd, szHelpFileName, HELP_QUIT, 0L);
         ::DeleteObject(_hBrushBackGround);
-        Hittest_Destructor();
+        _hitTest->destroy();
+        delete _hitTest;
 
         if (hBook)
             FreeBook();
@@ -719,9 +723,9 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
         HDC hdc = HDC(wParam);
         ::UnrealizeObject(_hBrushBackGround);
-        ::SetBkColor(hdc, clrBackGround);
+        ::SetBkColor(hdc, _clrBackGround);
         ::SetBkMode(hdc, TRANSPARENT);
-        ::SetTextColor(hdc, clrText);
+        ::SetTextColor(hdc, _clrText);
         POINT point;
         point.x = point.y = 0;
         ::ClientToScreen(hWnd, &point);
@@ -758,13 +762,13 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         point.x = LOWORD(lParam);
         point.y = HIWORD(lParam);
-        int Hit = HitTest(point.x, point.y);
+        int hit = _hitTest->test(point.x, point.y);
 
-        if (Hit == -1 )
+        if (hit == -1 )
         {
             if (_firstSq != -1)
             {
-                UnHiliteSquare(hWnd, _firstSq);
+                _board->UnHiliteSquare(hWnd, _firstSq);
                 _gotFirst = FALSE;
                 _firstSq = -1;
             }
@@ -773,21 +777,21 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         if (_gotFirst)
         {
-            UnHiliteSquare(hWnd, _firstSq);
+            _board->UnHiliteSquare(hWnd, _firstSq);
             _gotFirst = FALSE;
 
             if (EditActive == TRUE)
-                ::PostMessage(hWnd, MSG_EDITBOARD, _firstSq << 8 | Hit, 0);
+                ::PostMessage(hWnd, MSG_EDITBOARD, _firstSq << 8 | hit, 0);
             else if (User_Move == TRUE)
-                ::PostMessage(hWnd, MSG_USER_ENTERED_MOVE, _firstSq << 8 | Hit, 0);
+                ::PostMessage(hWnd, MSG_USER_ENTERED_MOVE, _firstSq << 8 | hit, 0);
 
             _firstSq = -1;
         }
         else
         {
             _gotFirst = TRUE;
-            _firstSq = Hit;
-            HiliteSquare(hWnd, Hit);
+            _firstSq = hit;
+            _board->HiliteSquare(hWnd, hit);
         }
     }
         break;
@@ -808,9 +812,9 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
          board[Square] = board[First];
          color[Square] = color[First];
-         board[First] = no_piece;
-         color[First] = neutral;
-         UpdateDisplay(hWnd, First, Square, false, false, flag.reverse);
+         board[First] = NO_PIECE;
+         color[First] = NEUTRAL;
+         UpdateDisplay(hWnd, _hComputerColor, First, Square, false, false, flag.reverse);
     }
         break;
     case MSG_USER_MOVE:
@@ -834,10 +838,12 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             Square  = wParam & 0xff;
         }
 
+        PromoteDlg promoteDlg(hInstance());
+
         /* Logic to allow selection for pawn promotion */
-        if (board[First] == pawn && (Square < 8 || Square > 55))
+        if (board[First] == PAWN && (Square < 8 || Square > 55))
         {
-            algbr_flag = PROMOTE + PromoteDialog(hWnd, hInstance());
+            algbr_flag = PROMOTE + promoteDlg.run(hWnd);
         }
         else
         {
@@ -853,7 +859,7 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         ::lstrcpy(str, mvstr[0]);
 
         WORD mv;
-        int temp = VerifyMove(hInstance(), hWnd, str, 0, &mv);
+        int temp = _verifyMove(hInstance(), hWnd, str, 0, &mv);
 
         if (!temp)
         {
@@ -861,13 +867,14 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         else
         {
-            ElapsedTime(1, ExtraTime);
+            ElapsedTime(1, ExtraTime, ResponseTime);
 
             if (flag.force)
             {
                 computer = opponent;
                 opponent = otherside[computer];
             }
+
             if (mv != hint)
             {
                 Sdepth = 0;
@@ -884,7 +891,8 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case MSG_COMPUTER_MOVE:
         if (!(flag.quit || flag.mate || flag.force))
         {
-            SelectMove(hWnd, computer, 1);
+            SelectMove(hInstance(), hWnd, _hComputerColor, computer, 1,
+                       _sim->maxSearchDepth(), hAccel());
 
             if (flag.beep)
                 ::MessageBeep(0);
@@ -914,12 +922,12 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
             if (_gotFirst)
             {
-                UnHiliteSquare(hWnd, _firstSq);
+                _board->UnHiliteSquare(hWnd, _firstSq);
                 _gotFirst = FALSE;
                 _firstSq = -1;
             }
 
-            if (DoManualMoveDlg(hInst, hWnd, tmpmove))
+            if (DoManualMoveDlg(hInstance(), hWnd, tmpmove))
             {
                 ::lstrcpy(mvstr[0], tmpmove);
                 ::PostMessage(hWnd, MSG_MANUAL_ENTRY_POINT, 0, 0);

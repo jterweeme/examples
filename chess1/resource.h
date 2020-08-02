@@ -3,30 +3,33 @@
 #include <windows.h>
 
 #define PAWNBASE 0
-#define PAWN   1
-#define KNIGHT 2
-#define BISHOP 3
-#define ROOK   4
-#define QUEEN  5
-#define KING   6
+#define IDB_PAWN   1
+#define IDB_KNIGHT 2
+#define IDB_BISHOP 3
+#define IDB_ROOK   4
+#define IDB_QUEEN  5
+#define IDB_KING   6
 
-#define PAWNM   7
-#define KNIGHTM 8
-#define BISHOPM 9
-#define ROOKM   10
-#define QUEENM  11
-#define KINGM   12
+#define IDB_PAWNM   7
+#define IDB_KNIGHTM 8
+#define IDB_BISHOPM 9
+#define IDB_ROOKM   10
+#define IDB_QUEENM  11
+#define IDB_KINGM   12
 
-#define PAWNO   13
-#define KNIGHTO 14
-#define BISHOPO 15
-#define ROOKO   16
-#define QUEENO  17
-#define KINGO   18
+#define IDB_PAWNO   13
+#define IDB_KNIGHTO 14
+#define IDB_BISHOPO 15
+#define IDB_ROOKO   16
+#define IDB_QUEENO  17
+#define IDB_KINGO   18
 
 #define IDD_HEADING  200
 #define IDD_OK       201
 #define IDD_CANCEL   202
+
+#define IDD_INT 0x10
+#define IDD_CHAR 0x11
 
 #define IDD_FNAME 0x10
 #define IDD_FPATH 0x11
@@ -74,10 +77,11 @@
 #define TMDLG_10MOV  (TMDLG_MOV+10)
 #define TMDLG_1MOV   (TMDLG_MOV+1)
 
-
+#if 0
 #define FILESAVE 270
 #define FILEOPEN 271
 #define WILDFILEOPEN 272
+#endif
 
 #define IDS_ILLEGALMOVE   1000     /* Illeagal move */
 #define IDS_AMBIGUOUSMOVE 1001    /* Ambigous move */
@@ -173,7 +177,7 @@
 
 #define IDM_TIMECONTROL 306
 
-#define AboutBox    262
+#define IDD_ABOUT    262
 #define REVIEW      263
 #define NUMBERDLG   264
 #define COLOR       266

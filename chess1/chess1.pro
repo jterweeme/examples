@@ -29,8 +29,10 @@ HEADERS += board.h\
     chess.h\
     colordlg.h\
     globals.h\
+    hittest.h\
     mainwin.h\
     palette.h\
+    promote.h\
     protos.h\
     resource.h\
     sim.h\

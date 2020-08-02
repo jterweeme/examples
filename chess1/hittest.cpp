@@ -21,63 +21,64 @@
   notice must be preserved on all copies.
 */
 
-
+#include "hittest.h"
 #include "protos.h"
 
-static int deltay;
-static HRGN hitrgn[8];
+HitTest::HitTest()
+{
 
-void InitHitTest()
+}
+
+void HitTest::init()
 {
     POINT ptls[4];
     POINT toppt, botpt;
 
-    for (int i = 0; i<8; i++)
+    for (int i = 0; i < 8; i++)
     {
-        QuerySqOrigin(i, 0, ptls+0 );
-        QuerySqOrigin(i, 8, ptls+1 );
-        QuerySqOrigin(i + 1, 8, ptls+2 );
-        QuerySqOrigin(i + 1, 0, ptls+3 );
-        hitrgn[i] = ::CreatePolygonRgn(ptls, 4, WINDING);
+        QuerySqOrigin(i, 0, ptls + 0);
+        QuerySqOrigin(i, 8, ptls + 1);
+        QuerySqOrigin(i + 1, 8, ptls + 2);
+        QuerySqOrigin(i + 1, 0, ptls + 3);
+        _hitrgn[i] = ::CreatePolygonRgn(ptls, 4, WINDING);
     }
 
     QuerySqOrigin(0, 0, &botpt);
     QuerySqOrigin(0, 8, &toppt);
-    deltay = botpt.y-toppt.y;
+    _deltay = botpt.y - toppt.y;
 }
 
-void Hittest_Destructor()
+void HitTest::destroy()
 {
     for (int i = 0; i < 8; i++)
-        ::DeleteObject(hitrgn[i]);
+        ::DeleteObject(_hitrgn[i]);
 }
 
-static int HorzHitTest(int x, int y)
+int HitTest::_horzHitTest(int x, int y)
 {
     for (int i = 0; i < 8; i++)
-    {
-        if (::PtInRegion(hitrgn[i], x, y))
+        if (::PtInRegion(_hitrgn[i], x, y))
             return i;
-    }
+
     return -1;
 }
 
-int HitTest(int x, int y)
+int HitTest::test(int x, int y)
 {
     POINT sq00;
-    int xsq = HorzHitTest(x, y);
+    int xsq = _horzHitTest(x, y);
 
     if (xsq == -1)
         return -1;
 
-    QuerySqOrigin(0,0, &sq00);
+    QuerySqOrigin(0, 0, &sq00);
 
     if (y > sq00.y)
         return -1;
 
-    if (y < (sq00.y - deltay))
+    if (y < sq00.y - _deltay)
         return -1;
 
-    int ysq = 7 - (y - (sq00.y-deltay)) / (deltay/8);
-    return ysq*8 + xsq;
+    int ysq = 7 - (y - (sq00.y - _deltay)) / (_deltay / 8);
+    return ysq * 8 + xsq;
 }
