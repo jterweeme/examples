@@ -1,3 +1,9 @@
+// TicTac1 - Simple tic-tac-toe game
+//
+// Written for the book Programming Windows CE
+// Copyright (C) 2003 Douglas Boling
+// 2020 Jasper ter Weeme
+
 #include <windows.h>
 
 static RECT rectBoard;

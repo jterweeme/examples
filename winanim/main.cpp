@@ -1,6 +1,6 @@
 /* 
    Name: WinAnim
-   Author: Brook Miles
+   Author: Brook Miles, Jasper ter Weeme
    Description: Making an animation in windows
 */
 

@@ -1,3 +1,9 @@
+/*
+   Name: WinAnim
+   Author: Brook Miles, Jasper ter Weeme
+   Description: Making an animation in windows
+*/
+
 #include "ball.h"
 
 void Ball::_eraseBall(HDC hdc)
