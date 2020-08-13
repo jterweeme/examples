@@ -23,9 +23,61 @@
 
 #include "chess.h"
 #include "resource.h"
+#include "manual.h"
 
 static TCHAR ManualDlgChar[8];
+ManualDlg *ManualDlg::_instance;
 
+ManualDlg::ManualDlg(HINSTANCE hInstance) : _hInstance(hInstance)
+{
+    _instance = this;
+}
+
+INT_PTR ManualDlg::run(HWND hwnd, TCHAR *szPrompt)
+{
+    ::lstrcpy(ManualDlgChar, TEXT(""));
+    int stat = ::DialogBox(_hInstance, MAKEINTRESOURCE(MANUALDLG), hwnd, dlgProc);
+    ::lstrcpy(szPrompt, ManualDlgChar);
+    return stat;
+}
+
+INT_PTR ManualDlg::_dlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM)
+{
+    switch (msg)
+    {
+    case WM_INITDIALOG:
+        ::SendMessage(GetDlgItem(hwnd, 100), EM_LIMITTEXT, sizeof(ManualDlgChar) - 1, 0);
+        ::SetDlgItemText(hwnd, 100, ManualDlgChar);
+        return TRUE;
+    case WM_SYSCOMMAND:
+        if ((wParam & 0xfff0) == SC_CLOSE)
+        {
+            ::EndDialog(hwnd, FALSE);
+            return TRUE;
+        }
+        return FALSE;
+    case WM_COMMAND:
+        switch (wParam)
+        {
+        case IDOK:
+            ::GetDlgItemText(hwnd, 100, ManualDlgChar, sizeof(ManualDlgChar) - 1);
+            ::EndDialog(hwnd, TRUE);
+            return TRUE;
+        case IDCANCEL:
+            ::EndDialog(hwnd, FALSE);
+            return TRUE;
+        }
+        return FALSE;
+    }
+    return FALSE;
+}
+
+INT_PTR CALLBACK ManualDlg::dlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    return _instance->_dlgProc(hwnd, msg, wParam, lParam);
+}
+
+#if 0
 static INT_PTR CALLBACK
 ManualMoveDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM)
 {
@@ -65,5 +117,5 @@ int DoManualMoveDlg(HINSTANCE hInst, HWND hWnd, TCHAR *szPrompt)
     ::lstrcpy(szPrompt, ManualDlgChar);
     return stat;
 }
-
+#endif
 

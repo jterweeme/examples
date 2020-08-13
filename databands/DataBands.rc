@@ -1,0 +1,124 @@
+#include "resource.h"
+#include <windows.h>
+
+IDM_MENU MENU DISCARDABLE 
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "E&xit",                       IDM_FILE_EXIT
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&About",                      IDM_HELP_ABOUT
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOG DISCARDABLE  0, 0, 110, 55
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_CAPTIONOKBTN
+CAPTION "About DataBands"
+FONT 8, "Tahoma"
+BEGIN
+    ICON            IDI_DATABANDS,IDC_STATIC,11,17,20,20
+    LTEXT           "DataBands Version 1.0",IDC_STATIC,40,10,119,8,
+                    SS_NOPREFIX
+    LTEXT           "Copyright (C) 2001",IDC_STATIC,40,25,119,8
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 56
+        TOPMARGIN, 7
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDC_DATABANDS ACCELERATORS DISCARDABLE 
+BEGIN
+    "/",            IDM_HELP_ABOUT,         ASCII,  ALT, NOINVERT
+    VK_F4,          IDM_FILE_EXIT,          VIRTKEY, ALT, NOINVERT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_APP_TITLE              "DataBands"
+    IDC_DATABANDS          "DATABANDS"
+    IDS_NAME                       "Name"
+    IDS_BADGE                     "Badge"
+    IDS_DESC                         "Description"
+    IDS_CAT                           "Category"
+    IDS_MODE_TRAVEL      "Travel by.."
+    IDS_WHERE_SEEN         "Where Seen"
+    IDS_PHYS_EVIDENCE   "Physical Evidence"
+    IDS_OFFICE                      "Home Office"
+    IDS_ABDUCTIONS          "Abductions"
+    IDS_FRIENDLY                "Friendly"
+    IDS_TALKATIVE             "Communicates"
+    IDS_APPEARANCE         "Appearance"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_CAT1                              "Sighting"
+    IDS_CAT2                              "Contact"
+    IDS_MODE_TRAVEL1        "Space Ship"
+    IDS_MODE_TRAVEL2        "Levitation"
+    IDS_MODE_TRAVEL3        "Bicycle"
+    IDS_WHERE1                       "Moonlit Desert"
+    IDS_WHERE2                       "Moonlit Seascape"
+    IDS_WHERE3                       "Hard to describe"
+    IDS_PHYS_EVIDENCE1     "Burnt ring of grass"
+    IDS_PHYS_EVIDENCE2     "Distressed livestock"
+    IDS_PHYS_EVIDENCE3     "Alien landing party"
+    IDS_OFFICE1                       "Sedona, Arizona"
+    IDS_OFFICE2                       "Crestone, Colorado"
+    IDS_OFFICE3                       "Roswell, New Mexico"
+    IDS_ABDUCTIONS1          "Took family pets"
+    IDS_ABDUCTIONS2          "Took Cell Phone sales person"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_ABDUCTIONS3         "Returned chemistry teacher"
+    IDS_APPEARANCE1         "Scary"
+    IDS_APPEARANCE2         "Cute"
+    IDS_APPEARANCE3         "Dressed Like L. Nemoy"
+    IDS_APPEARANCE4         "Not Dressed"
+    IDS_APPEARANCE5         "Can't Recall"
+    IDS_FRIENDLY1               "Really Friendly"
+    IDS_FRIENDLY2               "So So"
+    IDS_FRIENDLY3               "Standoffish"
+    IDS_TALKATIVE1            "Pleasantly chatty"
+    IDS_TALKATIVE2            "Shy but sensitive"
+    IDS_TALKATIVE3            "Taciturn"
+END
+
+

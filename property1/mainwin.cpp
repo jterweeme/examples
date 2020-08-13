@@ -43,7 +43,7 @@ INT_PTR CALLBACK About(HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM)
     return FALSE;
 }
 
-LRESULT CALLBACK
+static INT_PTR CALLBACK
 ButtonsDlgProc(HWND hdlg, UINT uMessage, WPARAM, LPARAM lParam)
 {
     LPNMHDR lpnmhdr;
@@ -78,7 +78,7 @@ ButtonsDlgProc(HWND hdlg, UINT uMessage, WPARAM, LPARAM lParam)
     return FALSE;
 }
 
-LRESULT CALLBACK
+static INT_PTR CALLBACK
 ComboDlgProc(HWND hdlg, UINT uMessage, WPARAM, LPARAM lParam)
 {
     LPNMHDR lpnmhdr;

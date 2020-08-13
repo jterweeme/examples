@@ -28,7 +28,7 @@
 #include "board.h"
 
 /* All units defined in pixels */
-static constexpr LONG BRD_HORZFRONT = 48, BRD_HORZBACK = 32, BRD_VERT = 32,
+static CONSTEXPR LONG BRD_HORZFRONT = 48, BRD_HORZBACK = 32, BRD_VERT = 32,
     BRD_EDGE = 8, BRD_HORZMARGIN = 32, BRD_BACKMARGIN = 5, BRD_FRONTMARGIN = 5;
 
 static int HilitSq;
@@ -49,12 +49,6 @@ void QueryBoardSize(POINT *pptl)
 {
     pptl->x = 2 * BRD_HORZMARGIN + 8 * BRD_HORZFRONT;
     pptl->y = BRD_BACKMARGIN + 8 * BRD_VERT + 2 * BRD_FRONTMARGIN + 2 * BRD_EDGE;
-}
-
-void QuerySqSize(POINT *pptl)
-{
-    pptl->x = BRD_HORZFRONT;
-    pptl->y = BRD_VERT;
 }
 
 void QuerySqOrigin(short x, short y, POINT *pptl)

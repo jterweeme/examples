@@ -20,34 +20,36 @@ void MainWindow::create()
 
 BOOL MainWindow::_loadFile(HWND hEdit, LPCTSTR pszFileName)
 {
+    LPSTR pszFileText2;
+    DWORD dwRead;
     BOOL bSuccess = FALSE;
-    HANDLE hFile = CreateFile(pszFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
+
+    HANDLE hFile = CreateFile(pszFileName, GENERIC_READ,
+                       FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
 
     if (hFile == INVALID_HANDLE_VALUE)
         throw TEXT("Cannot open file");
 
     DWORD dwFileSize = GetFileSize(hFile, NULL);
 
-    if (dwFileSize != 0xFFFFFFFF)
+    if (dwFileSize == 0xFFFFFFFF)
+        goto cleanup;
+
+    pszFileText2 = LPSTR(GlobalAlloc(GPTR, dwFileSize + 1));
+
+    if (pszFileText2 == NULL)
+        goto cleanup;
+
+    if (ReadFile(hFile, pszFileText2, dwFileSize, &dwRead, NULL))
     {
-        LPSTR pszFileText2 = LPSTR(GlobalAlloc(GPTR, dwFileSize + 1));
+        pszFileText2[dwFileSize] = 0; // Null terminator
 
-        if (pszFileText2 != NULL)
-        {
-            DWORD dwRead;
-
-            if (ReadFile(hFile, pszFileText2, dwFileSize, &dwRead, NULL))
-            {
-                pszFileText2[dwFileSize] = 0; // Null terminator
-
-                if (SetWindowTextA(hEdit, pszFileText2))
-                    bSuccess = TRUE; // It worked!
-            }
-            GlobalFree(pszFileText2);
-        }
+        if (SetWindowTextA(hEdit, pszFileText2))
+            bSuccess = TRUE; // It worked!
     }
+    GlobalFree(pszFileText2);
+cleanup:
     CloseHandle(hFile);
-
     return bSuccess;
 }
 
@@ -59,7 +61,7 @@ BOOL MainWindow::SaveFile(HWND hEdit, LPCTSTR pszFileName)
                                 CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 
     if (hFile == INVALID_HANDLE_VALUE)
-        return bSuccess;
+        return FALSE;
 
     DWORD dwTextLength = GetWindowTextLength(hEdit);
 
@@ -131,44 +133,44 @@ LRESULT MainWindow::_wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg)
     {
-        case WM_CREATE:
-            _editBox.create(_wc->hInstance(), hwnd);
-            break;
-        case WM_SIZE:
-            if (wParam != SIZE_MINIMIZED)
-                _editBox.move(0, 0, LOWORD(lParam), HIWORD(lParam), TRUE);
+    case WM_CREATE:
+        _editBox.create(_wc->hInstance(), hwnd);
+        break;
+    case WM_SIZE:
+        if (wParam != SIZE_MINIMIZED)
+            _editBox.move(0, 0, LOWORD(lParam), HIWORD(lParam), TRUE);
 
+        break;
+    case WM_SETFOCUS:
+        _editBox.setFocus();
+        break;
+    case WM_COMMAND:
+        switch (LOWORD(wParam))
+        {
+        case CM_FILE_OPEN:
+            DoFileOpenSave(hwnd, FALSE);
             break;
-        case WM_SETFOCUS:
-            _editBox.setFocus();
+        case CM_FILE_SAVEAS:
+            DoFileOpenSave(hwnd, TRUE);
             break;
-        case WM_COMMAND:
-            switch (LOWORD(wParam))
-            {
-                case CM_FILE_OPEN:
-                    DoFileOpenSave(hwnd, FALSE);
-                    break;
-                case CM_FILE_SAVEAS:
-                    DoFileOpenSave(hwnd, TRUE);
-                    break;
-                case CM_FILE_EXIT:
-                    ::PostMessage(hwnd, WM_CLOSE, 0, 0);
-                    break;
-                case CM_ABOUT:
-                    ::MessageBox(NULL,
-                          TEXT("File Editor for Windows !\n Using the Win32 API"),
-                          TEXT("About..."), 0);
-                    break;
-            }
+        case CM_FILE_EXIT:
+            ::PostMessage(hwnd, WM_CLOSE, 0, 0);
             break;
-        case WM_CLOSE:
-            DestroyWindow(hwnd);
+        case CM_ABOUT:
+            ::MessageBox(NULL,
+                  TEXT("File Editor for Windows !\n Using the Win32 API"),
+                  TEXT("About..."), 0);
             break;
-        case WM_DESTROY:
-            PostQuitMessage(0);
-            break;
-        default:
-            break;
+        }
+        break;
+    case WM_CLOSE:
+        DestroyWindow(hwnd);
+        break;
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        break;
+    default:
+        break;
     }
 
     return DefWindowProc(hwnd, msg, wParam, lParam);

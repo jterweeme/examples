@@ -3,6 +3,9 @@
 #include "chess.h"
 #include <windows.h>
 
+extern void ShowSidetoMove();
+extern void UpdateClocks();
+
 class Board;
 class Sim;
 class WinClass;
@@ -17,7 +20,7 @@ private:
     HWND _hwnd;
     int _firstSq;         /* Flag is a square is selected */
     int _gotFirst;
-    int EditActive;   /* Edit mode? */
+    int _editActive;   /* Edit mode? */
     int User_Move;     /* User or computer's turn */
     HMENU hMainMenu;
     void _makeHelpPathName(TCHAR *szFileName);
@@ -38,7 +41,7 @@ private:
     HACCEL _hAccel;
     HitTest *_hitTest;
     PIECEBITMAP *_pieces;
-    HWND _hComputerColor;
+    HWND _hComputerColor, _hMsgHuman;
 public:
     MainWindow(WinClass *wc, Sim *sim);
     HWND hwnd() const;

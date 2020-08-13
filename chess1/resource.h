@@ -178,7 +178,7 @@
 #define IDM_TIMECONTROL 306
 
 #define IDD_ABOUT    262
-#define REVIEW      263
+#define IDD_REVIEW      263
 #define NUMBERDLG   264
 #define COLOR       266
 #define TIMECONTROL 267

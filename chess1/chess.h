@@ -32,19 +32,25 @@
 #define white 0
 #define black 1
 
-static constexpr short VALUER = 550, VALUEB = 355, VALUEN = 350,
+#if __cplusplus >= 201103L
+#define CONSTEXPR constexpr
+#else
+#define CONSTEXPR const
+#endif
+
+static CONSTEXPR short VALUER = 550, VALUEB = 355, VALUEN = 350,
     VALUEQ = 1100, VALUEK = 1200, BPAWN = 7, PMASK = 0x0007,
     PROMOTE = 0x0008, NEUTRAL = 2,
     NO_PIECE = 0, PAWN = 1, KNIGHT = 2, BISHOP = 3, ROOK = 4, QUEEN = 5, KING = 6;
 
-static constexpr WORD CSTLMASK = 0x0010, EPMASK = 0x0020, CAPTURE = 0x0200;
+static CONSTEXPR WORD CSTLMASK = 0x0010, EPMASK = 0x0020, CAPTURE = 0x0200;
 
-constexpr int locn(int a, int b)
+CONSTEXPR int locn(int a, int b)
 {
     return a << 3 | b;
 }
 
-constexpr short column(short a)
+CONSTEXPR short column(short a)
 {
     return a & 7;
 }

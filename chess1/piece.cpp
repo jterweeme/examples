@@ -26,10 +26,11 @@
 
 #include "protos.h"
 #include "globals.h"
+#include "board.h"
 
-static constexpr LONG PIECE_XAXIS = 32, PIECE_YAXIS = 32;
+static CONSTEXPR LONG PIECE_XAXIS = 32, PIECE_YAXIS = 32;
 
-static short constexpr ConvertCoordToIndex(short x, short y)
+static short CONSTEXPR ConvertCoordToIndex(short x, short y)
 {
     return y * 8 + x;
 }
@@ -96,7 +97,7 @@ static void DrawOnePiece(HDC hdc, short x, short y, PIECEBITMAP *piece, COLORREF
     ShowPiece(hdc, &origin, piece, color);
 }
 
-static constexpr short NETURAL = 2;
+static CONSTEXPR short NETURAL = 2;
 
 void DrawAllPieces(HDC hDC, PIECEBITMAP *pieces, int reverse, short *pbrd,
                    short *color, COLORREF clrblack, COLORREF clrwhite)

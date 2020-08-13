@@ -27,16 +27,22 @@
 #include "resource.h"
 #include "protos.h"
 #include "globals.h"
+#include "book.h"
 
 #define MAX_BOOK_SIZE (32*1024)
 
 static DWORD book_used = 0;
 static char *xBook;
 
-void FreeBook(void)
+Book::Book()
 {
-    ::GlobalUnlock(hBook);
-    ::GlobalFree(hBook);
+
+}
+
+void FreeBook()
+{
+    GlobalUnlock(hBook);
+    GlobalFree(hBook);
     hBook = 0;
     book_used = 0;
 }

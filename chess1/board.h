@@ -3,6 +3,10 @@
 
 #include <windows.h>
 
+extern void QueryBoardSize(POINT *pptl);
+extern void QuerySqOrigin(short x, short y, POINT *pptl);
+extern void QuerySqCoords(short x, short y, POINT aptl[]);
+
 class Board
 {
 public:

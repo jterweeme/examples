@@ -1,11 +1,12 @@
 TEMPLATE = app
+CONFIG += silent
+#QMAKE_POST_LINK=copy gnuchess.boo $$DESTDIR
 
 SOURCES += about.cpp\
     board.cpp\
     book.cpp\
     colordlg.cpp\
     dsp.cpp\
-    eval.cpp\
     globals.cpp\
     hittest.cpp\
     main.cpp\
@@ -17,7 +18,6 @@ SOURCES += about.cpp\
     piece.cpp\
     promote.cpp\
     review.cpp\
-    search.cpp\
     sim.cpp\
     stats.cpp\
     test.cpp\
@@ -26,15 +26,19 @@ SOURCES += about.cpp\
     winclass.cpp
 
 HEADERS += board.h\
+    book.h\
     chess.h\
     colordlg.h\
+    dialog.h\
     globals.h\
     hittest.h\
     mainwin.h\
+    manual.h\
     palette.h\
     promote.h\
     protos.h\
     resource.h\
+    review.h\
     sim.h\
     toolbox.h\
     winclass.h
@@ -45,6 +49,7 @@ OTHER_FILES += chess.rc\
     bishop.bmp\
     bishopm.bmp\
     bishopo.bmp\
+    gnuchess.boo\
     king.bmp\
     kingm.bmp\
     kingo.bmp\

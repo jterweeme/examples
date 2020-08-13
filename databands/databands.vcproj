@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="FosHMI"
-	ProjectGUID="{A3ADA321-0BD4-4534-1234-0D772DDC4951}"
+	Name="databands"
+	ProjectGUID="{A3ADA321-8888-4534-ADEC-0D772DDC4951}"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -41,6 +41,7 @@
 				Name="VCCLCompilerTool"
 				ExecutionBucket="7"
 				Optimization="0"
+				AdditionalIncludeDirectories="../common"
 				PreprocessorDefinitions="_DEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;DEBUG;_WINDOWS;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE;STANDARDSHELL_UI_MODEL"
 				MinimalRebuild="false"
 				RuntimeLibrary="1"
@@ -63,7 +64,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,5.00 /nodefaultlib:libc.lib"
-				OutputFile="$(OutDir)/test951.exe"
+				AdditionalDependencies="aygshell.lib"
+				OutputFile="$(OutDir)/winmine.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories=""
 				DelayLoadDLLs="$(NOINHERIT)"
@@ -206,75 +208,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\about.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\board.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\book.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\dsp.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\globals.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\hittest.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\main.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\manual.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\mswdsp.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\numdlg.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\piece.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\promote.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\review.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\sim.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\stats.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\test.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\timecnt.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\winclass.cpp"
+				RelativePath=".\DataBands.cpp"
 				>
 			</File>
 		</Filter>
@@ -284,31 +218,11 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\chess.h"
-				>
-			</File>
-			<File
-				RelativePath=".\defs.h"
-				>
-			</File>
-			<File
-				RelativePath=".\globals.h"
-				>
-			</File>
-			<File
-				RelativePath=".\gnuchess.h"
+				RelativePath=".\DataBands.h"
 				>
 			</File>
 			<File
 				RelativePath=".\resource.h"
-				>
-			</File>
-			<File
-				RelativePath=".\saveopen.h"
-				>
-			</File>
-			<File
-				RelativePath=".\winclass.h"
 				>
 			</File>
 		</Filter>
@@ -318,7 +232,7 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 			<File
-				RelativePath=".\chess.rc"
+				RelativePath=".\DataBands.rc"
 				>
 			</File>
 		</Filter>

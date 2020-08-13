@@ -31,6 +31,7 @@
 #include "toolbox.h"
 #include "resource.h"
 #include "sim.h"
+#include "book.h"
 #include <ctime>
 
 #ifdef WINCE
@@ -59,10 +60,6 @@ static void start_main(HINSTANCE hInstance, HWND hwnd, HWND compClr, Sim *sim)
     {
         Toolbox().messageBox(hInstance, 0, IDS_UNKNOWNERR, IDS_CHESS);
     }
-
-    flag.easy = true;
-    flag.hash = true;
-    hashfile = NULL;
 }
 
 int WINAPI

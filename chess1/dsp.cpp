@@ -25,10 +25,10 @@
 */
 
 #include "protos.h"
-#include "chess.h"
 #include "resource.h"
 #include "globals.h"
 #include "toolbox.h"
+#include "mainwin.h"
 #include <ctime>
 #include <iostream>
 
@@ -42,11 +42,11 @@ void algbr(short f, short t, short flag)
     if (f != t)
     {
         /* algebraic notation */
-        mvstr[0][0] = char('a' + column(f));
-        mvstr[0][1] = char('1' + (f >> 3));
-        mvstr[0][2] = char('a' + column(t));
-        mvstr[0][3] = char('1' + (t >> 3));
-        mvstr[0][4] = mvstr[3][0] = '\0';
+        ::mvstr[0][0] = char('a' + column(f));
+        ::mvstr[0][1] = char('1' + (f >> 3));
+        ::mvstr[0][2] = char('a' + column(t));
+        ::mvstr[0][3] = char('1' + (t >> 3));
+        ::mvstr[0][4] = ::mvstr[3][0] = '\0';
 
         if ((mvstr[1][0] = " PNBRQK"[board[f]]) == 'P')
         {
@@ -79,7 +79,7 @@ void algbr(short f, short t, short flag)
             mvstr[2][2] = mvstr[1][1] = mvstr[0][2];      /* to column */
             mvstr[2][3] = mvstr[1][2] = mvstr[0][3];      /* to row */
             mvstr[2][4] = mvstr[1][3] = '\0';
-            ::lstrcpy(mvstr[3], mvstr[2]);
+            ::lstrcpy(::mvstr[3], ::mvstr[2]);
             mvstr[3][1] = mvstr[0][0];
 
             if (flag & CSTLMASK)
@@ -111,18 +111,15 @@ void algbr(short f, short t, short flag)
   the elapsed time exceeds the target (ResponseTime+ExtraTime) then set
   timeout to true which will terminate the search.
 */
-void ElapsedTime(short iop, long extra, long responseTime)
+void ElapsedTime(short iop, long extra, long responseTime, long xft)
 {
-    et = ::time(0) - time0;
+    ::et = ::time(0) - ::time0;
+    ::et = myMax(::et, long(0));
+    ::ETnodes += 50;
 
-    if (et < 0)
-        et = 0;
-
-    ETnodes += 50;
-
-    if (et > et0 || iop == 1)
+    if (::et > ::et0 || iop == 1)
     {
-        if (et > responseTime + extra && Sdepth > 1)
+        if (::et > responseTime + extra && ::Sdepth > 1)
             flag.timeout = true;
 
         et0 = et;
@@ -133,35 +130,28 @@ void ElapsedTime(short iop, long extra, long responseTime)
             et0 = 0;
         }
 
-        if (et > 0)
-        {
-            /* evrate used to be Nodes / cputime I dont` know why */
-            evrate = NodeCnt / (et + ft);
-        }
-        else
-        {
-            evrate = 0;
-        }
+        /* evrate used to be Nodes / cputime I dont know why */
+        ::evrate = ::et > 0 ? ::NodeCnt / (::et + xft) : 0;
         ETnodes = NodeCnt + 50;
         UpdateClocks();
     }
 }
 
-void SetTimeControl()
+void SetTimeControl(long xft)
 {
-    if (TCflag)
+    if (::TCflag)
     {
-        TimeControl.moves[white] = TimeControl.moves[black] = TCmoves;
-        TimeControl.clock[white] = TimeControl.clock[black] = 60 * (long) TCminutes;
+        ::TimeControl.moves[white] = ::TimeControl.moves[black] = ::TCmoves;
+        ::TimeControl.clock[white] = ::TimeControl.clock[black] = 60 * long(::TCminutes);
     }
     else
     {
-        TimeControl.moves[white] = TimeControl.moves[black] = 0;
-        TimeControl.clock[white] = TimeControl.clock[black] = 0;
-        Level = 60 * (long) TCminutes;
+        ::TimeControl.moves[white] = TimeControl.moves[black] = 0;
+        ::TimeControl.clock[white] = TimeControl.clock[black] = 0;
+        ::Level = 60 * long(TCminutes);
     }
-    et = 0;
-    ElapsedTime(1, ExtraTime, ResponseTime);
+    ::et = 0;
+    ElapsedTime(1, ExtraTime, ResponseTime, xft);
 }
 
 void GetGame(HWND hWnd, HWND compClr, char *fname)
@@ -199,7 +189,7 @@ void GetGame(HWND hWnd, HWND compClr, char *fname)
     while (c != EOF)
     {
         ++GameCnt;
-        c = fscanf (fd, "%hd%hd%hd%ld%hd%hd%hd", &tmp_rec.gmove,
+        c = fscanf(fd, "%hd%hd%hd%ld%hd%hd%hd", &tmp_rec.gmove,
                   &tmp_rec.score, &tmp_rec.depth,
                   &tmp_rec.nodes, &tmp_rec.time,
                   &tmp_rec.piece, &tmp_rec.color);
@@ -223,40 +213,6 @@ void GetGame(HWND hWnd, HWND compClr, char *fname)
     InitializeStats();
     Sdepth = 0;
     UpdateDisplay(hWnd, compClr, 0, 0, 1, 0, flag.reverse);
-}
-
-void SaveGame(HWND, char *fname)
-{
-    FILE *fd = ::fopen(fname, "w");
-
-    if (fd == NULL)
-        throw TEXT("Not saved");
-
-    ::fprintf(fd, "%d %d %d\n", computer + 1, opponent + 1, Game50);
-    ::fprintf(fd, "%d %d\n", castld[white], castld[black]);
-    ::fprintf(fd, "%d %d\n", TCflag, OperatorTime);
-
-    ::fprintf(fd, "%ld %ld %d %d\n",
-           TimeControl.clock[white], TimeControl.clock[black],
-           TimeControl.moves[white], TimeControl.moves[black]);
-
-    for (short sq = 0; sq < 64; sq++)
-    {
-        short c = color[sq] == NEUTRAL ? 0 : color[sq] + 1;
-        ::fprintf(fd, "%d %d\n", 256 * board[sq] + c, Mvboard[sq]);
-    }
-
-    for (short i = 1; i <= GameCnt; i++)
-    {
-        short c = GameList[i].color == NEUTRAL ? 0 : GameList[i].color + 1;
-
-        fprintf (fd, "%d %d %d %ld %d %d %d\n",
-               GameList[i].gmove, GameList[i].score, GameList[i].depth,
-               GameList[i].nodes, GameList[i].time,
-               GameList[i].piece, c);
-    }
-
-    ::fclose(fd);
 }
 
 void ListGame(char *fname)
@@ -290,54 +246,3 @@ void ListGame(char *fname)
     ::fclose(fd);
 }
 
-/*
-  Undo the most recent half-move.
-*/
-void Undo(HWND hWnd, HWND compClr)
-{
-    short f = GameList[GameCnt].gmove >> 8;
-    short t = GameList[GameCnt].gmove & 0xFF;
-
-    if (board[t] == KING && *(distdata + t * 64 + f) > 1)
-    {
-        (void)castle(GameList[GameCnt].color, f, t, 2);
-    }
-    else
-    {
-        /* Check for promotion: */
-        if ((color[t] == white && (f >> 3) == 6 && (t >> 3) == 7) ||
-            (color[t] == black && (f >> 3) == 1 && (t >> 3) == 0))
-        {
-            int g, from = f;
-
-            for (g = GameCnt - 1; g > 0; g--)
-                if (GameList[g].gmove & (0xFF == from))
-                    from = GameList[g].gmove >> 8;
-
-            if ((color[t] == white && (from >> 3) == 1) || (color[t] == black && (from >> 3) == 6))
-            {
-                board[t] = PAWN;
-            }
-        }
-        board[f] = board[t];
-        color[f] = color[t];
-        board[t] = GameList[GameCnt].piece;
-        color[t] = GameList[GameCnt].color;
-
-        if (color[t] != NEUTRAL)
-            Mvboard[t]--;
-
-        Mvboard[f]--;
-    }
-
-    if (TCflag)
-        ++TimeControl.moves[color[f]];
-
-    GameCnt--;
-    computer = otherside[computer];
-    opponent = otherside[opponent];
-    flag.mate = false;
-    Sdepth = 0;
-    UpdateDisplay(hWnd, compClr, 0, 0, 1, 0, flag.reverse);
-    InitializeStats();
-}

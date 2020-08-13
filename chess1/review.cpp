@@ -24,35 +24,45 @@
 #include "protos.h"
 #include "globals.h"
 #include "resource.h"
+#include "review.h"
 
-static INT_PTR CALLBACK
-ReviewDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
+ReviewDialog *ReviewDialog::_instance;
+
+ReviewDialog::ReviewDialog(HINSTANCE hInstance) : _hInstance(hInstance)
 {
-    int i, f, t;
-    TCHAR tmp[50];
+    _instance = this;
+}
 
-    switch (message)
+INT_PTR ReviewDialog::run(HWND hwnd)
+{
+    return DialogBox(_hInstance, MAKEINTRESOURCE(IDD_REVIEW), hwnd, dlgProc);
+}
+
+INT_PTR ReviewDialog::_dlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM)
+{
+    switch (msg)
     {
     case WM_INITDIALOG:
-        for (i = 1; i <= GameCnt; i++)
+        for (int i = 1; i <= GameCnt; i++)
         {
-            f = GameList[i].gmove >> 8;
-            t = (GameList[i].gmove & 0xFF);
+            int f = GameList[i].gmove >> 8;
+            int t = (GameList[i].gmove & 0xFF);
             algbr(f, t, false);
+            TCHAR tmp[50];
 
             wsprintf(tmp, TEXT("%4d-%c\t%5s\t%-5d\t%-2d\t%-5d"),
-                    (i+1)/2, i % 2 ? 'w' : 'b', (char *)mvstr[0],
+                    (i + 1) / 2, i % 2 ? 'w' : 'b', (char *)mvstr[0],
                     GameList[i].score, GameList[i].depth,
                     GameList[i].time);
 
-            SendDlgItemMessage(hDlg, 100, LB_ADDSTRING, 0, LPARAM(tmp));
+            ::SendDlgItemMessage(hwnd, 100, LB_ADDSTRING, 0, LPARAM(tmp));
         }
-        SendDlgItemMessage(hDlg, 100, WM_SETREDRAW, TRUE, 0);
+        ::SendDlgItemMessage(hwnd, 100, WM_SETREDRAW, TRUE, 0);
         return TRUE;
     case WM_SYSCOMMAND:
         if ((wParam & 0xfff0) == SC_CLOSE)
-		{
-            EndDialog(hDlg, NULL);
+        {
+            ::EndDialog(hwnd, NULL);
             return TRUE;
         }
         break;
@@ -60,7 +70,7 @@ ReviewDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
         switch (wParam)
         {
         case IDOK:
-            EndDialog(hDlg, 1);
+            ::EndDialog(hwnd, 1);
             return TRUE;
         }
         break;
@@ -69,9 +79,8 @@ ReviewDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
     return FALSE;
 }
 
-int ReviewDialog(HWND hWnd, HINSTANCE hInst)
+INT_PTR CALLBACK ReviewDialog::dlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    int status = DialogBoxParam(hInst, MAKEINTRESOURCE(REVIEW), hWnd, ReviewDlgProc, 0);
-    return status;
+    return _instance->_dlgProc(hwnd, msg, wParam, lParam);
 }
 

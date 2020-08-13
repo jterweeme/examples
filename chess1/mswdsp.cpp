@@ -28,19 +28,12 @@
 #include "resource.h"
 #include "globals.h"
 #include "toolbox.h"
+#include "board.h"
 
 void ShowPlayers(HWND hwnd)
 {
     /* display in the status line what color the computer is playing */
     ::SetWindowText(hwnd, computer == black ? TEXT("Computer is black") : TEXT("Computer is white"));
-}
-
-void SMessageBox(HINSTANCE hInstance, HWND hWnd, int str_num, int str1_num )
-{
-    TCHAR str[80], str1[20];
-    ::LoadString(hInstance, str_num, str, sizeof(str));
-    ::LoadString(hInstance, str1_num, str1, sizeof ( str1 ) );
-    ::MessageBox(hWnd, str, str1, MB_OK | MB_ICONEXCLAMATION | MB_APPLMODAL );
 }
 
 void ShowCurrentMove(HWND hwnd, short pnt, short f, short t)
@@ -53,15 +46,6 @@ void ShowCurrentMove(HWND hwnd, short pnt, short f, short t)
         ::wsprintf(tmp, TEXT("(%2d) %4s"), pnt, LPCTSTR(mvstr[0]));
         ::SetDlgItemText(hwnd, POSITIONTEXT, tmp);
     }
-}
-
-static LPCTSTR ColorStr[2] = {TEXT("White"), TEXT("Black")};
-
-void ShowSidetoMove()
-{
-    TCHAR tmp[30];
-    ::wsprintf(tmp, TEXT("It is %s's turn"), ColorStr[player]);
-    ::SetWindowText(hWhosTurn, tmp);
 }
 
 void ShowNodeCnt(HWND hwnd, long NodeCnt, long evrate)
@@ -81,28 +65,7 @@ void SearchStartStuff(short int)
 {
 }
 
-void UpdateClocks()
-{
-    TCHAR tmp[20];
-    short m = short(et / 60);
-    short s = short(et - 60 * (long)m);
-
-    if (TCflag)
-    {
-        m = short((TimeControl.clock[player] - et) / 60);
-        s = short(TimeControl.clock[player] - et - 60 * (long)m);
-    }
-
-    m = ::myMax(m, short(0));
-    s = ::myMax(s, short(0));
-    ::wsprintf(tmp, TEXT("%0d:%02d"), m, s);
-    ::SetWindowText(player == white ? hClockHuman : hClockComputer, tmp);
-
-    if (flag.post)
-        ShowNodeCnt(hStats, NodeCnt, evrate);
-}
-
-void DrawPiece(HWND hWnd, short f, bool reverse)
+static void DrawPiece(HWND hWnd, short f, bool reverse)
 {
     int x = reverse ? 7 - f % 8 : f % 8;
     int y = reverse ? 7 - f / 8 : f / 8;
@@ -113,7 +76,8 @@ void DrawPiece(HWND hWnd, short f, bool reverse)
     ::DeleteObject(hRgn);
 }
 
-void UpdateDisplay(HWND hWnd, HWND compClr, short f, short t, short redraw, short isspec, bool reverse)
+void UpdateDisplay(HWND hWnd, HWND compClr, short f, short t,
+                   short redraw, short isspec, bool reverse)
 {
     for (short sq = 0; sq < 64; sq++)
     {
