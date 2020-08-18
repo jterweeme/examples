@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="FosHMI"
+	Name="chess1"
 	ProjectGUID="{A3ADA321-0BD4-4534-1234-0D772DDC4951}"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
@@ -231,6 +231,10 @@
 			</File>
 			<File
 				RelativePath=".\main.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\mainwin.cpp"
 				>
 			</File>
 			<File

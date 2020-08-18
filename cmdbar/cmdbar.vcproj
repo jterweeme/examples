@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="cechat"
+	Name="cmdbar"
 	ProjectGUID="{A3ADA321-9999-4534-ADEC-0D772DDC4951}"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
@@ -68,7 +68,7 @@
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,5.00 /nodefaultlib:libc.lib"
 				AdditionalDependencies="aygshell.lib"
-				OutputFile="$(OutDir)/cechat.exe"
+				OutputFile="$(OutDir)/cmdbar.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories=""
 				DelayLoadDLLs="$(NOINHERIT)"
@@ -328,28 +328,12 @@
 				RelativePath=".\main.cpp"
 				>
 			</File>
-			<File
-				RelativePath=".\mainwin.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\menubar.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
-			<File
-				RelativePath=".\mainwin.h"
-				>
-			</File>
-			<File
-				RelativePath=".\menubar.h"
-				>
-			</File>
 			<File
 				RelativePath=".\resource.h"
 				>

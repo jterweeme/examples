@@ -38,6 +38,12 @@
 #define CONSTEXPR const
 #endif
 
+#if __cplusplus >= 201103L
+#define MAKRO constexpr
+#else
+#define MAKRO inline
+#endif
+
 static CONSTEXPR short VALUER = 550, VALUEB = 355, VALUEN = 350,
     VALUEQ = 1100, VALUEK = 1200, BPAWN = 7, PMASK = 0x0007,
     PROMOTE = 0x0008, NEUTRAL = 2,
@@ -45,12 +51,12 @@ static CONSTEXPR short VALUER = 550, VALUEB = 355, VALUEN = 350,
 
 static CONSTEXPR WORD CSTLMASK = 0x0010, EPMASK = 0x0020, CAPTURE = 0x0200;
 
-CONSTEXPR int locn(int a, int b)
+MAKRO int locn(int a, int b)
 {
     return a << 3 | b;
 }
 
-CONSTEXPR short column(short a)
+MAKRO short column(short a)
 {
     return a & 7;
 }

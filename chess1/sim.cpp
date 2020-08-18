@@ -7,10 +7,9 @@
 #include "book.h"
 #include <ctime>
 
-static constexpr short VALUEP = 100;
-
-static constexpr BYTE TRUESCORE = 0x01, LOWERBOUND = 0x02,
-    UPPERBOUND = 0x04, KINGCASTLE = 0x08, QUEENCASTLE = 0x10;
+static CONSTEXPR short VALUEP = 100;
+static CONSTEXPR BYTE TRUESCORE = 0x01, LOWERBOUND = 0x02;
+static CONSTEXPR BYTE UPPERBOUND = 0x04, KINGCASTLE = 0x08, QUEENCASTLE = 0x10;
 
 static FILE *hashfile;
 static HashVal *hashcode;
@@ -96,20 +95,20 @@ void Sim::FreeGlobals()
 {
     if (hHistory)
     {
-        ::GlobalUnlock(hHistory);
-        ::GlobalFree(hHistory);
+        GlobalUnlock(hHistory);
+        GlobalFree(hHistory);
     }
 
     if (hnextdir)
     {
-        ::GlobalUnlock(hnextdir);
-        ::GlobalFree(hnextdir);
+        GlobalUnlock(hnextdir);
+        GlobalFree(hnextdir);
     }
 
     if (hGameList)
     {
-        ::GlobalUnlock(hGameList);
-        ::GlobalFree(hGameList);
+        GlobalUnlock(hGameList);
+        GlobalFree(hGameList);
     }
 
     if (hTTable)
@@ -138,14 +137,14 @@ void Sim::FreeGlobals()
 
     if (hdistdata)
     {
-        ::GlobalUnlock(hdistdata);
-        ::GlobalFree(hdistdata);
+        GlobalUnlock(hdistdata);
+        GlobalFree(hdistdata);
     }
 
     if (hnextpos)
     {
-        ::GlobalUnlock(hnextpos);
-        ::GlobalFree(hnextpos);
+        GlobalUnlock(hnextpos);
+        GlobalFree(hnextpos);
     }
 }
 
@@ -717,11 +716,11 @@ bool xrecapture(short score, short alpha, short beta, short ply)
     return flag.rcptr && score > alpha && score < beta && ply > 2 && CptrFlag[ply - 1] && CptrFlag[ply - 2];
 }
 
-static constexpr WORD FREHASH = 6, EXACT = 0x0040, DRAW = 0x0400;
+static CONSTEXPR WORD FREHASH = 6, EXACT = 0x0040, DRAW = 0x0400;
 
-static constexpr short PWNTHRT = 0x0080;
+static CONSTEXPR short PWNTHRT = 0x0080;
 
-static constexpr short row(short a)
+static CONSTEXPR short row(short a)
 {
     return a >> 3;
 }
@@ -892,7 +891,7 @@ static bool anyatak(short c, short u)
     return atak[c][u] > 0;
 }
 
-static constexpr short CTLR = 0x0400, CTLQ = 0x0200, CTLK = 0x0100,
+static CONSTEXPR short CTLR = 0x0400, CTLQ = 0x0200, CTLK = 0x0100,
     CTLP = 0x4000, CTLB = 0x1800, CTLN = 0x2800, CTLRQ = 0x0600,
     CTLBN = 0x0800, CTLBQ = 0x1200, CTLNN = 0x2000;
 
@@ -1954,6 +1953,7 @@ static void OutputMove(HINSTANCE hInstance, HWND hwnd, HWND compClr, Leaf *node)
     ::wsprintf(tmp, TEXT("My move is %s"), mvstr[0]);
     ::SetWindowText(compClr, tmp);
     Toolbox t;
+    (void)t;
 
     if (node->flags & DRAW)
         t.messageBox(hInstance, hwnd, IDS_DRAWGAME, IDS_CHESS);

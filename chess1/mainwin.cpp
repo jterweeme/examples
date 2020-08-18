@@ -148,9 +148,9 @@ int MainWindow::_verifyMove(HINSTANCE hInstance, HWND hWnd, TCHAR *s, short iop,
 }
 
 #ifdef WINCE
-static constexpr DWORD WINSTYLE = WS_CLIPCHILDREN;
+static CONSTEXPR DWORD WINSTYLE = WS_CLIPCHILDREN;
 #else
-static constexpr DWORD WINSTYLE = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN;
+static CONSTEXPR DWORD WINSTYLE = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN;
 #endif
 
 void MainWindow::create(LPCTSTR caption)
@@ -374,6 +374,7 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
     case MSG_CHESS_ABOUT:
         ::DialogBox(hInstance(), MAKEINTRESOURCE(IDD_ABOUT), hWnd, About);
         break;
+#ifndef WINCE
     case MSG_CHESS_EDIT:
         _editActive = TRUE;
         hMenu = CreateMenu();
@@ -395,6 +396,7 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
         InitializeStats();
         ::PostMessage(hWnd, MSG_USER_MOVE, 0, 0);
         break;
+#endif
     case MSG_CHESS_REVIEW:
     {
         ReviewDialog revDlg(hInstance());
@@ -604,6 +606,7 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
             SetTimeControl(::ft);
         }
         break;
+#ifndef WINCE
     case MSG_HELP_INDEX:
     {
         TCHAR szHelpFileName[EXE_NAME_MAX_SIZE+1];
@@ -614,6 +617,7 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
     case MSG_HELP_HELP:
         ::WinHelp(hWnd, TEXT("WINHELP.HLP"), HELP_INDEX, 0L);
         break;
+#endif
     }
 }
 
@@ -693,13 +697,13 @@ void MainWindow::_createProc(HWND hWnd)
     /*Autosize main window */
     POINT point;
     QueryBoardSize(&point);
-
+#ifndef WINCE
     ::SetWindowPos(hWnd, hWnd, 0,0,
          point.x + GetSystemMetrics(SM_CXFRAME) * 2 + 50,
          point.y + GetSystemMetrics(SM_CYFRAME) * 2 + GetSystemMetrics(SM_CYMENU) +
          GetSystemMetrics(SM_CYCAPTION) + ychar,
          SWP_NOMOVE | SWP_NOZORDER);
-
+#endif
     ::ReleaseDC(hWnd, hDC);
     _hitTest = new HitTest();
     _hitTest->init();
@@ -721,9 +725,11 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_DESTROY:
     {
+#ifndef WINCE
         TCHAR szHelpFileName[EXE_NAME_MAX_SIZE + 1];
         _makeHelpPathName(szHelpFileName);
         ::WinHelp(hWnd, szHelpFileName, HELP_QUIT, 0L);
+#endif
         ::DeleteObject(_hBrushBackGround);
         _hitTest->destroy();
         delete _hitTest;
@@ -744,7 +750,9 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_CTLCOLORSTATIC:
     {
         HDC hdc = HDC(wParam);
+#ifndef WINCE
         ::UnrealizeObject(_hBrushBackGround);
+#endif
         ::SetBkColor(hdc, _clrBackGround);
         ::SetBkMode(hdc, TRANSPARENT);
         ::SetTextColor(hdc, _clrText);
@@ -756,8 +764,10 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         return LRESULT(_hBrushBackGround);
     case WM_ERASEBKGND:
     {
-        RECT rect;
+#ifndef WINCE
         ::UnrealizeObject(HGDIOBJ(_hBrushBackGround));
+#endif
+        RECT rect;
         ::GetClientRect(hWnd, &rect);
         ::FillRect(HDC(wParam), &rect, _hBrushBackGround);
     }

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cechat", "cechat.vcproj", "{A3ADA321-9999-4534-ADEC-0D772DDC4951}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cmdbar", "cmdbar.vcproj", "{A3ADA321-9999-4534-ADEC-0D772DDC4951}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

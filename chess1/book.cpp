@@ -67,6 +67,7 @@ static void *Book_alloc(DWORD size)
 */
 void GetOpenings(HINSTANCE hInstance)
 {
+#ifndef WINCE
     FILE *fd;
     int c;
     struct BookEntry *entry;
@@ -128,6 +129,7 @@ void GetOpenings(HINSTANCE hInstance)
     }
 
     fclose(fd);
+#endif
 }
 
 /*

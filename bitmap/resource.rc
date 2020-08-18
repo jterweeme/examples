@@ -1,0 +1,5 @@
+#include "resource.h"
+
+IDB_CASTLE BITMAP "castle.bmp"
+53 BITMAP "ghost.bmp"
+

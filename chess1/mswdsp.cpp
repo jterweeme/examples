@@ -71,9 +71,11 @@ static void DrawPiece(HWND hWnd, short f, bool reverse)
     int y = reverse ? 7 - f / 8 : f / 8;
     POINT aptl[4];
     QuerySqCoords(x, y, aptl + 0);
+#ifndef WINCE
     HRGN hRgn = ::CreatePolygonRgn(aptl, 4, WINDING);
     ::InvalidateRgn(hWnd, hRgn, FALSE );
     ::DeleteObject(hRgn);
+#endif
 }
 
 void UpdateDisplay(HWND hWnd, HWND compClr, short f, short t,

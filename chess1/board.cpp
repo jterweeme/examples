@@ -73,6 +73,7 @@ void QuerySqCoords(short x, short y, POINT aptl[])
 */
 void Board::Draw_Board(HDC hDC, int reverse, COLORREF darkColor, COLORREF lightColor)
 {
+#ifndef WINCE
     POINT aptl[4];
     HBRUSH hBrush_lt = ::CreateSolidBrush(lightColor);
     HBRUSH hBrush_dk = ::CreateSolidBrush(darkColor);
@@ -114,10 +115,12 @@ void Board::Draw_Board(HDC hDC, int reverse, COLORREF darkColor, COLORREF lightC
     ::SelectObject(hDC, hOldBrush);
     ::DeleteObject(hBrush_lt);
     ::DeleteObject(hBrush_dk);
+#endif
 }
 
 void Board::DrawCoords(HDC hDC, int reverse, COLORREF clrBackGround, COLORREF clrText)
 {
+#ifndef WINCE
     HFONT hFont = ::CreateFont(13, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
                         ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
                         DEFAULT_QUALITY, FIXED_PITCH | FF_SWISS, TEXT("Helv"));
@@ -150,10 +153,12 @@ void Board::DrawCoords(HDC hDC, int reverse, COLORREF clrBackGround, COLORREF cl
     ::SetBkColor(hDC, OldBkColor);
     ::SetBkMode(hDC, OldBkMode);
     ::SetTextColor(hDC, OldTextColor);
+#endif
 }
 
 void Board::HiliteSquare(HWND hWnd, int Square)
 {
+#ifndef WINCE
     POINT aptl[4];
     int y = Square / 8;
     int x = Square % 8;
@@ -164,13 +169,12 @@ void Board::HiliteSquare(HWND hWnd, int Square)
     ReleaseDC(hWnd, hDC);
     DeleteObject(hRgn);
     HilitSq = Square;
+#endif
 }
 
 void Board::UnHiliteSquare(HWND hWnd, int square)
 {
-    HDC hDC;
     POINT aptl[4];
-    HRGN hRgn;
 
     if (HilitSq == -1)
         return;
@@ -178,11 +182,13 @@ void Board::UnHiliteSquare(HWND hWnd, int square)
     int y = square / 8;
     int x = square % 8;
     QuerySqCoords(x, y, aptl + 0);
-    hRgn = ::CreatePolygonRgn(aptl, 4, WINDING);
-    hDC = ::GetDC(hWnd);
+#ifndef WINCE
+    HRGN hRgn = ::CreatePolygonRgn(aptl, 4, WINDING);
+    HDC hDC = ::GetDC(hWnd);
     ::InvertRgn(hDC, hRgn);
     ::ReleaseDC(hWnd, hDC);
     ::DeleteObject(hRgn);
+#endif
     HilitSq = -1;
 }
 

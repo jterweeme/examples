@@ -1,4 +1,14 @@
 TEMPLATE = subdirs
 
-SUBDIRS = chess1 commctrl1 FileEditor mdiapp opengl1 property1 tabs1 tictac winanim
+SUBDIRS = bitmap\
+    cechat\
+    chess1\
+    commctrl1\
+    FileEditor\
+    mdiapp\
+    opengl1\
+    property1\
+    tabs1\
+    tictac\
+    winanim
 
