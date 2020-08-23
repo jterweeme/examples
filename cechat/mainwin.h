@@ -10,7 +10,7 @@ class MainWindow
 private:
     static MainWindow *_instance;
     HINSTANCE _hInstance;
-    HWND _hwnd;
+    HWND _hwnd, _hC1, _hC2, _hBtn;
     AbstractMenuBar *_menu;
     CommandBar *_cmdBar;
     static void DoSizeMain(HWND hWnd);

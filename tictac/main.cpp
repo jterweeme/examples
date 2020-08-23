@@ -1,3 +1,4 @@
+// main.cpp
 // TicTac1 - Simple tic-tac-toe game
 //
 // Written for the book Programming Windows CE
@@ -6,12 +7,57 @@
 
 #include <windows.h>
 
-static RECT rectBoard;
-static RECT rectPrompt;
-static BYTE bBoard[9];
-static BYTE bTurn = 0;
+#if __cplusplus >= 201103L
+#define CONSTEXPR constexpr
+#define OVERRIDE override
+#else
+#define CONSTEXPR const
+#define OVERRIDE
+#endif
 
-static void sizeProc(HWND hwnd)
+class MainWindow
+{
+private:
+    static MainWindow *_instance;
+    HINSTANCE _hInstance;
+    HWND _hwnd;
+    LRESULT _wndProc(HWND, UINT, WPARAM, LPARAM);
+    RECT rectBoard;
+    RECT rectPrompt;
+    BYTE bBoard[9];
+    BYTE bTurn = 0;
+
+    void _sizeProc(HWND hwnd);
+    void _drawBoard(HDC hdc, RECT *prect);
+    void _drawXO(HDC hdc, HPEN, RECT *prect, INT nCell, INT nType);
+    void _paintProc(HWND hwnd);
+    void _lButtonUpProc(HWND hwnd, LPARAM lParam);
+public:
+    MainWindow(HINSTANCE hInstance);
+    void create();
+    void show(int nCmdShow);
+    void update();
+    static LRESULT CALLBACK wndProc(HWND, UINT, WPARAM, LPARAM);
+};
+
+MainWindow *MainWindow::_instance;
+
+MainWindow::MainWindow(HINSTANCE hInstance) : _hInstance(hInstance)
+{
+    _instance = this;
+}
+
+void MainWindow::show(int nCmdShow)
+{
+    ShowWindow(_hwnd, nCmdShow);
+}
+
+void MainWindow::update()
+{
+    UpdateWindow(_hwnd);
+}
+
+void MainWindow::_sizeProc(HWND hwnd)
 {
     RECT rect;
     GetClientRect(hwnd, &rect);
@@ -43,7 +89,7 @@ static void sizeProc(HWND hwnd)
     }
 }
 
-static void drawXO(HDC hdc, HPEN, RECT *prect, INT nCell, INT nType)
+void MainWindow::_drawXO(HDC hdc, HPEN, RECT *prect, INT nCell, INT nType)
 {
     POINT pt[2];
     INT cx, cy;
@@ -79,7 +125,7 @@ static void drawXO(HDC hdc, HPEN, RECT *prect, INT nCell, INT nType)
     return;
 }
 
-static void drawBoard(HDC hdc, RECT *prect)
+void MainWindow::_drawBoard(HDC hdc, RECT *prect)
 {
     HPEN hPen, hOldPen;
     POINT pt[2];
@@ -112,19 +158,19 @@ static void drawBoard(HDC hdc, RECT *prect)
     Polyline (hdc, pt, 2);
 
     for (i = 0; i < 9; i++)
-        drawXO(hdc, hPen, &rectBoard, i, bBoard[i]);
+        _drawXO(hdc, hPen, &rectBoard, i, bBoard[i]);
 
     SelectObject(hdc, hOldPen);
     DeleteObject(hPen);
 }
 
-static void paintProc(HWND hwnd)
+void MainWindow::_paintProc(HWND hwnd)
 {
     RECT rect;
     GetClientRect(hwnd, &rect);
     PAINTSTRUCT ps;
     HDC hdc = BeginPaint(hwnd, &ps);
-    drawBoard(hdc, &rectBoard);
+    _drawBoard(hdc, &rectBoard);
     HFONT hFont = HFONT(GetStockObject(SYSTEM_FONT));
     HFONT hOldFont = HFONT(SelectObject(hdc, hFont));
 
@@ -137,7 +183,7 @@ static void paintProc(HWND hwnd)
     EndPaint(hwnd, &ps);
 }
 
-static void lButtonUpProc(HWND hwnd, LPARAM lParam)
+void MainWindow::_lButtonUpProc(HWND hwnd, LPARAM lParam)
 {
     POINT pt;
     pt.x = LOWORD(lParam);
@@ -181,19 +227,18 @@ static void lButtonUpProc(HWND hwnd, LPARAM lParam)
     InvalidateRect(hwnd, NULL, FALSE);
 }
 
-static LRESULT CALLBACK
-MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT MainWindow::_wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg)
     {
     case WM_SIZE:
-        sizeProc(hwnd);
+        _sizeProc(hwnd);
         return 0;
     case WM_PAINT:
-        paintProc(hwnd);
+        _paintProc(hwnd);
         return 0;
     case WM_LBUTTONUP:
-        lButtonUpProc(hwnd, lParam);
+        _lButtonUpProc(hwnd, lParam);
         return 0;
     case WM_DESTROY:
         PostQuitMessage(0);
@@ -203,20 +248,23 @@ MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR cmdLine, int nCmdShow)
+LRESULT CALLBACK MainWindow::wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    (void)hPrevInstance;
-    (void)cmdLine;
+    return _instance->_wndProc(hwnd, msg, wParam, lParam);
+}
+
+void MainWindow::create()
+{
     rectBoard.top = 0;
     rectBoard.left = 0;
     rectBoard.right = 0;
     rectBoard.bottom = 0;
     WNDCLASS wc;
     wc.style = 0;
-    wc.lpfnWndProc = MainWndProc;
+    wc.lpfnWndProc = wndProc;
     wc.cbClsExtra = 0;
     wc.cbWndExtra = 0;
-    wc.hInstance = hInstance;
+    wc.hInstance = _hInstance;
     wc.hIcon = NULL;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     wc.hbrBackground = HBRUSH(GetStockObject(WHITE_BRUSH));
@@ -226,16 +274,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR cmdLine, 
     if (RegisterClass(&wc) == 0)
         throw TEXT("Cannot register class");
 
-    const DWORD style = WS_VISIBLE | WS_CAPTION | WS_SYSMENU;
-    HWND hwnd = CreateWindowEx(0, wc.lpszClassName, TEXT("TicTacToe"), style,
-                               CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-                               NULL, NULL, hInstance, NULL);
+    CONSTEXPR DWORD style = WS_VISIBLE | WS_CAPTION | WS_SYSMENU;
+    CONSTEXPR INT x = CW_USEDEFAULT;
+    CONSTEXPR INT y = CW_USEDEFAULT;
+    CONSTEXPR INT w = CW_USEDEFAULT;
+    CONSTEXPR INT h = CW_USEDEFAULT;
+    _hwnd = CreateWindowEx(0, wc.lpszClassName, TEXT("TicTacToe"), style, x, y, w, h, NULL, NULL, _hInstance, NULL);
 
-    if (!IsWindow(hwnd))
+    if (!IsWindow(_hwnd))
         throw TEXT("Cannot create main window");
+}
 
-    ShowWindow(hwnd, nCmdShow);
-    UpdateWindow(hwnd);
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR cmdLine, int nCmdShow)
+{
+    (void)hPrevInstance;
+    (void)cmdLine;
+    MainWindow mainWin(hInstance);
+    mainWin.create();
+    mainWin.show(nCmdShow);
+    mainWin.update();
 
     MSG msg;
     while (GetMessage(&msg, NULL, 0, 0))

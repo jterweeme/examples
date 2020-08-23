@@ -24,12 +24,7 @@
   notice must be preserved on all copies.
 */
 
-#include "protos.h"
 #include "board.h"
-
-/* All units defined in pixels */
-static CONSTEXPR LONG BRD_HORZFRONT = 48, BRD_HORZBACK = 32, BRD_VERT = 32,
-    BRD_EDGE = 8, BRD_HORZMARGIN = 32, BRD_BACKMARGIN = 5, BRD_FRONTMARGIN = 5;
 
 static int HilitSq;
 
@@ -45,21 +40,21 @@ void Board::DrawOneSquare(HDC hdc, short x, short y)
     ::Polygon(hdc, aptl, 4);
 }
 
-void QueryBoardSize(POINT *pptl)
+void Board::QueryBoardSize(POINT *pptl)
 {
     pptl->x = 2 * BRD_HORZMARGIN + 8 * BRD_HORZFRONT;
     pptl->y = BRD_BACKMARGIN + 8 * BRD_VERT + 2 * BRD_FRONTMARGIN + 2 * BRD_EDGE;
 }
 
-void QuerySqOrigin(short x, short y, POINT *pptl)
+void Board::QuerySqOrigin(short x, short y, POINT *pptl)
 {
     pptl->x = BRD_HORZMARGIN + y * (BRD_HORZFRONT - BRD_HORZBACK) / 2 +
              x * (y*BRD_HORZBACK + (8-y)*BRD_HORZFRONT)/8;
 
-    pptl->y = (BRD_BACKMARGIN+8*BRD_VERT+BRD_FRONTMARGIN)  - y*BRD_VERT;
+    pptl->y = (BRD_BACKMARGIN + 8 * BRD_VERT + BRD_FRONTMARGIN) - y * BRD_VERT;
 }
 
-void QuerySqCoords(short x, short y, POINT aptl[])
+void Board::QuerySqCoords(short x, short y, POINT aptl[])
 {
     QuerySqOrigin(x, y, aptl + 0);
     QuerySqOrigin(x + 1, y, aptl + 1);

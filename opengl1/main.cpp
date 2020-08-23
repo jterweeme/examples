@@ -91,10 +91,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         }
   }
   // shutdown OpenGL
-  DisableOpenGL( hWnd, hDC, hRC );
+  DisableOpenGL(hWnd, hDC, hRC);
   // destroy the window explicitly
-  DestroyWindow( hWnd );
-  return msg.wParam;
+  DestroyWindow(hWnd);
+  return int(msg.wParam);
 }
 
 // Window Procedure

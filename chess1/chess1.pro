@@ -1,44 +1,37 @@
 TEMPLATE = app
 CONFIG += silent
-#QMAKE_POST_LINK=copy gnuchess.boo $$DESTDIR
+DESTDIR = $$OUT_PWD/
+DEFINES -= UNICODE _UNICODE
+LIBS += -lgdi32 -luser32
 
-SOURCES += about.cpp\
-    board.cpp\
+copydata.commands = $(COPY_FILE) \"$$PWD\gnuchess.boo\" \"$$OUT_PWD/\"
+first.depends = $(first) copydata
+export(first.depends)
+export(copydata.commands)
+QMAKE_EXTRA_TARGETS += first copydata
+
+SOURCES += board.cpp\
     book.cpp\
-    colordlg.cpp\
-    dsp.cpp\
+    dialog.cpp\
     globals.cpp\
     hittest.cpp\
     main.cpp\
     mainwin.cpp\
-    manual.cpp\
-    mswdsp.cpp\
-    numdlg.cpp\
     palette.cpp\
     piece.cpp\
-    promote.cpp\
-    review.cpp\
     sim.cpp\
-    stats.cpp\
-    test.cpp\
-    timecnt.cpp\
     toolbox.cpp\
     winclass.cpp
 
 HEADERS += board.h\
     book.h\
     chess.h\
-    colordlg.h\
     dialog.h\
     globals.h\
     hittest.h\
     mainwin.h\
-    manual.h\
     palette.h\
-    promote.h\
-    protos.h\
     resource.h\
-    review.h\
     sim.h\
     toolbox.h\
     winclass.h
@@ -65,6 +58,3 @@ OTHER_FILES += chess.rc\
     rook.bmp\
     rookm.bmp\
     rooko.bmp
-
-DEFINES -= UNICODE _UNICODE
-LIBS += -lgdi32

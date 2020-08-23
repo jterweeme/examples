@@ -15,11 +15,11 @@ ID_MENU MENU DISCARDABLE
 BEGIN
     POPUP "&File"
     BEGIN
-        MENUITEM "E&xit",                       IDM_EXIT
+        MENUITEM "E&xit", IDM_EXIT
     END
     POPUP "&Help"
     BEGIN
-        MENUITEM "&About...",                   IDM_ABOUT
+        MENUITEM "&About...", IDM_ABOUT
     END
 END
 

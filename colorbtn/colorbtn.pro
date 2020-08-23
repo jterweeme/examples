@@ -1,4 +1,4 @@
 TEMPLATE = app
-LIBS += -lgdi32 -luser32
+LIBS += -lgdi32
 SOURCES += main.cpp
 

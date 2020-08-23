@@ -3,9 +3,6 @@
 #include "chess.h"
 #include <windows.h>
 
-extern void ShowSidetoMove();
-extern void UpdateClocks();
-
 class Board;
 class Sim;
 class WinClass;

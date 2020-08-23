@@ -24,7 +24,6 @@
   notice must be preserved on all copies.
 */
 
-#include "protos.h"
 #include "globals.h"
 #include "winclass.h"
 #include "mainwin.h"

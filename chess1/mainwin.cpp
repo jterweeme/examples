@@ -1,18 +1,17 @@
+//mainwin.cpp
+//Chess main window
+
 #include "mainwin.h"
 #include "globals.h"
-#include "protos.h"
 #include "resource.h"
 #include "sim.h"
 #include "winclass.h"
 #include "toolbox.h"
 #include "palette.h"
 #include "board.h"
-#include "colordlg.h"
 #include "hittest.h"
-#include "promote.h"
-#include "review.h"
 #include "book.h"
-#include "manual.h"
+#include "dialog.h"
 #include <ctime>
 
 MainWindow *MainWindow::_instance = 0;
@@ -40,38 +39,6 @@ static void GiveHint(HWND hWnd)
     ::lstrcpy(s, TEXT("try "));
     ::lstrcat(s, ::mvstr[0]);
     ::MessageBox(hWnd, s, TEXT("Chess"), MB_OK);
-}
-
-static LPCTSTR ColorStr[2] = {TEXT("White"), TEXT("Black")};
-
-static HWND hWhosTurn, hComputerMove, hClockHuman, hClockComputer;
-
-void ShowSidetoMove()
-{
-    TCHAR tmp[30];
-    ::wsprintf(tmp, TEXT("It is %s's turn"), ColorStr[player]);
-    ::SetWindowText(hWhosTurn, tmp);
-}
-
-void UpdateClocks()
-{
-    TCHAR tmp[20];
-    short m = short(::et / 60);
-    short s = short(::et - 60 * (long)m);
-
-    if (TCflag)
-    {
-        m = short((TimeControl.clock[player] - ::et) / 60);
-        s = short(TimeControl.clock[player] - ::et - 60 * (long)m);
-    }
-
-    m = ::myMax(m, short(0));
-    s = ::myMax(s, short(0));
-    ::wsprintf(tmp, TEXT("%0d:%02d"), m, s);
-    ::SetWindowText(player == white ? hClockHuman : hClockComputer, tmp);
-
-    if (flag.post)
-        ShowNodeCnt(hStats, NodeCnt, evrate);
 }
 
 /*
@@ -168,23 +135,17 @@ void MainWindow::create(LPCTSTR caption)
 
 void MainWindow::_createChildren(HWND hWnd, HINSTANCE hInst, short xchar, short ychar)
 {
-    POINT pt;
     static TCHAR lpStatic[] = TEXT("Static");
 
     /* Get the location of lower left conor of client area */
-    QueryBoardSize(&pt);
-
-    _hComputerColor = CreateWindow(lpStatic, NULL, WS_CHILD | SS_CENTER | WS_VISIBLE,
-                         0, pt.y, 10 * xchar, ychar, hWnd, HMENU(1000), hInst, NULL);
-
-    hWhosTurn = CreateWindow(lpStatic, NULL, WS_CHILD | SS_CENTER | WS_VISIBLE,
-                         10 * xchar, pt.y, 10*xchar, ychar, hWnd, HMENU(1001), hInst, NULL);
-
-    hComputerMove = CreateWindow(lpStatic, NULL, WS_CHILD | SS_LEFT | WS_VISIBLE,
-                         375, 10, 10 * xchar, ychar, hWnd, HMENU(1003), hInst, NULL);
-
-    hClockComputer = CreateWindow(lpStatic, NULL, WS_CHILD | SS_CENTER | WS_VISIBLE,
-                         390, 55, 6 * xchar, ychar, hWnd, HMENU(1010), hInst, NULL);
+    POINT pt;
+    Board::QueryBoardSize(&pt);
+    CONSTEXPR DWORD style1 = WS_CHILD | SS_CENTER | WS_VISIBLE;
+    _hComputerColor = CreateWindow(lpStatic, NULL, style1, 0, pt.y, 10 * xchar, ychar, hWnd, HMENU(1000), hInst, NULL);
+    hWhosTurn = CreateWindow(lpStatic, NULL, style1, 10 * xchar, pt.y, 10 * xchar, ychar, hWnd, HMENU(1001), hInst, NULL);
+    CONSTEXPR DWORD style2 = WS_CHILD | SS_LEFT | WS_VISIBLE;
+    hComputerMove = CreateWindow(lpStatic, NULL, style2, 375, 10, 10 * xchar, ychar, hWnd, HMENU(1003), hInst, NULL);
+    hClockComputer = CreateWindow(lpStatic, NULL, style1, 390, 55, 6 * xchar, ychar, hWnd, HMENU(1010), hInst, NULL);
 
     hClockHuman =  CreateWindow(lpStatic, NULL, WS_CHILD | SS_CENTER | WS_VISIBLE,
                          390, 55+3*ychar, 6*xchar, ychar, hWnd, HMENU(1011), hInst, NULL);
@@ -311,7 +272,7 @@ void MainWindow::_paintProc(HWND hWnd) const
     {
         POINT pt;
         RECT rect;
-        QuerySqOrigin(_firstSq % 8, _firstSq / 8, &pt);
+        Board::QuerySqOrigin(_firstSq % 8, _firstSq / 8, &pt);
         rect.left = pt.x;
         rect.right=pt.x + 48;
         rect.top = pt.y - 48;
@@ -623,46 +584,48 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
 
 void MainWindow::_userMoveProc(HWND hwnd)
 {
-    if (flag.bothsides && !flag.mate)
+    if (flag.mate)
+        return;
+
+    if (flag.bothsides)
     {
-        SelectMove(hInstance(), hwnd, _hComputerColor, opponent, 1, _sim->maxSearchDepth(), hAccel(), ::ft);
+        SelectMove(hInstance(), hwnd, _hComputerColor, opponent, 1,
+                   _sim->maxSearchDepth(), hAccel(), ::ft);
+
         if (flag.beep)
             MessageBeep(0);
 
         ::PostMessage(hwnd, MSG_COMPUTER_MOVE, 0, 0);
+        return;
     }
-    else if (!flag.mate)
-    {
-        User_Move = TRUE;
-        ::ft = 0;
-        player = opponent;
-        ShowSidetoMove();
 
-        /* Set up to allow computer to think while user takes move*/
-        int tmp;
+    User_Move = TRUE;
+    ::ft = 0;
+    player = opponent;
+    ShowSidetoMove();
+
+    /* Set up to allow computer to think while user takes move*/
+    if (hint > 0 && !flag.easy /*&& Book == NULL*/ )
+    {
         WORD mv;
         TCHAR s[10];
+        time0 = time(NULL);
+        algbr(hint >> 8, hint & 0xff, false);
+        ::lstrcpy(s, mvstr[0]);
+        int tmp = epsquare;
 
-        if (hint > 0 && !flag.easy /*&& Book == NULL*/ )
+        if (_verifyMove(hInstance(), hwnd, s, 1, &mv))
         {
-            time0 = time(NULL);
-            algbr(hint >> 8, hint & 0xff, false);
-            ::lstrcpy(s, mvstr[0]);
-            tmp = epsquare;
+            SelectMove(hInstance(), hwnd, _hComputerColor, computer,
+                       2, _sim->maxSearchDepth(), hAccel(), ::ft);
 
-            if (_verifyMove(hInstance(), hwnd, s, 1, &mv))
-            {
-                SelectMove(hInstance(), hwnd, _hComputerColor, computer,
-                           2, _sim->maxSearchDepth(), hAccel(), ::ft);
+            _verifyMove(hInstance(), hwnd, mvstr[0], 2, &mv);
 
-                _verifyMove(hInstance(), hwnd, mvstr[0], 2, &mv);
-
-                if (Sdepth > 0)
-                    Sdepth--;
-            }
-            ::ft = time(NULL) - time0;
-            epsquare = tmp;
+            if (Sdepth > 0)
+                Sdepth--;
         }
+        ::ft = time(NULL) - time0;
+        epsquare = tmp;
     }
 }
 
@@ -696,14 +659,10 @@ void MainWindow::_createProc(HWND hWnd)
 
     /*Autosize main window */
     POINT point;
-    QueryBoardSize(&point);
-#ifndef WINCE
-    ::SetWindowPos(hWnd, hWnd, 0,0,
-         point.x + GetSystemMetrics(SM_CXFRAME) * 2 + 50,
-         point.y + GetSystemMetrics(SM_CYFRAME) * 2 + GetSystemMetrics(SM_CYMENU) +
-         GetSystemMetrics(SM_CYCAPTION) + ychar,
-         SWP_NOMOVE | SWP_NOZORDER);
-#endif
+    Board::QueryBoardSize(&point);
+    const int w = point.x + GetSystemMetrics(SM_CXFRAME) * 2 + 50;
+    const int h = point.y + GetSystemMetrics(SM_CYFRAME) * 2 + GetSystemMetrics(SM_CYMENU) + GetSystemMetrics(SM_CYCAPTION) + ychar;
+    ::SetWindowPos(hWnd, hWnd, 0, 0, w, h, SWP_NOMOVE | SWP_NOZORDER);
     ::ReleaseDC(hWnd, hDC);
     _hitTest = new HitTest();
     _hitTest->init();

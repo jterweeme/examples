@@ -1,5 +1,5 @@
 TEMPLATE = app
-LIBS += -lcomctl32 -lgdi32
+LIBS += -lcomctl32 -lgdi32 -luser32
 
 SOURCES += element.cpp main.cpp mainwin.cpp toolbox.cpp\
     winclass.cpp window.cpp

@@ -25,7 +25,6 @@
 */
 
 #include "resource.h"
-#include "protos.h"
 #include "globals.h"
 #include "book.h"
 
@@ -101,10 +100,12 @@ void GetOpenings(HINSTANCE hInstance)
         {
             tmp[++i] = mv;
             side = otherside[side];
+            continue;
         }
-        else if (c == 0 && i > 0)
+
+        if (c == 0 && i > 0)
         {
-            entry = (struct BookEntry *)(Book_alloc(sizeof(struct BookEntry)));
+            entry = (BookEntry *)(Book_alloc(sizeof(BookEntry)));
             mp = LPWORD(Book_alloc((i + 1) * sizeof(WORD)));
 
             if (entry == 0 || mp == 0)
@@ -176,7 +177,7 @@ void OpeningBook(WORD *hint)
         if (((Tree[pnt].f << 8) | Tree[pnt].t) == m)
             Tree[pnt].score = 0;
 
-    pick (TrPnt[1], TrPnt[2] - 1);
+    pick(TrPnt[1], TrPnt[2] - 1);
 
     if (Tree[TrPnt[1]].score < 0)
     {

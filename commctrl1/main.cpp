@@ -641,7 +641,7 @@ HTREEITEM InsertTreeviewItem(const HWND hTreeview, LPCTSTR pszText,
     tvi.mask = TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE;
     tvi.hItem = 0;
     tvi.pszText = LPWSTR(pszText);
-    tvi.cchTextMax = ::wcslen(pszText);
+    tvi.cchTextMax = int(::wcslen(pszText));
     tvi.iImage = 0;
     tvi.iSelectedImage = 1;
     tvi.state = 0;
@@ -806,7 +806,7 @@ int InsertTabItem(HWND hTab, LPCTSTR pszText, int iid)
     ZeroMemory(&ti, sizeof(ti));
     ti.mask = TCIF_TEXT;
     ti.pszText = LPTSTR(pszText);
-    ti.cchTextMax = wcslen(pszText);
+    ti.cchTextMax = int(wcslen(pszText));
 
     return int(SendMessage(hTab, TCM_INSERTITEM, iid, (LPARAM)&ti));
 }

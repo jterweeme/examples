@@ -1,6 +1,10 @@
+//cechat
+//mainwin.cpp
+
 #include "mainwin.h"
 #include "menubar.h"
 #include "resource.h"
+#include "toolbox.h"
 #include <commctrl.h>
 
 extern HANDLE g_hSendEvent;
@@ -55,17 +59,21 @@ void MainWindow::create()
     g_hSendEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
     // Create main window.
-    _hwnd = CreateWindow(wc.lpszClassName, TEXT ("CeChat"),
-                         WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
-                         CW_USEDEFAULT, CW_USEDEFAULT, NULL,
-                         NULL, _hInstance, NULL);
+    CONSTEXPR DWORD style = WS_VISIBLE;
+    CONSTEXPR INT x = CW_USEDEFAULT;
+    CONSTEXPR INT y = CW_USEDEFAULT;
+    CONSTEXPR INT w = CW_USEDEFAULT;
+    CONSTEXPR INT h = CW_USEDEFAULT;
+
+    _hwnd = CreateWindow(wc.lpszClassName, TEXT("CeChat"),
+                         style, x, y, w, h, NULL, NULL, _hInstance, NULL);
 
     if (!IsWindow(_hwnd))
         throw TEXT("Cannot create window");
 }
 
 // About Dialog procedure
-static BOOL CALLBACK AboutDlgProc (HWND hWnd, UINT wMsg, WPARAM wParam, LPARAM)
+static INT_PTR CALLBACK AboutDlgProc (HWND hWnd, UINT wMsg, WPARAM wParam, LPARAM)
 {
     switch (wMsg)
     {
@@ -183,10 +191,8 @@ static HANDLE InitCommunication(HWND hWnd, LPTSTR pszDevName)
         cto.WriteTotalTimeoutMultiplier = 0;
         cto.WriteTotalTimeoutConstant = 0;
         SetCommTimeouts (hLocal, &cto);
-
-        wsprintf (szDbg, TEXT ("Port %s opened\r\n"), pszDevName);
-        SendDlgItemMessage (hWnd, ID_RCVTEXT, EM_REPLACESEL, 0,
-                            (LPARAM)szDbg);
+        wsprintf(szDbg, TEXT("Port %s opened\r\n"), pszDevName);
+        SendDlgItemMessage(hWnd, ID_RCVTEXT, EM_REPLACESEL, 0, (LPARAM)szDbg);
 
         // Start read thread if not already started.
         hComPort = hLocal;
@@ -197,16 +203,15 @@ static HANDLE InitCommunication(HWND hWnd, LPTSTR pszDevName)
             hReadThread = CreateThread(NULL, 0, ReadThread, hWnd,
                                         0, &dwTStat);
             if (hReadThread)
-                CloseHandle (hReadThread);
+                CloseHandle(hReadThread);
         }
     }
     else
     {
-        wsprintf (szDbg, TEXT ("Couldn\'t open port %s. rc=%d\r\n"),
+        wsprintf(szDbg, TEXT("Couldn\'t open port %s. rc=%d\r\n"),
                   pszDevName, GetLastError());
 
-        SendDlgItemMessage(hWnd, ID_RCVTEXT, EM_REPLACESEL,
-                            0, (LPARAM)szDbg);
+        SendDlgItemMessage(hWnd, ID_RCVTEXT, EM_REPLACESEL, 0, (LPARAM)szDbg);
     }
     return hComPort;
 }
@@ -217,14 +222,14 @@ void MainWindow::_comPortComboProc(HWND hWnd, WORD, HWND hwndCtl, WORD wNotifyCo
     if (wNotifyCode != CBN_SELCHANGE)
         return;
 
-    int i = SendMessage(hwndCtl, CB_GETCURSEL, 0, 0);
+    int i = int(SendMessage(hwndCtl, CB_GETCURSEL, 0, 0));
 
     if (i != nLastDev)
     {
         TCHAR szDev[32];
         SendMessage(hwndCtl, CB_GETLBTEXT, i, LPARAM(szDev));
         InitCommunication(hWnd, szDev);
-        SetFocus (GetDlgItem (hWnd, ID_SENDTEXT));
+        SetFocus(GetDlgItem(hWnd, ID_SENDTEXT));
     }
 }
 
@@ -245,7 +250,7 @@ LRESULT MainWindow::_commandProc(HWND hWnd, UINT, WPARAM wParam, LPARAM lParam)
         SendMessage(hWnd, WM_CLOSE, 0, 0);
         return 0;
     case IDM_ABOUT:
-        DialogBox(_hInstance, TEXT("aboutbox"), hWnd, AboutDlgProc);
+        DialogBox(_hInstance, MAKEINTRESOURCE(IDD_ABOUT), hWnd, AboutDlgProc);
         return 0;
     }
 
@@ -253,8 +258,6 @@ LRESULT MainWindow::_commandProc(HWND hWnd, UINT, WPARAM wParam, LPARAM lParam)
 }
 
 // FillComComboBox - Fills the COM port combo box
-//#ifdef WINCE
-#if 1
 static int FillComComboBox(HWND hWnd)
 {
     int rc;
@@ -272,22 +275,18 @@ static int FillComComboBox(HWND hWnd)
                                 IDC_COMPORT, CB_INSERTSTRING,
                                 -1, (LPARAM)fd.cFileName);
 
-            rc = FindNextFile (hFind, &fd);
+            rc = FindNextFile(hFind, &fd);
         }
         while (rc);
 
         rc = FindClose(hFind);
     }
-    SendDlgItemMessage(GetDlgItem (hWnd, IDC_CMDBAR), IDC_COMPORT,
-                        CB_SETCURSEL, 0, 0);
-
+    SendDlgItemMessage(GetDlgItem(hWnd, IDC_CMDBAR), IDC_COMPORT, CB_SETCURSEL, 0, 0);
     return 0;
 }
-#endif
 
 void MainWindow::_createProc(HWND hWnd, UINT, WPARAM, LPARAM lParam)
 {
-    HWND hC1, hC2, hC3;
     TCHAR szFirstDev[32];
     LPCREATESTRUCT lpcs = LPCREATESTRUCT(lParam);
     (void)szFirstDev;
@@ -303,28 +302,24 @@ void MainWindow::_createProc(HWND hWnd, UINT, WPARAM, LPARAM lParam)
 
     // Create child windows. They will be positioned in WM_SIZE.
     // Create receive text window.
-    hC1 = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT ("edit"),
-                          TEXT (""), WS_VISIBLE | WS_CHILD |
-                          WS_VSCROLL | ES_MULTILINE | ES_AUTOHSCROLL |
-                          ES_READONLY, 0, 0, 10, 10, hWnd,
-                          (HMENU)ID_RCVTEXT, _hInstance, NULL);
+    CONSTEXPR DWORD style1 = WS_VISIBLE | WS_CHILD | WS_VSCROLL | ES_MULTILINE | ES_AUTOHSCROLL | ES_READONLY;
+    _hC1 = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("edit"), TEXT(""), style1,
+                          0, 0, 10, 10, hWnd, HMENU(ID_RCVTEXT), _hInstance, NULL);
 
     // Create send text window.
-    hC2 = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT ("edit"),
-                          TEXT (""), WS_VISIBLE | WS_CHILD,
-                          0, 0, 10, 10,  hWnd, (HMENU)ID_SENDTEXT,
-                             _hInstance, NULL);
+    CONSTEXPR DWORD style2 = WS_VISIBLE | WS_CHILD;
+    _hC2 = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("edit"), TEXT(""), style2,
+                          0, 0, 10, 10, hWnd, (HMENU)ID_SENDTEXT, _hInstance, NULL);
 
     // Create send text window.
-    hC3 = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT ("button"),
-                          TEXT ("&Send"), WS_VISIBLE | WS_CHILD |
-                          BS_DEFPUSHBUTTON, 0, 0, 10, 10,
-                          hWnd, (HMENU)ID_SENDBTN, _hInstance, NULL);
+    CONSTEXPR DWORD style3 = WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON;
+    _hBtn = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("button"), TEXT("&Send"),
+                 style3, 0, 0, 10, 10, hWnd, HMENU(ID_SENDBTN), _hInstance, NULL);
 
     // Destroy frame if window not created.
-    if (!IsWindow(hC1) || !IsWindow(hC2) || !IsWindow(hC3))
+    if (!IsWindow(_hC1) || !IsWindow(_hC2) || !IsWindow(_hBtn))
     {
-        DestroyWindow (hWnd);
+        DestroyWindow(hWnd);
         return;
     }
 
@@ -335,7 +330,7 @@ void MainWindow::_createProc(HWND hWnd, UINT, WPARAM, LPARAM lParam)
         if (SendDlgItemMessage(hwndCB, IDC_COMPORT, CB_GETLBTEXT, i, LPARAM(szFirstDev)) == CB_ERR)
             break;
 
-        if (InitCommunication (hWnd, szFirstDev) != INVALID_HANDLE_VALUE)
+        if (InitCommunication(hWnd, szFirstDev) != INVALID_HANDLE_VALUE)
         {
             SendDlgItemMessage(hwndCB, IDC_COMPORT, CB_SETCURSEL, i, LPARAM(szFirstDev));
             break;

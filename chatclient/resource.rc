@@ -1,0 +1,13 @@
+#include "resource.h"
+
+IDM_MAIN MENU DISCARDABLE
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "E&xit", IDM_EXIT
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&About...", IDM_ABOUT
+    END
+END

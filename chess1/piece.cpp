@@ -24,7 +24,6 @@
   notice must be preserved on all copies.
 */
 
-#include "protos.h"
 #include "globals.h"
 #include "board.h"
 
@@ -38,7 +37,7 @@ static short CONSTEXPR ConvertCoordToIndex(short x, short y)
 static void QuerySqCenter(short x, short y, POINT *pptl)
 {
     POINT aptl[4];
-    QuerySqCoords(x, y, aptl);
+    Board::QuerySqCoords(x, y, aptl);
     pptl->x = (aptl[0].x + aptl[1].x + aptl[2].x + aptl[3].x) / 4;
     pptl->y = (aptl[0].y + aptl[2].y) / 2;
 }

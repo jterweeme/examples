@@ -23,7 +23,6 @@
 
 #include "hittest.h"
 #include "board.h"
-#include "protos.h"
 
 HitTest::HitTest()
 {
@@ -37,17 +36,17 @@ void HitTest::init()
 
     for (int i = 0; i < 8; i++)
     {
-        QuerySqOrigin(i, 0, ptls + 0);
-        QuerySqOrigin(i, 8, ptls + 1);
-        QuerySqOrigin(i + 1, 8, ptls + 2);
-        QuerySqOrigin(i + 1, 0, ptls + 3);
+        Board::QuerySqOrigin(i, 0, ptls + 0);
+        Board::QuerySqOrigin(i, 8, ptls + 1);
+        Board::QuerySqOrigin(i + 1, 8, ptls + 2);
+        Board::QuerySqOrigin(i + 1, 0, ptls + 3);
 #ifndef WINCE
         _hitrgn[i] = ::CreatePolygonRgn(ptls, 4, WINDING);
 #endif
     }
 
-    QuerySqOrigin(0, 0, &botpt);
-    QuerySqOrigin(0, 8, &toppt);
+    Board::QuerySqOrigin(0, 0, &botpt);
+    Board::QuerySqOrigin(0, 8, &toppt);
     _deltay = botpt.y - toppt.y;
 }
 
@@ -74,7 +73,7 @@ int HitTest::test(int x, int y)
     if (xsq == -1)
         return -1;
 
-    QuerySqOrigin(0, 0, &sq00);
+    Board::QuerySqOrigin(0, 0, &sq00);
 
     if (y > sq00.y)
         return -1;

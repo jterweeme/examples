@@ -2,7 +2,9 @@ TEMPLATE = subdirs
 
 SUBDIRS = bitmap\
     cechat\
+    chatclient\
     chess1\
+    colorbtn\
     commctrl1\
     FileEditor\
     mdiapp\
@@ -10,5 +12,7 @@ SUBDIRS = bitmap\
     property1\
     tabs1\
     tictac\
-    winanim
+    winanim\
+    wsclient\
+    wsserver
 

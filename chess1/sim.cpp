@@ -1,6 +1,5 @@
 #include "sim.h"
 #include "globals.h"
-#include "protos.h"
 #include "resource.h"
 #include "toolbox.h"
 #include "mainwin.h"
@@ -160,7 +159,7 @@ static short Stboard[64] = {
     PAWN, PAWN, PAWN, PAWN, PAWN, PAWN, PAWN, PAWN,
     ROOK, KNIGHT, BISHOP, QUEEN, KING, BISHOP, KNIGHT, ROOK};
 
-static short Stcolor[64] = {
+short const Sim::Stcolor[64] = {
     white, white, white, white, white, white, white, white,
     white, white, white, white, white, white, white, white,
     2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
@@ -168,7 +167,7 @@ static short Stcolor[64] = {
     black, black, black, black, black, black, black, black,
     black, black, black, black, black, black, black, black};
 
-static short direc[8][8] = {
+short const Sim::direc[8][8] = {
     {  0,  0,   0,   0,  0,   0,  0,   0},
     { 10,  9,  11,   0,  0,   0,  0,   0},
     {  8, -8,  12, -12, 19, -19, 21, -21},
@@ -178,9 +177,9 @@ static short direc[8][8] = {
     {  1, 10,  -1, -10,  9,  11, -9, -11},
     {-10, -9, -11,   0,  0,   0,  0,   0}};
 
-static short max_steps[8] = {0, 2, 1, 7, 7, 7, 1, 2};
+short const Sim::max_steps[8] = {0, 2, 1, 7, 7, 7, 1, 2};
 
-static short nunmap[120] = {
+short const Sim::nunmap[120] = {
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1,  0,  1,  2,  3,  4,  5,  6,  7, -1,
@@ -201,13 +200,13 @@ static short nunmap[120] = {
 */
 void Sim::Initialize_moves()
 {
-    short p0, d, di, delta;
+    short d, di, delta;
 
     for (short ptyp = 0; ptyp < 8; ptyp++)
     {
         for (short po = 0; po < 64; po++)
         {
-            for (p0 = 0; p0 < 64; p0++)
+            for (short p0 = 0; p0 < 64; p0++)
             {
                 *(nextpos + ptyp * 64 * 64 + po * 64 + p0) = BYTE(po);
                 *(nextdir + ptyp * 64 * 64 + po * 64 + p0) = BYTE(po);
@@ -237,10 +236,10 @@ void Sim::Initialize_moves()
 
                 if (delta != 0)
                 {
-                    p0 = po;
+                    short p0 = po;
                     for (s = 0; s < max_steps[ptyp]; s++)
                     {
-                        p0 = p0 + delta;
+                        p0 += delta;
                         /*
                           break if (off board) or
                           (pawns only move two steps from home square)
@@ -249,10 +248,9 @@ void Sim::Initialize_moves()
                         {
                             break;
                         }
-                        else
-                        {
-                            dest[d][s] = nunmap[p0];
-                        }
+
+                        dest[d][s] = nunmap[p0];
+
                     }
                 }
                 else
@@ -269,10 +267,11 @@ void Sim::Initialize_moves()
 
                 for (di = d; s > 0 && di > 0; di--)
                 {
-                    if (steps[sorted[di - 1]] == 0) /* should be: < s */
-                        sorted[di] = sorted[di - 1];
-                    else
+                    /* should be: < s */
+                    if (steps[sorted[di - 1]] != 0)
                         break;
+
+                    sorted[di] = sorted[di - 1];
                 }
                 sorted[di] = d;
             }
@@ -281,7 +280,7 @@ void Sim::Initialize_moves()
               update nextpos/nextdir,
               pawns have two threads (capture and no capture)
             */
-            p0 = nunmap[po];
+            short p0 = nunmap[po];
 
             if (ptyp == PAWN || ptyp == BPAWN)
             {
@@ -298,22 +297,22 @@ void Sim::Initialize_moves()
                     pdir[p0] = (unsigned char) dest[d][0];
                     p0 = dest[d][0];
                 }
+
+                continue;
             }
-            else
+
+            pdir[p0] = BYTE(dest[sorted[0]][0]);
+
+            for (d = 0; d < 8; d++)
             {
-                pdir[p0] = BYTE(dest[sorted[0]][0]);
-
-                for (d = 0; d < 8; d++)
+                for (s = 0; s < steps[sorted[d]]; s++)
                 {
-                    for (s = 0; s < steps[sorted[d]]; s++)
-                    {
-                        ppos[p0] = BYTE(dest[sorted[d]][s]);
-                        p0 = dest[sorted[d]][s];
+                    ppos[p0] = BYTE(dest[sorted[d]][s]);
+                    p0 = dest[sorted[d]][s];
 
-                        if (d < 7)
-                            pdir[p0] = BYTE(dest[sorted[d + 1]][0]);
-                        /* else is already initialized */
-                    }
+                    if (d < 7)
+                        pdir[p0] = BYTE(dest[sorted[d + 1]][0]);
+                    /* else is already initialized */
                 }
             }
         }
@@ -402,7 +401,6 @@ static short PawnAdvance[64] = {
 */
 void pick(short p1, short p2)
 {
-    Leaf temp;
     short s0 = Tree[p1].score;
     short p0 = p1;
 
@@ -419,7 +417,7 @@ void pick(short p1, short p2)
 
     if (p0 != p1)
     {
-        temp = Tree[p1];
+        Leaf temp = Tree[p1];
         Tree[p1] = Tree[p0];
         Tree[p0] = temp;
     }
@@ -485,7 +483,7 @@ void Sim::NewGame(HWND hWnd, HWND compClr)
     for (short l = 0; l < 64; l++)
     {
         ::board[l] = ::Stboard[l];
-        ::color[l] = ::Stcolor[l];
+        ::color[l] = Stcolor[l];
         ::Mvboard[l] = 0;
     }
 
@@ -502,7 +500,7 @@ void Sim::NewGame(HWND hWnd, HWND compClr)
         SetTimeControl(::ft);
     }
     InitializeStats();
-    ::time0 = ::time(0);
+    ::time0 = long(::time(0));
     ElapsedTime(1, ExtraTime, ResponseTime, ::ft);
     UpdateDisplay(hWnd, compClr, 0, 0, 1, 0, flag.reverse);
     flag.easy = true;
@@ -1946,6 +1944,7 @@ static int search(HWND hWnd, short side, short ply, short depth,
     return best;
 }
 
+//moet weg uit sim.cpp
 static void OutputMove(HINSTANCE hInstance, HWND hwnd, HWND compClr, Leaf *node)
 {
     TCHAR tmp[30];
@@ -2916,7 +2915,7 @@ void CaptureList(short side, short ply)
     short r7 = rank7[side];
     short *PL = PieceList[side];
 
-    for (short i = 0; i <= PieceCnt[side]; i++)
+    for (short i = 0; i <= PieceCnt[side]; ++i)
     {
         short sq = PL[i];
         short piece = board[sq];
@@ -2937,56 +2936,57 @@ void CaptureList(short side, short ply)
                 {
                     if (color[u] == xside)
                     {
-                        xlink(node++, sq, u, CAPTURE,
-                              value[board[u]] + svalue[board[u]] - piece,
-                              ply);
+                        short s = value[board[u]] + svalue[board[u]] - piece;
+                        xlink(node, sq, u, CAPTURE, s, ply);
+                        node++;
                     }
 
                     u = pdir[u];
                 }
             }
             while (u != sq);
+
+            continue;
         }
-        else
+
+        BYTE *pdir = nextdir + ptype[side][piece] * 64 * 64 + sq * 64;
+
+        if (piece == PAWN && sq >> 3 == r7)
         {
-            BYTE *pdir = nextdir + ptype[side][piece] * 64 * 64 + sq * 64;
+            u = pdir[sq];
 
-            if (piece == PAWN && sq >> 3 == r7)
-            {
-                u = pdir[sq];
+            if (color[u] == xside)
+                xlink(node++, sq, u, CAPTURE | PROMOTE | QUEEN, VALUEQ, ply);
 
-                if (color[u] == xside)
-                    xlink(node++, sq, u, CAPTURE | PROMOTE | QUEEN, VALUEQ, ply);
+            u = pdir[u];
 
-                u = pdir[u];
+            if (color[u] == xside)
+                xlink(node++, sq, u, CAPTURE | PROMOTE | QUEEN, VALUEQ, ply);
 
-                if (color[u] == xside)
-                    xlink(node++, sq, u, CAPTURE | PROMOTE | QUEEN, VALUEQ, ply);
+            ppos = nextpos + ptype[side][piece] * 64 * 64 + sq * 64;
+            u = ppos[sq]; /* also generate non capture promote */
 
-                ppos = nextpos+ptype[side][piece] * 64 * 64 + sq * 64;
-                u = ppos[sq]; /* also generate non capture promote */
+            if (color[u] == NEUTRAL)
+                xlink(node++, sq, u, PROMOTE | QUEEN, VALUEQ, ply);
 
-                if (color[u] == NEUTRAL)
-                    xlink(node++, sq, u, PROMOTE | QUEEN, VALUEQ, ply);
-            }
-            else
-            {
-                u = pdir[sq];
-
-                do
-                {
-                    if (color[u] == xside)
-                    {
-                        xlink(node++, sq, u, CAPTURE,
-                              value[board[u]] + svalue[board[u]] - piece,
-                              ply);
-                    }
-
-                    u = pdir[u];
-                }
-                while (u != sq);
-            }
+            continue;
         }
+
+        u = pdir[sq];
+
+        do
+        {
+            if (color[u] == xside)
+            {
+                short s = value[board[u]] + svalue[board[u]] - piece;
+                xlink(node, sq, u, CAPTURE, s, ply);
+                node++;
+            }
+
+            u = pdir[u];
+        }
+        while (u != sq);
+
     }
 }
 
