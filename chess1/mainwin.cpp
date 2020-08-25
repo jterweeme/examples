@@ -12,11 +12,10 @@
 #include "hittest.h"
 #include "book.h"
 #include "dialog.h"
-#include <ctime>
 
 MainWindow *MainWindow::_instance = 0;
 
-MainWindow::MainWindow(WinClass *wc, Sim *sim) : _wc(wc), _sim(sim)
+MainWindow::MainWindow(WinClass *wc, Sim *sim) : _wc(wc), _sim(sim), coords(1)
 {
     _instance = this;
     _firstSq = -1;
@@ -30,9 +29,7 @@ HWND MainWindow::hComputerColor() const
     return _hComputerColor;
 }
 
-static int coords = 1;
-
-static void GiveHint(HWND hWnd)
+void MainWindow::GiveHint(HWND hWnd)
 {
     TCHAR s[40];
     algbr(short(::hint >> 8), short(::hint & 0xFF), false);
@@ -45,7 +42,7 @@ static void GiveHint(HWND hWnd)
    Compare the string 's' to the list of legal moves available for the
    opponent. If a match is found, make the move on the board.
 */
-int MainWindow::_verifyMove(HINSTANCE hInstance, HWND hWnd, TCHAR *s, short iop, WORD *mv)
+int MainWindow::_verifyMove(HWND hWnd, TCHAR *s, short iop, WORD *mv)
 {
     static short tempb, tempc, tempsf, tempst;
     static Leaf xnode;
@@ -54,12 +51,12 @@ int MainWindow::_verifyMove(HINSTANCE hInstance, HWND hWnd, TCHAR *s, short iop,
 
     if (iop == 2)
     {
-        UnmakeMove(opponent, &xnode, &tempb, &tempc, &tempsf, &tempst);
+        _sim->UnmakeMove(opponent, &xnode, &tempb, &tempc, &tempsf, &tempst);
         return false;
     }
 
     short cnt = 0;
-    MoveList(opponent, 2);
+    _sim->MoveList(opponent, 2);
     short pnt = TrPnt[2];
 
     while (pnt < TrPnt[3])
@@ -77,12 +74,12 @@ int MainWindow::_verifyMove(HINSTANCE hInstance, HWND hWnd, TCHAR *s, short iop,
 
     if (cnt == 1)
     {
-        MakeMove(opponent, &xnode, &tempb, &tempc, &tempsf, &tempst, &INCscore);
+        _sim->MakeMove(opponent, &xnode, &tempb, &tempc, &tempsf, &tempst, &INCscore);
 
-        if (SqAtakd(PieceList[opponent][0], computer))
+        if (_sim->SqAtakd(PieceList[opponent][0], computer))
         {
-            UnmakeMove(opponent, &xnode, &tempb, &tempc, &tempsf, &tempst);
-            Toolbox().messageBox(hInstance, hWnd, IDS_ILLEGALMOVE, IDS_CHESS);
+            _sim->UnmakeMove(opponent, &xnode, &tempb, &tempc, &tempsf, &tempst);
+            Toolbox().messageBox(hInstance(), hWnd, IDS_ILLEGALMOVE, IDS_CHESS);
             return false;
         }
 
@@ -94,7 +91,7 @@ int MainWindow::_verifyMove(HINSTANCE hInstance, HWND hWnd, TCHAR *s, short iop,
         if (board[xnode.t] == PAWN || xnode.flags & CAPTURE || xnode.flags & CSTLMASK)
         {
             Game50 = GameCnt;
-            ZeroRPT();
+            _sim->ZeroRPT();
         }
 
         GameList[GameCnt].depth = GameList[GameCnt].score = 0;
@@ -109,7 +106,7 @@ int MainWindow::_verifyMove(HINSTANCE hInstance, HWND hWnd, TCHAR *s, short iop,
     }
 
     if (cnt > 1)
-        Toolbox().messageBox(hInstance, hWnd, IDS_AMBIGUOUSMOVE, IDS_CHESS);
+        Toolbox().messageBox(hInstance(), hWnd, IDS_AMBIGUOUSMOVE, IDS_CHESS);
 
     return false;
 }
@@ -146,15 +143,10 @@ void MainWindow::_createChildren(HWND hWnd, HINSTANCE hInst, short xchar, short 
     CONSTEXPR DWORD style2 = WS_CHILD | SS_LEFT | WS_VISIBLE;
     hComputerMove = CreateWindow(lpStatic, NULL, style2, 375, 10, 10 * xchar, ychar, hWnd, HMENU(1003), hInst, NULL);
     hClockComputer = CreateWindow(lpStatic, NULL, style1, 390, 55, 6 * xchar, ychar, hWnd, HMENU(1010), hInst, NULL);
+    hClockHuman = CreateWindow(lpStatic, NULL, style1, 390, 55 + 3 * ychar, 6 * xchar, ychar, hWnd, HMENU(1011), hInst, NULL);
+    hMsgComputer = CreateWindow(lpStatic, TEXT("Black:"), style1, 390, 55 - 3 * ychar / 2, 6 * xchar, ychar, hWnd, HMENU(1020), hInst, NULL);
 
-    hClockHuman =  CreateWindow(lpStatic, NULL, WS_CHILD | SS_CENTER | WS_VISIBLE,
-                         390, 55+3*ychar, 6*xchar, ychar, hWnd, HMENU(1011), hInst, NULL);
-
-    hMsgComputer = CreateWindow(lpStatic, TEXT("Black:"), WS_CHILD | SS_CENTER | WS_VISIBLE,
-                         390, 55 - 3 * ychar / 2, 6 * xchar, ychar, hWnd, HMENU(1020), hInst, NULL);
-
-    _hMsgHuman = CreateWindow(lpStatic, TEXT("White:"),
-                         WS_CHILD | SS_CENTER | WS_VISIBLE,
+    _hMsgHuman = CreateWindow(lpStatic, TEXT("White:"), WS_CHILD | SS_CENTER | WS_VISIBLE,
                          390, 55 + 3 * ychar / 2, 6 * xchar, ychar,
                          hWnd, HMENU(1021), hInst, NULL);
 }
@@ -308,8 +300,6 @@ void MainWindow::_setStandardColors()
 
 void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
 {
-    HMENU hMenu;
-
     switch (wParam)
     {
     case MSG_CHESS_QUIT:
@@ -333,29 +323,36 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
         GetOpenings(hInstance());
         break;
     case MSG_CHESS_ABOUT:
-        ::DialogBox(hInstance(), MAKEINTRESOURCE(IDD_ABOUT), hWnd, About);
+    {
+        AboutDlg aboutDlg(hInstance());
+        aboutDlg.run(hWnd);
+    }
         break;
 #ifndef WINCE
     case MSG_CHESS_EDIT:
+    {
         _editActive = TRUE;
-        hMenu = CreateMenu();
+        HMENU hMenu = CreateMenu();
         ::AppendMenu(hMenu, MF_STRING, MSG_CHESS_EDITDONE, TEXT("&Done"));
         hMainMenu = GetMenu(hWnd);
         ::SetMenu(hWnd, hMenu);
         DrawMenuBar(hWnd);
+    }
         break;
     case MSG_CHESS_EDITDONE:
+    {
         _editActive = FALSE;
-        hMenu = GetMenu(hWnd);
+        HMENU hMenu = GetMenu(hWnd);
         SetMenu(hWnd, hMainMenu);
         DrawMenuBar(hWnd);
         DestroyMenu(hMenu);
         GameCnt = 0;
         Game50 = 1;
-        ZeroRPT ();
+        _sim->ZeroRPT();
         Sdepth = 0;
-        InitializeStats();
+        _sim->InitializeStats();
         ::PostMessage(hWnd, MSG_USER_MOVE, 0, 0);
+    }
         break;
 #endif
     case MSG_CHESS_REVIEW:
@@ -557,28 +554,20 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
         ::InvalidateRect(_hMsgHuman, NULL, TRUE);
         break;
     case IDM_TIMECONTROL:
-        if (TimeControlDialog(hWnd, hInstance(), wParam))
+    {
+        TimeCtrlDlg timeCtrlDlg(hInstance());
+
+        if (timeCtrlDlg.run(hWnd, wParam))
         {
             ::TCflag = ::TCmoves > 1;
-
-            if (TCflag)
-            {
-            }
             SetTimeControl(::ft);
         }
-        break;
-#ifndef WINCE
-    case MSG_HELP_INDEX:
-    {
-        TCHAR szHelpFileName[EXE_NAME_MAX_SIZE+1];
-        _makeHelpPathName(szHelpFileName);
-        ::WinHelp(hWnd,szHelpFileName,HELP_INDEX,0L);
     }
         break;
-    case MSG_HELP_HELP:
-        ::WinHelp(hWnd, TEXT("WINHELP.HLP"), HELP_INDEX, 0L);
+    case MSG_HELP_INDEX:
         break;
-#endif
+    case MSG_HELP_HELP:
+        break;
     }
 }
 
@@ -589,8 +578,8 @@ void MainWindow::_userMoveProc(HWND hwnd)
 
     if (flag.bothsides)
     {
-        SelectMove(hInstance(), hwnd, _hComputerColor, opponent, 1,
-                   _sim->maxSearchDepth(), hAccel(), ::ft);
+        _sim->SelectMove(hInstance(), hwnd, _hComputerColor, opponent, 1,
+                   _sim->maxSearchDepth(), ::ft);
 
         if (flag.beep)
             MessageBeep(0);
@@ -603,30 +592,6 @@ void MainWindow::_userMoveProc(HWND hwnd)
     ::ft = 0;
     player = opponent;
     ShowSidetoMove();
-
-    /* Set up to allow computer to think while user takes move*/
-    if (hint > 0 && !flag.easy /*&& Book == NULL*/ )
-    {
-        WORD mv;
-        TCHAR s[10];
-        time0 = time(NULL);
-        algbr(hint >> 8, hint & 0xff, false);
-        ::lstrcpy(s, mvstr[0]);
-        int tmp = epsquare;
-
-        if (_verifyMove(hInstance(), hwnd, s, 1, &mv))
-        {
-            SelectMove(hInstance(), hwnd, _hComputerColor, computer,
-                       2, _sim->maxSearchDepth(), hAccel(), ::ft);
-
-            _verifyMove(hInstance(), hwnd, mvstr[0], 2, &mv);
-
-            if (Sdepth > 0)
-                Sdepth--;
-        }
-        ::ft = time(NULL) - time0;
-        epsquare = tmp;
-    }
 }
 
 void MainWindow::_getStartupColors()
@@ -660,19 +625,110 @@ void MainWindow::_createProc(HWND hWnd)
     /*Autosize main window */
     POINT point;
     Board::QueryBoardSize(&point);
+#ifdef WINCE
+    const int w = point.x + 1 * 2 + 50;
+    const int h = point.y + 1 * 2 + GetSystemMetrics(SM_CYMENU) + GetSystemMetrics(SM_CYCAPTION) + ychar;
+#else
     const int w = point.x + GetSystemMetrics(SM_CXFRAME) * 2 + 50;
     const int h = point.y + GetSystemMetrics(SM_CYFRAME) * 2 + GetSystemMetrics(SM_CYMENU) + GetSystemMetrics(SM_CYCAPTION) + ychar;
+#endif
     ::SetWindowPos(hWnd, hWnd, 0, 0, w, h, SWP_NOMOVE | SWP_NOZORDER);
+
+    _hitTest = new HitTestCE();
+    _hitTest->init(hDC);
     ::ReleaseDC(hWnd, hDC);
-    _hitTest = new HitTest();
-    _hitTest->init();
     _createChildren(hWnd, hInstance(), xchar, ychar);
+}
+
+void MainWindow::_entryPoint(HWND hWnd)
+{
+    TCHAR str[10];
+    ::lstrcpy(str, mvstr[0]);
+    WORD mv;
+    int temp = _verifyMove(hWnd, str, 0, &mv);
+
+    if (!temp)
+    {
+        ::PostMessage(hWnd, MSG_USER_MOVE, 0, 0);
+        return;
+    }
+
+    ElapsedTime(1, ExtraTime, ResponseTime, ::ft);
+
+    if (flag.force)
+    {
+        computer = opponent;
+        opponent = otherside[computer];
+    }
+
+    if (mv != hint)
+    {
+        Sdepth = 0;
+        ::ft = 0;
+    }
+
+    ::PostMessage(hWnd, MSG_COMPUTER_MOVE, 0, 0);
+}
+
+void MainWindow::_lButtonDownProc(HWND hWnd, LPARAM lParam)
+{
+    /* If computer is thinking on human's time stop it at the first
+        button click.  add test to ensure that "human" can't interupt
+        the computer from thinking through its turn */
+    if (User_Move)
+    {
+        ::flag.timeout = true;
+        ::flag.bothsides = false;
+    }
+
+    /* Don't continue unless reason to */
+    if (!(_editActive || User_Move))
+        return;
+
+    POINT point;
+    point.x = LOWORD(lParam);
+    point.y = HIWORD(lParam);
+
+    //HDC tijdelijk om te testen
+    HDC hdc = GetDC(hWnd);
+    int hit = _hitTest->test(point.x, point.y, hdc);
+    ReleaseDC(hWnd, hdc);
+
+    if (hit == -1 )
+    {
+        if (_firstSq != -1)
+        {
+            _board->UnHiliteSquare(hWnd, _firstSq);
+            _gotFirst = FALSE;
+            _firstSq = -1;
+        }
+        return;
+    }
+
+    if (_gotFirst)
+    {
+        _board->UnHiliteSquare(hWnd, _firstSq);
+        _gotFirst = FALSE;
+
+        if (_editActive == TRUE)
+            ::PostMessage(hWnd, MSG_EDITBOARD, _firstSq << 8 | hit, 0);
+        else if (User_Move == TRUE)
+            ::PostMessage(hWnd, MSG_USER_ENTERED_MOVE, _firstSq << 8 | hit, 0);
+
+        _firstSq = -1;
+    }
+    else
+    {
+        _gotFirst = TRUE;
+        _firstSq = hit;
+        _board->HiliteSquare(hWnd, hit);
+    }
 }
 
 LRESULT
 MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    POINT point;
+    //POINT point;
 
     switch (message)
     {
@@ -684,11 +740,6 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_DESTROY:
     {
-#ifndef WINCE
-        TCHAR szHelpFileName[EXE_NAME_MAX_SIZE + 1];
-        _makeHelpPathName(szHelpFileName);
-        ::WinHelp(hWnd, szHelpFileName, HELP_QUIT, 0L);
-#endif
         ::DeleteObject(_hBrushBackGround);
         _hitTest->destroy();
         delete _hitTest;
@@ -737,54 +788,7 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         break;
     case WM_LBUTTONDOWN:
-    {
-        /* If computer is thinking on human's time stop it at the first
-            button click.  add test to ensure that "human" can't interupt
-            the computer from thinking through its turn */
-        if (User_Move)
-        {
-            ::flag.timeout = true;
-            ::flag.bothsides = false;
-        }
-
-        /* Don't continue unless reason to */
-        if (!(_editActive || User_Move))
-            break;
-
-        point.x = LOWORD(lParam);
-        point.y = HIWORD(lParam);
-        int hit = _hitTest->test(point.x, point.y);
-
-        if (hit == -1 )
-        {
-            if (_firstSq != -1)
-            {
-                _board->UnHiliteSquare(hWnd, _firstSq);
-                _gotFirst = FALSE;
-                _firstSq = -1;
-            }
-            break;
-        }
-
-        if (_gotFirst)
-        {
-            _board->UnHiliteSquare(hWnd, _firstSq);
-            _gotFirst = FALSE;
-
-            if (_editActive == TRUE)
-                ::PostMessage(hWnd, MSG_EDITBOARD, _firstSq << 8 | hit, 0);
-            else if (User_Move == TRUE)
-                ::PostMessage(hWnd, MSG_USER_ENTERED_MOVE, _firstSq << 8 | hit, 0);
-
-            _firstSq = -1;
-        }
-        else
-        {
-            _gotFirst = TRUE;
-            _firstSq = hit;
-            _board->HiliteSquare(hWnd, hit);
-        }
-    }
+        _lButtonDownProc(hWnd, lParam);
         break;
     case MSG_EDITBOARD:
     {
@@ -845,45 +849,13 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
         /*fallthrough*/
     case MSG_MANUAL_ENTRY_POINT:
-    {
-        TCHAR str[10];
-        ::lstrcpy(str, mvstr[0]);
-
-        WORD mv;
-        int temp = _verifyMove(hInstance(), hWnd, str, 0, &mv);
-
-        if (!temp)
-        {
-            ::PostMessage(hWnd, MSG_USER_MOVE, 0, 0);
-        }
-        else
-        {
-            ElapsedTime(1, ExtraTime, ResponseTime, ::ft);
-
-            if (flag.force)
-            {
-                computer = opponent;
-                opponent = otherside[computer];
-            }
-
-            if (mv != hint)
-            {
-                Sdepth = 0;
-                ::ft = 0;
-                ::PostMessage(hWnd, MSG_COMPUTER_MOVE, 0, 0);
-            }
-            else
-            {
-                ::PostMessage(hWnd, MSG_COMPUTER_MOVE, 0, 0);
-            }
-        }
-    }
+        _entryPoint(hWnd);
         break;
     case MSG_COMPUTER_MOVE:
         if (!(flag.quit || flag.mate || flag.force))
         {
-            SelectMove(hInstance(), hWnd, _hComputerColor, computer, 1,
-                       _sim->maxSearchDepth(), hAccel(), ::ft);
+            _sim->SelectMove(hInstance(), hWnd, _hComputerColor, computer, 1,
+                       _sim->maxSearchDepth(), ::ft);
 
             if (flag.beep)
                 ::MessageBeep(0);

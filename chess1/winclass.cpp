@@ -10,7 +10,11 @@ WinClass::WinClass(HINSTANCE hInstance, WNDPROC wndProc, LPCTSTR className)
     _wc.hIcon = ::LoadIcon(hInstance, className);
     _wc.hCursor = ::LoadCursor(NULL, IDC_ARROW);
     _wc.hbrBackground = HBRUSH(GetStockObject(WHITE_BRUSH));
+#ifdef WINCE
+    _wc.lpszMenuName = NULL;
+#else
     _wc.lpszMenuName = className;
+#endif
     _wc.lpszClassName = className;
 }
 

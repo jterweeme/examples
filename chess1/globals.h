@@ -30,28 +30,14 @@ extern HWND hComputerMove;
 extern HWND hClockHuman;
 extern HWND hClockComputer;
 
-extern void SelectMove(HINSTANCE hInstance, HWND hWnd, HWND compClr, short side,
-                       short iop, short maxSearchDepth, HACCEL haccel, long xft);
-
 extern void DrawAllPieces(HDC hdc, PIECEBITMAP *pieces, int reverse,
                 short *pbrd, short *color, COLORREF xblack, COLORREF xwhite);
-
-extern void MakeMove(short side, Leaf *node, short *tempb,
-              short *tempc, short *tempsf, short *tempst, short *INCscore);
-
-extern void UnmakeMove(short side, Leaf *node, short *tempb,
-                       short *tempc, short *tempsf, short *tempst);
 
 extern void UpdateDisplay(HWND hWnd, HWND compClr, short f, short t,
                           short flag, short iscastle, bool reverse);
 
 extern int parse(FILE *fd, WORD *mv, short side);
-extern void ZeroTTable();
-extern void ZeroRPT();
-extern void MoveList(short side, short ply);
 extern void CaptureList(short side, short ply);
-extern void InitializeStats();
-extern int SqAtakd(short sq, short side);
 extern void SetTimeControl(long xft);
 extern void ElapsedTime(short iop, long extra, long responseTime, long xft);
 extern void SearchStartStuff(short side);
@@ -59,9 +45,7 @@ extern void algbr(short f, short t, short flag);
 extern void ShowNodeCnt(HWND hwnd, long NodeCnt, long evrate);
 extern void ShowCurrentMove(HWND hwnd, short pnt, short f, short t);
 extern void ListGame(char *fname);
-extern int TimeControlDialog(HWND hWnd, HINSTANCE hInst, DWORD Param);
 extern void GetGame(HWND hWnd, HWND compClr, char *fname);
-extern INT_PTR CALLBACK About(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 extern int TestDialog(HWND hWnd, HINSTANCE hInst);
 extern void StatDialog(HWND hWnd, HINSTANCE hInst);
 extern void pick(short p1, short p2);

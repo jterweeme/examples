@@ -5,14 +5,14 @@
 #include <iostream>
 #include <windows.h>
 
-template <class T> const T& myMax(const T &a, const T &b)
-{
-    return a < b ? b : a;
-}
-
 class Toolbox
 {
 public:
+    template <class T> static const T& myMax(const T &a, const T &b)
+    {
+        return a < b ? b : a;
+    }
+
     static char nibble(BYTE n);
     static std::string hex8(BYTE b);
     static void hex8(std::ostream &os, BYTE b);

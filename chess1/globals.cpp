@@ -2,8 +2,9 @@
 #include "toolbox.h"
 #include "resource.h"
 #include "board.h"
+#include "sim.h"
+#include "zeit.h"
 #include <iostream>
-#include <ctime>
 
 BookEntry *Book;
 DWORD hashkey, hashbd;
@@ -110,8 +111,10 @@ void algbr(short f, short t, short flag)
 */
 void ElapsedTime(short iop, long extra, long responseTime, long xft)
 {
-    ::et = ::time(0) - ::time0;
-    ::et = myMax(::et, long(0));
+    SystemTime sysTime;
+    sysTime.getTime();
+    ::et = sysTime.unix() - ::time0;
+    ::et = Toolbox::myMax(::et, long(0));
     ::ETnodes += 50;
 
     if (::et > ::et0 || iop == 1)
@@ -123,7 +126,8 @@ void ElapsedTime(short iop, long extra, long responseTime, long xft)
 
         if (iop == 1)
         {
-            time0 = ::time(0);
+            sysTime.getTime();
+            time0 = sysTime.unix();
             et0 = 0;
         }
 
@@ -207,7 +211,7 @@ void GetGame(HWND hWnd, HWND compClr, char *fname)
     computer--;
     opponent--;
     ::fclose(fd);
-    InitializeStats();
+    Sim::InitializeStats();
     Sdepth = 0;
     UpdateDisplay(hWnd, compClr, 0, 0, 1, 0, flag.reverse);
 }
@@ -264,8 +268,8 @@ void UpdateClocks()
         s = short(TimeControl.clock[player] - ::et - 60 * (long)m);
     }
 
-    m = ::myMax(m, short(0));
-    s = ::myMax(s, short(0));
+    m = Toolbox::myMax(m, short(0));
+    s = Toolbox::myMax(s, short(0));
     ::wsprintf(tmp, TEXT("%0d:%02d"), m, s);
     ::SetWindowText(player == white ? hClockHuman : hClockComputer, tmp);
 
@@ -273,107 +277,21 @@ void UpdateClocks()
         ShowNodeCnt(hStats, NodeCnt, evrate);
 }
 
-static TCHAR Version[100];
-
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
-{
-    switch (message)
-    {
-    case WM_INITDIALOG:
-        SetDlgItemText(hDlg, 106, Version);
-        return TRUE;
-    case WM_SYSCOMMAND:
-        if ((wParam & 0xfff0) == SC_CLOSE)
-        {
-            ::EndDialog(hDlg, NULL);
-            return TRUE;
-        }
-        break;
-    case WM_COMMAND:
-        if (wParam == IDOK)
-        {
-            ::EndDialog(hDlg, NULL);
-            return TRUE;
-        }
-        break;
-    }
-
-    return FALSE;
-}
-
-static int tmpTCmoves;
-static int tmpTCminutes;
-
-static INT_PTR CALLBACK
-TimeControlDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
-{
-    switch (message)
-    {
-    case WM_INITDIALOG:
-        CheckRadioButton(hDlg, TMDLG_1MOV, TMDLG_60MOV, TCmoves + TMDLG_MOV);
-        CheckRadioButton(hDlg, TMDLG_5MIN, TMDLG_600MIN, TCminutes+TMDLG_MIN);
-        tmpTCminutes = TCminutes;
-        tmpTCmoves   = TCmoves;
-        return TRUE;
-    case WM_SYSCOMMAND:
-        if ((wParam & 0xfff0) == SC_CLOSE)
-        {
-            EndDialog(hDlg, NULL);
-            return TRUE;
-        }
-        break;
-    case WM_COMMAND:
-        switch (wParam)
-        {
-        case IDOK:
-            TCminutes = tmpTCminutes;
-            TCmoves = tmpTCmoves;
-            ::EndDialog(hDlg, 1);
-            return TRUE;
-        case IDCANCEL:
-            EndDialog(hDlg, NULL);
-            return TRUE;
-        case TMDLG_1MOV:
-        case TMDLG_10MOV:
-        case TMDLG_20MOV:
-        case TMDLG_40MOV:
-        case TMDLG_60MOV:
-            tmpTCmoves = wParam - TMDLG_MOV;
-            CheckRadioButton(hDlg, TMDLG_1MOV, TMDLG_60MOV, wParam);
-            break;
-        case TMDLG_5MIN:
-        case TMDLG_15MIN:
-        case TMDLG_30MIN:
-        case TMDLG_60MIN:
-        case TMDLG_600MIN:
-            tmpTCminutes = wParam - TMDLG_MIN;
-            CheckRadioButton(hDlg, TMDLG_5MIN, TMDLG_600MIN, wParam);
-            break;
-        }
-        break;
-    }
-
-    return FALSE;
-}
-
-int TimeControlDialog(HWND hWnd, HINSTANCE hInst, DWORD Param )
-{
-    int status = DialogBoxParam(hInst, MAKEINTRESOURCE(TIMECONTROL), hWnd, TimeControlDlgProc, Param);
-    return status;
-}
-
 void TestSpeed(HWND hWnd, int cnt, void (*f) (short int side, short int ply))
 {
-    long t2, evrate;
+    long evrate;
     TCHAR tmp[40];
-    long t1 = time(0);
+    SystemTime sysTime;
+    sysTime.getTime();
+    long t1 = sysTime.unix();
 
     for (short i = 0; i < 10000; i++)
     {
         f(opponent, 2);
     }
 
-    t2 = time(0);
+    sysTime.getTime();
+    long t2 = sysTime.unix();
     NodeCnt = 10000L * (TrPnt[3] - TrPnt[2]);
     evrate = NodeCnt / (t2 - t1);
     wsprintf(tmp, TEXT("Nodes= %8ld, Nodes/Sec= %5ld"), NodeCnt, evrate);
@@ -395,15 +313,15 @@ TestDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
     case (WM_USER+1):
         hCursor = ::SetCursor(::LoadCursor(NULL, IDC_WAIT) );
         ::ShowCursor(TRUE);
-        ::TestSpeed(hDlg, 100, MoveList);
+        ::TestSpeed(hDlg, 100, Sim::MoveList);
         ::TestSpeed(hDlg, 101, CaptureList);
         ::ShowCursor(FALSE);
         ::SetCursor(hCursor);
         break;
     case WM_SYSCOMMAND:
-        if ((wParam&0xfff0) == SC_CLOSE)
+        if ((wParam & 0xfff0) == SC_CLOSE)
         {
-            ::EndDialog(hDlg, NULL);
+            ::EndDialog(hDlg, 0);
             return TRUE;
         }
         break;
@@ -536,11 +454,14 @@ static void DrawPiece(HWND hWnd, short f, bool reverse)
     int y = reverse ? 7 - f / 8 : f / 8;
     POINT aptl[4];
     Board::QuerySqCoords(x, y, aptl + 0);
-#ifndef WINCE
-    HRGN hRgn = ::CreatePolygonRgn(aptl, 4, WINDING);
+    HRGN hRgn;
+#ifdef WINCE
+    hRgn = ::CreateRectRgn(aptl[0].x, aptl[0].y, aptl[2].x, aptl[2].y);
+#else
+    hRgn = ::CreatePolygonRgn(aptl, 4, WINDING);
+#endif
     ::InvalidateRgn(hWnd, hRgn, FALSE );
     ::DeleteObject(hRgn);
-#endif
 }
 
 void UpdateDisplay(HWND hWnd, HWND compClr, short f, short t,

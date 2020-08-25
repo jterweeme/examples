@@ -26,9 +26,54 @@
 #include "dialog.h"
 #include "palette.h"
 
-Dialog::Dialog(HINSTANCE)
+Dialog::Dialog(HINSTANCE hInstance) : _hInstance(hInstance)
 {
 
+}
+
+HINSTANCE Dialog::hInstance() const
+{
+    return _hInstance;
+}
+
+AboutDlg::AboutDlg(HINSTANCE hInstance) : Dialog(hInstance)
+{
+
+}
+
+static TCHAR Version[100];
+
+INT_PTR CALLBACK AboutDlg::dlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM)
+{
+    switch (msg)
+    {
+    case WM_INITDIALOG:
+        SetDlgItemText(hDlg, 106, Version);
+        return TRUE;
+    case WM_SYSCOMMAND:
+        if ((wParam & 0xfff0) == SC_CLOSE)
+        {
+            ::EndDialog(hDlg, NULL);
+            return TRUE;
+        }
+        break;
+    case WM_COMMAND:
+        if (wParam == IDOK)
+        {
+            ::EndDialog(hDlg, NULL);
+            return TRUE;
+        }
+        break;
+    }
+
+    return FALSE;
+    return 0;
+    //return _instance->_dlgProc(hwnd, msg, wParam, lParam);
+}
+
+INT_PTR AboutDlg::run(HWND hwnd)
+{
+    return DialogBox(hInstance(), MAKEINTRESOURCE(IDD_ABOUT), hwnd, dlgProc);
 }
 
 ReviewDialog *ReviewDialog::_instance;
@@ -92,14 +137,14 @@ INT_PTR CALLBACK ReviewDialog::dlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARA
 ColorDlg *ColorDlg::_instance;
 
 ColorDlg::ColorDlg(HINSTANCE hInstance, UINT variant, COLORREF *item) :
-    _hInstance(hInstance), _variant(variant), _pclr(item)
+    Dialog(hInstance), _variant(variant), _pclr(item)
 {
     _instance = this;
 }
 
 INT_PTR ColorDlg::run(HWND hwnd, LPARAM lParam)
 {
-    return DialogBoxParam(_hInstance, MAKEINTRESOURCE(COLOR), hwnd, dlgProc, lParam);
+    return DialogBoxParam(hInstance(), MAKEINTRESOURCE(COLOR), hwnd, dlgProc, lParam);
 }
 
 static TCHAR lpWBGC[] = TEXT("Window background color");
@@ -301,5 +346,72 @@ INT_PTR ManualDlg::_dlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM)
 INT_PTR CALLBACK ManualDlg::dlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     return _instance->_dlgProc(hwnd, msg, wParam, lParam);
+}
+
+TimeCtrlDlg *TimeCtrlDlg::_instance;
+
+TimeCtrlDlg::TimeCtrlDlg(HINSTANCE hInstance) : Dialog(hInstance)
+{
+    _instance = this;
+}
+
+static int tmpTCmoves;
+static int tmpTCminutes;
+
+INT_PTR CALLBACK
+TimeCtrlDlg::dlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
+{
+    switch (message)
+    {
+    case WM_INITDIALOG:
+        CheckRadioButton(hDlg, TMDLG_1MOV, TMDLG_60MOV, TCmoves + TMDLG_MOV);
+        CheckRadioButton(hDlg, TMDLG_5MIN, TMDLG_600MIN, TCminutes+TMDLG_MIN);
+        tmpTCminutes = TCminutes;
+        tmpTCmoves   = TCmoves;
+        return TRUE;
+    case WM_SYSCOMMAND:
+        if ((wParam & 0xfff0) == SC_CLOSE)
+        {
+            EndDialog(hDlg, NULL);
+            return TRUE;
+        }
+        break;
+    case WM_COMMAND:
+        switch (wParam)
+        {
+        case IDOK:
+            TCminutes = tmpTCminutes;
+            TCmoves = tmpTCmoves;
+            ::EndDialog(hDlg, 1);
+            return TRUE;
+        case IDCANCEL:
+            EndDialog(hDlg, NULL);
+            return TRUE;
+        case TMDLG_1MOV:
+        case TMDLG_10MOV:
+        case TMDLG_20MOV:
+        case TMDLG_40MOV:
+        case TMDLG_60MOV:
+            tmpTCmoves = wParam - TMDLG_MOV;
+            CheckRadioButton(hDlg, TMDLG_1MOV, TMDLG_60MOV, wParam);
+            break;
+        case TMDLG_5MIN:
+        case TMDLG_15MIN:
+        case TMDLG_30MIN:
+        case TMDLG_60MIN:
+        case TMDLG_600MIN:
+            tmpTCminutes = wParam - TMDLG_MIN;
+            CheckRadioButton(hDlg, TMDLG_5MIN, TMDLG_600MIN, wParam);
+            break;
+        }
+        break;
+    }
+
+    return FALSE;
+}
+
+INT_PTR TimeCtrlDlg::run(HWND hwnd, LPARAM param)
+{
+    return DialogBoxParam(hInstance(), MAKEINTRESOURCE(TIMECONTROL), hwnd, dlgProc, param);
 }
 

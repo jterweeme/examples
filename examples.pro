@@ -1,6 +1,7 @@
 TEMPLATE = subdirs
 
-SUBDIRS = bitmap\
+SUBDIRS = bgcolor\
+    bitmap\
     cechat\
     chatclient\
     chess1\
@@ -14,5 +15,6 @@ SUBDIRS = bitmap\
     tictac\
     winanim\
     wsclient\
-    wsserver
+    wsserver\
+    zeit
 

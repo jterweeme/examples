@@ -1,0 +1,23 @@
+#include <windows.h>
+#include "resource.h"
+
+IDM_MAIN MENU DISCARDABLE
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "E&xit", IDM_EXIT
+    END
+    POPUP "View"
+    BEGIN
+        MENUITEM "White", IDM_WHITE
+        MENUITEM "Black", IDM_BLACK
+        MENUITEM "Red", IDM_RED
+        MENUITEM "Green", IDM_GREEN
+        MENUITEM "Blue", IDM_BLUE
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&About...", IDM_ABOUT
+    END
+END
+

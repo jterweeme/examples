@@ -23,64 +23,71 @@
 
 #include "hittest.h"
 #include "board.h"
+#include <iostream>
 
-HitTest::HitTest()
+AbstractHitTest::~AbstractHitTest()
 {
 
 }
 
-void HitTest::init()
+#ifdef WINCE
+void HitTestCE::init(HDC)
 {
-    POINT ptls[4];
-    POINT toppt, botpt;
-
-    for (int i = 0; i < 8; i++)
+    for (int y = 0; y < 8; ++y)
     {
-        Board::QuerySqOrigin(i, 0, ptls + 0);
-        Board::QuerySqOrigin(i, 8, ptls + 1);
-        Board::QuerySqOrigin(i + 1, 8, ptls + 2);
-        Board::QuerySqOrigin(i + 1, 0, ptls + 3);
-#ifndef WINCE
-        _hitrgn[i] = ::CreatePolygonRgn(ptls, 4, WINDING);
-#endif
+        for (int x = 0; x < 8; ++x)
+        {
+            POINT aptl[4];
+            Board::QuerySqCoords(x, y, aptl);
+
+            //voor windows ce gebruiken we rechthoekige hitboxes die binnen de square passen
+            _hitrgn[y << 3 | x] = CreateRectRgn(aptl[3].x, aptl[3].y, aptl[1].x, aptl[1].y);
+        }
     }
-
-    Board::QuerySqOrigin(0, 0, &botpt);
-    Board::QuerySqOrigin(0, 8, &toppt);
-    _deltay = botpt.y - toppt.y;
 }
 
-void HitTest::destroy()
+void HitTestCE::destroy()
 {
-    for (int i = 0; i < 8; i++)
-        ::DeleteObject(_hitrgn[i]);
+
 }
 
-int HitTest::_horzHitTest(int x, int y)
+int HitTestCE::test(int x, int y, HDC)
 {
-    for (int i = 0; i < 8; i++)
-        if (::PtInRegion(_hitrgn[i], x, y))
+    for (int i = 0; i < 64; ++i)
+        if (PtInRegion(_hitrgn[i], x, y))
             return i;
 
     return -1;
 }
-
-int HitTest::test(int x, int y)
+#else
+void HitTest::init(HDC)
 {
-    POINT sq00;
-    int xsq = _horzHitTest(x, y);
-
-    if (xsq == -1)
-        return -1;
-
-    Board::QuerySqOrigin(0, 0, &sq00);
-
-    if (y > sq00.y)
-        return -1;
-
-    if (y < sq00.y - _deltay)
-        return -1;
-
-    int ysq = 7 - (y - (sq00.y - _deltay)) / (_deltay / 8);
-    return ysq * 8 + xsq;
+    for (int y = 0; y < 8; ++y)
+    {
+        for (int x = 0; x < 8; ++x)
+        {
+            POINT aptl[4];
+            Board::QuerySqCoords(x, y, aptl);
+            _hitrgn[y << 3 | x] = ::CreatePolygonRgn(aptl, 4, WINDING);
+        }
+    }
 }
+
+void HitTest::destroy()
+{
+    for (int i = 0; i < 64; ++i)
+        ::DeleteObject(_hitrgn[i]);
+}
+
+//HDC tijdelijk voor debuggen
+int HitTest::test(int x, int y, HDC)
+{
+    for (int i = 0; i < 64; ++i)
+        if (PtInRegion(_hitrgn[i], x, y))
+            return i;
+
+    return -1;
+}
+#endif
+
+

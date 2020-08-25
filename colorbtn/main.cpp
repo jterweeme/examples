@@ -31,15 +31,14 @@ LRESULT Button::_wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     switch (msg)
     {
     case WM_PAINT:
+        return 0;
+    case WM_ERASEBKGND:
     {
-        PAINTSTRUCT ps;
-        //HDC hdc = BeginPaint(hwnd, &ps);
-        //::SetBkColor(hdc, RGB(255,0,0));
-        //EndPaint(hwnd, &ps);
-        std::cout << "Debug bericht\n";
-        std::cout.flush();
+        RECT rect;
+        ::GetClientRect(hwnd, &rect);
+        ::FillRect(HDC(wParam), &rect, HBRUSH(CreateSolidBrush(RGB(255, 0, 0))));
     }
-        break;
+        return 0;
     }
 
     return CallWindowProc(_originalWndProc, hwnd, msg, wParam, lParam);
@@ -52,7 +51,7 @@ LRESULT CALLBACK Button::wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 
 void Button::colorize()
 {
-    SetWindowLong(_hwnd, GWL_WNDPROC, LONG(wndProc));
+    SetWindowLongPtr(_hwnd, GWLP_WNDPROC, LONG_PTR(wndProc));
 }
 
 void Button::create(HWND hParent)
@@ -63,7 +62,7 @@ void Button::create(HWND hParent)
     if (_hwnd == NULL)
         throw TEXT("Cannot create button");
 
-    _originalWndProc = WNDPROC(GetWindowLong(_hwnd, GWL_WNDPROC));
+    _originalWndProc = WNDPROC(GetWindowLongPtr(_hwnd, GWLP_WNDPROC));
 }
 
 class MainWindow
@@ -99,6 +98,35 @@ LRESULT MainWindow::_wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         _button->create(hwnd);
         _button->colorize();
         return 0;
+    case WM_PAINT:
+    {
+#if 0
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hwnd, &ps);
+        SetBkColor(hdc, RGB(255,0,0));
+        SetBkMode(hdc, TRANSPARENT);
+        EndPaint(hwnd, &ps);
+#endif
+    }
+        return 0;
+    case WM_CTLCOLORSTATIC:
+    {
+#if 0
+        HDC hdc = HDC(wParam);
+        ::SetBkColor(hdc, RGB(255,0,0));
+        ::SetBkMode(hdc, TRANSPARENT);
+#endif
+    }
+        break;
+    case WM_ERASEBKGND:
+    {
+#if 0
+        RECT rect;
+        ::GetClientRect(hwnd, &rect);
+        ::FillRect(HDC(wParam), &rect, ::CreateSolidBrush(RGB(255,0,0)));
+#endif
+    }
+        break;
     case WM_DESTROY:
         PostQuitMessage(0);
         return 0;

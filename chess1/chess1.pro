@@ -17,11 +17,13 @@ SOURCES += board.cpp\
     hittest.cpp\
     main.cpp\
     mainwin.cpp\
+    menubar.cpp\
     palette.cpp\
     piece.cpp\
     sim.cpp\
     toolbox.cpp\
-    winclass.cpp
+    winclass.cpp\
+    zeit.cpp
 
 HEADERS += board.h\
     book.h\
@@ -30,11 +32,13 @@ HEADERS += board.h\
     globals.h\
     hittest.h\
     mainwin.h\
+    menubar.h\
     palette.h\
     resource.h\
     sim.h\
     toolbox.h\
-    winclass.h
+    winclass.h\
+    zeit.h
 
 RC_FILE += chess.rc
 

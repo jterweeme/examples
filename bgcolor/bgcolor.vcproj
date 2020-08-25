@@ -2,14 +2,17 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="chess1"
-	ProjectGUID="{A3ADA321-0BD4-4534-1234-0D772DDC4951}"
+	Name="bgcolor"
+	ProjectGUID="{A5ADA321-ABCD-4534-ADEC-0D772DDC4951}"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
 	<Platforms>
 		<Platform
 			Name="STANDARDSDK_500 (x86)"
+		/>
+		<Platform
+			Name="Win32"
 		/>
 	</Platforms>
 	<ToolFiles>
@@ -41,6 +44,7 @@
 				Name="VCCLCompilerTool"
 				ExecutionBucket="7"
 				Optimization="0"
+				AdditionalIncludeDirectories="../common"
 				PreprocessorDefinitions="_DEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;DEBUG;_WINDOWS;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE;STANDARDSHELL_UI_MODEL"
 				MinimalRebuild="false"
 				RuntimeLibrary="1"
@@ -63,12 +67,13 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,5.00 /nodefaultlib:libc.lib"
-				OutputFile="$(OutDir)/test951.exe"
+				AdditionalDependencies="aygshell.lib"
+				OutputFile="$(OutDir)/bgcolor.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories=""
 				DelayLoadDLLs="$(NOINHERIT)"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/test951.pdb"
+				ProgramDatabaseFile="$(OutDir)/bgcolor.pdb"
 				SubSystem="0"
 				StackReserveSize="65536"
 				StackCommitSize="4096"
@@ -100,6 +105,64 @@
 				AdditionalFiles=""
 			/>
 			<DebuggerTool
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
@@ -154,14 +217,14 @@
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,5.00 /nodefaultlib:libc.lib"
 				AdditionalDependencies="ws2.lib mmtimer.lib"
-				OutputFile="$(OutDir)/chess1.exe"
+				OutputFile="$(OutDir)/foshmi.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories=""
 				IgnoreAllDefaultLibraries="false"
 				IgnoreDefaultLibraryNames="secchk.lib"
 				DelayLoadDLLs="$(NOINHERIT)"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/chess1.pdb"
+				ProgramDatabaseFile="$(OutDir)/bgcolor.pdb"
 				SubSystem="0"
 				StackReserveSize="65536"
 				StackCommitSize="4096"
@@ -196,6 +259,62 @@
 			<DebuggerTool
 			/>
 		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			ConfigurationType="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>
@@ -206,55 +325,11 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\board.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\book.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\dialog.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\globals.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\hittest.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\main.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\mainwin.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\palette.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\piece.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\sim.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\toolbox.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\winclass.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\zeit.cpp"
+				RelativePath=".\menubar.cpp"
 				>
 			</File>
 		</Filter>
@@ -264,55 +339,11 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\board.h"
-				>
-			</File>
-			<File
-				RelativePath=".\book.h"
-				>
-			</File>
-			<File
-				RelativePath=".\chess.h"
-				>
-			</File>
-			<File
-				RelativePath=".\dialog.h"
-				>
-			</File>
-			<File
-				RelativePath=".\globals.h"
-				>
-			</File>
-			<File
-				RelativePath=".\hittest.h"
-				>
-			</File>
-			<File
-				RelativePath=".\mainwin.h"
-				>
-			</File>
-			<File
-				RelativePath=".\palette.h"
+				RelativePath=".\menubar.h"
 				>
 			</File>
 			<File
 				RelativePath=".\resource.h"
-				>
-			</File>
-			<File
-				RelativePath=".\sim.h"
-				>
-			</File>
-			<File
-				RelativePath=".\toolbox.h"
-				>
-			</File>
-			<File
-				RelativePath=".\winclass.h"
-				>
-			</File>
-			<File
-				RelativePath=".\zeit.h"
 				>
 			</File>
 		</Filter>
@@ -322,79 +353,7 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 			<File
-				RelativePath=".\bishop.bmp"
-				>
-			</File>
-			<File
-				RelativePath=".\bishopm.bmp"
-				>
-			</File>
-			<File
-				RelativePath=".\bishopo.bmp"
-				>
-			</File>
-			<File
-				RelativePath=".\chess.rc"
-				>
-			</File>
-			<File
-				RelativePath=".\king.bmp"
-				>
-			</File>
-			<File
-				RelativePath=".\kingm.bmp"
-				>
-			</File>
-			<File
-				RelativePath=".\kingo.bmp"
-				>
-			</File>
-			<File
-				RelativePath=".\knight.bmp"
-				>
-			</File>
-			<File
-				RelativePath=".\knightm.bmp"
-				>
-			</File>
-			<File
-				RelativePath=".\knighto.bmp"
-				>
-			</File>
-			<File
-				RelativePath=".\pawn.bmp"
-				>
-			</File>
-			<File
-				RelativePath=".\pawnm.bmp"
-				>
-			</File>
-			<File
-				RelativePath=".\pawno.bmp"
-				>
-			</File>
-			<File
-				RelativePath=".\queen.bmp"
-				>
-			</File>
-			<File
-				RelativePath=".\queenm.bmp"
-				>
-			</File>
-			<File
-				RelativePath=".\queeno.bmp"
-				>
-			</File>
-			<File
-				RelativePath=".\rook.bmp"
-				>
-			</File>
-			<File
-				RelativePath=".\rookm.bmp"
-				>
-			</File>
-			<File
-				RelativePath=".\rooko.bmp"
+				RelativePath=".\resource.rc"
 				>
 			</File>
 		</Filter>

@@ -5,8 +5,19 @@
 
 class Dialog
 {
+private:
+    HINSTANCE _hInstance;
 public:
     Dialog(HINSTANCE hInstance);
+    HINSTANCE hInstance() const;
+};
+
+class AboutDlg : public Dialog
+{
+public:
+    AboutDlg(HINSTANCE hInstance);
+    INT_PTR run(HWND hwnd);
+    static INT_PTR CALLBACK dlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 };
 
 class ReviewDialog
@@ -33,10 +44,9 @@ public:
     static INT_PTR CALLBACK dlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 };
 
-class ColorDlg
+class ColorDlg : public Dialog
 {
 private:
-    HINSTANCE _hInstance;
     UINT _variant;
     COLORREF * const _pclr;
     int _index;
@@ -59,7 +69,17 @@ private:
 public:
     PromoteDlg(HINSTANCE hInstance);
     INT_PTR run(HWND hwnd);
-    static INT_PTR CALLBACK dlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+    static INT_PTR CALLBACK dlgProc(HWND, UINT, WPARAM, LPARAM);
+};
+
+class TimeCtrlDlg : public Dialog
+{
+private:
+    static TimeCtrlDlg *_instance;
+public:
+    TimeCtrlDlg(HINSTANCE hInstance);
+    INT_PTR run(HWND hwnd, LPARAM param);
+    static INT_PTR CALLBACK dlgProc(HWND, UINT, WPARAM, LPARAM);
 };
 
 #endif

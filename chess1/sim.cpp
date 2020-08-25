@@ -4,11 +4,23 @@
 #include "toolbox.h"
 #include "mainwin.h"
 #include "book.h"
+#include "zeit.h"
 #include <ctime>
 
-static CONSTEXPR short VALUEP = 100;
-static CONSTEXPR BYTE TRUESCORE = 0x01, LOWERBOUND = 0x02;
-static CONSTEXPR BYTE UPPERBOUND = 0x04, KINGCASTLE = 0x08, QUEENCASTLE = 0x10;
+Sim::Sim()
+{
+
+}
+
+HGLOBAL Sim::xalloc(SIZE_T n)
+{
+    HGLOBAL ret = ::GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, n);
+
+    if (ret == NULL)
+        throw UINT(IDS_ALLOCMEM);
+
+    return ret;
+}
 
 static FILE *hashfile;
 static HashVal *hashcode;
@@ -31,23 +43,9 @@ static short Mwpawn[64], Mbpawn[64], Mknight[2][64], Mbishop[2][64];
 static short Mking[2][64], Kfield[2][64], hung[2], svalue[64];
 static short HasKnight[2], HasBishop[2], mtl[2], PawnCnt[2][8];
 static short PawnBonus, BishopBonus, RookBonus;
-static short *PC1, *PC2, *atk1, *atk2, atak[2][64];
+
 static short *distdata, *taxidata;
 
-Sim::Sim()
-{
-
-}
-
-static HGLOBAL xalloc(SIZE_T n)
-{
-    HGLOBAL ret = ::GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, n);
-
-    if (ret == NULL)
-        throw UINT(IDS_ALLOCMEM);
-
-    return ret;
-}
 
 void Sim::init_main()
 {
@@ -147,11 +145,14 @@ void Sim::FreeGlobals()
     }
 }
 
+static CONSTEXPR short VALUEP = 100;
+
+
 static short rank7[3] = {6, 1, 0};
 static short kingP[3] = {4, 60, 0};
 static short value[7] = {0, VALUEP, VALUEN, VALUEB, VALUER, VALUEQ, VALUEK};
 
-static short Stboard[64] = {
+short const Sim::Stboard[64] = {
     ROOK, KNIGHT, BISHOP, QUEEN, KING, BISHOP, KNIGHT, ROOK,
     PAWN, PAWN, PAWN, PAWN, PAWN, PAWN, PAWN, PAWN,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -345,7 +346,7 @@ static short KBNK[64] = {
     40, 20, 30, 40, 50, 60, 80, 90,
     40, 40, 50, 60, 70, 80, 90, 99};
 
-static short KingOpening[64] = {
+short const Sim::KingOpening[64] = {
       0,   0,  -4, -10, -10,  -4,   0,   0,
      -4,  -4,  -8, -12, -12,  -8,  -4,  -4,
     -12, -16, -20, -20, -20, -20, -16, -12,
@@ -355,7 +356,7 @@ static short KingOpening[64] = {
      -4,  -4,  -8, -12, -12,  -8,  -4,  -4,
       0,   0,  -4, -10, -10,  -4,   0,   0};
 
-static short KingEnding[64] = {
+short const Sim::KingEnding[64] = {
      0,  6, 12, 18, 18, 12,  6,  0,
      6, 12, 18, 24, 24, 18, 12,  6,
     12, 18, 24, 30, 30, 24, 18, 12,
@@ -365,7 +366,7 @@ static short KingEnding[64] = {
      6, 12, 18, 24, 24, 18, 12,  6,
      0,  6, 12, 18, 18, 12,  6,  0};
 
-static short pknight[64] = {
+short const Sim::pknight[64] = {
      0,  4,  8, 10, 10,  8,  4,  0,
      4,  8, 16, 20, 20, 16,  8,  4,
      8, 16, 24, 28, 28, 24, 16,  8,
@@ -375,7 +376,7 @@ static short pknight[64] = {
      4,  8, 16, 20, 20, 16,  8,  4,
      0,  4,  8, 10, 10,  8,  4,  0};
 
-static short pbishop[64] = {
+short const Sim::pbishop[64] = {
     14, 14, 14, 14, 14, 14, 14, 14,
     14, 22, 18, 18, 18, 18, 22, 14,
     14, 18, 22, 22, 22, 22, 18, 14,
@@ -385,7 +386,7 @@ static short pbishop[64] = {
     14, 22, 18, 18, 18, 18, 22, 14,
     14, 14, 14, 14, 14, 14, 14, 14};
 
-static short PawnAdvance[64] = {
+short const Sim::PawnAdvance[64] = {
      0,  0,  0,  0,  0,  0,  0,  0,
      4,  4,  4,  0,  0,  4,  4,  4,
      6,  8,  2, 10, 10,  2,  8,  6,
@@ -482,7 +483,7 @@ void Sim::NewGame(HWND hWnd, HWND compClr)
 #endif
     for (short l = 0; l < 64; l++)
     {
-        ::board[l] = ::Stboard[l];
+        ::board[l] = Stboard[l];
         ::color[l] = Stcolor[l];
         ::Mvboard[l] = 0;
     }
@@ -499,8 +500,11 @@ void Sim::NewGame(HWND hWnd, HWND compClr)
         ::TCflag = ::TCmoves > 1 ? 1 : 0;
         SetTimeControl(::ft);
     }
+
     InitializeStats();
-    ::time0 = long(::time(0));
+    SystemTime sysTime;
+    sysTime.getTime();
+    time0 = long(sysTime.unix());
     ElapsedTime(1, ExtraTime, ResponseTime, ::ft);
     UpdateDisplay(hWnd, compClr, 0, 0, 1, 0, flag.reverse);
     flag.easy = true;
@@ -511,8 +515,7 @@ void Sim::NewGame(HWND hWnd, HWND compClr)
 /*
   Look for the current board position in the transposition table.
 */
-static int
-ProbeTTable(short side, short depth, short *alpha, short *beta, short *score)
+int Sim::ProbeTTable(short side, short depth, short *alpha, short *beta, short *score)
 {
     struct hashentry *ptbl;
     WORD i;
@@ -561,8 +564,7 @@ ProbeTTable(short side, short depth, short *alpha, short *beta, short *score)
 }
 
 //Store the current board position in the transposition table.
-void PutInTTable(short side, short score, short depth, short alpha,
-             short beta, WORD mv)
+void Sim::PutInTTable(short side, short score, short depth, short alpha, short beta, WORD mv)
 {
     hashentry *ptbl;
     WORD i;
@@ -617,7 +619,7 @@ static void ShowDepth(HWND hwnd, char ch)
     }
 }
 
-static void ShowResults(HWND hwnd, short score, PWORD bstline, char ch)
+void Sim::ShowResults(HWND hwnd, short score, PWORD bstline, char ch)
 {
     if (!flag.post)
         return;
@@ -639,8 +641,7 @@ static void ShowResults(HWND hwnd, short score, PWORD bstline, char ch)
     ::SetDlgItemText(hwnd, BSTLINETEXT, LPTSTR(str));
 }
 
-static void
-updateSearchStatus(short &d, short pnt, short f,
+void Sim::updateSearchStatus(short &d, short pnt, short f,
                    short t, short best, short alpha, short score)
 {
     if (flag.post)
@@ -666,7 +667,7 @@ updateSearchStatus(short &d, short pnt, short f,
         ExtraTime = 5 * ResponseTime;
 }
 
-static bool mateThreat(short ply)
+bool Sim::mateThreat(short ply)
 {
     return ply < Sdepth + 4 && ply > 4 && ChkFlag[ply - 2] &&
             ChkFlag[ply - 4] && ChkFlag[ply - 2] != ChkFlag[ply - 4];
@@ -675,7 +676,7 @@ static bool mateThreat(short ply)
 /*
   Check for draw by threefold repetition.
 */
-static inline void repetition(short *cnt)
+void Sim::repetition(short *cnt)
 {
     short c = 0;
     short b[64];
@@ -707,28 +708,21 @@ static inline void repetition(short *cnt)
     }
 }
 
-#define FILESZ (1 << 17)
+
 
 bool xrecapture(short score, short alpha, short beta, short ply)
 {
     return flag.rcptr && score > alpha && score < beta && ply > 2 && CptrFlag[ply - 1] && CptrFlag[ply - 2];
 }
 
-static CONSTEXPR WORD FREHASH = 6, EXACT = 0x0040, DRAW = 0x0400;
 
-static CONSTEXPR short PWNTHRT = 0x0080;
 
-static CONSTEXPR short row(short a)
-{
-    return a >> 3;
-}
-
-static short xdistance(short a, short b)
+short Sim::xdistance(short a, short b)
 {
     return *(::distdata + a * 64 + b);
 }
 
-static short taxicab(short a, short b)
+short Sim::taxicab(short a, short b)
 {
     return *(::taxidata + a * 64 + b);
 }
@@ -736,9 +730,8 @@ static short taxicab(short a, short b)
 /*
   Score King and Pawns versus King endings.
 */
-static inline int
-ScoreKPK(short side, short winner, short loser,
-         short king1, short king2, short sq)
+int Sim::ScoreKPK(short side, short winner, short loser,
+    short king1, short king2, short sq)
 {
     short s = PieceCnt[winner] == 1 ? 50 : 120;
 
@@ -779,7 +772,7 @@ ScoreKPK(short side, short winner, short loser,
   Score King+Bishop+Knight versus King endings.
   This doesn't work all that well but it's better than nothing.
 */
-static inline int ScoreKBNK(short winner, short king1, short king2)
+int Sim::ScoreKBNK(short winner, short king1, short king2)
 {
     short KBNKsq = 0;
 
@@ -804,7 +797,7 @@ static inline int ScoreKBNK(short winner, short king1, short king2)
   If material balance has changed, determine the values for the positional
   evaluation terms.
 */
-static void UpdateWeights()
+void Sim::UpdateWeights()
 {
     emtl[white] = mtl[white] - pmtl[white] - VALUEK;
     emtl[black] = mtl[black] - pmtl[black] - VALUEK;
@@ -844,7 +837,7 @@ static void UpdateWeights()
     }
 }
 
-static short DyingKing[64] = {
+short const Sim::DyingKing[64] = {
      0,  8, 16, 24, 24, 16,  8,  0,
      8, 32, 40, 48, 48, 40, 32,  8,
     16, 40, 56, 64, 64, 56, 40, 16,
@@ -858,7 +851,7 @@ static short DyingKing[64] = {
   Static evaluation when loser has only a king and winner has no pawns or no
   pieces.
 */
-static void ScoreLoneKing(short int side, short int *score)
+void Sim::ScoreLoneKing(short int side, short int *score)
 {
     UpdateWeights();
     short winner = mtl[white] > mtl[black] ? white : black;
@@ -884,6 +877,8 @@ static void ScoreLoneKing(short int side, short int *score)
     *score = side == winner ? s : -s;
 }
 
+static short *PC1, *PC2, *atk1, *atk2, atak[2][64];
+
 static bool anyatak(short c, short u)
 {
     return atak[c][u] > 0;
@@ -893,14 +888,14 @@ static CONSTEXPR short CTLR = 0x0400, CTLQ = 0x0200, CTLK = 0x0100,
     CTLP = 0x4000, CTLB = 0x1800, CTLN = 0x2800, CTLRQ = 0x0600,
     CTLBN = 0x0800, CTLBQ = 0x1200, CTLNN = 0x2000;
 
-static short control[7] = {0, CTLP, CTLN, CTLB, CTLR, CTLQ, CTLK};
+
 
 /*
   Fill array atak[][] with info about ataks to a square.  Bits 8-15 are set
   if the piece (king..pawn) ataks the square.  Bits 0-7 contain a count of
   total ataks to the square.
 */
-static void ataks(short side, short *a)
+void Sim::ataks(short side, short *a)
 {
     BYTE *ppos, *pdir;
     memset((char *)a, 0, 64 * sizeof(a[0]));
@@ -1040,7 +1035,7 @@ static inline int trapped(short sq)
 /*
   Calculate the positional value for a pawn on 'sq'.
 */
-static inline int PawnValue(short sq, short side)
+int Sim::PawnValue(short sq, short side)
 {
     short j, in_square, r, e;
     short a1 = atk1[sq] & 0x4FFF;
@@ -1204,7 +1199,7 @@ static inline int KnightValue(short sq, short)
   Find Bishop and Rook mobility, XRAY attacks, and pins. Increment the
   hung[] array if a pin is found.
 */
-static inline void BRscan(short sq, short *s, short *mob)
+void Sim::BRscan(short sq, short *s, short *mob)
 {
     short *Kf = Kfield[c1];
     *mob = 0;
@@ -1268,7 +1263,7 @@ static inline void BRscan(short sq, short *s, short *mob)
 /*
   Calculate the positional value for a bishop on 'sq'.
 */
-static inline int BishopValue(short sq, short)
+int Sim::BishopValue(short sq, short)
 {
     short mob;
     short s = Mbishop[c1][sq];
@@ -1299,7 +1294,7 @@ static inline int BishopValue(short sq, short)
 /*
   Calculate the positional value for a rook on 'sq'.
 */
-static inline int RookValue(short sq, short)
+int Sim::RookValue(short sq, short)
 {
     short mob;
     short s = RookBonus;
@@ -1330,7 +1325,7 @@ static inline int RookValue(short sq, short)
             s += HUNGP;
             ++hung[c1];
 
-            if (trapped (sq))
+            if (trapped(sq))
                 ++hung[c1];
         }
         else if (a2 >= CTLR || a1 < CTLP)
@@ -1342,7 +1337,7 @@ static inline int RookValue(short sq, short)
 }
 
 //Calculate the positional value for a queen on 'sq'.
-static inline int QueenValue(short sq, short)
+int Sim::QueenValue(short sq, short)
 {
     short s = xdistance(sq, EnemyKing()) < 3 ? 12 : 0;
 
@@ -1380,7 +1375,7 @@ static inline int QueenValue(short sq, short)
   c1 == color[sq]
   c2 == otherside[c1]
 */
-void ScoreThreat2(short u, short &cnt, short *s)
+void Sim::ScoreThreat2(short u, short &cnt, short *s)
 {
     if (::color[u] == ::c2)
         return;
@@ -1391,7 +1386,7 @@ void ScoreThreat2(short u, short &cnt, short *s)
         *s -= 3;
 }
 
-static inline void KingScan(short sq, short *s)
+void Sim::KingScan(short sq, short *s)
 {
     BYTE *ppos, *pdir;
     short cnt = 0;
@@ -1473,7 +1468,7 @@ static inline void KingScan(short sq, short *s)
 }
 
 //Calculate the positional value for a king on 'sq'.
-static inline int KingValue(short sq, short)
+int Sim::KingValue(short sq, short)
 {
     short s = Mking[c1][sq];
 
@@ -1555,7 +1550,7 @@ static inline int KingValue(short sq, short)
   Perform normal static evaluation of board position. A score is generated
   for each piece and these are summed to get a score for each side.
 */
-void ScorePosition(short side, short *score, short *value)
+void Sim::ScorePosition(short side, short *score, short *value)
 {
     short pscore[2];
     UpdateWeights();
@@ -1645,7 +1640,7 @@ void ScorePosition(short side, short *score, short *value)
   only a king and the other either has no pawns or no pieces then the
   function ScoreLoneKing() is called.
 */
-static int evaluate(short side, short ply, short alpha, short beta,
+int Sim::evaluate(short side, short ply, short alpha, short beta,
           short INCscore, short *slk, short *InChk, short toSquare)
 {
     short evflag;
@@ -1696,8 +1691,11 @@ static int evaluate(short side, short ply, short alpha, short beta,
     return s;
 }
 
-static int search(HWND hWnd, short side, short ply, short depth,
-        short alpha, short beta, WORD *bstline, short *rpt, HACCEL haccel)
+static CONSTEXPR WORD FREHASH = 6, EXACT = 0x0040, DRAW = 0x0400;
+static CONSTEXPR short PWNTHRT = 0x0080;
+
+int Sim::search(HWND hWnd, short side, short ply, short depth,
+        short alpha, short beta, WORD *bstline, short *rpt)
 {
     NodeCnt++;
     short xside = otherside[side];
@@ -1793,6 +1791,7 @@ static int search(HWND hWnd, short side, short ply, short depth,
     {
         /* Little code segment to allow cooperative multitasking */
         {
+#if 0
             MSG msg;
 
             if (!flag.timeout && ::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
@@ -1803,6 +1802,7 @@ static int search(HWND hWnd, short side, short ply, short depth,
                     DispatchMessage(&msg);
                 }
             }
+#endif
         }
         /* End of segment */
 
@@ -1830,7 +1830,7 @@ static int search(HWND hWnd, short side, short ply, short depth,
             PV = node->reply;
 
             short rcnt;
-            node->score = -search(hWnd, xside, ply + 1, depth > 0 ? depth - 1 : 0, -beta, -alpha, nxtline, &rcnt, haccel);
+            node->score = -search(hWnd, xside, ply + 1, depth > 0 ? depth - 1 : 0, -beta, -alpha, nxtline, &rcnt);
 
             if (abs (node->score) > 9000)
                 node->flags |= EXACT;
@@ -1850,7 +1850,7 @@ static int search(HWND hWnd, short side, short ply, short depth,
             }
 
             node->reply = nxtline[ply + 1];
-            UnmakeMove (side, node, &tempb, &tempc, &tempsf, &tempst);
+            UnmakeMove(side, node, &tempb, &tempc, &tempsf, &tempst);
         }
 
         if (node->score > best && !flag.timeout)
@@ -1969,20 +1969,19 @@ static void OutputMove(HINSTANCE hInstance, HWND hwnd, HWND compClr, Leaf *node)
         ShowNodeCnt(hStats, NodeCnt, evrate);
 }
 
-static inline void
-BlendBoard(const short a[64], const short b[64], short c[64])
+void Sim::BlendBoard(const short a[64], const short b[64], short c[64])
 {
     for (int sq = 0; sq < 64; sq++)
         c[sq] = (a[sq] * (10 - stage) + b[sq] * stage) / 10;
 }
 
-static inline void CopyBoard(const short a[64], short b[64])
+void Sim::CopyBoard(const short a[64], short b[64])
 {
     for (int sq = 0; sq < 64; sq++)
         b[sq] = a[sq];
 }
 
-static bool inline patak(short c, short u)
+bool Sim::patak(short c, short u)
 {
     return atak[c][u] > CTLP;
 }
@@ -1992,7 +1991,7 @@ static bool inline patak(short c, short u)
   Mwpawn, Mbpawn, Mknight, Mbishop, Mking which are used in the
   SqValue() function to determine the positional value of each piece.
 */
-static void ExaminePosition()
+void Sim::ExaminePosition()
 {
     short wpadv, bpadv, wstrong, bstrong, z, pp, j, k, val, Pd, fyle, rank;
     static short PawnStorm = false;
@@ -2251,8 +2250,8 @@ static void ExaminePosition()
   opponents move and the search will start at a depth of Sdepth+1 rather
   than a depth of 1.
 */
-void SelectMove(HINSTANCE hInstance, HWND hWnd, HWND compClr, short side,
-                short iop, short maxSearchDepth, HACCEL haccel, long xft)
+void Sim::SelectMove(HINSTANCE hInstance, HWND hWnd, HWND compClr, short side,
+                short iop, short maxSearchDepth, long xft)
 {
     static short i, tempb, tempc, tempsf, tempst, rpt;
     static short alpha, beta, score;
@@ -2332,7 +2331,7 @@ void SelectMove(HINSTANCE hInstance, HWND hWnd, HWND compClr, short side,
     {
         Sdepth++;
         ShowDepth(hStats, ' ');
-        score = search(hWnd, side, 1, Sdepth, alpha, beta, PrVar, &rpt, haccel);
+        score = search(hWnd, side, 1, Sdepth, alpha, beta, PrVar, &rpt);
 
         for (i = 1; i <= Sdepth; i++)
             killr0[i] = PrVar[i];
@@ -2342,7 +2341,7 @@ void SelectMove(HINSTANCE hInstance, HWND hWnd, HWND compClr, short side,
             ShowDepth(hStats, '\xbb' /*'-'*/);
             ExtraTime = 10 * ResponseTime;
             /* ZeroTTable (); */
-            score = search(hWnd, side, 1, Sdepth, -9000, score, PrVar, &rpt, haccel);
+            score = search(hWnd, side, 1, Sdepth, -9000, score, PrVar, &rpt);
         }
 
         if (score > beta && !(root->flags & EXACT))
@@ -2350,7 +2349,7 @@ void SelectMove(HINSTANCE hInstance, HWND hWnd, HWND compClr, short side,
             ShowDepth(hStats, '\xab' /*'+'*/);
             ExtraTime = 0;
             /* ZeroTTable (); */
-            score = search(hWnd, side, 1, Sdepth, score, 9000, PrVar, &rpt, haccel);
+            score = search(hWnd, side, 1, Sdepth, score, 9000, PrVar, &rpt);
         }
 
         score = root->score;
@@ -2521,12 +2520,12 @@ void UpdateHashbd(short side, short piece, short f, short t)
     }
 }
 
-static BYTE CB(WORD i)
+BYTE Sim::CB(WORD i)
 {
     return BYTE((color[2 * i] ? 0x80 : 0) | (board[2 * i] << 4) | (color[2 * i + 1] ? 0x8 : 0) | (board[2 * i + 1]));
 }
 
-void ZeroTTable()
+void Sim::ZeroTTable()
 {
     if (!flag.hash)
         return;
@@ -2536,15 +2535,17 @@ void ZeroTTable()
             (ttable + side * 2 + i)->depth = 0;
 }
 
+#define FILESZ (1 << 17)
+
 /*
   Look for the current board position in the persistent transposition table.
 */
-int ProbeFTable(short side, short depth, short *alpha, short *beta, short *score)
+int Sim::ProbeFTable(short side, short depth, short *alpha, short *beta, short *score)
 {
     WORD j;
     DWORD hashix;
     short s;
-    struct fileentry xnew, t;
+    fileentry xnew, t;
 
     if (side == white)
         hashix = hashkey & 0xFFFFFFFE & (FILESZ - 1);
@@ -2655,7 +2656,7 @@ static void PutInFTable(short side, short score, short depth, short alpha,
 #endif
 #endif
 
-void ZeroRPT()
+void Sim::ZeroRPT()
 {
     for (int side = white; side <= black; side++)
         for (int i = 0; i < 256; i++)
@@ -2804,7 +2805,7 @@ GenMoves(short ply, short sq, short side, short xside)
 }
 
 //Make or Unmake a castling move.
-int castle(short side, short kf, short kt, short iop)
+int Sim::castle(short side, short kf, short kt, short iop)
 {
     short rf, rt, t0;
     short xside = otherside[side];
@@ -2824,8 +2825,8 @@ int castle(short side, short kf, short kt, short iop)
     {
         if (kf != kingP[side] || board[kf] != KING || board[rf] != ROOK ||
             Mvboard[kf] != 0 || Mvboard[rf] != 0 || color[kt] != NEUTRAL ||
-            color[rt] != NEUTRAL || color[kt - 1] != NEUTRAL || SqAtakd(kf, xside) ||
-            SqAtakd(kt, xside) || SqAtakd(rt, xside))
+            color[rt] != NEUTRAL || color[kt - 1] != NEUTRAL || Sim::SqAtakd(kf, xside) ||
+            Sim::SqAtakd(kt, xside) || Sim::SqAtakd(rt, xside))
         {
             return (false);
         }
@@ -2875,7 +2876,7 @@ int castle(short side, short kf, short kt, short iop)
   Fill the array Tree[] with all available moves for side to play. Array
   TrPnt[ply] contains the index into Tree[] of the first move at a ply.
 */
-void MoveList(short side, short ply)
+void Sim::MoveList(short side, short ply)
 {
     short xside = otherside[side];
     TrPnt[ply + 1] = TrPnt[ply];
@@ -2892,10 +2893,10 @@ void MoveList(short side, short ply)
     {
         short f = PieceList[side][0];
 
-        if (castle(side, f, f + 2, 0))
+        if (Sim::castle(side, f, f + 2, 0))
             LinkMove(ply, f, f + 2, CSTLMASK, xside);
 
-        if (castle(side, f, f - 2, 0))
+        if (Sim::castle(side, f, f - 2, 0))
             LinkMove(ply, f, f - 2, CSTLMASK, xside);
     }
 }
@@ -2991,7 +2992,7 @@ void CaptureList(short side, short ply)
 }
 
 //Make or unmake an en passant move.
-static inline void EnPassant(short xside, short f, short t, short iop)
+void Sim::EnPassant(short xside, short f, short t, short iop)
 {
     short l = t > f ? t - 8 : t + 8;
 
@@ -3036,7 +3037,7 @@ static inline void UpdatePieceList(short side, short sq, short iop)
   position obtained after making the move pointed to by node. Also update
   miscellaneous stuff that changes when a move is made.
 */
-void MakeMove(short side, Leaf *node, short *tempb,
+void Sim::MakeMove(short side, Leaf *node, short *tempb,
           short *tempc, short *tempsf, short *tempst, short *INCscore)
 {
     short ct, cf;
@@ -3054,7 +3055,7 @@ void MakeMove(short side, Leaf *node, short *tempb,
     {
         GameList[GameCnt].piece = NO_PIECE;
         GameList[GameCnt].color = side;
-        castle(side, f, t, 1);
+        Sim::castle(side, f, t, 1);
     }
     else
     {
@@ -3154,7 +3155,7 @@ void MakeMove(short side, Leaf *node, short *tempb,
 /*
   Take back a move.
 */
-void UnmakeMove(short side, Leaf *node, short *tempb,
+void Sim::UnmakeMove(short side, Leaf *node, short *tempb,
             short *tempc, short *tempsf, short *tempst)
 {
     short xside = otherside[side];
@@ -3165,66 +3166,65 @@ void UnmakeMove(short side, Leaf *node, short *tempb,
 
     if (node->flags & CSTLMASK)
     {
-        (void)castle(side, f, t, 2);
+        Sim::castle(side, f, t, 2);
+        return;
     }
-    else
-    {
-        color[f] = color[t];
-        board[f] = board[t];
-        svalue[f] = *tempsf;
-        Pindex[f] = Pindex[t];
-        PieceList[side][Pindex[f]] = f;
-        color[t] = *tempc;
-        board[t] = *tempb;
-        svalue[t] = *tempst;
 
-        if (node->flags & PROMOTE)
-        {
-            board[f] = PAWN;
-            ++PawnCnt[side][column (t)];
-            mtl[side] += VALUEP - value[node->flags & PMASK];
-            pmtl[side] += VALUEP;
+    color[f] = color[t];
+    board[f] = board[t];
+    svalue[f] = *tempsf;
+    Pindex[f] = Pindex[t];
+    PieceList[side][Pindex[f]] = f;
+    color[t] = *tempc;
+    board[t] = *tempb;
+    svalue[t] = *tempst;
+
+    if (node->flags & PROMOTE)
+    {
+        board[f] = PAWN;
+        ++PawnCnt[side][column (t)];
+        mtl[side] += VALUEP - value[node->flags & PMASK];
+        pmtl[side] += VALUEP;
 #if TTBLSZ
-            UpdateHashbd(side, short(node->flags) & PMASK, -1, t);
-            UpdateHashbd(side, PAWN, -1, t);
+        UpdateHashbd(side, short(node->flags) & PMASK, -1, t);
+        UpdateHashbd(side, PAWN, -1, t);
 #endif
+    }
+
+    if (*tempc != NEUTRAL)
+    {
+        UpdatePieceList (*tempc, t, 2);
+
+        if (*tempb == PAWN)
+            ++PawnCnt[*tempc][column (t)];
+
+        if (board[f] == PAWN)
+        {
+            --PawnCnt[side][column (t)];
+            ++PawnCnt[side][column (f)];
         }
 
-        if (*tempc != NEUTRAL)
-        {
-            UpdatePieceList (*tempc, t, 2);
+        mtl[xside] += value[*tempb];
 
-            if (*tempb == PAWN)
-                ++PawnCnt[*tempc][column (t)];
-
-            if (board[f] == PAWN)
-            {
-                --PawnCnt[side][column (t)];
-                ++PawnCnt[side][column (f)];
-            }
-
-            mtl[xside] += value[*tempb];
-
-            if (*tempb == PAWN)
-                pmtl[xside] += VALUEP;
+        if (*tempb == PAWN)
+            pmtl[xside] += VALUEP;
 #if TTBLSZ
             UpdateHashbd (xside, *tempb, -1, t);
 #endif
             Mvboard[t]--;
-        }
-        if (node->flags & EPMASK)
-            EnPassant(xside, f, t, 2);
-        else
+    }
+    if (node->flags & EPMASK)
+        EnPassant(xside, f, t, 2);
+    else
 #if TTBLSZ
-            UpdateHashbd(side, board[f], f, t);
+    UpdateHashbd(side, board[f], f, t);
 #else
       /* NOOP */;
 #endif
-        Mvboard[f]--;
+    Mvboard[f]--;
 
-        if (!(node->flags & CAPTURE) && (board[f] != PAWN))
-            rpthash[side][hashkey & 0xFF]--;
-    }
+    if (!(node->flags & CAPTURE) && (board[f] != PAWN))
+        rpthash[side][hashkey & 0xFF]--;
 }
 
 /*
@@ -3236,7 +3236,7 @@ void UnmakeMove(short side, Leaf *node, short *tempb,
   side. Array Pindex[sq] contains the indx into PieceList for a given
   square.
 */
-void InitializeStats()
+void Sim::InitializeStats()
 {
     epsquare = -1;
 
@@ -3274,11 +3274,13 @@ void InitializeStats()
     }
 }
 
+short const Sim::control[7] = {0, CTLP, CTLN, CTLB, CTLR, CTLQ, CTLK};
+
 /*
   See if any piece with color 'side' ataks sq.  First check pawns then Queen,
   Bishop, Rook and King and last Knight.
 */
-int SqAtakd(short sq, short side)
+int Sim::SqAtakd(short sq, short side)
 {
     BYTE *ppos;
     short xside = otherside[side];
