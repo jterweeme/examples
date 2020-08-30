@@ -1,16 +1,19 @@
 #ifndef MAINWIN_H
 #define MAINWIN_H
 #include "chess.h"
-#include <windows.h>
 
+class AbstractHitTest;
+class AbstractMenuBar;
 class Board;
 class Sim;
 class WinClass;
-class AbstractHitTest;
 
 class MainWindow
 {
 private:
+    static CONSTEXPR LONG PIECE_XAXIS = 32, PIECE_YAXIS = 32;
+    static short CONSTEXPR ConvertCoordToIndex(short x, short y) { return y * 8 + x; }
+
     WinClass *_wc;
     Sim *_sim;
     Board *_board;
@@ -28,6 +31,7 @@ private:
     AbstractHitTest *_hitTest;
     PIECEBITMAP *_pieces;
     HWND _hComputerColor, _hMsgHuman;
+    AbstractMenuBar *_menuBar;
 
     static void GiveHint(HWND hWnd);
     void _makeHelpPathName(TCHAR *szFileName);
@@ -44,13 +48,20 @@ private:
     void _entryPoint(HWND hwnd);
     void _lButtonDownProc(HWND hwnd, LPARAM lParam);
     int _verifyMove(HWND hWnd, TCHAR *s, short iop, WORD *mv);
+    static void QuerySqCenter(short x, short y, POINT *pptl);
+    static void PieceOriginFromCenter(POINT *pptl);
+    static void QuerySqPieceOrigin(short x, short y, POINT *pptl);
+    static void ShowPiece(HDC hdc, POINT *pptl, PIECEBITMAP *Piece_bitmap, COLORREF color);
+    static void DrawOnePiece(HDC hdc, short x, short y, PIECEBITMAP *piece, COLORREF color);
+
+    static void DrawAllPieces(HDC hdc, PIECEBITMAP *pieces, int reverse,
+                    short *pbrd, short *color, COLORREF xblack, COLORREF xwhite);
 public:
-    MainWindow(WinClass *wc, Sim *sim);
+    MainWindow(WinClass *wc, Sim *sim, HACCEL hAccel);
     HWND hwnd() const;
     HWND hComputerColor() const;
     void create(LPCTSTR caption);
     HINSTANCE hInstance() const;
-    HACCEL hAccel() const;
     void show(int nCmdShow);
     static LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 };

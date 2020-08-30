@@ -19,7 +19,6 @@ SOURCES += board.cpp\
     mainwin.cpp\
     menubar.cpp\
     palette.cpp\
-    piece.cpp\
     sim.cpp\
     toolbox.cpp\
     winclass.cpp\
@@ -40,9 +39,9 @@ HEADERS += board.h\
     winclass.h\
     zeit.h
 
-RC_FILE += chess.rc
+RC_FILE += resource.rc
 
-OTHER_FILES += chess.rc\
+OTHER_FILES += resource.rc\
     bishop.bmp\
     bishopm.bmp\
     bishopo.bmp\

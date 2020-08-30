@@ -12,10 +12,12 @@
 #include "hittest.h"
 #include "book.h"
 #include "dialog.h"
+#include "menubar.h"
 
 MainWindow *MainWindow::_instance = 0;
 
-MainWindow::MainWindow(WinClass *wc, Sim *sim) : _wc(wc), _sim(sim), coords(1)
+MainWindow::MainWindow(WinClass *wc, Sim *sim, HACCEL hAccel)
+    : _wc(wc), _sim(sim), coords(1), _hAccel(hAccel)
 {
     _instance = this;
     _firstSq = -1;
@@ -111,14 +113,16 @@ int MainWindow::_verifyMove(HWND hWnd, TCHAR *s, short iop, WORD *mv)
     return false;
 }
 
-#ifdef WINCE
-static CONSTEXPR DWORD WINSTYLE = WS_CLIPCHILDREN;
-#else
-static CONSTEXPR DWORD WINSTYLE = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN;
-#endif
+
 
 void MainWindow::create(LPCTSTR caption)
 {
+#ifdef WINCE
+    CONSTEXPR DWORD WINSTYLE = WS_CLIPCHILDREN;
+#else
+    CONSTEXPR DWORD WINSTYLE = WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN;
+#endif
+
     _hwnd = CreateWindow(_wc->className(), caption, WINSTYLE,
                     CW_USEDEFAULT, CW_USEDEFAULT,
                     CW_USEDEFAULT, CW_USEDEFAULT,
@@ -126,8 +130,6 @@ void MainWindow::create(LPCTSTR caption)
 
     if (!_hwnd)
         throw TEXT("Cannot create main window");
-
-    _hAccel = ::LoadAccelerators(hInstance(), TEXT("Chess"));
 }
 
 void MainWindow::_createChildren(HWND hWnd, HINSTANCE hInst, short xchar, short ychar)
@@ -154,11 +156,6 @@ void MainWindow::_createChildren(HWND hWnd, HINSTANCE hInst, short xchar, short 
 HWND MainWindow::hwnd() const
 {
     return _hwnd;
-}
-
-HACCEL MainWindow::hAccel() const
-{
-    return _hAccel;
 }
 
 void MainWindow::show(int nCmdShow)
@@ -266,7 +263,7 @@ void MainWindow::_paintProc(HWND hWnd) const
         RECT rect;
         Board::QuerySqOrigin(_firstSq % 8, _firstSq / 8, &pt);
         rect.left = pt.x;
-        rect.right=pt.x + 48;
+        rect.right = pt.x + 48;
         rect.top = pt.y - 48;
         rect.bottom = pt.y;
         InvalidateRect(hWnd, &rect, FALSE);
@@ -362,7 +359,10 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
     }
         break;
     case MSG_CHESS_TEST:
-        TestDialog(hWnd, hInstance());
+    {
+        TestDlg testDlg(hInstance(), _sim);
+        testDlg.run(hWnd);
+    }
         break;
     case MSG_CHESS_HASH:
         flag.hash = !flag.hash;
@@ -404,22 +404,27 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
     case MSG_CHESS_AWIN:
     {
         TCHAR str[40];
-        ::LoadString(hInstance(), IDS_SETAWIN, str, sizeof(str)),
-        Awindow = DoGetNumberDlg(hInstance(), hWnd, str, Awindow);
+        ::LoadString(hInstance(), IDS_SETAWIN, str, sizeof(str));
+        NumDlg numDlg(hInstance());
+        short ret = numDlg.getInt(hWnd, str, _sim->aWindow());
+        _sim->aWindow(ret);
     }
         break;
     case MSG_CHESS_BWIN:
     {
         TCHAR str[40];
         ::LoadString(hInstance(), IDS_SETBWIN, str, sizeof(str));
-        Bwindow = DoGetNumberDlg(hInstance(), hWnd, str, Bwindow);
+        NumDlg numDlg(hInstance());
+        short ret = numDlg.getInt(hWnd, str, _sim->bWindow());
+        _sim->bWindow(ret);
     }
         break;
     case MSG_CHESS_CONTEMP:
     {
         TCHAR str[40];
         LoadString(hInstance(), IDS_SETCONTEMPT, str, sizeof(str));
-        contempt = DoGetNumberDlg(hInstance(), hWnd, str, contempt);
+        NumDlg numDlg(hInstance());
+        contempt = numDlg.getInt(hWnd, str, contempt);
     }
         break;
     case MSG_CHESS_FORCE:
@@ -440,7 +445,9 @@ void MainWindow::_commandProc(HWND hWnd, WPARAM wParam)
     {
         TCHAR str[40];
         ::LoadString(hInstance(), IDS_MAXSEARCH, str, sizeof(str));
-        _sim->maxSearchDepth(DoGetNumberDlg(hInstance(), hWnd, str, _sim->maxSearchDepth()));
+        NumDlg numDlg(hInstance());
+        short ret = numDlg.getInt(hWnd, str, _sim->maxSearchDepth());
+        _sim->maxSearchDepth(ret);
     }
         break;
     case MSG_CHESS_REVERSE:
@@ -603,6 +610,12 @@ void MainWindow::_getStartupColors()
 
 void MainWindow::_createProc(HWND hWnd)
 {
+#ifdef WINCE
+    _menuBar = new MenuBarCE(hInstance(), IDM_MAIN);
+#else
+    _menuBar = new MenuBar(hInstance(), IDM_MAIN);
+#endif
+    _menuBar->enable(hWnd);
     _board = new Board;
     _pieces = new PIECEBITMAP[7];
     _getStartupColors();
@@ -633,8 +646,11 @@ void MainWindow::_createProc(HWND hWnd)
     const int h = point.y + GetSystemMetrics(SM_CYFRAME) * 2 + GetSystemMetrics(SM_CYMENU) + GetSystemMetrics(SM_CYCAPTION) + ychar;
 #endif
     ::SetWindowPos(hWnd, hWnd, 0, 0, w, h, SWP_NOMOVE | SWP_NOZORDER);
-
+#ifdef WINCE
     _hitTest = new HitTestCE();
+#else
+    _hitTest = new HitTest();
+#endif
     _hitTest->init(hDC);
     ::ReleaseDC(hWnd, hDC);
     _createChildren(hWnd, hInstance(), xchar, ychar);
@@ -805,11 +821,11 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             Square = wParam & 0xff;
         }
 
-         board[Square] = board[First];
-         color[Square] = color[First];
-         board[First] = NO_PIECE;
-         color[First] = NEUTRAL;
-         UpdateDisplay(hWnd, _hComputerColor, First, Square, false, false, flag.reverse);
+        board[Square] = board[First];
+        color[Square] = color[First];
+        board[First] = NO_PIECE;
+        color[First] = NEUTRAL;
+        UpdateDisplay(hWnd, _hComputerColor, First, Square, false, false, flag.reverse);
     }
         break;
     case MSG_USER_MOVE:
@@ -838,7 +854,7 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         /* Logic to allow selection for pawn promotion */
         if (board[First] == PAWN && (Square < 8 || Square > 55))
         {
-            algbr_flag = PROMOTE + promoteDlg.run(hWnd);
+            algbr_flag = PROMOTE + int(promoteDlg.run(hWnd));
         }
         else
         {
@@ -846,8 +862,9 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
 
         algbr(First, Square, algbr_flag);
+        _entryPoint(hWnd);
     }
-        /*fallthrough*/
+        break;
     case MSG_MANUAL_ENTRY_POINT:
         _entryPoint(hWnd);
         break;
@@ -922,19 +939,7 @@ MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         ::PostMessage(hWnd, MSG_WM_COMMAND, wParam, lParam);
         break;
     case MSG_WM_COMMAND:
-        try
-        {
-            _commandProc(hWnd, wParam);
-        }
-        catch (UINT err)
-        {
-            Toolbox().messageBox(hInstance(), hWnd, err, IDS_CHESS);
-        }
-        catch (...)
-        {
-            Toolbox().messageBox(hInstance(), hWnd, IDS_UNKNOWNERR, IDS_CHESS);
-        }
-
+        _commandProc(hWnd, wParam);
         break;
     default:
         return ::DefWindowProc(hWnd, message, wParam, lParam);
@@ -947,5 +952,89 @@ LRESULT CALLBACK MainWindow::wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
     if (_instance)
         return _instance->_wndProc(hwnd, msg, wParam, lParam);
     return 0;
+}
+
+void MainWindow::QuerySqCenter(short x, short y, POINT *pptl)
+{
+    POINT aptl[4];
+    Board::QuerySqCoords(x, y, aptl);
+    pptl->x = (aptl[0].x + aptl[1].x + aptl[2].x + aptl[3].x) / 4;
+    pptl->y = (aptl[0].y + aptl[2].y) / 2;
+}
+
+void MainWindow::PieceOriginFromCenter(POINT *pptl)
+{
+    pptl->x -= PIECE_XAXIS / 2;
+    pptl->y -= PIECE_YAXIS / 2;
+}
+
+void MainWindow::QuerySqPieceOrigin(short x, short y, POINT *pptl)
+{
+    QuerySqCenter(x, y, pptl);
+    PieceOriginFromCenter (pptl);
+}
+
+/*
+   Draw a piece in the specificed point
+
+   Piece_bitmap is a structure with the handles for the mask,
+   outline and piece.
+*/
+void MainWindow::ShowPiece(HDC hdc, POINT *pptl, PIECEBITMAP *Piece_bitmap, COLORREF color)
+{
+    HBRUSH hOldBrush = HBRUSH(::SelectObject(hdc, ::GetStockObject(BLACK_BRUSH)));
+    HPEN hOldPen = HPEN(::SelectObject(hdc, ::GetStockObject(BLACK_PEN)));
+    HDC hMemDC = ::CreateCompatibleDC(hdc);
+
+    /* Write the mask to clear the space */
+    ::SelectObject(hMemDC, Piece_bitmap->mask);
+    ::BitBlt(hdc, pptl->x, pptl->y, PIECE_XAXIS, PIECE_YAXIS, hMemDC, 0, 0,SRCAND);
+
+    /* Write out the piece with an OR */
+    HBRUSH hBrush = ::CreateSolidBrush(color);
+    ::SelectObject(hdc, hBrush);
+    ::SelectObject(hMemDC, Piece_bitmap->piece);
+    ::BitBlt(hdc, pptl->x, pptl->y, PIECE_XAXIS, PIECE_YAXIS, hMemDC, 0, 0, 0xB80746L);
+
+    /* The draw the outline */
+    ::SelectObject(hdc, GetStockObject(BLACK_BRUSH));
+    ::SelectObject(hMemDC, Piece_bitmap->outline);
+    ::BitBlt(hdc, pptl->x, pptl->y, PIECE_XAXIS, PIECE_YAXIS, hMemDC, 0, 0, 0xB80746L);
+    ::SelectObject(hdc, hOldBrush);
+    ::SelectObject(hdc, hOldPen);
+    ::DeleteObject(hBrush);
+
+    if (::DeleteDC(hMemDC) == 0)
+        ::MessageBeep(0);
+}
+
+void MainWindow::DrawOnePiece(HDC hdc, short x, short y, PIECEBITMAP *piece, COLORREF color)
+{
+    POINT origin;
+    QuerySqPieceOrigin(x, y, &origin);
+    ShowPiece(hdc, &origin, piece, color);
+}
+
+void MainWindow::DrawAllPieces(HDC hDC, PIECEBITMAP *pieces, int reverse, short *pbrd,
+                   short *color, COLORREF clrblack, COLORREF clrwhite)
+{
+    for (short y = 0; y < 8; ++y)
+    {
+        for (short x = 0; x < 8; ++x)
+        {
+            short i = ConvertCoordToIndex(x, y);
+            short *colori = color + i;
+
+            if (*colori == 2)
+                continue;
+
+            COLORREF colorRef = *colori == BLACK ? clrblack : clrwhite;
+
+            if (reverse == 0)
+                DrawOnePiece(hDC, x, y, pieces + *(pbrd + i), colorRef);
+            else
+                DrawOnePiece(hDC, 7 - x, 7 - y, pieces + *(pbrd + i), colorRef);
+        }
+    }
 }
 

@@ -1,0 +1,23 @@
+#include "resource.h"
+#include <windows.h>
+
+IDM_MAIN MENU
+BEGIN
+POPUP "&File"
+BEGIN
+    MENUITEM "&New", IDM_NEW
+    MENUITEM "&Open...", IDM_OPEN
+    MENUITEM "&Save...", IDM_SAVE
+    MENUITEM SEPARATOR
+    MENUITEM "E&xit", IDM_EXIT
+END
+END
+
+IDD_NEW DIALOG 0, 0, 200, 100
+STYLE WS_CAPTION | WS_POPUP
+CAPTION "New"
+BEGIN
+    PUSHBUTTON "OK", IDOK, 10, 60, 30, 15
+    PUSHBUTTON "Cancel", IDCANCEL, 50, 60, 30, 15
+END
+

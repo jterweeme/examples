@@ -8,7 +8,7 @@
 
 BookEntry *Book;
 DWORD hashkey, hashbd;
-WORD hint, PrVar[MAXDEPTH];
+WORD hint;
 Leaf *Tree;
 Flags flag;
 GameRec *GameList;
@@ -17,13 +17,16 @@ HWND hMsgComputer, hStats;
 GLOBALHANDLE hBook = 0;
 TCHAR mvstr[4][6];
 long ResponseTime, ExtraTime, Level, et, et0, time0, ft, NodeCnt, ETnodes, evrate;
-short TrPnt[MAXDEPTH], PieceList[2][16], castld[2], Mvboard[64];
-short opponent, computer, Awindow, Bwindow, dither, INCscore;
+short TrPnt[MAXDEPTH], PieceList[2][16];
+
+short Mvboard[64];
+short opponent, computer;
+short dither, INCscore;
 short Sdepth, GameCnt, Game50, epsquare, contempt;
 short TCflag, TCmoves, TCminutes, OperatorTime, player;
-short Pindex[64], PieceCnt[2], c1, c2;
-short Tscore[MAXDEPTH], boarddraw[64], colordraw[64];
-short board[64], color[64];
+short boarddraw[64], colordraw[64];
+short board[64];
+short color[64];
 const short otherside[3] = {1, 0, 2};
 HWND hWhosTurn;
 HWND hComputerMove;
@@ -155,67 +158,6 @@ void SetTimeControl(long xft)
     ElapsedTime(1, ExtraTime, ResponseTime, xft);
 }
 
-void GetGame(HWND hWnd, HWND compClr, char *fname)
-{
-    WORD m;
-    GameRec tmp_rec;
-    FILE *fd = fopen(fname, "r");
-
-    if (fd == NULL)
-        throw IDS_LOADFAILED;
-
-    fscanf(fd, "%hd%hd%hd", &computer, &opponent, &Game50);
-    fscanf(fd, "%hd%hd", &castld[white], &castld[black]);
-    fscanf(fd, "%hd%hd", &TCflag, &OperatorTime);
-
-    fscanf(fd, "%ld%ld%hd%hd",
-          &TimeControl.clock[white], &TimeControl.clock[black],
-          &TimeControl.moves[white], &TimeControl.moves[black]);
-
-    for (short sq = 0; sq < 64; sq++)
-    {
-        ::fscanf(fd, "%hd%hd", &m, &Mvboard[sq]);
-        board[sq] = (m >> 8);
-        color[sq] = (m & 0xFF);
-
-        if (color[sq] == 0)
-            color[sq] = NEUTRAL;
-        else
-            --color[sq];
-    }
-
-    GameCnt = 0;
-    int c = '?';
-
-    while (c != EOF)
-    {
-        ++GameCnt;
-        c = fscanf(fd, "%hd%hd%hd%ld%hd%hd%hd", &tmp_rec.gmove,
-                  &tmp_rec.score, &tmp_rec.depth,
-                  &tmp_rec.nodes, &tmp_rec.time,
-                  &tmp_rec.piece, &tmp_rec.color);
-
-        GameList[GameCnt] = tmp_rec;
-
-        if (GameList[GameCnt].color == 0)
-            GameList[GameCnt].color = NEUTRAL;
-        else
-            --GameList[GameCnt].color;
-    }
-
-    GameCnt--;
-
-    if (TimeControl.clock[white] > 0)
-        TCflag = true;
-
-    computer--;
-    opponent--;
-    ::fclose(fd);
-    Sim::InitializeStats();
-    Sdepth = 0;
-    UpdateDisplay(hWnd, compClr, 0, 0, 1, 0, flag.reverse);
-}
-
 void ListGame(char *fname)
 {
     FILE *fd = fopen(fname, "w");
@@ -275,108 +217,6 @@ void UpdateClocks()
 
     if (flag.post)
         ShowNodeCnt(hStats, NodeCnt, evrate);
-}
-
-void TestSpeed(HWND hWnd, int cnt, void (*f) (short int side, short int ply))
-{
-    long evrate;
-    TCHAR tmp[40];
-    SystemTime sysTime;
-    sysTime.getTime();
-    long t1 = sysTime.unix();
-
-    for (short i = 0; i < 10000; i++)
-    {
-        f(opponent, 2);
-    }
-
-    sysTime.getTime();
-    long t2 = sysTime.unix();
-    NodeCnt = 10000L * (TrPnt[3] - TrPnt[2]);
-    evrate = NodeCnt / (t2 - t1);
-    wsprintf(tmp, TEXT("Nodes= %8ld, Nodes/Sec= %5ld"), NodeCnt, evrate);
-    SetDlgItemText(hWnd, cnt, tmp);
-}
-
-static INT_PTR CALLBACK
-TestDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
-{
-    HCURSOR hCursor;
-
-    switch (message)
-    {
-    case WM_INITDIALOG:
-        ::SetDlgItemText(hDlg, 100, TEXT(" "));
-        ::SetDlgItemText(hDlg, 101, TEXT(" "));
-        ::PostMessage(hDlg, WM_USER + 1, 0, 0);
-        return TRUE;
-    case (WM_USER+1):
-        hCursor = ::SetCursor(::LoadCursor(NULL, IDC_WAIT) );
-        ::ShowCursor(TRUE);
-        ::TestSpeed(hDlg, 100, Sim::MoveList);
-        ::TestSpeed(hDlg, 101, CaptureList);
-        ::ShowCursor(FALSE);
-        ::SetCursor(hCursor);
-        break;
-    case WM_SYSCOMMAND:
-        if ((wParam & 0xfff0) == SC_CLOSE)
-        {
-            ::EndDialog(hDlg, 0);
-            return TRUE;
-        }
-        break;
-    }
-
-    return FALSE;
-}
-
-int TestDialog(HWND hWnd, HINSTANCE hInst)
-{
-    int status;
-    status = DialogBox(hInst, MAKEINTRESOURCE(TEST), hWnd, TestDlgProc);
-    return status;
-}
-
-static int NumberDlgInt;
-static TCHAR NumberDlgChar[80];
-
-static INT_PTR CALLBACK
-NumberDlgDlgProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM)
-{
-    int temp, Ier;
-    switch (iMessage)
-    {
-    case WM_INITDIALOG:
-        SetDlgItemText(hDlg, IDD_CHAR, NumberDlgChar);
-        SetDlgItemInt(hDlg, IDD_INT, NumberDlgInt, TRUE);
-        return TRUE;
-    case WM_COMMAND:
-        switch (wParam)
-        {
-        case IDOK:
-            temp = GetDlgItemInt(hDlg, IDD_INT, &Ier, TRUE);
-
-            if (Ier != 0)
-            {
-                  NumberDlgInt = temp;
-                  EndDialog ( hDlg, TRUE);
-            }
-            return FALSE;
-        case IDCANCEL:
-            EndDialog ( hDlg, TRUE);
-            return FALSE;
-        }
-        return FALSE;
-    }
-    return TRUE;
-}
-
-int DoGetNumberDlg(HINSTANCE hInst, HWND hWnd, TCHAR *szPrompt, int def)
-{
-    ::lstrcpy(::NumberDlgChar, szPrompt);
-    ::NumberDlgInt = def;
-    ::DialogBox(hInst, MAKEINTRESOURCE(NUMBERDLG), hWnd, NumberDlgDlgProc);
-    return ::NumberDlgInt;
 }
 
 static INT_PTR CALLBACK
@@ -507,3 +347,10 @@ void UpdateDisplay(HWND hWnd, HWND compClr, short f, short t,
     UpdateWindow(hWnd);
 
 }
+
+
+
+
+
+
+

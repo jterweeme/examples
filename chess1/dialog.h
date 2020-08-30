@@ -60,6 +60,17 @@ public:
     static INT_PTR CALLBACK dlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 };
 
+class NumDlg : public Dialog
+{
+private:
+    static NumDlg *_instance;
+    INT_PTR _dlgProc(HWND, UINT, WPARAM, LPARAM);
+public:
+    NumDlg(HINSTANCE hInstance);
+    static INT_PTR CALLBACK dlgProc(HWND, UINT, WPARAM, LPARAM);
+    int getInt(HWND hwnd, TCHAR *szPrompt, int def);
+};
+
 class PromoteDlg
 {
 private:
@@ -68,6 +79,20 @@ private:
     INT_PTR _dlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 public:
     PromoteDlg(HINSTANCE hInstance);
+    INT_PTR run(HWND hwnd);
+    static INT_PTR CALLBACK dlgProc(HWND, UINT, WPARAM, LPARAM);
+};
+
+class Sim;
+
+class TestDlg : public Dialog
+{
+private:
+    static TestDlg *_instance;
+    INT_PTR _dlgProc(HWND, UINT, WPARAM, LPARAM);
+    Sim *_sim;
+public:
+    TestDlg(HINSTANCE hInstance, Sim *sim);
     INT_PTR run(HWND hwnd);
     static INT_PTR CALLBACK dlgProc(HWND, UINT, WPARAM, LPARAM);
 };

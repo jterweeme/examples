@@ -68,7 +68,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPXSTR lpCmdLine, int nCmd
     (void)hPrevInstance;
     Sim sim;
     WinClass wc(hInstance, MainWindow::wndProc, TEXT("Chess"));
-    MainWindow win(&wc, &sim);
+    HACCEL hAccel = ::LoadAccelerators(hInstance, TEXT("Chess"));
+    MainWindow win(&wc, &sim, hAccel);
 
     try
     {
@@ -98,14 +99,14 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPXSTR lpCmdLine, int nCmd
     MSG msg;
     while (::GetMessage(&msg, NULL, 0, 0))
     {
-        if (!TranslateAccelerator(win.hwnd(), win.hAccel(), &msg) )
+        if (!TranslateAccelerator(win.hwnd(), hAccel, &msg))
         {
             ::TranslateMessage(&msg);
             ::DispatchMessage(&msg);
         }
     }
 
-    return msg.wParam;
+    return int(msg.wParam);
 }
 
 

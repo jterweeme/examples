@@ -8,6 +8,11 @@
 class Toolbox
 {
 public:
+    template <class T> static const T& myMin(const T& a, const T &b)
+    {
+        return a < b ? a : b;
+    }
+
     template <class T> static const T& myMax(const T &a, const T &b)
     {
         return a < b ? b : a;

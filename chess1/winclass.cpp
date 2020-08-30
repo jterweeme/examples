@@ -13,7 +13,8 @@ WinClass::WinClass(HINSTANCE hInstance, WNDPROC wndProc, LPCTSTR className)
 #ifdef WINCE
     _wc.lpszMenuName = NULL;
 #else
-    _wc.lpszMenuName = className;
+    //_wc.lpszMenuName = className;
+    _wc.lpszMenuName = NULL;
 #endif
     _wc.lpszClassName = className;
 }

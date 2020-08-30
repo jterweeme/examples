@@ -22,30 +22,25 @@ HGLOBAL Sim::xalloc(SIZE_T n)
     return ret;
 }
 
-static FILE *hashfile;
-static HashVal *hashcode;
-static hashentry *ttable;
-static Leaf *root;
-static WORD killr0[MAXDEPTH], killr1[MAXDEPTH], killr2[MAXDEPTH], killr3[MAXDEPTH];
-static WORD PV, Swag0, Swag1, Swag2, Swag3, Swag4;
-static BYTE *history, *nextpos, *nextdir;
-static long EvalNodes, HashCol, HashCnt, FHashCnt;
-static short rpthash[2][256], TOsquare;
-static short Zscore, FROMsquare, zwndw, stage, stage2, Developed[2];
-static short c1, c2, xwndw, rehash, HasRook[2];
-static short ChkFlag[MAXDEPTH], CptrFlag[MAXDEPTH], PawnThreat[MAXDEPTH];
-static short emtl[2], HasQueen[2], pmtl[2], Pscore[MAXDEPTH];
-static short RHOPN, RHOPNX, KHOPN, KHOPNX, KSFTY;
-static short ATAKD, HUNGP, HUNGX, KCASTLD, KMOVD, XRAY, PINVAL;
-static short PEDRNK2B, PWEAKH, PADVNCM, PADVNCI, PAWNSHIELD, PDOUBLED, PBLOK;
-static short KNIGHTPOST, KNIGHTSTRONG, BISHOPSTRONG, KATAK;
-static short Mwpawn[64], Mbpawn[64], Mknight[2][64], Mbishop[2][64];
-static short Mking[2][64], Kfield[2][64], hung[2], svalue[64];
-static short HasKnight[2], HasBishop[2], mtl[2], PawnCnt[2][8];
-static short PawnBonus, BishopBonus, RookBonus;
+void Sim::aWindow(short n)
+{
+    _awindow = n;
+}
 
-static short *distdata, *taxidata;
+short Sim::aWindow() const
+{
+    return _awindow;
+}
 
+void Sim::bWindow(short n)
+{
+    Bwindow = n;
+}
+
+short Sim::bWindow() const
+{
+    return Bwindow;
+}
 
 void Sim::init_main()
 {
@@ -144,13 +139,6 @@ void Sim::FreeGlobals()
         GlobalFree(hnextpos);
     }
 }
-
-static CONSTEXPR short VALUEP = 100;
-
-
-static short rank7[3] = {6, 1, 0};
-static short kingP[3] = {4, 60, 0};
-static short value[7] = {0, VALUEP, VALUEN, VALUEB, VALUER, VALUEQ, VALUEK};
 
 short const Sim::Stboard[64] = {
     ROOK, KNIGHT, BISHOP, QUEEN, KING, BISHOP, KNIGHT, ROOK,
@@ -330,13 +318,11 @@ short Sim::maxSearchDepth() const
     return _maxSearchDepth;
 }
 
-static short sweep[8] = {false, false, false, true, true, true, false, false};
-
-static short ptype[2][8] = {
+short const Sim::ptype[2][8] = {
     {NO_PIECE, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, NO_PIECE},
     {NO_PIECE, BPAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, NO_PIECE}};
 
-static short KBNK[64] = {
+short const Sim::KBNK[64] = {
     99, 90, 80, 70, 60, 50, 40, 40,
     90, 80, 60, 50, 40, 30, 20, 40,
     80, 60, 40, 30, 20, 10, 30, 50,
@@ -429,7 +415,8 @@ void pick(short p1, short p2)
 */
 void Sim::NewGame(HWND hWnd, HWND compClr)
 {
-    stage = stage2 = -1;          /* the game is not yet started */
+    /* the game is not yet started */
+    stage = stage2 = -1;
 
     if (flag.post)
     {
@@ -443,7 +430,7 @@ void Sim::NewGame(HWND hWnd, HWND compClr)
     flag.hash = flag.easy = flag.beep = flag.rcptr = true;
     NodeCnt = et0 = epsquare = 0;
     dither = 0;
-    Awindow = 90;
+    _awindow = 90;
     Bwindow = 90;
     xwndw = 90;
     _maxSearchDepth = 29;
@@ -608,7 +595,7 @@ static void ShowScore(HWND hwnd, short score)
     }
 }
 
-static void ShowDepth(HWND hwnd, char ch)
+void Sim::ShowDepth(HWND hwnd, char ch)
 {
     TCHAR tmp[30];
 
@@ -667,7 +654,7 @@ void Sim::updateSearchStatus(short &d, short pnt, short f,
         ExtraTime = 5 * ResponseTime;
 }
 
-bool Sim::mateThreat(short ply)
+bool Sim::_mateThreat(short ply)
 {
     return ply < Sdepth + 4 && ply > 4 && ChkFlag[ply - 2] &&
             ChkFlag[ply - 4] && ChkFlag[ply - 2] != ChkFlag[ply - 4];
@@ -708,23 +695,19 @@ void Sim::repetition(short *cnt)
     }
 }
 
-
-
-bool xrecapture(short score, short alpha, short beta, short ply)
+bool Sim::xrecapture(short score, short alpha, short beta, short ply)
 {
     return flag.rcptr && score > alpha && score < beta && ply > 2 && CptrFlag[ply - 1] && CptrFlag[ply - 2];
 }
 
-
-
 short Sim::xdistance(short a, short b)
 {
-    return *(::distdata + a * 64 + b);
+    return *(distdata + a * 64 + b);
 }
 
 short Sim::taxicab(short a, short b)
 {
-    return *(::taxidata + a * 64 + b);
+    return *(taxidata + a * 64 + b);
 }
 
 /*
@@ -772,7 +755,7 @@ int Sim::ScoreKPK(short side, short winner, short loser,
   Score King+Bishop+Knight versus King endings.
   This doesn't work all that well but it's better than nothing.
 */
-int Sim::ScoreKBNK(short winner, short king1, short king2)
+int Sim::_scoreKBNK(short winner, short king1, short king2)
 {
     short KBNKsq = 0;
 
@@ -867,7 +850,7 @@ void Sim::ScoreLoneKing(short int side, short int *score)
     }
     else if (emtl[winner] == VALUEB + VALUEN)
     {
-        s = ScoreKBNK(winner, king1, king2);
+        s = _scoreKBNK(winner, king1, king2);
     }
     else if (emtl[winner] > VALUEB)
     {
@@ -877,25 +860,17 @@ void Sim::ScoreLoneKing(short int side, short int *score)
     *score = side == winner ? s : -s;
 }
 
-static short *PC1, *PC2, *atk1, *atk2, atak[2][64];
-
-static bool anyatak(short c, short u)
+bool Sim::anyatak(short c, short u)
 {
     return atak[c][u] > 0;
 }
-
-static CONSTEXPR short CTLR = 0x0400, CTLQ = 0x0200, CTLK = 0x0100,
-    CTLP = 0x4000, CTLB = 0x1800, CTLN = 0x2800, CTLRQ = 0x0600,
-    CTLBN = 0x0800, CTLBQ = 0x1200, CTLNN = 0x2000;
-
-
 
 /*
   Fill array atak[][] with info about ataks to a square.  Bits 8-15 are set
   if the piece (king..pawn) ataks the square.  Bits 0-7 contain a count of
   total ataks to the square.
 */
-void Sim::ataks(short side, short *a)
+void Sim::_ataks(short side, short *a)
 {
     BYTE *ppos, *pdir;
     memset((char *)a, 0, 64 * sizeof(a[0]));
@@ -929,28 +904,23 @@ void Sim::ataks(short side, short *a)
             {
                 a[u] = (a[u] + 1) | c;
                 u = pdir[u];
-            } while (u != sq);
+            }
+            while (u != sq);
         }
     }
 }
 
-static short PassedPawn0[8] = {0, 60, 80, 120, 200, 360, 600, 800};
-static short PassedPawn1[8] = {0, 30, 40, 60, 100, 180, 300, 800};
-static short PassedPawn2[8] = {0, 15, 25, 35, 50, 90, 140, 800};
-static short PassedPawn3[8] = {0, 5, 10, 15, 20, 30, 140, 800};
-static short ISOLANI[8] = {-12, -16, -20, -24, -24, -20, -16, -12};
-
-static short BACKWARD[16] = {
+short const Sim::BACKWARD[16] = {
      -6, -10, -15, -21, -28, -28, -28, -28,
     -28, -28, -28, -28, -28, -28, -28, -28};
 
-static short BMBLTY[14] = {
+short const Sim::BMBLTY[14] = {
     -2, 0, 2, 4, 6, 8, 10, 12, 13, 14, 15, 16, 16, 16};
 
-static short RMBLTY[15] = {
+short const Sim::RMBLTY[15] = {
     0, 2, 4, 6, 8, 10, 11, 12, 13, 14, 14, 14, 14, 14, 14};
 
-static short KTHRT[36] = {
+short const Sim::KTHRT[36] = {
       0,  -8, -20, -36, -52, -68, -80, -80, -80, -80, -80, -80,
     -80, -80, -80, -80, -80, -80, -80, -80, -80, -80, -80, -80,
     -80, -80, -80, -80, -80, -80, -80, -80, -80, -80, -80, -80
@@ -961,17 +931,17 @@ static short qrook[3] = {0, 56, 0};
 static short krook[3] = {7, 63, 0};
 #endif
 
-static short wking()
+short Sim::_wking()
 {
     return ::PieceList[white][0];
 }
 
-static short bking()
+short Sim::_bking()
 {
     return ::PieceList[black][0];
 }
 
-static short EnemyKing()
+short Sim::_enemyKing()
 {
     return ::PieceList[c2][0];
 }
@@ -982,7 +952,7 @@ static short EnemyKing()
   c1 == color[sq]
   c2 == otherside[c1]
 */
-static inline int trapped(short sq)
+int Sim::trapped(short sq)
 {
     short piece = board[sq];
     BYTE *ppos = nextpos + (ptype[c1][piece] * 64 * 64) + sq * 64;
@@ -1070,7 +1040,7 @@ int Sim::PawnValue(short sq, short side)
         if (PC2[fyle] == 0)
         {
             r = side == black ? rank - 1 : rank;
-            in_square = row(bking()) >= r && xdistance(sq, bking()) < 8 - r;
+            in_square = row(_bking()) >= r && xdistance(sq, _bking()) < 8 - r;
             e = a2 == 0 || side == white ? 0 : 1;
 
             for (j = sq + 8; j < 64; j += 8)
@@ -1122,7 +1092,7 @@ int Sim::PawnValue(short sq, short side)
         if (PC2[fyle] == 0)
         {
             r = side == white ? rank + 1 : rank;
-            in_square = (row(wking()) <= r && xdistance(sq, wking()) < r + 1);
+            in_square = (row(_wking()) <= r && xdistance(sq, _wking()) < r + 1);
             e = a2 == 0 || side == black ? 0 : 1;
 
             for (j = sq - 8; j >= 0; j -= 8)
@@ -1170,7 +1140,7 @@ int Sim::PawnValue(short sq, short side)
 /*
   Calculate the positional value for a knight on 'sq'.
 */
-static inline int KnightValue(short sq, short)
+int Sim::KnightValue(short sq, short)
 {
     short s = Mknight[c1][sq];
     short a2 = atk2[sq] & 0x4FFF;
@@ -1294,7 +1264,7 @@ int Sim::BishopValue(short sq, short)
 /*
   Calculate the positional value for a rook on 'sq'.
 */
-int Sim::RookValue(short sq, short)
+int Sim::_rookValue(short sq, short)
 {
     short mob;
     short s = RookBonus;
@@ -1312,7 +1282,7 @@ int Sim::RookValue(short sq, short)
         s += 10;
 
     if (stage > 2)
-        s += 14 - taxicab(sq, EnemyKing());
+        s += 14 - taxicab(sq, _enemyKing());
 
     short a2 = atk2[sq] & 0x4FFF;
 
@@ -1339,10 +1309,10 @@ int Sim::RookValue(short sq, short)
 //Calculate the positional value for a queen on 'sq'.
 int Sim::QueenValue(short sq, short)
 {
-    short s = xdistance(sq, EnemyKing()) < 3 ? 12 : 0;
+    short s = xdistance(sq, _enemyKing()) < 3 ? 12 : 0;
 
     if (stage > 2)
-        s += 14 - taxicab(sq, EnemyKing());
+        s += 14 - taxicab(sq, _enemyKing());
 
     short a2 = atk2[sq] & 0x4FFF;
 
@@ -1377,10 +1347,10 @@ int Sim::QueenValue(short sq, short)
 */
 void Sim::ScoreThreat2(short u, short &cnt, short *s)
 {
-    if (::color[u] == ::c2)
+    if (::color[u] == c2)
         return;
 
-    if (::atk1[u] == 0 || (::atk2[u] & 0xff) > 1)
+    if (atk1[u] == 0 || (atk2[u] & 0xff) > 1)
         ++cnt;
     else
         *s -= 3;
@@ -1582,7 +1552,7 @@ void Sim::ScorePosition(short side, short *score, short *value)
                 s = BishopValue(sq, side);
                 break;
             case ROOK:
-                s = RookValue(sq, side);
+                s = _rookValue(sq, side);
                 break;
             case QUEEN:
                 s = QueenValue(sq, side);
@@ -1666,12 +1636,12 @@ int Sim::evaluate(short side, short ply, short alpha, short beta,
     if (evflag)
     {
         EvalNodes++;
-        ataks(side, atak[side]);
+        _ataks(side, atak[side]);
 
         if (anyatak(side, PieceList[xside][0]))
             return 10001 - ply;
 
-        ataks(xside, atak[xside]);
+        _ataks(xside, atak[xside]);
         *InChk = anyatak(xside, PieceList[side][0]);
         ScorePosition(side, &s, svalue);
     }
@@ -1691,10 +1661,7 @@ int Sim::evaluate(short side, short ply, short alpha, short beta,
     return s;
 }
 
-static CONSTEXPR WORD FREHASH = 6, EXACT = 0x0040, DRAW = 0x0400;
-static CONSTEXPR short PWNTHRT = 0x0080;
-
-int Sim::search(HWND hWnd, short side, short ply, short depth,
+int Sim::_search(HWND hWnd, short side, short ply, short depth,
         short alpha, short beta, WORD *bstline, short *rpt)
 {
     NodeCnt++;
@@ -1740,7 +1707,7 @@ int Sim::search(HWND hWnd, short side, short ply, short depth,
     {
         if (score >= alpha && (InChk || PawnThreat[ply - 1] || (hung[side] > 1 && ply == Sdepth+1)))
             ++depth;           /* this was depth=1 in original ?bug? */
-        else if (score <= beta && mateThreat(ply))
+        else if (score <= beta && _mateThreat(ply))
             ++depth;           /* this was also set to depth=1  ?bug? */
     }
 
@@ -1830,9 +1797,9 @@ int Sim::search(HWND hWnd, short side, short ply, short depth,
             PV = node->reply;
 
             short rcnt;
-            node->score = -search(hWnd, xside, ply + 1, depth > 0 ? depth - 1 : 0, -beta, -alpha, nxtline, &rcnt);
+            node->score = -_search(hWnd, xside, ply + 1, depth > 0 ? depth - 1 : 0, -beta, -alpha, nxtline, &rcnt);
 
-            if (abs (node->score) > 9000)
+            if (abs(node->score) > 9000)
                 node->flags |= EXACT;
             else if (rcnt == 1)
                 node->score /= 2;
@@ -1939,13 +1906,13 @@ int Sim::search(HWND hWnd, short side, short ply, short depth,
             }
         }
 
-        killr0[ply] = best > 9000 ? mv : 0;
+        _killr0[ply] = best > 9000 ? mv : 0;
     }
     return best;
 }
 
 //moet weg uit sim.cpp
-static void OutputMove(HINSTANCE hInstance, HWND hwnd, HWND compClr, Leaf *node)
+void Sim::OutputMove(HINSTANCE hInstance, HWND hwnd, HWND compClr, Leaf *node)
 {
     TCHAR tmp[30];
     UpdateDisplay(hwnd, compClr, node->f, node->t, 0, short(node->flags), flag.reverse);
@@ -1996,8 +1963,8 @@ void Sim::ExaminePosition()
     short wpadv, bpadv, wstrong, bstrong, z, pp, j, k, val, Pd, fyle, rank;
     static short PawnStorm = false;
 
-    ataks(white, atak[white]);
-    ataks(black, atak[black]);
+    _ataks(white, atak[white]);
+    _ataks(black, atak[black]);
     UpdateWeights();
     HasKnight[white] = HasKnight[black] = 0;
     HasBishop[white] = HasBishop[black] = 0;
@@ -2040,8 +2007,8 @@ void Sim::ExaminePosition()
 
     if (!PawnStorm && stage < 5)
     {
-        PawnStorm = (column(wking()) < 3 && column(bking()) > 4) ||
-                     (column(wking()) > 4 && column(bking()) < 3);
+        PawnStorm = (column(_wking()) < 3 && column(_bking()) > 4) ||
+                     (column(_wking()) > 4 && column(_bking()) < 3);
     }
 
     CopyBoard(pknight, Mknight[white]);
@@ -2096,7 +2063,7 @@ void Sim::ExaminePosition()
 
         if (Mvboard[kingP[white]])
         {
-            if ((fyle < 3 || fyle > 4) && xdistance(sq, wking()) < 3)
+            if ((fyle < 3 || fyle > 4) && xdistance(sq, _wking()) < 3)
                 Mwpawn[sq] += PAWNSHIELD;
         }
         else if (rank < 3 && (fyle < 2 || fyle > 5))
@@ -2106,7 +2073,7 @@ void Sim::ExaminePosition()
 
         if (Mvboard[kingP[black]])
         {
-            if ((fyle < 3 || fyle > 4) && xdistance(sq, bking()) < 3)
+            if ((fyle < 3 || fyle > 4) && xdistance(sq, _bking()) < 3)
                 Mbpawn[sq] += PAWNSHIELD;
         }
         else if (rank > 4 && (fyle < 2 || fyle > 5))
@@ -2116,17 +2083,17 @@ void Sim::ExaminePosition()
 
         if (PawnStorm)
         {
-            if ((column(wking()) < 4 && fyle > 4) || (column(wking()) > 3 && fyle < 3))
+            if ((column(_wking()) < 4 && fyle > 4) || (column(_wking()) > 3 && fyle < 3))
                 Mwpawn[sq] += 3 * rank - 21;
 
-            if ((column(bking()) < 4 && fyle > 4) || (column(bking()) > 3 && fyle < 3))
+            if ((column(_bking()) < 4 && fyle > 4) || (column(_bking()) > 3 && fyle < 3))
                 Mbpawn[sq] -= 3 * rank;
         }
 
-        Mknight[white][sq] += 5 - xdistance(sq, bking());
-        Mknight[white][sq] += 5 - xdistance(sq, wking());
-        Mknight[black][sq] += 5 - xdistance(sq, wking());
-        Mknight[black][sq] += 5 - xdistance(sq, bking());
+        Mknight[white][sq] += 5 - xdistance(sq, _bking());
+        Mknight[white][sq] += 5 - xdistance(sq, _wking());
+        Mknight[black][sq] += 5 - xdistance(sq, _wking());
+        Mknight[black][sq] += 5 - xdistance(sq, _bking());
         Mbishop[white][sq] += BishopBonus;
         Mbishop[black][sq] += BishopBonus;
 
@@ -2172,10 +2139,10 @@ void Sim::ExaminePosition()
 
         Kfield[white][sq] = Kfield[black][sq] = 0;
 
-        if (xdistance(sq, wking()) == 1)
+        if (xdistance(sq, _wking()) == 1)
             Kfield[black][sq] = KATAK;
 
-        if (xdistance(sq, bking()) == 1)
+        if (xdistance(sq, _bking()) == 1)
             Kfield[white][sq] = KATAK;
 
         Pd = 0;
@@ -2304,7 +2271,7 @@ void Sim::SelectMove(HINSTANCE hInstance, HWND hWnd, HWND compClr, short side,
             hint = 0;
 
         for (i = 0; i < MAXDEPTH; i++)
-            PrVar[i] = killr0[i] = killr1[i] = killr2[i] = killr3[i] = 0;
+            PrVar[i] = _killr0[i] = killr1[i] = killr2[i] = killr3[i] = 0;
 
         alpha = score - 90;
         beta = score + 90;
@@ -2331,17 +2298,17 @@ void Sim::SelectMove(HINSTANCE hInstance, HWND hWnd, HWND compClr, short side,
     {
         Sdepth++;
         ShowDepth(hStats, ' ');
-        score = search(hWnd, side, 1, Sdepth, alpha, beta, PrVar, &rpt);
+        score = _search(hWnd, side, 1, Sdepth, alpha, beta, PrVar, &rpt);
 
         for (i = 1; i <= Sdepth; i++)
-            killr0[i] = PrVar[i];
+            _killr0[i] = PrVar[i];
 
         if (score < alpha)
         {
             ShowDepth(hStats, '\xbb' /*'-'*/);
             ExtraTime = 10 * ResponseTime;
             /* ZeroTTable (); */
-            score = search(hWnd, side, 1, Sdepth, -9000, score, PrVar, &rpt);
+            score = _search(hWnd, side, 1, Sdepth, -9000, score, PrVar, &rpt);
         }
 
         if (score > beta && !(root->flags & EXACT))
@@ -2349,7 +2316,7 @@ void Sim::SelectMove(HINSTANCE hInstance, HWND hWnd, HWND compClr, short side,
             ShowDepth(hStats, '\xab' /*'+'*/);
             ExtraTime = 0;
             /* ZeroTTable (); */
-            score = search(hWnd, side, 1, Sdepth, score, 9000, PrVar, &rpt);
+            score = _search(hWnd, side, 1, Sdepth, score, 9000, PrVar, &rpt);
         }
 
         score = root->score;
@@ -2361,7 +2328,7 @@ void Sim::SelectMove(HINSTANCE hInstance, HWND hWnd, HWND compClr, short side,
         ShowResults(hStats, score, PrVar, '\xb7' /*'.'*/);
 
         for (i = 1; i <= Sdepth; i++)
-            killr0[i] = PrVar[i];
+            _killr0[i] = PrVar[i];
 
         if (score > Zscore - zwndw && score > Tree[1].score + 250)
             ExtraTime = 0;
@@ -2389,9 +2356,9 @@ void Sim::SelectMove(HINSTANCE hInstance, HWND hWnd, HWND compClr, short side,
         beta = score + Bwindow;
 
         if (Zscore < score)
-            alpha = Zscore - Awindow - zwndw;
+            alpha = Zscore - _awindow - zwndw;
         else
-            alpha = score - Awindow - zwndw;
+            alpha = score - _awindow - zwndw;
     }
 
     score = root->score;
@@ -2505,18 +2472,18 @@ int parse(FILE *fd, WORD *mv, short side)
   the hashbd and hashkey values keeps things current.
 */
 #if TTBLSZ
-void UpdateHashbd(short side, short piece, short f, short t)
+void Sim::UpdateHashbd(short side, short piece, short f, short t)
 {
     if (f >= 0)
     {
-        ::hashbd ^= (::hashcode + side * 7 * 64 + piece * 64 + f)->bd;
-        ::hashkey ^= (::hashcode + side * 7 * 64 + piece * 64 + f)->key;
+        ::hashbd ^= (hashcode + side * 7 * 64 + piece * 64 + f)->bd;
+        ::hashkey ^= (hashcode + side * 7 * 64 + piece * 64 + f)->key;
     }
 
     if (t >= 0)
     {
-        ::hashbd ^= (::hashcode + side * 7 * 64 + piece * 64 + t)->bd;
-        ::hashkey ^= (::hashcode + side * 7 * 64 + piece * 64 + t)->key;
+        ::hashbd ^= (hashcode + side * 7 * 64 + piece * 64 + t)->bd;
+        ::hashkey ^= (hashcode + side * 7 * 64 + piece * 64 + t)->key;
     }
 }
 
@@ -2663,8 +2630,7 @@ void Sim::ZeroRPT()
             rpthash[side][i] = 0;
 }
 
-static void
-xlink(Leaf *node, short from, short to, short flag, short s, short ply)
+void Sim::xlink(Leaf *node, short from, short to, short flag, short s, short ply)
 {
     node->f = from;
     node->t = to;
@@ -2683,8 +2649,7 @@ xlink(Leaf *node, short from, short to, short flag, short s, short ply)
   4. Killer moves
   5. "history" killers
 */
-static inline void
-LinkMove(short ply, short f, short t, short flag, short xside)
+void Sim::LinkMove(short ply, short f, short t, short flag, short xside)
 {
     Leaf *node = &Tree[TrPnt[ply + 1]];
     WORD mv = (f << 8) | t;
@@ -2706,7 +2671,7 @@ LinkMove(short ply, short f, short t, short flag, short xside)
     if (xside == white)
         z |= 0x1000;
 
-    s += *(history+z);
+    s += *(history + z);
 
     if (color[t] != NEUTRAL)
     {
@@ -2747,8 +2712,7 @@ LinkMove(short ply, short f, short t, short flag, short xside)
   array nextpos/nextdir. If the board is free, next move is choosen from
   nextpos else from nextdir.
 */
-static inline void
-GenMoves(short ply, short sq, short side, short xside)
+void Sim::GenMoves(short ply, short sq, short side, short xside)
 {
     short piece = board[sq];
     BYTE *ppos = nextpos + ptype[side][piece] * 64 * 64 + sq * 64;
@@ -2780,28 +2744,28 @@ GenMoves(short ply, short sq, short side, short xside)
             LinkMove(ply, sq, u, CAPTURE, xside);
         else if (u == epsquare)
             LinkMove(ply, sq, u, CAPTURE | EPMASK, xside);
+
+        return;
     }
-    else
+
+    short u = ppos[sq];
+
+    do
     {
-        short u = ppos[sq];
-
-        do
+        if (color[u] == NEUTRAL)
         {
-            if (color[u] == NEUTRAL)
-            {
-                LinkMove(ply, sq, u, 0, xside);
-                u = ppos[u];
-            }
-            else
-            {
-                if (color[u] == xside)
-                    LinkMove(ply, sq, u, CAPTURE, xside);
-
-                u = pdir[u];
-            }
+            LinkMove(ply, sq, u, 0, xside);
+            u = ppos[u];
         }
-        while (u != sq);
+        else
+        {
+            if (color[u] == xside)
+                LinkMove(ply, sq, u, CAPTURE, xside);
+
+            u = pdir[u];
+        }
     }
+    while (u != sq);
 }
 
 //Make or Unmake a castling move.
@@ -2825,8 +2789,8 @@ int Sim::castle(short side, short kf, short kt, short iop)
     {
         if (kf != kingP[side] || board[kf] != KING || board[rf] != ROOK ||
             Mvboard[kf] != 0 || Mvboard[rf] != 0 || color[kt] != NEUTRAL ||
-            color[rt] != NEUTRAL || color[kt - 1] != NEUTRAL || Sim::SqAtakd(kf, xside) ||
-            Sim::SqAtakd(kt, xside) || Sim::SqAtakd(rt, xside))
+            color[rt] != NEUTRAL || color[kt - 1] != NEUTRAL || SqAtakd(kf, xside) ||
+            SqAtakd(kt, xside) || SqAtakd(rt, xside))
         {
             return (false);
         }
@@ -2880,7 +2844,7 @@ void Sim::MoveList(short side, short ply)
 {
     short xside = otherside[side];
     TrPnt[ply + 1] = TrPnt[ply];
-    Swag0 = PV == 0 ? killr0[ply] : PV;
+    Swag0 = PV == 0 ? _killr0[ply] : PV;
     Swag1 = killr1[ply];
     Swag2 = killr2[ply];
     Swag3 = killr3[ply];
@@ -2893,10 +2857,10 @@ void Sim::MoveList(short side, short ply)
     {
         short f = PieceList[side][0];
 
-        if (Sim::castle(side, f, f + 2, 0))
+        if (castle(side, f, f + 2, 0))
             LinkMove(ply, f, f + 2, CSTLMASK, xside);
 
-        if (Sim::castle(side, f, f - 2, 0))
+        if (castle(side, f, f - 2, 0))
             LinkMove(ply, f, f - 2, CSTLMASK, xside);
     }
 }
@@ -2906,7 +2870,7 @@ void Sim::MoveList(short side, short ply)
   side to play. Array TrPnt[ply] contains the index into Tree[]
   of the first move at a ply.
 */
-void CaptureList(short side, short ply)
+void Sim::CaptureList(short side, short ply)
 {
     short u;
     BYTE *ppos;
@@ -2987,7 +2951,6 @@ void CaptureList(short side, short ply)
             u = pdir[u];
         }
         while (u != sq);
-
     }
 }
 
@@ -3013,7 +2976,7 @@ void Sim::EnPassant(short xside, short f, short t, short iop)
   Update the PieceList and Pindex arrays when a piece is captured or when a
   capture is unmade.
 */
-static inline void UpdatePieceList(short side, short sq, short iop)
+void Sim::_updatePieceList(short side, short sq, short iop)
 {
     if (iop == 1)
     {
@@ -3071,7 +3034,7 @@ void Sim::MakeMove(short side, Leaf *node, short *tempb,
 
         if (*tempc != NEUTRAL)
         {
-            UpdatePieceList (*tempc, t, 1);
+            _updatePieceList (*tempc, t, 1);
 
             if (*tempb == PAWN)
                 --PawnCnt[*tempc][column(t)];
@@ -3193,7 +3156,7 @@ void Sim::UnmakeMove(short side, Leaf *node, short *tempb,
 
     if (*tempc != NEUTRAL)
     {
-        UpdatePieceList (*tempc, t, 2);
+        _updatePieceList (*tempc, t, 2);
 
         if (*tempb == PAWN)
             ++PawnCnt[*tempc][column (t)];
@@ -3209,9 +3172,9 @@ void Sim::UnmakeMove(short side, Leaf *node, short *tempb,
         if (*tempb == PAWN)
             pmtl[xside] += VALUEP;
 #if TTBLSZ
-            UpdateHashbd (xside, *tempb, -1, t);
+        UpdateHashbd (xside, *tempb, -1, t);
 #endif
-            Mvboard[t]--;
+        Mvboard[t]--;
     }
     if (node->flags & EPMASK)
         EnPassant(xside, f, t, 2);

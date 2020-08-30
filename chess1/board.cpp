@@ -117,8 +117,8 @@ void Board::DrawCoords(HDC hDC, int reverse, COLORREF clrBackGround, COLORREF cl
     COLORREF OldTextColor = ::SetTextColor(hDC, clrText);
     TEXTMETRIC tm;
     ::GetTextMetrics(hDC, &tm);
-    const short xchar = tm.tmMaxCharWidth;
-    const short ychar = tm.tmHeight;
+    const LONG xchar = tm.tmMaxCharWidth;
+    const LONG ychar = tm.tmHeight;
 
     for (int i = 0; i < 8; ++i)
     {

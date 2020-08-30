@@ -109,6 +109,8 @@
 #define IDS_UNKNOWNERR    1024
 #define IDS_ALLOCMEM      1025
 
+#define IDM_MAIN    9000
+
 #define MENU_ID_FILE      0
 #define MENU_ID_EDIT      1
 #define MENU_ID_OPTIONS   2

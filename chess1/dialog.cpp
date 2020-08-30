@@ -25,6 +25,9 @@
 #include "resource.h"
 #include "dialog.h"
 #include "palette.h"
+#include "sim.h"
+#include "zeit.h"
+#include "toolbox.h"
 
 Dialog::Dialog(HINSTANCE hInstance) : _hInstance(hInstance)
 {
@@ -147,13 +150,6 @@ INT_PTR ColorDlg::run(HWND hwnd, LPARAM lParam)
     return DialogBoxParam(hInstance(), MAKEINTRESOURCE(COLOR), hwnd, dlgProc, lParam);
 }
 
-static TCHAR lpWBGC[] = TEXT("Window background color");
-static TCHAR lpBS[] = TEXT("Black square color");
-static TCHAR lpWS[] = TEXT("White square color");
-static TCHAR lpBP[] = TEXT("Black piece color");
-static TCHAR lpWP[] = TEXT("White piece color");
-static TCHAR lpTX[] = TEXT("Text color");
-
 void ColorDlg::_initDialogProc(HWND hwnd)
 {
     LPCTSTR pchHeading;
@@ -162,22 +158,22 @@ void ColorDlg::_initDialogProc(HWND hwnd)
     {
     default:
     case IDM_BACKGROUND:
-        pchHeading = lpWBGC;
+        pchHeading = TEXT("Window background color");
         break;
     case IDM_BLACKSQUARE:
-        pchHeading = lpBS;
+        pchHeading = TEXT("Black square color");
         break;
     case IDM_WHITESQUARE:
-        pchHeading = lpWS;
+        pchHeading = TEXT("White square color");
         break;
     case IDM_BLACKPIECE:
-        pchHeading = lpBP;
+        pchHeading = TEXT("Black piece color");
         break;
     case IDM_WHITEPIECE:
-        pchHeading = lpWP;
+        pchHeading = TEXT("White piece color");
         break;
     case IDM_TEXT:
-        pchHeading = lpTX;
+        pchHeading = TEXT("Text color");
         break;
     }
 
@@ -213,7 +209,7 @@ INT_PTR ColorDlg::_commandProc(HWND hwnd, WPARAM wParam)
     case CNT_DARKPINK:
     case CNT_BROWN:
     case CNT_WHITE:
-        _index = wParam;
+        _index = int(wParam);
         ::CheckRadioButton(hwnd, CNT_BLACK, CNT_WHITE, _index);
         break;
     }
@@ -286,8 +282,8 @@ PromoteDlg::_dlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM)
         case 101:
         case 102:
         case 103:
-            xstatus = 2 + wParam - 100;
-            CheckRadioButton(hwnd, 100, 103, wParam);
+            xstatus = 2 + int(wParam) - 100;
+            CheckRadioButton(hwnd, 100, 103, int(wParam));
             break;
         }
         break;
@@ -307,7 +303,7 @@ ManualDlg::ManualDlg(HINSTANCE hInstance) : _hInstance(hInstance)
 INT_PTR ManualDlg::run(HWND hwnd, TCHAR *szPrompt)
 {
     ::lstrcpy(ManualDlgChar, TEXT(""));
-    int stat = ::DialogBox(_hInstance, MAKEINTRESOURCE(MANUALDLG), hwnd, dlgProc);
+    int stat = int(DialogBox(_hInstance, MAKEINTRESOURCE(MANUALDLG), hwnd, dlgProc));
     ::lstrcpy(szPrompt, ManualDlgChar);
     return stat;
 }
@@ -348,6 +344,135 @@ INT_PTR CALLBACK ManualDlg::dlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM l
     return _instance->_dlgProc(hwnd, msg, wParam, lParam);
 }
 
+NumDlg *NumDlg::_instance;
+
+NumDlg::NumDlg(HINSTANCE hInstance) : Dialog(hInstance)
+{
+    _instance = this;
+}
+
+static int NumberDlgInt;
+static TCHAR NumberDlgChar[80];
+
+INT_PTR NumDlg::_dlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM)
+{
+    int temp, Ier;
+
+    switch (msg)
+    {
+    case WM_INITDIALOG:
+        SetDlgItemText(hDlg, IDD_CHAR, NumberDlgChar);
+        SetDlgItemInt(hDlg, IDD_INT, NumberDlgInt, TRUE);
+        return TRUE;
+    case WM_COMMAND:
+        switch (wParam)
+        {
+        case IDOK:
+            temp = GetDlgItemInt(hDlg, IDD_INT, &Ier, TRUE);
+
+            if (Ier != 0)
+            {
+                  NumberDlgInt = temp;
+                  EndDialog ( hDlg, TRUE);
+            }
+            return FALSE;
+        case IDCANCEL:
+            EndDialog ( hDlg, TRUE);
+            return FALSE;
+        }
+        return FALSE;
+    }
+    return TRUE;
+}
+
+INT_PTR CALLBACK NumDlg::dlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    return _instance->_dlgProc(hwnd, msg, wParam, lParam);
+}
+
+int NumDlg::getInt(HWND hwnd, TCHAR *szPrompt, int def)
+{
+    ::lstrcpy(::NumberDlgChar, szPrompt);
+    ::NumberDlgInt = def;
+    DialogBox(hInstance(), MAKEINTRESOURCE(NUMBERDLG), hwnd, dlgProc);
+    return NumberDlgInt;
+}
+
+TestDlg *TestDlg::_instance;
+
+TestDlg::TestDlg(HINSTANCE hInstance, Sim *sim) : Dialog(hInstance), _sim(sim)
+{
+    _instance = this;
+}
+
+INT_PTR TestDlg::run(HWND hwnd)
+{
+    return DialogBox(hInstance(), MAKEINTRESOURCE(TEST), hwnd, dlgProc);
+}
+
+#if 0
+static void TestSpeed(HWND hWnd, int cnt, void (*f) (short int side, short int ply))
+{
+    long evrate;
+    TCHAR tmp[40];
+    SystemTime sysTime;
+    sysTime.getTime();
+    long t1 = sysTime.unix();
+
+    for (long i = 0; i < 1000; i++)
+    {
+        f(opponent, 2);
+    }
+
+    sysTime.getTime();
+    long t2 = sysTime.unix();
+    NodeCnt = 10000L * (TrPnt[3] - TrPnt[2]);
+    long td = Toolbox::myMax(t2 - t1, long(1));
+    evrate = NodeCnt / td;
+    wsprintf(tmp, TEXT("Nodes= %8ld, Nodes/Sec= %5ld"), NodeCnt, evrate);
+    SetDlgItemText(hWnd, cnt, tmp);
+}
+#endif
+
+INT_PTR TestDlg::_dlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM)
+{
+    HCURSOR hCursor;
+
+    switch (msg)
+    {
+    case WM_INITDIALOG:
+        ::SetDlgItemText(hDlg, 100, TEXT(" "));
+        ::SetDlgItemText(hDlg, 101, TEXT(" "));
+        ::PostMessage(hDlg, WM_USER + 1, 0, 0);
+        return TRUE;
+    case (WM_USER+1):
+        hCursor = ::SetCursor(::LoadCursor(NULL, IDC_WAIT) );
+        ::ShowCursor(TRUE);
+#if 0
+        ::TestSpeed(hDlg, 100, _sim->MoveList);
+        ::TestSpeed(hDlg, 101, _sim->CaptureList);
+#endif
+        ::ShowCursor(FALSE);
+        ::SetCursor(hCursor);
+        break;
+    case WM_SYSCOMMAND:
+        if ((wParam & 0xfff0) == SC_CLOSE)
+        {
+            ::EndDialog(hDlg, 0);
+            return TRUE;
+        }
+        break;
+    }
+
+    return FALSE;
+}
+
+INT_PTR CALLBACK
+TestDlg::dlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    return _instance->_dlgProc(hDlg, msg, wParam, lParam);
+}
+
 TimeCtrlDlg *TimeCtrlDlg::_instance;
 
 TimeCtrlDlg::TimeCtrlDlg(HINSTANCE hInstance) : Dialog(hInstance)
@@ -367,7 +492,7 @@ TimeCtrlDlg::dlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
         CheckRadioButton(hDlg, TMDLG_1MOV, TMDLG_60MOV, TCmoves + TMDLG_MOV);
         CheckRadioButton(hDlg, TMDLG_5MIN, TMDLG_600MIN, TCminutes+TMDLG_MIN);
         tmpTCminutes = TCminutes;
-        tmpTCmoves   = TCmoves;
+        tmpTCmoves = TCmoves;
         return TRUE;
     case WM_SYSCOMMAND:
         if ((wParam & 0xfff0) == SC_CLOSE)
@@ -392,16 +517,16 @@ TimeCtrlDlg::dlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
         case TMDLG_20MOV:
         case TMDLG_40MOV:
         case TMDLG_60MOV:
-            tmpTCmoves = wParam - TMDLG_MOV;
-            CheckRadioButton(hDlg, TMDLG_1MOV, TMDLG_60MOV, wParam);
+            tmpTCmoves = int(wParam) - TMDLG_MOV;
+            CheckRadioButton(hDlg, TMDLG_1MOV, TMDLG_60MOV, int(wParam));
             break;
         case TMDLG_5MIN:
         case TMDLG_15MIN:
         case TMDLG_30MIN:
         case TMDLG_60MIN:
         case TMDLG_600MIN:
-            tmpTCminutes = wParam - TMDLG_MIN;
-            CheckRadioButton(hDlg, TMDLG_5MIN, TMDLG_600MIN, wParam);
+            tmpTCminutes = int(wParam) - TMDLG_MIN;
+            CheckRadioButton(hDlg, TMDLG_5MIN, TMDLG_600MIN, int(wParam));
             break;
         }
         break;

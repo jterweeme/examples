@@ -9,7 +9,6 @@
 #include <cstdio>
 #include <windows.h>
 
-//static const TCHAR szAppName[] = TEXT ("CeChat");
 HINSTANCE hInst;
 
 BOOL fContinue = TRUE;

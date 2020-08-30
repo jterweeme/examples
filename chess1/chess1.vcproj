@@ -234,6 +234,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\menubar.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\palette.cpp"
 				>
 			</File>
@@ -292,6 +296,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\menubar.h"
+				>
+			</File>
+			<File
 				RelativePath=".\palette.h"
 				>
 			</File>
@@ -331,10 +339,6 @@
 			</File>
 			<File
 				RelativePath=".\bishopo.bmp"
-				>
-			</File>
-			<File
-				RelativePath=".\chess.rc"
 				>
 			</File>
 			<File
@@ -383,6 +387,10 @@
 			</File>
 			<File
 				RelativePath=".\queeno.bmp"
+				>
+			</File>
+			<File
+				RelativePath=".\resource.rc"
 				>
 			</File>
 			<File

@@ -14,33 +14,33 @@
 #define OVERRIDE
 #endif
 
-template <class T> const T& mynMax(const T &a, const T &b)
-{
-    return a < b ? b : a;
-}
-
-template <class T> const T& mynMin(const T &a, const T &b)
-{
-    return a < b ? a : b;
-}
-
-
-template <class T> void mynSwap(T &a, T &b)
-{
-    T tmp = a;
-    a = b;
-    b = tmp;
-}
-
-template <class T> void mynReverse(T first, T last)
-{
-    while (first != last && first != --last)
-        std::iter_swap(first++, last);
-}
-
 class Toolbox
 {
 public:
+    template <class T> const T& mynMax(const T &a, const T &b)
+    {
+        return a < b ? b : a;
+    }
+
+    template <class T> const T& mynMin(const T &a, const T &b)
+    {
+        return a < b ? a : b;
+    }
+
+
+    template <class T> static void mynSwap(T &a, T &b)
+    {
+        T tmp = a;
+        a = b;
+        b = tmp;
+    }
+
+    template <class T> static void mynReverse(T first, T last)
+    {
+        while (first != last && first != --last)
+            std::iter_swap(first++, last);
+    }
+
     static char bin(BYTE b);
     static char nibble(BYTE n);
     static std::string bin8(BYTE b);
