@@ -8,16 +8,15 @@
 class MainWindow
 {
 private:
-    static const UINT_PTR k_animate     = 2011;
-    HINSTANCE hInst;
-    bool g_isDragging = false;
-    bool g_isRightClick = false;
-    POINT g_startPoint = {0,0};
-    POINT g_adjustedPoint = {0,0};
-    long g_adjustmentDiff = 0;
     static MainWindow *_instance;
     HINSTANCE _hInstance;
     HWND _hwnd;
+    static const UINT_PTR k_animate = 2011;
+    bool g_isDragging;
+    bool g_isRightClick;
+    POINT g_startPoint;
+    POINT g_adjustedPoint;
+    long g_adjustmentDiff;
     LRESULT _wndProc(HWND, UINT, WPARAM, LPARAM);
 public:
     MainWindow(HINSTANCE hInstance);
@@ -29,9 +28,18 @@ public:
 
 MainWindow *MainWindow::_instance;
 
-MainWindow::MainWindow(HINSTANCE hInstance) : _hInstance(hInstance)
+MainWindow::MainWindow(HINSTANCE hInstance)
+  :
+    _hInstance(hInstance),
+    g_isDragging(false),
+    g_isRightClick(false),
+    g_adjustmentDiff(0)
 {
     _instance = this;
+    g_startPoint.x = 0;
+    g_startPoint.y = 0;
+    g_adjustedPoint.x = 0;
+    g_adjustedPoint.y = 0;
 }
 
 void MainWindow::show(int nCmdShow)
@@ -49,12 +57,9 @@ LRESULT CALLBACK MainWindow::wndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
     return _instance->_wndProc(hWnd, message, wParam, lParam);
 }
 
-//using namespace article;
-
 LRESULT MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     PAINTSTRUCT ps;
-    //HDC hdc;
 
     switch (message)
     {
@@ -70,7 +75,7 @@ LRESULT MainWindow::_wndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
         {
         case IDM_ABOUT:
         {
-            AboutDlg aboutDlg(hInst);
+            AboutDlg aboutDlg(_hInstance);
             aboutDlg.run(hWnd);
         }
             break;
@@ -173,18 +178,16 @@ void MainWindow::create()
     wcex.lpfnWndProc = wndProc;
     wcex.cbClsExtra = 0;
     wcex.cbWndExtra = 0;
-    wcex.hInstance		= _hInstance;
-    wcex.hIcon			= ::LoadIcon(_hInstance, MAKEINTRESOURCE(IDI_WIN32_MEMDC));
-    wcex.hCursor		= ::LoadCursor(NULL, IDC_ARROW);
-    wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName	= MAKEINTRESOURCE(IDC_WIN32_MEMDC);
-    wcex.lpszClassName	= TEXT("ExampleClass");
-    wcex.hIconSm		= ::LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+    wcex.hInstance = _hInstance;
+    wcex.hIcon = ::LoadIcon(_hInstance, MAKEINTRESOURCE(IDI_WIN32_MEMDC));
+    wcex.hCursor = ::LoadCursor(NULL, IDC_ARROW);
+    wcex.hbrBackground = HBRUSH(COLOR_WINDOW + 1);
+    wcex.lpszMenuName = MAKEINTRESOURCE(IDC_WIN32_MEMDC);
+    wcex.lpszClassName = TEXT("ExampleClass");
+    wcex.hIconSm = ::LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
     if (!RegisterClassEx(&wcex))
         throw TEXT("Cannot create winclass");
-
-    hInst = _hInstance;
 
     _hwnd = ::CreateWindow(wcex.lpszClassName, TEXT("Win32_MemDC"), WS_OVERLAPPEDWINDOW,
             CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, _hInstance, NULL);

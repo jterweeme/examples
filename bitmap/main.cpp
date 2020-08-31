@@ -74,7 +74,11 @@ void MainWindow::create()
     if (RegisterClass(&wc) == 0)
         throw TEXT("Cannot register window class");
 
+#ifdef WINCE
+    const DWORD style = WS_VISIBLE;
+#else
     const DWORD style = WS_OVERLAPPEDWINDOW;
+#endif
     const INT x = CW_USEDEFAULT;
     const INT y = CW_USEDEFAULT;
     const INT w = CW_USEDEFAULT;

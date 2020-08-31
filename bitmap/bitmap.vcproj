@@ -67,8 +67,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,5.00 /nodefaultlib:libc.lib"
-				AdditionalDependencies="aygshell.lib"
-				OutputFile="$(OutDir)/cechat.exe"
+				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories=""
 				DelayLoadDLLs="$(NOINHERIT)"
@@ -216,8 +215,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,5.00 /nodefaultlib:libc.lib"
-				AdditionalDependencies="ws2.lib mmtimer.lib"
-				OutputFile="$(OutDir)/foshmi.exe"
+				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories=""
 				IgnoreAllDefaultLibraries="false"

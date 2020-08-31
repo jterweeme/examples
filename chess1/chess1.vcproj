@@ -63,7 +63,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,5.00 /nodefaultlib:libc.lib"
-				OutputFile="$(OutDir)/test951.exe"
+				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories=""
 				DelayLoadDLLs="$(NOINHERIT)"
@@ -154,7 +154,7 @@
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,5.00 /nodefaultlib:libc.lib"
 				AdditionalDependencies="ws2.lib mmtimer.lib"
-				OutputFile="$(OutDir)/chess1.exe"
+				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories=""
 				IgnoreAllDefaultLibraries="false"
@@ -239,10 +239,6 @@
 			</File>
 			<File
 				RelativePath=".\palette.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\piece.cpp"
 				>
 			</File>
 			<File

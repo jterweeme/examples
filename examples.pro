@@ -9,8 +9,10 @@ SUBDIRS = bgcolor\
     commctrl1\
     FileEditor\
     mdiapp\
+    memdc\
     opengl1\
     property1\
+    qrcode\
     tabs1\
     tictac\
     winanim\
