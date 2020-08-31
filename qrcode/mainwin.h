@@ -12,6 +12,8 @@ private:
     HINSTANCE _hInstance;
     HWND _hwnd;
     AbstractMenuBar *_menuBar;
+    static void _myDrawRect(HDC hdc, INT x, INT y, INT w, INT h, COLORREF color);
+    void _drawQrCode(HDC hdc, INT x, INT y, INT w, INT h, LPCSTR s);
     void _commandProc(HWND hwnd, WPARAM wParam);
     LRESULT _wndProc(HWND, UINT, WPARAM, LPARAM);
 public:

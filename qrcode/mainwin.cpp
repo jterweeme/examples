@@ -2,6 +2,10 @@
 #include "menubar.h"
 #include "resource.h"
 #include "dialog.h"
+#include "qrcode.h"
+
+using qrcodegen::QrCode;
+using qrcodegen::QrSegment;
 
 MainWindow *MainWindow::_instance;
 
@@ -26,6 +30,30 @@ void MainWindow::_commandProc(HWND hwnd, WPARAM wParam)
     }
 }
 
+void MainWindow::_myDrawRect(HDC hdc, INT x, INT y, INT w, INT h, COLORREF color)
+{
+    for (INT y2 = y; y2 <= y + h; ++y2)
+        for (INT x2 = x; x2 <= x + w; ++x2)
+            SetPixel(hdc, x2, y2, color);
+}
+
+void MainWindow::_drawQrCode(HDC hdc, INT x, INT y, INT w, INT h, LPCSTR s)
+{
+    const QrCode::Ecc errCorLvl = QrCode::Ecc::LOW;
+    const QrCode qr = QrCode::encodeText(s, errCorLvl);
+    const COLORREF black = RGB(0, 0, 0);
+    const COLORREF white = RGB(255, 255, 255);
+
+    for (int iy = 0; iy < qr.getSize(); ++iy)
+    {
+        for (int ix = 0; ix < qr.getSize(); ++ix)
+        {
+            COLORREF color = qr.getModule(ix, iy) ? black : white;
+            _myDrawRect(hdc, ix * w + x, iy * h + y, 10, 10, color);
+        }
+    }
+}
+
 LRESULT MainWindow::_wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg)
@@ -45,9 +73,7 @@ LRESULT MainWindow::_wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hwnd, &ps);
-        HDC hMemDC = CreateCompatibleDC(hdc);
-
-        DeleteDC(hMemDC);
+        _drawQrCode(hdc, 10, 10, 10, 10, "https://tweakers.net/");
         EndPaint(hwnd, &ps);
     }
         break;

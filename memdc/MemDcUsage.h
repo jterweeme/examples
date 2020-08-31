@@ -6,23 +6,15 @@ Copyright 2011 Paul Watt
 ******************************************************************************/
 #ifndef MEMDCUSAGE_H_INCLUDED
 #define MEMDCUSAGE_H_INCLUDED
-/* Includes ******************************************************************/
+#include <windows.h>
 
-namespace article
-{
-
-/* Function Declarations *****************************************************/
-void Init(const UINT width, const UINT height);
-void Term();
-
-UINT GetFrameRateDelay();
-void EnableBackBuffer(bool isEnable);
-bool IsBackBufferEnabled();
-void FlushBackBuffer();
 int  AdjustAnimation(HWND hWnd, int offset);
-void StepAnimation(HWND hWnd);
+void EnableBackBuffer(bool isEnable);
+void FlushBackBuffer();
+UINT GetFrameRateDelay();
+bool IsBackBufferEnabled();
+void Init(const UINT width, const UINT height);
 void PaintAnimation(HWND hWnd, HDC hDc);
-
-}
-
-#endif // MEMDCUSAGE_H_INCLUDED
+void StepAnimation(HWND hWnd);
+void Term();
+#endif
