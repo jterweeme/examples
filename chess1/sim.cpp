@@ -12,6 +12,16 @@ Sim::Sim()
 
 }
 
+short const Sim::value[7] = {0, VALUEP, VALUEN, VALUEB, VALUER, VALUEQ, VALUEK};
+short const Sim::sweep[8] = {false, false, false, true, true, true, false, false};
+short const Sim::rank7[3] = {6, 1, 0};
+short const Sim::kingP[3] = {4, 60, 0};
+short const Sim::PassedPawn0[8] = {0, 60, 80, 120, 200, 360, 600, 800};
+short const Sim::PassedPawn1[8] = {0, 30, 40, 60, 100, 180, 300, 800};
+short const Sim::PassedPawn2[8] = {0, 15, 25, 35, 50, 90, 140, 800};
+short const Sim::PassedPawn3[8] = {0, 5, 10, 15, 20, 30, 140, 800};
+short const Sim::ISOLANI[8] = {-12, -16, -20, -24, -24, -20, -16, -12};
+
 HGLOBAL Sim::xalloc(SIZE_T n)
 {
     HGLOBAL ret = ::GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, n);

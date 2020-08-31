@@ -109,7 +109,7 @@ LRESULT CALLBACK MainWindow::wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 void MainWindow::create()
 {
     WNDCLASS wc;
-    wc.hIcon = NULL;
+    wc.hIcon = LoadIcon(_hInstance, MAKEINTRESOURCE(IDI_MAIN));
     wc.hInstance = _hInstance;
     wc.style = 0;
     wc.cbClsExtra = 0;

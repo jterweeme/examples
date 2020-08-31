@@ -1,6 +1,7 @@
 #ifndef RESOURCE_H
 #define RESOURCE_H
-#define ID_ICON             1                  // App icon resource ID
+
+#define IDI_MAIN 1
 #define ID_MENU             2                  // Menu resource ID
 #define ID_ACCEL            3                  // Accel table ID
 #define IDC_CMDBAR          4                  // Command band ID
@@ -13,4 +14,5 @@
 #define IDC_COMPORT         150                // COM port combo box
 #define IDC_BAUDRATE        151                // Baud rate combo box
 #define IDD_ABOUT 152
+
 #endif

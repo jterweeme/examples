@@ -31,7 +31,6 @@ LRESULT MainWindow::_wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
     case WM_CREATE:
         _hCastle = LoadBitmap(_hInstance, MAKEINTRESOURCE(IDB_CASTLE));
-        //_hCastle = LoadBitmap(_hInstance, MAKEINTRESOURCE(53));
 
         if (_hCastle == NULL)
             throw TEXT("Cannot load bitmap");
@@ -61,7 +60,7 @@ LRESULT MainWindow::_wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 void MainWindow::create()
 {
     WNDCLASS wc;
-    wc.hIcon = NULL;
+    wc.hIcon = LoadIcon(_hInstance, MAKEINTRESOURCE(IDI_MAIN));
     wc.style = 0;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     wc.hInstance = _hInstance;
@@ -75,8 +74,13 @@ void MainWindow::create()
     if (RegisterClass(&wc) == 0)
         throw TEXT("Cannot register window class");
 
-    _hwnd = CreateWindow(wc.lpszClassName, TEXT("Bitmap Example"), WS_VISIBLE,
-                         CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+    const DWORD style = WS_OVERLAPPEDWINDOW;
+    const INT x = CW_USEDEFAULT;
+    const INT y = CW_USEDEFAULT;
+    const INT w = CW_USEDEFAULT;
+    const INT h = CW_USEDEFAULT;
+
+    _hwnd = CreateWindow(wc.lpszClassName, TEXT("Bitmap Example"), style, x, y, w, h,
                          NULL, NULL, _hInstance, NULL);
 
     if (!IsWindow(_hwnd))
@@ -97,7 +101,8 @@ LRESULT CALLBACK MainWindow::wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 {
     LRESULT ret = 0;
 
-    try {
+    try
+    {
         ret = _instance->_wndProc(hwnd, msg, wParam, lParam);
     }
     catch (LPCWSTR err)

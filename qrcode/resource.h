@@ -8,6 +8,7 @@
 #define IDM_EXIT 1004
 
 #define IDD_NEW 1100
+#define IDC_DATA 1101
 
 #endif
 

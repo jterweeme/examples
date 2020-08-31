@@ -3,6 +3,7 @@
 #include "resource.h"
 #include "dialog.h"
 #include "qrcode.h"
+#include <iostream>
 
 using qrcodegen::QrCode;
 using qrcodegen::QrSegment;
@@ -12,6 +13,9 @@ MainWindow *MainWindow::_instance;
 MainWindow::MainWindow(HINSTANCE hInstance) : _hInstance(hInstance)
 {
     _instance = this;
+
+    //terminate string
+    _qrInput[0] = 0;
 }
 
 void MainWindow::_commandProc(HWND hwnd, WPARAM wParam)
@@ -20,8 +24,16 @@ void MainWindow::_commandProc(HWND hwnd, WPARAM wParam)
     {
     case IDM_NEW:
     {
-        NewDlg newDlg(_hInstance);
-        newDlg.run(hwnd);
+        //char buf[100];
+        NewDlg newDlg(_hInstance, _qrInput);
+
+        if (newDlg.run(hwnd))
+        {
+            RECT r;
+            GetClientRect(hwnd, &r);
+            InvalidateRect(hwnd, &r, FALSE);
+        }
+
     }
         return;
     case IDM_EXIT:
@@ -30,26 +42,21 @@ void MainWindow::_commandProc(HWND hwnd, WPARAM wParam)
     }
 }
 
-void MainWindow::_myDrawRect(HDC hdc, INT x, INT y, INT w, INT h, COLORREF color)
-{
-    for (INT y2 = y; y2 <= y + h; ++y2)
-        for (INT x2 = x; x2 <= x + w; ++x2)
-            SetPixel(hdc, x2, y2, color);
-}
-
 void MainWindow::_drawQrCode(HDC hdc, INT x, INT y, INT w, INT h, LPCSTR s)
 {
     const QrCode::Ecc errCorLvl = QrCode::Ecc::LOW;
     const QrCode qr = QrCode::encodeText(s, errCorLvl);
-    const COLORREF black = RGB(0, 0, 0);
-    const COLORREF white = RGB(255, 255, 255);
+    const HBRUSH blackBrush = HBRUSH(GetStockObject(BLACK_BRUSH));
+    const HBRUSH whiteBrush = HBRUSH(GetStockObject(WHITE_BRUSH));
 
     for (int iy = 0; iy < qr.getSize(); ++iy)
     {
         for (int ix = 0; ix < qr.getSize(); ++ix)
         {
-            COLORREF color = qr.getModule(ix, iy) ? black : white;
-            _myDrawRect(hdc, ix * w + x, iy * h + y, 10, 10, color);
+            const HBRUSH brush = qr.getModule(ix, iy) ? blackBrush : whiteBrush;
+            const LONG left = ix *w + x, top = iy * h + y;
+            const RECT r = {left, top, left + w, top + y};
+            FillRect(hdc, &r, brush);
         }
     }
 }
@@ -71,10 +78,16 @@ LRESULT MainWindow::_wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         break;
     case WM_PAINT:
     {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hwnd, &ps);
-        _drawQrCode(hdc, 10, 10, 10, 10, "https://tweakers.net/");
-        EndPaint(hwnd, &ps);
+        std::cout << "WM_PAINT\n";
+        std::cout.flush();
+
+        if (strlen(_qrInput) > 1)
+        {
+            PAINTSTRUCT ps;
+            HDC hdc = BeginPaint(hwnd, &ps);
+            _drawQrCode(hdc, 10, 10, 10, 10, _qrInput);
+            EndPaint(hwnd, &ps);
+        }
     }
         break;
     case WM_DESTROY:
@@ -96,7 +109,7 @@ void MainWindow::create()
     wc.hInstance = _hInstance;
     wc.hIcon = NULL;
     wc.style = 0;
-    wc.hCursor = NULL;
+    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     wc.cbClsExtra = 0;
     wc.cbWndExtra = 0;
     wc.lpszMenuName = NULL;
@@ -107,11 +120,12 @@ void MainWindow::create()
     if (!RegisterClass(&wc))
         throw TEXT("Cannot register main window class");
 
+    const DWORD style = WS_OVERLAPPEDWINDOW;
     const int x = CW_USEDEFAULT;
     const int y = CW_USEDEFAULT;
     const int w = CW_USEDEFAULT;
     const int h = CW_USEDEFAULT;
-    _hwnd = CreateWindow(wc.lpszClassName, TEXT("QR Code"), 0, x, y, w, h, NULL, NULL, _hInstance, NULL);
+    _hwnd = CreateWindow(wc.lpszClassName, TEXT("QR Code"), style, x, y, w, h, NULL, NULL, _hInstance, NULL);
 
     if (_hwnd == NULL)
         throw TEXT("Cannot create main window");

@@ -265,7 +265,7 @@ void MainWindow::create()
     wc.cbClsExtra = 0;
     wc.cbWndExtra = 0;
     wc.hInstance = _hInstance;
-    wc.hIcon = NULL;
+    wc.hIcon = LoadIcon(_hInstance, TEXT("BALLICON"));
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     wc.hbrBackground = HBRUSH(GetStockObject(WHITE_BRUSH));
     wc.lpszMenuName = NULL;

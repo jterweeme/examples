@@ -6,10 +6,8 @@
 //======================================================================
 #include <windows.h>
 #include "resource.h"
-//----------------------------------------------------------------------
-// Icons and bitmaps
-//
-//ID_ICON ICON   "CeChat.ico"              // Program icon
+
+IDI_MAIN ICON "terminal.ico"
 
 ID_MENU MENU DISCARDABLE
 BEGIN

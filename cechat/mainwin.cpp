@@ -41,7 +41,7 @@ void MainWindow::create()
     wc.cbClsExtra = 0;
     wc.cbWndExtra = 0;
     wc.hInstance = _hInstance;
-    wc.hIcon = NULL;
+    wc.hIcon = LoadIcon(_hInstance, MAKEINTRESOURCE(IDI_MAIN));
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     wc.hbrBackground = HBRUSH(GetStockObject(WHITE_BRUSH));
     wc.lpszMenuName = NULL;
@@ -58,8 +58,11 @@ void MainWindow::create()
     // Create unnamed auto-reset event initially false.
     g_hSendEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
-    // Create main window.
+#ifdef WINCE
     CONSTEXPR DWORD style = WS_VISIBLE;
+#else
+    CONSTEXPR DWORD style = WS_OVERLAPPEDWINDOW;
+#endif
     CONSTEXPR INT x = CW_USEDEFAULT;
     CONSTEXPR INT y = CW_USEDEFAULT;
     CONSTEXPR INT w = CW_USEDEFAULT;

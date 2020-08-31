@@ -17,21 +17,21 @@ private:
     static CONSTEXPR short CTLP = 0x4000, CTLB = 0x1800, CTLN = 0x2800, CTLRQ = 0x0600;
     static CONSTEXPR short CTLBN = 0x0800, CTLBQ = 0x1200, CTLNN = 0x2000;
     static CONSTEXPR short row(short a) { return a >> 3; }
-    static CONSTEXPR short PassedPawn0[8] = {0, 60, 80, 120, 200, 360, 600, 800};
-    static CONSTEXPR short PassedPawn1[8] = {0, 30, 40, 60, 100, 180, 300, 800};
-    static CONSTEXPR short PassedPawn2[8] = {0, 15, 25, 35, 50, 90, 140, 800};
-    static CONSTEXPR short PassedPawn3[8] = {0, 5, 10, 15, 20, 30, 140, 800};
-    static CONSTEXPR short ISOLANI[8] = {-12, -16, -20, -24, -24, -20, -16, -12};
-    static CONSTEXPR short rank7[3] = {6, 1, 0};
-    static CONSTEXPR short kingP[3] = {4, 60, 0};
-    static CONSTEXPR short sweep[8] = {false, false, false, true, true, true, false, false};
     static CONSTEXPR WORD FREHASH = 6, EXACT = 0x0040, DRAW = 0x0400;
     static CONSTEXPR short PWNTHRT = 0x0080;
     static CONSTEXPR short VALUEP = 100;
     static CONSTEXPR short VALUER = 550, VALUEB = 355, VALUEN = 350;
     static CONSTEXPR short VALUEQ = 1100, VALUEK = 1200, BPAWN = 7;
-    static CONSTEXPR short value[7] = {0, VALUEP, VALUEN, VALUEB, VALUER, VALUEQ, VALUEK};
 
+    static short const ISOLANI[8];
+    static short const PassedPawn0[8];
+    static short const PassedPawn1[8];
+    static short const PassedPawn2[8];
+    static short const PassedPawn3[8];
+    static short const kingP[3];
+    static short const rank7[3];
+    static short const sweep[8];
+    static short const value[7];
     static short const control[7];
     static short const max_steps[8];
     static short const direc[8][8];

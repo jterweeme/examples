@@ -1,6 +1,8 @@
 #ifndef RESOURCE_H
 #define RESOURCE_H
 
+#define IDI_MAIN 1000
+
 #define IDM_MAIN 100
 #define IDM_EXIT 101
 #define IDM_ABOUT 102

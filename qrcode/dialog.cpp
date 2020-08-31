@@ -3,7 +3,7 @@
 
 NewDlg *NewDlg::_instance;
 
-NewDlg::NewDlg(HINSTANCE hInstance) : _hInstance(hInstance)
+NewDlg::NewDlg(HINSTANCE hInstance, LPSTR buf) : _hInstance(hInstance), _buf(buf)
 {
     _instance = this;
 }
@@ -17,10 +17,13 @@ INT_PTR NewDlg::_dlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM)
 {
     switch (msg)
     {
+    case WM_INITDIALOG:
+        break;
     case WM_COMMAND:
         switch (LOWORD(wParam))
         {
         case IDOK:
+            GetDlgItemTextA(hwnd, IDC_DATA, _buf, 100);
             EndDialog(hwnd, 1);
             return TRUE;
         case IDCANCEL:
