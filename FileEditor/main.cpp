@@ -1,11 +1,17 @@
 #include "winclass.h"
 #include "mainwin.h"
 
+#ifdef WINCE
+#define LPXSTR LPTSTR
+#else
+#define LPXSTR LPSTR
+#endif
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-                   LPSTR lpCmdLine, int nCmdShow)
+                   LPXSTR lpCmdLine, int nCmdShow)
 {
-    (void)hPrevInstance;
-    (void)lpCmdLine;
+    UNREFERENCED_PARAMETER(hPrevInstance);
+    UNREFERENCED_PARAMETER(lpCmdLine);
     WinClass wc(MainWindow::WndProc, hInstance, L"MyWindowClass");
     MainWindow win(&wc);
 
@@ -16,15 +22,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         win.show(nCmdShow);
         win.update();
     }
+#ifndef WINCE
     catch (LPCSTR err)
     {
-        ::MessageBoxA(0, err, "Error", 0);
+        ::MessageBoxA(NULL, err, "Error", 0);
+    }
+#endif
+    catch (LPCWSTR err)
+    {
+        ::MessageBoxW(NULL, err, L"Error", 0);
     }
     catch (...)
     {
-        ::MessageBoxW(0, L"Unknown Error", L"Error", 0);
+        ::MessageBox(NULL, TEXT("Unknown Error"), TEXT("Error"), 0);
     }
-
 
     MSG msg;
     while (GetMessage(&msg, NULL, 0, 0))

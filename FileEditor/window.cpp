@@ -2,7 +2,7 @@
 #include "winclass.h"
 
 Window::Window(WinClass *wc, int x, int y, int width, int height) :
-    Element(0, 0, x, y, width, height), _wc(wc)
+    Element(NULLPTR, 0, x, y, width, height), _wc(wc)
 {
 
 }

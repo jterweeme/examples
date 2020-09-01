@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="cmdbar"
-	ProjectGUID="{929A2BBE-D904-4DBB-A0E2-F2F5ADE67DFA}"
+	Name="fileeditor"
+	ProjectGUID="{A5ADA321-4444-4534-ADEC-0D772DDC4951}"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -67,13 +67,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,5.00 /nodefaultlib:libc.lib"
-				AdditionalDependencies="aygshell.lib"
-				OutputFile="$(OutDir)\$(ProjectName).exe"
+				OutputFile="$(OutDir)/bgcolor.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories=""
 				DelayLoadDLLs="$(NOINHERIT)"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/test951.pdb"
+				ProgramDatabaseFile="$(OutDir)/bgcolor.pdb"
 				SubSystem="0"
 				StackReserveSize="65536"
 				StackCommitSize="4096"
@@ -191,7 +190,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				ExecutionBucket="7"
-				Optimization="2"
+				Optimization="0"
 				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;_WINDOWS;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE;STANDARDSHELL_UI_MODEL"
 				MinimalRebuild="false"
@@ -224,7 +223,7 @@
 				IgnoreDefaultLibraryNames="secchk.lib"
 				DelayLoadDLLs="$(NOINHERIT)"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/test951.pdb"
+				ProgramDatabaseFile="$(OutDir)/bgcolor.pdb"
 				SubSystem="0"
 				StackReserveSize="65536"
 				StackCommitSize="4096"
@@ -325,7 +324,27 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\editbox.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\element.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\main.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\mainwin.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\winclass.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\window.cpp"
 				>
 			</File>
 		</Filter>
@@ -335,7 +354,31 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath=".\editbox.h"
+				>
+			</File>
+			<File
+				RelativePath=".\element.h"
+				>
+			</File>
+			<File
+				RelativePath=".\main.h"
+				>
+			</File>
+			<File
+				RelativePath=".\mainwin.h"
+				>
+			</File>
+			<File
 				RelativePath=".\resource.h"
+				>
+			</File>
+			<File
+				RelativePath=".\winclass.h"
+				>
+			</File>
+			<File
+				RelativePath=".\window.h"
 				>
 			</File>
 		</Filter>
@@ -345,7 +388,7 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 			<File
-				RelativePath=".\cechat.rc"
+				RelativePath=".\resource.rc"
 				>
 			</File>
 		</Filter>

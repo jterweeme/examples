@@ -36,10 +36,6 @@ using std::uint8_t;
 using std::size_t;
 using std::vector;
 
-
-namespace qrcodegen
-{
-
 QrSegment::Mode::Mode(int mode, int cc0, int cc1, int cc2) : modeBits(mode)
 {
 	numBitsCharCount[0] = cc0;
@@ -173,7 +169,8 @@ vector<QrSegment> QrSegment::makeSegments(const char *text)
 		result.push_back(makeNumeric(text));
 	else if (isAlphanumeric(text))
 		result.push_back(makeAlphanumeric(text));
-	else {
+    else
+    {
 		vector<uint8_t> bytes;
 		for (; *text != '\0'; text++)
 			bytes.push_back(static_cast<uint8_t>(*text));
@@ -238,17 +235,22 @@ QrSegment::QrSegment(Mode md, int numCh, std::vector<bool> &&dt) :
 }
 
 
-int QrSegment::getTotalBits(const vector<QrSegment> &segs, int version) {
+int QrSegment::getTotalBits(const vector<QrSegment> &segs, int version)
+{
 	int result = 0;
-	for (const QrSegment &seg : segs) {
+    for (const QrSegment &seg : segs)
+    {
 		int ccbits = seg.mode.numCharCountBits(version);
 		if (seg.numChars >= (1L << ccbits))
 			return -1;  // The segment's length doesn't fit the field's bit width
 		if (4 + ccbits > INT_MAX - result)
 			return -1;  // The sum will overflow an int type
 		result += 4 + ccbits;
+
+        // The sum will overflow an int type
 		if (seg.data.size() > static_cast<unsigned int>(INT_MAX - result))
-			return -1;  // The sum will overflow an int type
+            return -1;
+
 		result += static_cast<int>(seg.data.size());
 	}
 	return result;
@@ -623,29 +625,39 @@ void QrCode::drawFunctionPatterns()
 void QrCode::drawFormatBits(int msk)
 {
 	// Calculate error correction code and pack bits
-	int data = getFormatBits(errorCorrectionLevel) << 3 | msk;  // errCorrLvl is uint2, msk is uint3
+    // errCorrLvl is uint2, msk is uint3
+    int data = getFormatBits(errorCorrectionLevel) << 3 | msk;
 	int rem = data;
+
 	for (int i = 0; i < 10; i++)
 		rem = (rem << 1) ^ ((rem >> 9) * 0x537);
-	int bits = (data << 10 | rem) ^ 0x5412;  // uint15
+
+    // uint15
+    int bits = (data << 10 | rem) ^ 0x5412;
+
 	if (bits >> 15 != 0)
 		throw std::logic_error("Assertion error");
 	
 	// Draw first copy
 	for (int i = 0; i <= 5; i++)
 		setFunctionModule(8, i, getBit(bits, i));
+
 	setFunctionModule(8, 7, getBit(bits, 6));
 	setFunctionModule(8, 8, getBit(bits, 7));
 	setFunctionModule(7, 8, getBit(bits, 8));
+
 	for (int i = 9; i < 15; i++)
 		setFunctionModule(14 - i, 8, getBit(bits, i));
 	
 	// Draw second copy
 	for (int i = 0; i < 8; i++)
 		setFunctionModule(size - 1 - i, 8, getBit(bits, i));
+
 	for (int i = 8; i < 15; i++)
 		setFunctionModule(8, size - 15 + i, getBit(bits, i));
-	setFunctionModule(8, size - 8, true);  // Always black
+
+    // Always black
+    setFunctionModule(8, size - 8, true);
 }
 
 // Draws two copies of the version bits (with its own error correction code),
@@ -739,12 +751,16 @@ vector<uint8_t> QrCode::addEccAndInterleave(const vector<uint8_t> &data) const
 	// Split data into blocks and append ECC to each block
 	vector<vector<uint8_t> > blocks;
 	const vector<uint8_t> rsDiv = reedSolomonComputeDivisor(blockEccLen);
-	for (int i = 0, k = 0; i < numBlocks; i++) {
+
+    for (int i = 0, k = 0; i < numBlocks; i++)
+    {
 		vector<uint8_t> dat(data.cbegin() + k, data.cbegin() + (k + shortBlockLen - blockEccLen + (i < numShortBlocks ? 0 : 1)));
 		k += static_cast<int>(dat.size());
 		const vector<uint8_t> ecc = reedSolomonComputeRemainder(dat, rsDiv);
+
 		if (i < numShortBlocks)
 			dat.push_back(0);
+
 		dat.insert(dat.end(), ecc.cbegin(), ecc.cend());
 		blocks.push_back(std::move(dat));
 	}
@@ -760,6 +776,7 @@ vector<uint8_t> QrCode::addEccAndInterleave(const vector<uint8_t> &data) const
 				result.push_back(blocks.at(j).at(i));
 		}
 	}
+
 	if (result.size() != static_cast<unsigned int>(rawCodewords))
 		throw std::logic_error("Assertion error");
 
@@ -786,11 +803,18 @@ void QrCode::drawCodewords(const vector<uint8_t> &data)
         // Vertical counter
         for (int vert = 0; vert < size; vert++)
         {
-			for (int j = 0; j < 2; j++) {
-				size_t x = static_cast<size_t>(right - j);  // Actual x coordinate
+            for (int j = 0; j < 2; j++)
+            {
+                // Actual x coordinate
+                size_t x = static_cast<size_t>(right - j);
+
 				bool upward = ((right + 1) & 2) == 0;
-				size_t y = static_cast<size_t>(upward ? size - 1 - vert : vert);  // Actual y coordinate
-				if (!isFunction.at(y).at(x) && i < data.size() * 8) {
+
+                // Actual y coordinate
+                size_t y = static_cast<size_t>(upward ? size - 1 - vert : vert);
+
+                if (!isFunction.at(y).at(x) && i < data.size() * 8)
+                {
 					modules.at(y).at(x) = getBit(data.at(i >> 3), 7 - static_cast<int>(i & 7));
 					i++;
 				}
@@ -855,50 +879,173 @@ void QrCode::applyMask(int msk)
 	}
 }
 
+long QrCode::getPenaltyScore() const
+{
+    long result = 0;
+
+    // Adjacent modules in row having same color, and finder-like patterns
+    for (int y = 0; y < size; y++)
+    {
+        bool runColor = false;
+        int runX = 0;
+        History hist;
+        hist.clear();
+        //std::array<int,7> runHistory = {};
+
+        for (int x = 0; x < size; x++)
+        {
+            if (module(x, y) == runColor)
+            {
+                runX++;
+                if (runX == 5)
+                    result += PENALTY_N1;
+                else if (runX > 5)
+                    result++;
+            }
+            else
+            {
+                finderPenaltyAddHistory(runX, hist);
+
+                if (!runColor)
+                    result += finderPenaltyCountPatterns(hist) * PENALTY_N3;
+
+                runColor = module(x, y);
+                runX = 1;
+            }
+        }
+        result += finderPenaltyTerminateAndCount(runColor, runX, hist) * PENALTY_N3;
+    }
+
+    // Adjacent modules in column having same color, and finder-like patterns
+    for (int x = 0; x < size; x++)
+    {
+        bool runColor = false;
+        int runY = 0;
+
+        History hist;
+        hist.clear();
+
+        //std::array<int,7> runHistory = {};
+
+        for (int y = 0; y < size; y++)
+        {
+            if (module(x, y) == runColor)
+            {
+                runY++;
+                if (runY == 5)
+                    result += PENALTY_N1;
+                else if (runY > 5)
+                    result++;
+            }
+            else
+            {
+                finderPenaltyAddHistory(runY, hist);
+
+                if (!runColor)
+                    result += finderPenaltyCountPatterns(hist) * PENALTY_N3;
+
+                runColor = module(x, y);
+                runY = 1;
+            }
+        }
+        result += finderPenaltyTerminateAndCount(runColor, runY, hist) * PENALTY_N3;
+    }
+
+    // 2*2 blocks of modules having same color
+    for (int y = 0; y < size - 1; y++)
+    {
+        for (int x = 0; x < size - 1; x++)
+        {
+            bool color = module(x, y);
+
+            if (color == module(x + 1, y) && color == module(x, y + 1) && color == module(x + 1, y + 1))
+                result += PENALTY_N2;
+        }
+    }
+
+    // Balance of black and white modules
+    int black = 0;
+    for (const vector<bool> &row : modules)
+    {
+        for (bool color : row)
+        {
+            if (color)
+                black++;
+        }
+    }
+
+    // Note that size is odd, so black/total != 1/2
+    int total = size * size;
+
+    // Compute the smallest integer k >= 0 such that (45-5k)% <= black/total <= (55+5k)%
+    int k = static_cast<int>((std::abs(black * 20L - total * 10L) + total - 1) / total) - 1;
+
+    result += k * PENALTY_N4;
+    return result;
+}
+
 // Calculates and returns the penalty score based on state of this QR Code's current modules.
 // This is used by the automatic mask choice algorithm to find the mask pattern that yields the lowest score.
+#if 0
 long QrCode::getPenaltyScore() const
 {
 	long result = 0;
 	
 	// Adjacent modules in row having same color, and finder-like patterns
-	for (int y = 0; y < size; y++) {
+    for (int y = 0; y < size; y++)
+    {
 		bool runColor = false;
 		int runX = 0;
 		std::array<int,7> runHistory = {};
-		for (int x = 0; x < size; x++) {
-			if (module(x, y) == runColor) {
+
+        for (int x = 0; x < size; x++)
+        {
+            if (module(x, y) == runColor)
+            {
 				runX++;
 				if (runX == 5)
 					result += PENALTY_N1;
 				else if (runX > 5)
 					result++;
-			} else {
+            }
+            else
+            {
 				finderPenaltyAddHistory(runX, runHistory);
+
 				if (!runColor)
 					result += finderPenaltyCountPatterns(runHistory) * PENALTY_N3;
+
 				runColor = module(x, y);
 				runX = 1;
 			}
 		}
 		result += finderPenaltyTerminateAndCount(runColor, runX, runHistory) * PENALTY_N3;
 	}
+
 	// Adjacent modules in column having same color, and finder-like patterns
-	for (int x = 0; x < size; x++) {
-		bool runColor = false;
-		int runY = 0;
-		std::array<int,7> runHistory = {};
-		for (int y = 0; y < size; y++) {
-			if (module(x, y) == runColor) {
+    for (int x = 0; x < size; x++)
+    {
+        bool runColor = false;
+        int runY = 0;
+        std::array<int,7> runHistory = {};
+
+        for (int y = 0; y < size; y++)
+        {
+            if (module(x, y) == runColor)
+            {
 				runY++;
 				if (runY == 5)
 					result += PENALTY_N1;
 				else if (runY > 5)
 					result++;
-			} else {
+            }
+            else
+            {
 				finderPenaltyAddHistory(runY, runHistory);
+
 				if (!runColor)
 					result += finderPenaltyCountPatterns(runHistory) * PENALTY_N3;
+
 				runColor = module(x, y);
 				runY = 1;
 			}
@@ -907,30 +1054,38 @@ long QrCode::getPenaltyScore() const
 	}
 	
 	// 2*2 blocks of modules having same color
-	for (int y = 0; y < size - 1; y++) {
-		for (int x = 0; x < size - 1; x++) {
-			bool  color = module(x, y);
-			if (  color == module(x + 1, y) &&
-			      color == module(x, y + 1) &&
-			      color == module(x + 1, y + 1))
+    for (int y = 0; y < size - 1; y++)
+    {
+        for (int x = 0; x < size - 1; x++)
+        {
+            bool color = module(x, y);
+
+            if (color == module(x + 1, y) && color == module(x, y + 1) && color == module(x + 1, y + 1))
 				result += PENALTY_N2;
 		}
 	}
 	
 	// Balance of black and white modules
 	int black = 0;
-	for (const vector<bool> &row : modules) {
-		for (bool color : row) {
+    for (const vector<bool> &row : modules)
+    {
+        for (bool color : row)
+        {
 			if (color)
 				black++;
 		}
 	}
-	int total = size * size;  // Note that size is odd, so black/total != 1/2
+
+    // Note that size is odd, so black/total != 1/2
+    int total = size * size;
+
 	// Compute the smallest integer k >= 0 such that (45-5k)% <= black/total <= (55+5k)%
 	int k = static_cast<int>((std::abs(black * 20L - total * 10L) + total - 1) / total) - 1;
+
 	result += k * PENALTY_N4;
 	return result;
 }
+#endif
 
 // Returns an ascending list of positions of alignment patterns for this version number.
 // Each position is in the range [0,177), and are used on both the x and y axes.
@@ -1052,22 +1207,77 @@ uint8_t QrCode::reedSolomonMultiply(uint8_t x, uint8_t y)
 	return static_cast<uint8_t>(z);
 }
 
+int History::get(int i) const
+{
+    return _buf[i];
+}
+
+void History::clear()
+{
+    for (int i = 0; i < 7; ++i)
+        _buf[i] = 0;
+}
+
+void History::push_front(int val)
+{
+    for (int i = 6; i > 0; --i)
+        _buf[i] = _buf[i - 1];
+
+    _buf[0] = val;
+}
+
+int QrCode::finderPenaltyCountPatterns(const History &hist) const
+{
+    const int n = hist.get(1);
+
+    if (n > size * 3)
+        throw std::logic_error("Assertion error");
+
+    const bool core = n > 0 && hist.get(2) == n && hist.get(3) == n * 3 && hist.get(4) == n && hist.get(5) == n;
+    const int a = core && hist.get(0) >= n * 4 && hist.get(6) >= n ? 1 : 0;
+    const int b = core && hist.get(6) >= n * 4 && hist.get(0) >= n ? 1 : 0;
+    return a + b;
+}
+
 // Can only be called immediately after a white run is added, and
 // returns either 0, 1, or 2. A helper function for getPenaltyScore().
-int QrCode::finderPenaltyCountPatterns(const std::array<int,7> &runHistory) const
+#if 0
+int QrCode::finderPenaltyCountPatterns(std::array<int,7> runHistory) const
 {
 	int n = runHistory.at(1);
 
 	if (n > size * 3)
 		throw std::logic_error("Assertion error");
 
-	bool core = n > 0 && runHistory.at(2) == n && runHistory.at(3) == n * 3 && runHistory.at(4) == n && runHistory.at(5) == n;
+    bool core = n > 0 &&
+         runHistory.at(2) == n &&
+         runHistory.at(3) == n * 3 &&
+         runHistory.at(4) == n &&
+         runHistory.at(5) == n;
 
-	return (core && runHistory.at(0) >= n * 4 && runHistory.at(6) >= n ? 1 : 0)
-	     + (core && runHistory.at(6) >= n * 4 && runHistory.at(0) >= n ? 1 : 0);
+    const int a = core && runHistory.at(0) >= n * 4 && runHistory.at(6) >= n ? 1 : 0;
+    const int b = core && runHistory.at(6) >= n * 4 && runHistory.at(0) >= n ? 1 : 0;
+    return a + b;
+}
+#endif
+
+int QrCode::finderPenaltyTerminateAndCount(
+    bool currentRunColor, int currentRunLength, History &hist) const
+{
+    if (currentRunColor)
+    {
+        finderPenaltyAddHistory(currentRunLength, hist);
+        currentRunLength = 0;
+    }
+
+    currentRunLength += size;
+    finderPenaltyAddHistory(currentRunLength, hist);
+    return finderPenaltyCountPatterns(hist);
 }
 
-// Must be called at the end of a line (row or column) of modules. A helper function for getPenaltyScore().
+// Must be called at the end of a line (row or column) of modules.
+//A helper function for getPenaltyScore().
+#if 0
 int QrCode::finderPenaltyTerminateAndCount(bool currentRunColor,
     int currentRunLength, std::array<int,7> &runHistory) const
 {
@@ -1084,8 +1294,19 @@ int QrCode::finderPenaltyTerminateAndCount(bool currentRunColor,
 	finderPenaltyAddHistory(currentRunLength, runHistory);
 	return finderPenaltyCountPatterns(runHistory);
 }
+#endif
 
-// Pushes the given value to the front and drops the last value. A helper function for getPenaltyScore().
+void QrCode::finderPenaltyAddHistory(int currentRunLength, History &hist) const
+{
+    if (hist.get(0) == 0)
+        currentRunLength += size;
+
+    hist.push_front(currentRunLength);
+}
+
+// Pushes the given value to the front and drops the last value.
+//A helper function for getPenaltyScore().
+#if 0
 void QrCode::finderPenaltyAddHistory(
     int currentRunLength, std::array<int,7> &runHistory) const
 {
@@ -1096,6 +1317,7 @@ void QrCode::finderPenaltyAddHistory(
 	std::copy_backward(runHistory.cbegin(), runHistory.cend() - 1, runHistory.end());
 	runHistory.at(0) = currentRunLength;
 }
+#endif
 
 // Returns true iff the i'th bit of x is set to 1.
 bool QrCode::getBit(long x, int i)
@@ -1161,4 +1383,3 @@ void BitBuffer::appendBits(std::uint32_t val, int len)
 		this->push_back(((val >> i) & 1) != 0);
 }
 
-}

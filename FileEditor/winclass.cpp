@@ -2,7 +2,6 @@
 
 WinClass::WinClass(WNDPROC wndProc, HINSTANCE hInstance, LPCTSTR className)
 {
-    _wc.cbSize = sizeof(WNDCLASSEX);
     _wc.style = 0;
     _wc.lpfnWndProc = wndProc;
     _wc.cbClsExtra = 0;
@@ -13,12 +12,11 @@ WinClass::WinClass(WNDPROC wndProc, HINSTANCE hInstance, LPCTSTR className)
     _wc.hbrBackground = HBRUSH(COLOR_WINDOW + 1);
     _wc.lpszMenuName = TEXT("MAINMENU");
     _wc.lpszClassName = className;
-    _wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
 }
 
 void WinClass::registerClass()
 {
-    if (!::RegisterClassEx(&_wc))
+    if (!::RegisterClass(&_wc))
         throw TEXT("Window registration failed");
 }
 

@@ -30,9 +30,15 @@
 #include <string>
 #include <vector>
 
-
-namespace qrcodegen
+class History
 {
+private:
+    int _buf[7];
+public:
+    int get(int i) const;
+    void clear();
+    void push_front(int val);
+};
 
 /* 
  * A segment of character/binary/control data in a QR Code symbol.
@@ -223,7 +229,7 @@ private:
     std::vector<std::uint8_t> addEccAndInterleave(const std::vector<std::uint8_t> &data) const;
     void drawCodewords(const std::vector<std::uint8_t> &data);
     void applyMask(int msk);
-    long getPenaltyScore() const;
+
     std::vector<int> getAlignmentPatternPositions() const;
     static int getNumRawDataModules(int ver);
     static int getNumDataCodewords(int ver, Ecc ecl);
@@ -233,17 +239,23 @@ private:
             const std::vector<std::uint8_t> &data, const std::vector<std::uint8_t> &divisor);
 	
     static std::uint8_t reedSolomonMultiply(std::uint8_t x, std::uint8_t y);
-    int finderPenaltyCountPatterns(const std::array<int,7> &runHistory) const;
+#if 0
+    long getPenaltyScore() const;
+    int finderPenaltyCountPatterns(std::array<int,7> runHistory) const;
     int finderPenaltyTerminateAndCount(bool currentRunColor, int currentRunLength, std::array<int,7> &runHistory) const;
     void finderPenaltyAddHistory(int currentRunLength, std::array<int,7> &runHistory) const;
+#endif
+    long getPenaltyScore() const;
+    int finderPenaltyCountPatterns(const History &hist) const;
+    int finderPenaltyTerminateAndCount(bool currentRunColor, int currentRunLength, History &hist) const;
+    void finderPenaltyAddHistory(int currentRunLength, History &hist) const;
+
     static bool getBit(long x, int i);
-	
-	// The minimum version number supported in the QR Code Model 2 standard.
 public:
+    // The minimum version number supported in the QR Code Model 2 standard.
     static constexpr int MIN_VERSION =  1;
 	
 	// The maximum version number supported in the QR Code Model 2 standard.
-public:
     static constexpr int MAX_VERSION = 40;
 	
 	
@@ -274,6 +286,4 @@ public:
     BitBuffer();
     void appendBits(std::uint32_t val, int len);
 };
-
-}
 #endif

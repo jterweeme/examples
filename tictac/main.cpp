@@ -25,7 +25,7 @@ private:
     RECT rectBoard;
     RECT rectPrompt;
     BYTE bBoard[9];
-    BYTE bTurn = 0;
+    BYTE bTurn;
 
     void _sizeProc(HWND hwnd);
     void _drawBoard(HDC hdc, RECT *prect);
@@ -42,7 +42,8 @@ public:
 
 MainWindow *MainWindow::_instance;
 
-MainWindow::MainWindow(HINSTANCE hInstance) : _hInstance(hInstance)
+MainWindow::MainWindow(HINSTANCE hInstance)
+    : _hInstance(hInstance), bTurn(0)
 {
     _instance = this;
 }
@@ -285,7 +286,13 @@ void MainWindow::create()
         throw TEXT("Cannot create main window");
 }
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR cmdLine, int nCmdShow)
+#ifdef WINCE
+#define LPXSTR LPTSTR
+#else
+#define LPXSTR LPSTR
+#endif
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPXSTR cmdLine, INT nCmdShow)
 {
     (void)hPrevInstance;
     (void)cmdLine;

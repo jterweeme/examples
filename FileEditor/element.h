@@ -3,19 +3,27 @@
 
 #include <windows.h>
 
+#if __cplusplus >= 201103L
+#define CONSTEXPR constexpr
+#define NULLPTR nullptr
+#else
+#define CONSTEXPR const
+#define NULLPTR NULL
+#endif
+
 class Element
 {
 private:
     HWND _hwnd;
 protected:
     Element *_parent;
-    uintptr_t _id;
+    UINT_PTR _id;
     int _x;
     int _y;
     int _width;
     int _height;
 public:
-    Element(Element *parent, uintptr_t id, int x, int y, int width, int height);
+    Element(Element *parent, UINT_PTR id, int x, int y, int width, int height);
     HWND hwnd() const;
     virtual void move(int x, int y, int width, int height, BOOL repaint);
     virtual void move();

@@ -5,9 +5,6 @@
 #include "qrcode.h"
 #include <iostream>
 
-using qrcodegen::QrCode;
-using qrcodegen::QrSegment;
-
 MainWindow *MainWindow::_instance;
 
 MainWindow::MainWindow(HINSTANCE hInstance) : _hInstance(hInstance)
@@ -24,13 +21,17 @@ void MainWindow::_commandProc(HWND hwnd, WPARAM wParam)
     {
     case IDM_NEW:
     {
-        //char buf[100];
         NewDlg newDlg(_hInstance, _qrInput);
 
         if (newDlg.run(hwnd))
         {
             RECT r;
             GetClientRect(hwnd, &r);
+            HDC hdc = GetDC(hwnd);
+
+            FillRect(hdc, &r, HBRUSH(GetStockObject(WHITE_BRUSH)));
+            ReleaseDC(hwnd, hdc);
+
             InvalidateRect(hwnd, &r, FALSE);
         }
 

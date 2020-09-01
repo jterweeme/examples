@@ -5,7 +5,7 @@
 class WinClass
 {
 private:
-    WNDCLASSEX _wc;
+    WNDCLASS _wc;
 public:
     WinClass(WNDPROC wndProc, HINSTANCE hInstance, LPCTSTR className);
     void registerClass();
