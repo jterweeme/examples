@@ -1,5 +1,7 @@
 #include "dialog.h"
 #include "resource.h"
+#include "toolbox.h"
+#include <string>
 
 NewDlg *NewDlg::_instance;
 
@@ -23,8 +25,14 @@ INT_PTR NewDlg::_dlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM)
         switch (LOWORD(wParam))
         {
         case IDOK:
-            GetDlgItemTextA(hwnd, IDC_DATA, _buf, 100);
+        {
+            WCHAR buf[100];
+            GetDlgItemTextW(hwnd, IDC_DATA, buf, 100);
+            std::wstring ws = std::wstring(buf);
+            std::string s = Toolbox::wstrtostr(ws);
+            strncpy(_buf, s.c_str(), 100);
             EndDialog(hwnd, 1);
+        }
             return TRUE;
         case IDCANCEL:
             EndDialog(hwnd, 0);

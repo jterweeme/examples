@@ -43,10 +43,8 @@ void MainWindow::_commandProc(HWND hwnd, WPARAM wParam)
     }
 }
 
-void MainWindow::_drawQrCode(HDC hdc, INT x, INT y, INT w, INT h, LPCSTR s)
+void MainWindow::_drawQrCode(HDC hdc, INT x, INT y, INT w, INT h, const QrCode &qr)
 {
-    const QrCode::Ecc errCorLvl = QrCode::Ecc::LOW;
-    const QrCode qr = QrCode::encodeText(s, errCorLvl);
     const HBRUSH blackBrush = HBRUSH(GetStockObject(BLACK_BRUSH));
     const HBRUSH whiteBrush = HBRUSH(GetStockObject(WHITE_BRUSH));
 
@@ -55,11 +53,18 @@ void MainWindow::_drawQrCode(HDC hdc, INT x, INT y, INT w, INT h, LPCSTR s)
         for (int ix = 0; ix < qr.getSize(); ++ix)
         {
             const HBRUSH brush = qr.getModule(ix, iy) ? blackBrush : whiteBrush;
-            const LONG left = ix *w + x, top = iy * h + y;
-            const RECT r = {left, top, left + w, top + y};
+            const LONG left = ix * w + x, top = iy * h + y;
+            const RECT r = {left, top, left + w, top + h};
             FillRect(hdc, &r, brush);
         }
     }
+}
+
+void MainWindow::_drawQrCode(HDC hdc, INT x, INT y, INT w, INT h, LPCSTR s)
+{
+    const QrCode::Ecc errCorLvl = QrCode::Ecc::LOW;
+    const QrCode qr = QrCode::encodeText(s, errCorLvl);
+    _drawQrCode(hdc, x, y, w, h, qr);
 }
 
 LRESULT MainWindow::_wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -79,14 +84,20 @@ LRESULT MainWindow::_wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         break;
     case WM_PAINT:
     {
-        std::cout << "WM_PAINT\n";
-        std::cout.flush();
+        RECT r;
+        GetClientRect(hwnd, &r);
 
         if (strlen(_qrInput) > 1)
         {
+            const QrCode::Ecc errCorLvl = QrCode::Ecc::LOW;
+            const QrCode qr = QrCode::encodeText(_qrInput, errCorLvl);
+            const int stretch = 10;
+            int size = qr.getSize();
+            int x = r.right / 2 - size * stretch / 2;
+            int y = r.bottom / 2 - size * stretch / 2;
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
-            _drawQrCode(hdc, 10, 10, 10, 10, _qrInput);
+            _drawQrCode(hdc, x, y, stretch, stretch, qr);
             EndPaint(hwnd, &ps);
         }
     }
@@ -114,14 +125,18 @@ void MainWindow::create()
     wc.cbClsExtra = 0;
     wc.cbWndExtra = 0;
     wc.lpszMenuName = NULL;
-    wc.hbrBackground = 0;
+    wc.hbrBackground = HBRUSH(GetStockObject(WHITE_BRUSH));
     wc.lpszClassName = TEXT("QRClass");
     wc.lpfnWndProc = wndProc;
 
     if (!RegisterClass(&wc))
         throw TEXT("Cannot register main window class");
 
+#ifdef WINCE
+    const DWORD style = WS_VISIBLE;
+#else
     const DWORD style = WS_OVERLAPPEDWINDOW;
+#endif
     const int x = CW_USEDEFAULT;
     const int y = CW_USEDEFAULT;
     const int w = CW_USEDEFAULT;
