@@ -970,7 +970,8 @@ int Sim::trapped(short sq)
 
     if (piece == PAWN)
     {
-        short u = ppos[sq];     /* follow no captures thread */
+        /* follow no captures thread */
+        short u = ppos[sq];
 
         if (color[u] == NEUTRAL)
         {
@@ -992,23 +993,21 @@ int Sim::trapped(short sq)
 
         u = pdir[u];
 
-        if (color[u] == c2)
-            return false;
+        return color[u] == c2 ? false : true;
     }
-    else
+
+    short u = ppos[sq];
+
+    do
     {
-        short u = ppos[sq];
+        if (color[u] != c1)
+            if (atk2[u] == 0 || board[u] >= piece)
+                return false;
 
-        do
-        {
-            if (color[u] != c1)
-                if (atk2[u] == 0 || board[u] >= piece)
-                    return false;
-
-            u = color[u] == NEUTRAL ? ppos[u] : pdir[u];
-        }
-        while (u != sq);
+        u = color[u] == NEUTRAL ? ppos[u] : pdir[u];
     }
+    while (u != sq);
+
     return true;
 }
 
@@ -1197,8 +1196,9 @@ void Sim::BRscan(short sq, short *s, short *mob)
         {
             (*mob)++;
 
+            /* oops new direction */
             if (ppos[u] == pdir[u])
-                pin = -1;           /* oops new direction */
+                pin = -1;
 
             u = ppos[u];
         }
@@ -1210,8 +1210,9 @@ void Sim::BRscan(short sq, short *s, short *mob)
             }
             else
             {
+                /* not on the edge and on to find a pin */
                 if (ppos[u] != pdir[u])
-                    pin = u;        /* not on the edge and on to find a pin */
+                    pin = u;
 
                 u = ppos[u];
             }
@@ -1233,7 +1234,8 @@ void Sim::BRscan(short sq, short *s, short *mob)
                 }
             }
 
-            pin = -1;             /* new direction */
+            /* new direction */
+            pin = -1;
             u = pdir[u];
         }
     }

@@ -185,9 +185,9 @@ void Board::UnHiliteSquare(HWND hWnd, int square)
     int x = square % 8;
     POINT aptl[4];
     QuerySqCoords(x, y, aptl + 0);
-    HRGN hRgn;
 #ifdef WINCE
 #else
+    HRGN hRgn;
     hRgn = ::CreatePolygonRgn(aptl, 4, WINDING);
     HDC hDC = ::GetDC(hWnd);
     ::InvertRgn(hDC, hRgn);
