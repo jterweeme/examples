@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="md5sum"
-	ProjectGUID="{A4ADA321-ABCD-4534-ADEC-0D772DDC4951}"
+	Name="cat"
+	ProjectGUID="{1B42253E-5637-4092-A0D2-18D830FFD4CC}"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -108,8 +108,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			>
 			<Tool
@@ -323,19 +323,11 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\chunk.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\hash.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\hasher.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\main.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\options.cpp"
 				>
 			</File>
 			<File
@@ -349,15 +341,7 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\chunk.h"
-				>
-			</File>
-			<File
-				RelativePath=".\hash.h"
-				>
-			</File>
-			<File
-				RelativePath=".\hasher.h"
+				RelativePath=".\options.h"
 				>
 			</File>
 			<File

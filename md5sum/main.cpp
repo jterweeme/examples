@@ -2,7 +2,7 @@
 #include <fstream>
 
 #ifdef WINCE
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, INT nCmdShow)
 {
     std::wcout << lpCmdLine << "\n";
     std::wcout.flush();
@@ -12,7 +12,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLin
         return 0;
 
     std::ifstream ifs;
-    ifs.open("onzin.dat", std::ifstream::in | std::ifstream::binary);
+    ifs.open(lpCmdLine, std::ifstream::in | std::ifstream::binary);
 
     if (!ifs.good())
     {
