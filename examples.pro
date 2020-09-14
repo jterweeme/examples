@@ -15,6 +15,10 @@ SUBDIRS = bgcolor\
     opengl1\
     property1\
     qrcode\
+    rb\
+    rx\
+    sb\
+    sx\
     tabs1\
     tictac\
     winanim\
