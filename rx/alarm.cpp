@@ -1,4 +1,6 @@
 #include "alarm.h"
+#include <unistd.h>
+#include <signal.h>
 
 Alarm::Alarm()
 {
@@ -12,7 +14,7 @@ void Alarm::callback(int)
 
 void Alarm::init()
 {
-#ifdef LINUX
+#ifndef WIN32
     siginterrupt(SIGALRM, 1);
     signal(SIGALRM, callback);
 #endif
@@ -21,7 +23,7 @@ void Alarm::init()
 void Alarm::set(int sec)
 {
     (void)sec;
-#ifdef LINUX
+#ifndef WIN32
     ::alarm(sec);
 #endif
 }

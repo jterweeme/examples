@@ -10,7 +10,7 @@ XReceiver::XReceiver(InputStream *is, std::ostream *os, Logger *log)
 
 void XReceiver::receive(std::ostream &os)
 {
-    *_os << "rx: ready to receive file\n";
+    *_os << "waiting to receive.";
     _os->flush();
 
     while (_timeouts < 10)
