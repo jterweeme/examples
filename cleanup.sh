@@ -35,6 +35,7 @@ rm -Rvf cechat/x64
 rm -Rvf chess1/chess1.pro.user
 rm -Rvf chess1/chess1.vcproj.DESKTOP-LGKFQ39.jasper.user
 rm -Rvf chess1/Debug
+rm -Rvf chess1/resource.aps
 rm -Rvf chess1/STANDARDSDK_500\ \(x86\)/
 rm -Rvf chess1/x64
 

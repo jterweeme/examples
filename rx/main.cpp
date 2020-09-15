@@ -2,7 +2,12 @@
 #include "xrecv.h"
 #include "logger.h"
 #include <fstream>
+
+#ifdef WIN32
+#include <windows.h>
+#else
 #include <termios.h>
+#endif
 
 int main(int argc, char **argv)
 {
@@ -12,7 +17,7 @@ int main(int argc, char **argv)
         std::cerr.flush();
         return -1;
     }
-
+#ifndef WIN32
     struct termios old_tty, tty;
     tcgetattr(0, &old_tty);
     tty = old_tty;
@@ -25,14 +30,18 @@ int main(int argc, char **argv)
     tty.c_cc[VMIN] = 1;
     tty.c_cc[VTIME] = 1;
     tcsetattr(0, TCSADRAIN, &tty);
-
+#endif
     std::ofstream logfile;
     logfile.open("xrecv.log", std::ofstream::out | std::ofstream::app);
     Logger logger(&logfile);
     logger.log("Startup...");
-
-    InputStream is(0, &logger);
+#ifdef WIN32
+    InputStreamWin is(STD_INPUT_HANDLE, &logger);
     is.init();
+#else
+    InputStreamUnix is(0, &logger);
+    is.init();
+#endif
 
     XReceiver xReceiver(&is, &std::cout, &logger);
     std::ofstream ofs;
@@ -44,7 +53,9 @@ int main(int argc, char **argv)
     logfile.close();
 
     //restore terminal
+#ifndef WIN32
     tcsetattr(0, TCSADRAIN, &old_tty);
+#endif
     return 0;
 }
 

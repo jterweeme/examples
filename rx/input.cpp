@@ -1,18 +1,55 @@
 #include "input.h"
 #include <unistd.h>
+#include <iostream>
 
-InputStream::InputStream(int fd, Logger *log)
+#ifdef WIN32
+InputStreamWin::InputStreamWin(DWORD fd, Logger *log)
     : _fd(fd), _log(log)
 {
 
 }
 
-void InputStream::init()
+void InputStreamWin::init()
+{
+    _handle = GetStdHandle(STD_INPUT_HANDLE);
+    GetConsoleMode(_handle, &_oldMode);
+    DWORD newMode = _oldMode & ~(ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT | ENABLE_LINE_INPUT);
+    SetConsoleMode(_handle, newMode);
+}
+
+int InputStreamWin::getc(int timeout)
+{
+    FlushConsoleInputBuffer(_handle);
+    int c;
+
+    if (WaitForSingleObject(_handle, timeout * 1000) == WAIT_OBJECT_0)
+    {
+        c = std::cin.get();
+    }
+    else
+    {
+        //timeout
+    }
+    return 0;
+}
+
+int InputStreamWin::get(char *buf, size_t n, int timeout)
+{
+    return 0;
+}
+#else
+InputStreamUnix::InputStreamUnix(int fd, Logger *log)
+    : _fd(fd), _log(log)
+{
+
+}
+
+void InputStreamUnix::init()
 {
     _alarm.init();
 }
 
-int InputStream::get(char *buf, size_t n, int timeout)
+int InputStreamUnix::get(char *buf, size_t n, int timeout)
 {
     _alarm.set(timeout);
     size_t ret = ::read(_fd, buf, n);
@@ -20,7 +57,7 @@ int InputStream::get(char *buf, size_t n, int timeout)
     return ret;
 }
 
-int InputStream::getc(int timeout)
+int InputStreamUnix::getc(int timeout)
 {
     _alarm.set(timeout);
     char c;
@@ -28,4 +65,6 @@ int InputStream::getc(int timeout)
     _alarm.set(0);
     return ret > 0 ? c : -1;
 }
+#endif
+
 

@@ -8,11 +8,13 @@ SUBDIRS = bgcolor\
     chess1\
     colorbtn\
     commctrl1\
+    contimeout\
     FileEditor\
     md5sum\
     mdiapp\
     memdc\
     opengl1\
+    overlap\
     property1\
     qrcode\
     rb\
