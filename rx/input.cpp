@@ -52,7 +52,7 @@ void InputStreamUnix::init()
 int InputStreamUnix::get(char *buf, size_t n, int timeout)
 {
     _alarm.set(timeout);
-    size_t ret = ::read(_fd, buf, n);
+    ssize_t ret = ::read(_fd, buf, n);
     _alarm.set(0);
     return ret;
 }
@@ -61,7 +61,7 @@ int InputStreamUnix::getc(int timeout)
 {
     _alarm.set(timeout);
     char c;
-    size_t ret = ::read(_fd, &c, 1);
+    ssize_t ret = ::read(_fd, &c, 1);
     _alarm.set(0);
     return ret > 0 ? c : -1;
 }

@@ -1,4 +1,9 @@
 #include "input.h"
+#include <iostream>
+
+#ifndef WIN32
+#include <unistd.h>
+#endif
 
 #ifdef WIN32
 InputStreamWin::InputStreamWin(DWORD fd) : _fd(fd)
@@ -102,8 +107,8 @@ int InputStreamWin::getc(int timeout)
     return -1;
 }
 #else
-InputStreamUnix::InputStreamUnix(int fd, Logger *log)
-    : _fd(fd), _log(log)
+InputStreamUnix::InputStreamUnix(int fd)
+    : _fd(fd)
 {
 
 }
@@ -116,7 +121,7 @@ void InputStreamUnix::init()
 int InputStreamUnix::get(char *buf, size_t n, int timeout)
 {
     _alarm.set(timeout);
-    size_t ret = ::read(_fd, buf, n);
+    ssize_t ret = ::read(_fd, buf, n);
     _alarm.set(0);
     return ret;
 }
@@ -125,8 +130,9 @@ int InputStreamUnix::getc(int timeout)
 {
     _alarm.set(timeout);
     char c;
-    size_t ret = ::read(_fd, &c, 1);
+    ssize_t ret = ::read(_fd, &c, 1);
     _alarm.set(0);
     return ret > 0 ? c : -1;
 }
 #endif
+

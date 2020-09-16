@@ -1,7 +1,12 @@
 #ifndef INPUT_H
 #define INPUT_H
 
+#ifdef WIN32
 #include <windows.h>
+#else
+#include "alarm.h"
+#include <cstddef>
+#endif
 
 class InputStream
 {
@@ -30,9 +35,8 @@ class InputStreamUnix : public InputStream
 private:
     Alarm _alarm;
     int _fd;
-    Logger *_log;
 public:
-    InputStreamUnix(int fd, Logger *log);
+    InputStreamUnix(int fd);
     void init();
     int getc(int timeout) override;
     int get(char *buf, size_t n, int timeout) override;
