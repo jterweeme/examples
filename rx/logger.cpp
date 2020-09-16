@@ -1,5 +1,6 @@
 #include "logger.h"
 #include <cstdarg>
+#include <windows.h>
 
 Logger::Logger(std::ostream *os) : _os(os)
 {
@@ -8,7 +9,13 @@ Logger::Logger(std::ostream *os) : _os(os)
 
 void Logger::log(const char *s)
 {
+#ifdef WIN32
+    char buf[100];
+    GetTimeFormatA(LOCALE_USER_DEFAULT, 0, NULL, NULL, buf, 100);
+    *_os << buf << " " << s << "\r\n";
+#else
     *_os << s << "\r\n";
+#endif
     _os->flush();
 }
 

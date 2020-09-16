@@ -52,7 +52,7 @@ INT_PTR CALLBACK dlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     return ::DefDlgProc(hwnd, msg, wParam, lParam);
 }
 
-void MainWin::_onSelChanged(HWND hwnd)
+void MainWin::_onSelChanged(HWND)
 {
     //int sel = _tc.getCurSel();
 

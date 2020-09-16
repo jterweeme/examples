@@ -14,15 +14,17 @@ void InputStreamWin::init()
 {
     _handle = GetStdHandle(_fd);
     GetConsoleMode(_handle, &_oldMode);
-    SetConsoleMode(_handle, ENABLE_ECHO_INPUT);
+    SetConsoleMode(_handle, 0);
 }
 
 BOOL InputStreamWin::thereIsCharEvents() const
 {
-    INPUT_RECORD tInput[255];
-    DWORD dwEvents;
+    constexpr DWORD MAX_RECORDS = 2048;
+    INPUT_RECORD tInput[MAX_RECORDS];
+    DWORD dwEvents = 0;
+    BOOL ret = PeekConsoleInputA(_handle, tInput, MAX_RECORDS, &dwEvents);
 
-    if (PeekConsoleInput(_handle, tInput, 256, &dwEvents) == 0)
+    if (ret == 0)
         return TRUE;
 
     if (dwEvents == 0)
@@ -54,13 +56,16 @@ int InputStreamWin::getc(int timeout)
 
         if (ret == WAIT_OBJECT_0)
         {
-            if (thereIsCharEvents() == FALSE)
+            BOOL tisce = thereIsCharEvents();
+
+            if (tisce == FALSE)
                 continue;
 
             char buf;
             DWORD read = 0;
+            BOOL rf = ReadFile(_handle, &buf, 1, &read, NULL);
 
-            if (ReadFile(_handle, &buf, 1, &read, NULL) == FALSE)
+            if (rf == FALSE)
                 return -1;
 
             if (read == 0)
@@ -82,10 +87,10 @@ int InputStreamWin::getc(int timeout)
 
 int InputStreamWin::get(char *buf, size_t n, int timeout)
 {
+    _log->logf("getting %u bytes, timeout %ds...", n, timeout);
     for (size_t i = 0; i < n; ++i)
     {
         int c = getc(timeout);
-        _log->logf("InputStreamWin::get: %d", c);
 
         if (c == -1)
             return i;

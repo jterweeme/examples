@@ -44,6 +44,7 @@ int main(int argc, char **argv)
 
     XReceiver xReceiver(&is, &std::cout, &logger);
     std::ofstream ofs;
+    logger.logf("Opening/creating file %s...", argv[1]);
     ofs.open(argv[1]);
     xReceiver.receive(ofs);
     ofs.close();

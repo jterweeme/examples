@@ -25,8 +25,7 @@ uint8_t Packet::header() const
 int Packet::read(InputStream *is, int timeout)
 {
     int ret = is->get(_buf, FULLSIZE, timeout);
-
-    _log->logf("Packet::read: %d", ret);
+    _log->logf("got %d out of %u bytes!", ret, FULLSIZE);
 
     if (ret != FULLSIZE)
         return -1;

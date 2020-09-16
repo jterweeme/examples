@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 
         if (ConnectSocket == INVALID_SOCKET)
         {
-            printf("socket failed with error: %ld\n", WSAGetLastError());
+            printf("socket failed with error: %d\n", WSAGetLastError());
             WSACleanup();
             return 1;
         }
@@ -100,7 +100,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    printf("Bytes Sent: %ld\n", iResult);
+    printf("Bytes Sent: %d\n", iResult);
 
     // shutdown the connection since no more data will be sent
     iResult = shutdown(ConnectSocket, SD_SEND);

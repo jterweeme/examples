@@ -10,7 +10,7 @@ XReceiver::XReceiver(InputStream *is, std::ostream *os, Logger *log)
 
 void XReceiver::receive(std::ostream &os)
 {
-    *_os << "waiting to receive.";
+    *_os << "waiting to receive...";
     _os->flush();
     Packet packet(_log);
 
@@ -21,18 +21,16 @@ void XReceiver::receive(std::ostream &os)
         //door 'C' te sturen. C voor CRC modus
         if (_packets == 0)
         {
-            _log->log("C");
+            _log->log("Trying to connect in CRC mode...");
             _os->put('C');
             _os->flush();
         }
 
-        _log->logf("start packet.read");
         int ret = packet.read(_is, 5);
-        _log->logf("packet.read: %d", ret);
 
         if (ret == -1)
         {
-            //_log->logf("Timeout packet %d!", _packets);
+            _log->logf("Timeout %d, packet %d!", _timeouts + 1, _packets);
             _timeouts++;
             continue;
         }
@@ -41,7 +39,7 @@ void XReceiver::receive(std::ostream &os)
         {
         case Packet::SOH:
             _packets++;
-            //_log->logf("Write packet %d %d", _packets, packet.volgnummer());
+            _log->logf("Write packet %d %d...", _packets, packet.volgnummer());
             packet.writeData(os);
             _os->put(ACK);
             _os->flush();

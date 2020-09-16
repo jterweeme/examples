@@ -137,7 +137,7 @@ LRESULT MainWindow::_wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 LRESULT CALLBACK MainWindow::wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    LRESULT ret;
+    LRESULT ret = 0;
 
     try
     {

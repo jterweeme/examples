@@ -56,14 +56,14 @@ INT_PTR CALLBACK AboutDlg::dlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM)
     case WM_SYSCOMMAND:
         if ((wParam & 0xfff0) == SC_CLOSE)
         {
-            ::EndDialog(hDlg, NULL);
+            ::EndDialog(hDlg, 0);
             return TRUE;
         }
         break;
     case WM_COMMAND:
         if (wParam == IDOK)
         {
-            ::EndDialog(hDlg, NULL);
+            ::EndDialog(hDlg, 0);
             return TRUE;
         }
         break;
@@ -115,7 +115,7 @@ INT_PTR ReviewDialog::_dlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM)
     case WM_SYSCOMMAND:
         if ((wParam & 0xfff0) == SC_CLOSE)
         {
-            ::EndDialog(hwnd, NULL);
+            ::EndDialog(hwnd, 0);
             return TRUE;
         }
         break;
@@ -191,7 +191,7 @@ INT_PTR ColorDlg::_commandProc(HWND hwnd, WPARAM wParam)
         *_pclr = Palette::indexToColor(_index);
         return TRUE;
     case IDD_CANCEL:
-        ::EndDialog(hwnd, NULL);
+        ::EndDialog(hwnd, 0);
         return TRUE;
     case CNT_BLACK:
     case CNT_BLUE:
@@ -497,7 +497,7 @@ TimeCtrlDlg::dlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
     case WM_SYSCOMMAND:
         if ((wParam & 0xfff0) == SC_CLOSE)
         {
-            EndDialog(hDlg, NULL);
+            EndDialog(hDlg, 0);
             return TRUE;
         }
         break;
@@ -510,7 +510,7 @@ TimeCtrlDlg::dlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM)
             ::EndDialog(hDlg, 1);
             return TRUE;
         case IDCANCEL:
-            EndDialog(hDlg, NULL);
+            EndDialog(hDlg, 0);
             return TRUE;
         case TMDLG_1MOV:
         case TMDLG_10MOV:
