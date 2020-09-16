@@ -17,7 +17,15 @@ int main(int argc, char **argv)
         std::cerr.flush();
         return -1;
     }
-#ifndef WIN32
+
+    std::ofstream logfile;
+    logfile.open("xrecv.log", std::ofstream::out | std::ofstream::app);
+    Logger logger(&logfile);
+    logger.log("Startup...");
+#ifdef WIN32
+    InputStreamWin is(STD_INPUT_HANDLE, &logger);
+    is.init();
+#else
     struct termios old_tty, tty;
     tcgetattr(0, &old_tty);
     tty = old_tty;
@@ -30,15 +38,6 @@ int main(int argc, char **argv)
     tty.c_cc[VMIN] = 1;
     tty.c_cc[VTIME] = 1;
     tcsetattr(0, TCSADRAIN, &tty);
-#endif
-    std::ofstream logfile;
-    logfile.open("xrecv.log", std::ofstream::out | std::ofstream::app);
-    Logger logger(&logfile);
-    logger.log("Startup...");
-#ifdef WIN32
-    InputStreamWin is(STD_INPUT_HANDLE, &logger);
-    is.init();
-#else
     InputStreamUnix is(0, &logger);
     is.init();
 #endif

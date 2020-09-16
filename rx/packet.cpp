@@ -6,30 +6,36 @@ Packet::Packet()
 
 }
 
+Packet::~Packet()
+{
+
+}
+
 uint8_t Packet::volgnummer() const
 {
-    return _n;
+    return _buf[1];
+}
+
+uint8_t Packet::header() const
+{
+    return _buf[0];
 }
 
 int Packet::read(InputStream *is, int timeout)
 {
-    char buf[FULLSIZE];
-    int ret = is->get(buf, FULLSIZE, timeout);
+    int ret = is->get(_buf, FULLSIZE, timeout);
 
     if (ret != FULLSIZE)
         return -1;
 
-    if (buf[0] == EOT)
+    if (header() == EOT)
         return EOT;
 
-    if (buf[0] == ETB)
+    if (header() == ETB)
         return ETB;
 
-    _n = buf[1];
-    _nn = buf[2];
-
     for (int i = 0; i < SIZE; ++i)
-        _data[i] = buf[i + 3];
+        _data[i] = _buf[i + 3];
 
     return SOH;
 }

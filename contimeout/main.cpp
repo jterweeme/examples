@@ -7,6 +7,9 @@
 
 int main()
 {
+    std::cout << "Timeout on standard input example\r\n";
+    std::cout << "Press 'q' to quit\r\n";
+    std::cout.flush();
 #ifdef WIN32
     InputStreamWin is(STD_INPUT_HANDLE);
 #else
@@ -28,6 +31,10 @@ int main()
     while (true)
     {
         int c = is.getc(2);
+
+        if (c == 'q')
+            break;
+
         std::cout << c << "\r\n";
         std::cout.flush();
     }

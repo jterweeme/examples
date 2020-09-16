@@ -24,6 +24,7 @@ private:
     Logger *_log;
     HANDLE _handle;
     DWORD _oldMode;
+    BOOL thereIsCharEvents() const;
 public:
     InputStreamWin(DWORD fd, Logger *log);
     void init();

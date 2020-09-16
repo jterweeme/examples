@@ -11,31 +11,86 @@ InputStreamWin::InputStreamWin(DWORD fd, Logger *log)
 
 void InputStreamWin::init()
 {
-    _handle = GetStdHandle(STD_INPUT_HANDLE);
+    _handle = GetStdHandle(_fd);
     GetConsoleMode(_handle, &_oldMode);
-    DWORD newMode = _oldMode & ~(ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT | ENABLE_LINE_INPUT);
-    SetConsoleMode(_handle, newMode);
+    SetConsoleMode(_handle, ENABLE_ECHO_INPUT);
+}
+
+BOOL InputStreamWin::thereIsCharEvents() const
+{
+    INPUT_RECORD tInput[255];
+    DWORD dwEvents;
+
+    if (PeekConsoleInput(_handle, tInput, 256, &dwEvents) == 0)
+        return TRUE;
+
+    if (dwEvents == 0)
+        return TRUE;
+
+    for (DWORD i = 0; i < dwEvents; i++)
+    {
+        if (tInput[i].EventType != KEY_EVENT)
+            continue;
+
+        if (tInput[i].Event.KeyEvent.bKeyDown == FALSE)
+            continue;
+
+        if (tInput[i].Event.KeyEvent.uChar.AsciiChar)
+            return TRUE;
+    }
+
+    ReadConsoleInput(_handle, tInput, dwEvents, &dwEvents);
+    return FALSE;
 }
 
 int InputStreamWin::getc(int timeout)
 {
-    FlushConsoleInputBuffer(_handle);
-    int c;
+    int c = 0;
 
-    if (WaitForSingleObject(_handle, timeout * 1000) == WAIT_OBJECT_0)
+    while (true)
     {
-        c = std::cin.get();
+        DWORD ret = WaitForSingleObject(_handle, timeout * 1000);
+
+        if (ret == WAIT_OBJECT_0)
+        {
+            if (thereIsCharEvents() == FALSE)
+                continue;
+
+            char buf;
+            DWORD read = 0;
+
+            if (ReadFile(_handle, &buf, 1, &read, NULL) == FALSE)
+                return -1;
+
+            if (read == 0)
+                continue;
+
+            c = buf;
+
+            if (buf == 13)
+                buf = 10;
+
+            return c;
+        }
+
+        return -1;
     }
-    else
-    {
-        //timeout
-    }
-    return 0;
+
+    return -1;
 }
 
 int InputStreamWin::get(char *buf, size_t n, int timeout)
 {
-    return 0;
+    for (size_t i = 0; i < n; ++i)
+    {
+        int c = getc(timeout);
+
+        if (c == -1)
+            return -1;
+
+        buf[i] = c;
+    }
+    return n;
 }
 #else
 InputStreamUnix::InputStreamUnix(int fd, Logger *log)

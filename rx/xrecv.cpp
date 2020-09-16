@@ -27,22 +27,24 @@ void XReceiver::receive(std::ostream &os)
         Packet packet;
         int ret = packet.read(_is, 5);
 
-        if (ret == Packet::SOH)
+        if (ret == -1)
         {
+            _log->logf("Timeout packet %d!", _packets);
+            _timeouts++;
+            continue;
+        }
+
+        switch (packet.header())
+        {
+        case Packet::SOH:
             _packets++;
             _log->logf("Write packet %d %d", _packets, packet.volgnummer());
             packet.writeData(os);
             _os->put(ACK);
             _os->flush();
-        }
-        else if (ret == Packet::EOT)
-        {
+            break;
+        case Packet::EOT:
             return;
-        }
-        else
-        {
-            _log->logf("Timeout packet %d!", _packets);
-            _timeouts++;
         }
     }
 }
