@@ -1,4 +1,5 @@
 TEMPLATE = app
 CONFIG += console silent
-SOURCES += main.cpp
+SOURCES += input.cpp main.cpp
+HEADERS += input.h
 
