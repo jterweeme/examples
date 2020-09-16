@@ -55,6 +55,13 @@ rm -Rvf md5sum/md5sum.pro.user
 rm -Rvf md5sum/Debug
 rm -Rvf md5sum/x64
 
+rm -Rvf rx/fuzzymain.exe
+rm -Rvf rx/rx
+rm -Rvf rx/xrecv.log
+rm -Rvf rx/.qmake.stash
+rm -Rvf rx/*.o
+rm -Rvf rx/Makefile
+
 rm -Rvf tictac/STANDARDSDK_500\ \(x86\)
 rm -Rvf tictac/tictac.vcproj.DESKTOP-LGKFQ39.jasper.user
 rm -Rvf tictac/Debug
