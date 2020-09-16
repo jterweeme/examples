@@ -3,7 +3,11 @@
 
 int main()
 {
+#ifdef WIN32
     InputStreamWin is(STD_INPUT_HANDLE);
+#else
+    InputStreamUnix is(0);
+#endif
     is.init();
 
     while (true)

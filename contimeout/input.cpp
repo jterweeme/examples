@@ -1,5 +1,6 @@
 #include "input.h"
 
+#ifdef WIN32
 InputStreamWin::InputStreamWin(DWORD fd) : _fd(fd)
 {
 
@@ -39,6 +40,32 @@ BOOL InputStreamWin::thereIsCharEvents() const
     return FALSE;
 }
 
+/*!
+ * \brief InputStreamWin::get
+ * \param buf   target buffer
+ * \param n     number of bytes to read
+ * \param timeout
+ * \return
+ */
+int InputStreamWin::get(char *buf, size_t n, int timeout)
+{
+    for (size_t i = 0; i < n; ++i)
+    {
+        int c = getc(timeout);
+
+        if (c == -1)
+            return -1;
+
+        buf[i] = c;
+    }
+    return n;
+}
+
+/*!
+ * \brief InputStreamWin::getc
+ * \param timeout timeout in seconds
+ * \return
+ */
 int InputStreamWin::getc(int timeout)
 {
     int c = 0;
@@ -74,3 +101,32 @@ int InputStreamWin::getc(int timeout)
 
     return -1;
 }
+#else
+InputStreamUnix::InputStreamUnix(int fd, Logger *log)
+    : _fd(fd), _log(log)
+{
+
+}
+
+void InputStreamUnix::init()
+{
+    _alarm.init();
+}
+
+int InputStreamUnix::get(char *buf, size_t n, int timeout)
+{
+    _alarm.set(timeout);
+    size_t ret = ::read(_fd, buf, n);
+    _alarm.set(0);
+    return ret;
+}
+
+int InputStreamUnix::getc(int timeout)
+{
+    _alarm.set(timeout);
+    char c;
+    size_t ret = ::read(_fd, &c, 1);
+    _alarm.set(0);
+    return ret > 0 ? c : -1;
+}
+#endif
