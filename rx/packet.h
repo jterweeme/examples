@@ -5,20 +5,21 @@
 
 class InputStream;
 
+class Logger;
+
 class Packet
 {
 private:
     static constexpr uint16_t SIZE = 128;
     static constexpr uint16_t FULLSIZE = 128 + 5;
-    uint8_t _header;
-    uint8_t _n;
+    Logger *_log;
     char _buf[FULLSIZE];
     char _data[SIZE];
     uint16_t _crc;
 public:
     static constexpr uint8_t SOH = 1, EOT = 4, ETB = 0x17;
 
-    Packet();
+    Packet(Logger *log);
     virtual ~Packet();
     uint8_t volgnummer() const;
     uint8_t header() const;

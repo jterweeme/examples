@@ -1,7 +1,8 @@
 #include "packet.h"
 #include "input.h"
+#include "logger.h"
 
-Packet::Packet()
+Packet::Packet(Logger *log) : _log(log)
 {
 
 }
@@ -25,19 +26,15 @@ int Packet::read(InputStream *is, int timeout)
 {
     int ret = is->get(_buf, FULLSIZE, timeout);
 
+    _log->logf("Packet::read: %d", ret);
+
     if (ret != FULLSIZE)
         return -1;
-
-    if (header() == EOT)
-        return EOT;
-
-    if (header() == ETB)
-        return ETB;
 
     for (int i = 0; i < SIZE; ++i)
         _data[i] = _buf[i + 3];
 
-    return SOH;
+    return ret;
 }
 
 void Packet::writeData(std::ostream &os) const

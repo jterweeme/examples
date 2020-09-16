@@ -1,4 +1,5 @@
 #include "input.h"
+#include "logger.h"
 #include <unistd.h>
 #include <iostream>
 
@@ -84,9 +85,10 @@ int InputStreamWin::get(char *buf, size_t n, int timeout)
     for (size_t i = 0; i < n; ++i)
     {
         int c = getc(timeout);
+        _log->logf("InputStreamWin::get: %d", c);
 
         if (c == -1)
-            return -1;
+            return i;
 
         buf[i] = c;
     }
