@@ -12,7 +12,7 @@ void Logger::log(const char *s)
 #ifdef WIN32
     char buf[100];
     GetTimeFormatA(LOCALE_USER_DEFAULT, 0, NULL, NULL, buf, 100);
-    *_os << buf << " " << s << "\r\n";
+    *_os << buf << " " << s << std::endl;
 #else
     *_os << s << "\r\n";
 #endif

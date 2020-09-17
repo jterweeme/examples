@@ -44,6 +44,9 @@ rm -Rvf cmdbar/cmdbar.vcproj.DESKTOP-LGKFQ39.jasper.user
 rm -Rvf cmdbar/Debug
 rm -Rvf cmdbar/x64
 
+rm -Rvf contimeout/contimeout.vcproj.DESKTOP-LGKFQ39.jasper.user
+rm -Rvf contimeout/STANDARDSDK_500\ \(x86\)
+
 rm -Rvf qrcode/STANDARDSDK_500\ \(x86\)
 rm -Rvf qrcode/qrcode.vcproj.DESKTOP-LGKFQ39.jasper.user
 rm -Rvf qrcode/Debug

@@ -1,11 +1,11 @@
 #include "input.h"
 #include <iostream>
 
-#ifndef WIN32
+#ifndef WINDHOOS
 #include <unistd.h>
 #endif
 
-#ifdef WIN32
+#ifdef WINDHOOS
 InputStreamWin::InputStreamWin(DWORD fd) : _fd(fd)
 {
 

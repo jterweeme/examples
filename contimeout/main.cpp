@@ -1,7 +1,7 @@
 #include "input.h"
 #include <iostream>
 
-#ifndef WIN32
+#ifndef WINDHOOS
 #include <termios.h>
 #endif
 
@@ -10,7 +10,7 @@ int main()
     std::cout << "Timeout on standard input example\r\n";
     std::cout << "Press 'q' to quit\r\n";
     std::cout.flush();
-#ifdef WIN32
+#ifdef WINDHOOS
     InputStreamWin is(STD_INPUT_HANDLE);
 #else
     struct termios old_tty, tty;
@@ -39,7 +39,7 @@ int main()
         std::cout.flush();
     }
     
-#ifndef WIN32
+#ifndef WINDHOOS
     tcsetattr(0, TCSADRAIN, &old_tty);
 #endif
     // restore console mode when exit

@@ -1,5 +1,6 @@
 #include "input.h"
 #include "logger.h"
+#include "toolbox.h"
 #include <unistd.h>
 #include <iostream>
 
@@ -19,9 +20,10 @@ void InputStreamWin::init()
 
 BOOL InputStreamWin::thereIsCharEvents() const
 {
-    constexpr DWORD MAX_RECORDS = 2048;
+    constexpr DWORD MAX_RECORDS = 16;
     INPUT_RECORD tInput[MAX_RECORDS];
     DWORD dwEvents = 0;
+#if 0
     BOOL ret = PeekConsoleInputA(_handle, tInput, MAX_RECORDS, &dwEvents);
 
     if (ret == 0)
@@ -38,11 +40,42 @@ BOOL InputStreamWin::thereIsCharEvents() const
         if (tInput[i].Event.KeyEvent.bKeyDown == FALSE)
             continue;
 
-        if (tInput[i].Event.KeyEvent.uChar.AsciiChar)
+        if (tInput[i].Event.KeyEvent.uChar.AsciiChar || !tInput[i].Event.KeyEvent.wVirtualKeyCode)
             return TRUE;
     }
 
-    ReadConsoleInput(_handle, tInput, dwEvents, &dwEvents);
+    _log->logf("ReadConsoleInputA %u events", dwEvents);
+    ReadConsoleInputA(_handle, tInput, dwEvents, &dwEvents);
+    return FALSE;
+#endif
+    do
+     {
+         BOOL ret = PeekConsoleInputA(_handle, tInput, MAX_RECORDS, &dwEvents);
+
+         if (ret == 0)
+             return TRUE;
+
+         if (dwEvents == 0)
+             return TRUE;
+
+         for (DWORD i = 0; i < dwEvents; i++)
+         {
+             if (tInput[i].EventType != KEY_EVENT)
+                 continue;
+
+             if (tInput[i].Event.KeyEvent.bKeyDown == FALSE)
+                 continue;
+
+             if (tInput[i].Event.KeyEvent.wVirtualKeyCode)
+                 return TRUE;
+#if 0
+             if ( (tInput[i].Event.KeyEvent.uChar.AsciiChar) || (!tInput[i].Event.KeyEvent.wVirtualKeyCode) )
+                 return TRUE;
+#endif
+         }
+
+         ReadConsoleInput(_handle, tInput, dwEvents, &dwEvents);
+     } while ( dwEvents == MAX_RECORDS );
     return FALSE;
 }
 
@@ -61,9 +94,18 @@ int InputStreamWin::getc(int timeout)
             if (tisce == FALSE)
                 continue;
 
-            char buf;
+            char buf[200];
             DWORD read = 0;
-            BOOL rf = ReadFile(_handle, &buf, 1, &read, NULL);
+            BOOL rf = ReadFile(_handle, buf, 200, &read, NULL);
+            _log->logf("characters   read: %u", read);
+            std::string s;
+
+            for (DWORD i = 0; i < read; i++)
+            {
+                s.append(Toolbox::hex8(buf[i]));
+            }
+
+            _log->log(s.c_str());
 
             if (rf == FALSE)
                 return -1;
@@ -71,11 +113,11 @@ int InputStreamWin::getc(int timeout)
             if (read == 0)
                 continue;
 
-            c = buf;
-
+            c = buf[0];
+#if 0
             if (buf == 13)
                 buf = 10;
-
+#endif
             return c;
         }
 

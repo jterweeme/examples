@@ -1,7 +1,15 @@
 #ifndef INPUT_H
 #define INPUT_H
 
+#ifdef WINCE
+#define WINDHOOS
+#endif
+
 #ifdef WIN32
+#define WINDHOOS
+#endif
+
+#ifdef WINDHOOS
 #include <windows.h>
 #else
 #include "alarm.h"
@@ -15,7 +23,7 @@ public:
     virtual int getc(int timeout) = 0;
 };
 
-#ifdef WIN32
+#ifdef WINDHOOS
 class InputStreamWin : public InputStream
 {
 private:
