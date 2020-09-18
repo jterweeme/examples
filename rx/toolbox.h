@@ -3,7 +3,7 @@
 
 #include <string>
 #include <iostream>
-#include <windows.h>
+//#include <windows.h>
 
 #if __cplusplus >= 201103L
 #define CONSTEXPR constexpr
@@ -34,26 +34,22 @@ template <class T> void mynSwap(T &a, T &b)
 class Toolbox
 {
 public:
-    static char bin(BYTE b);
-    static char nibble(BYTE n);
-    static std::string bin8(BYTE b);
-    static std::string hex8(BYTE b);
-    static void hex8(std::ostream &os, BYTE b);
-    static std::string hex16(WORD w);
-    static std::string hex32(DWORD dw);
-    static std::string hex64(DWORD64 dw64);
-    char *utoa8(BYTE b, char *s, int base) const;
-    std::string utoa32(DWORD dw, int base) const;
+    static char bin(uint8_t b);
+    static char nibble(uint8_t n);
+    static std::string bin8(uint8_t b);
+    static std::string hex8(uint8_t b);
+    static void hex8(std::ostream &os, uint8_t b);
+    static std::string hex16(uint16_t w);
+    static std::string hex32(uint32_t dw);
+    static std::string hex64(uint64_t dw64);
+    char *utoa8(uint8_t b, char *s, int base) const;
+    std::string utoa32(uint32_t dw, int base) const;
     static void reverseStr(char *s, size_t n);
     static void reverseStr(std::string &s);
     static std::string padding(const std::string &s, char c, size_t n);
     static std::wstring strtowstr(const std::string &s);
     static std::string wstrtostr(const std::wstring &ws);
-    void hexdump(std::ostream &os, const BYTE *data, DWORD len) const;
-    static void errorBox(HWND hwnd, LPCSTR err);
-    static void errorBox(HWND hwnd, LPCWSTR err);
-    static void errorBox(LPCSTR err);
-    static void errorBox(LPCWSTR err);
+    static void hexdump(std::ostream &os, const uint8_t *data, uint32_t len);
 };
 #endif
 

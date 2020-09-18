@@ -155,10 +155,20 @@ void InputStreamUnix::init()
 
 int InputStreamUnix::get(char *buf, size_t n, int timeout)
 {
-    _alarm.set(timeout);
-    ssize_t ret = ::read(_fd, buf, n);
-    _alarm.set(0);
-    return ret;
+    //we moeten bytes individueel lezen
+    //anders krijgt serieel niet alle bytes
+    //telnet en ssh werkt wel
+    for (size_t i = 0; i < n; ++i)
+    {
+        int c = getc(timeout);
+
+        if (c == -1)
+            return i;
+
+        buf[i] = c;
+    }
+
+    return n;
 }
 
 int InputStreamUnix::getc(int timeout)

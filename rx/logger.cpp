@@ -1,6 +1,9 @@
 #include "logger.h"
 #include <cstdarg>
+
+#ifdef WIN32
 #include <windows.h>
+#endif
 
 Logger::Logger(std::ostream *os) : _os(os)
 {

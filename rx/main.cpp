@@ -19,7 +19,9 @@ int main(int argc, char **argv)
     }
 
     std::ofstream logfile;
+#if 1
     logfile.open("xrecv.log", std::ofstream::out | std::ofstream::app);
+#endif
     Logger logger(&logfile);
     logger.log("Startup...");
 #ifdef WIN32

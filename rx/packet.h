@@ -14,7 +14,6 @@ private:
     static constexpr uint16_t FULLSIZE = 128 + 5;
     Logger *_log;
     char _buf[FULLSIZE];
-    char _data[SIZE];
     uint16_t _crc;
 public:
     static constexpr uint8_t SOH = 1, EOT = 4, ETB = 0x17;

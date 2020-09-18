@@ -25,18 +25,11 @@ uint8_t Packet::header() const
 int Packet::read(InputStream *is, int timeout)
 {
     int ret = is->get(_buf, FULLSIZE, timeout);
-    _log->logf("got %d out of %u bytes!", ret, FULLSIZE);
-
-    if (ret != FULLSIZE)
-        return -1;
-
-    for (int i = 0; i < SIZE; ++i)
-        _data[i] = _buf[i + 3];
-
-    return ret;
+    //_log->logf("got %d out of %u bytes!", ret, FULLSIZE);
+    return ret == FULLSIZE ? ret : -1;
 }
 
 void Packet::writeData(std::ostream &os) const
 {
-    os.write(_data, SIZE);
+    os.write(_buf + 3, SIZE);
 }

@@ -1,7 +1,7 @@
 #include "toolbox.h"
 #include <algorithm>
 
-char Toolbox::bin(BYTE b)
+char Toolbox::bin(uint8_t b)
 {
     if (b == 1)
         return '1';
@@ -9,26 +9,26 @@ char Toolbox::bin(BYTE b)
     if (b == 0)
         return '0';
 
-    throw TEXT("Not a binary");
+    throw std::string("Not a binary");
     return 'x';
 }
 
-char Toolbox::nibble(BYTE n)
+char Toolbox::nibble(uint8_t n)
 {
     return n <= 9 ? '0' + char(n) : 'A' + char(n - 10);
 }
 
-std::string Toolbox::bin8(BYTE b)
+std::string Toolbox::bin8(uint8_t b)
 {
     std::string ret;
 
-    for (BYTE i = 8; i > 0;)
+    for (uint8_t i = 8; i > 0;)
         ret += b & 1 << --i ? '1' : '0';
 
     return ret;
 }
 
-std::string Toolbox::hex8(BYTE b)
+std::string Toolbox::hex8(uint8_t b)
 {
     std::string ret;
     ret += nibble(b >> 4 & 0xf);
@@ -36,13 +36,13 @@ std::string Toolbox::hex8(BYTE b)
     return ret;
 }
 
-void Toolbox::hex8(std::ostream &os, BYTE b)
+void Toolbox::hex8(std::ostream &os, uint8_t b)
 {
     os.put(nibble(b >> 4 & 0xf));
     os.put(nibble(b >> 0 & 0xf));
 }
 
-std::string Toolbox::hex16(WORD w)
+std::string Toolbox::hex16(uint16_t w)
 {
     std::string ret;
     ret += hex8(w >> 8 & 0xff);
@@ -50,7 +50,7 @@ std::string Toolbox::hex16(WORD w)
     return ret;
 }
 
-std::string Toolbox::hex32(DWORD dw)
+std::string Toolbox::hex32(uint32_t dw)
 {
     std::string ret;
     ret += hex16(dw >> 16 & 0xffff);
@@ -58,7 +58,7 @@ std::string Toolbox::hex32(DWORD dw)
     return ret;
 }
 
-std::string Toolbox::hex64(DWORD64 dw64)
+std::string Toolbox::hex64(uint64_t dw64)
 {
     std::string ret;
     ret += hex32(dw64 >> 32 & 0xffffffff);
@@ -66,7 +66,7 @@ std::string Toolbox::hex64(DWORD64 dw64)
     return ret;
 }
 
-char *Toolbox::utoa8(BYTE b, char *s, int base) const
+char *Toolbox::utoa8(uint8_t b, char *s, int base) const
 {
     if (b == 0)
     {
@@ -78,7 +78,7 @@ char *Toolbox::utoa8(BYTE b, char *s, int base) const
     int i = 0;
     while (b > 0)
     {
-        BYTE rem = b % base;
+        uint8_t rem = b % base;
         s[i++] = rem > 9 ? (rem - 10) + 'a' : rem + '0';
         b = b / base;
     }
@@ -88,7 +88,7 @@ char *Toolbox::utoa8(BYTE b, char *s, int base) const
     return s;
 }
 
-std::string Toolbox::utoa32(DWORD dw, int base) const
+std::string Toolbox::utoa32(uint32_t dw, int base) const
 {
     if (dw == 0)
         return std::string("0");
@@ -97,7 +97,7 @@ std::string Toolbox::utoa32(DWORD dw, int base) const
 
     while (dw > 0)
     {
-        DWORD rem = dw % base;
+        uint32_t rem = dw % base;
         char c = rem > 9 ? (rem - 10) + 'a' : rem + '0';
         ret.push_back(c);
         dw = dw / base;
@@ -137,9 +137,9 @@ std::string Toolbox::padding(const std::string &s, char c, size_t n)
 std::wstring Toolbox::strtowstr(const std::string &s)
 {
     std::wstring ret;
-    size_t len = s.length();
+    std::string::size_type len = s.length();
 
-    for (size_t i = 0; i < len; ++i)
+    for (std::string::size_type i = 0; i < len; ++i)
         ret.push_back(wchar_t(s.at(i)));
 
     return ret;
@@ -148,20 +148,20 @@ std::wstring Toolbox::strtowstr(const std::string &s)
 std::string Toolbox::wstrtostr(const std::wstring &ws)
 {
     std::string ret;
-    size_t len = ws.length();
+    std::string::size_type len = ws.length();
 
-    for (size_t i = 0; i < len; ++i)
+    for (std::string::size_type i = 0; i < len; ++i)
         ret.push_back(char(ws.at(i)));
 
     return ret;
 
 }
 
-void Toolbox::hexdump(std::ostream &os, const BYTE *data, DWORD len) const
+void Toolbox::hexdump(std::ostream &os, const uint8_t *data, uint32_t len)
 {
-    for (DWORD i = 0; i < len; i += 16)
+    for (uint32_t i = 0; i < len; i += 16)
     {
-        DWORD j = i;
+        uint32_t j = i;
 
         while (j < i + 16 && j < len)
         {
@@ -187,28 +187,5 @@ void Toolbox::hexdump(std::ostream &os, const BYTE *data, DWORD len) const
     }
 }
 
-void Toolbox::errorBox(HWND hwnd, LPCSTR err)
-{
-#ifdef UNICODE
-    std::wstring werr = strtowstr(err);
-    ::MessageBoxW(hwnd, werr.c_str(), L"Error", 0);
-#else
-    ::MessageBoxA(hwnd, err, "Error", 0);
-#endif
-}
 
-void Toolbox::errorBox(HWND hwnd, LPCWSTR err)
-{
-    ::MessageBoxW(hwnd, err, L"Error", 0);
-}
-
-void Toolbox::errorBox(LPCSTR err)
-{
-    errorBox(0, err);
-}
-
-void Toolbox::errorBox(LPCWSTR err)
-{
-    errorBox(0, err);
-}
 
