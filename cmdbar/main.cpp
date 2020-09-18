@@ -75,10 +75,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     if (!IsWindow(hwnd))
         return 0;
-
+#ifdef WINCE
     HWND hwndCB = CommandBar_Create(hInst, hwnd, IDC_CMDBAR);
     CommandBar_InsertMenubar(hwndCB, hInst, ID_MENU, 0);
     CommandBar_AddAdornments(hwndCB, 0, 0);
+#endif
     ShowWindow(hwnd, nCmdShow);
     UpdateWindow(hwnd);
     

@@ -111,7 +111,7 @@ LRESULT CALLBACK MainWindow::wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
     }
     catch (LPCWSTR err)
     {
-        MessageBox(hwnd, err, L"Error", 0);
+        MessageBoxW(hwnd, err, L"Error", 0);
     }
     catch (...)
     {

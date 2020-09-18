@@ -24,6 +24,7 @@ public:
     uint8_t header() const;
     int read(InputStream *is, int timeout);
     void writeData(std::ostream &os) const;
+    bool check() const;
 };
 
 #endif

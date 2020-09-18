@@ -239,7 +239,7 @@ QrSegment::QrSegment(Mode md, int numCh, const std::vector<bool> &dt)
  * The character count (numCh) must agree with the mode and the bit buffer length,
  * but the constraint isn't checked. The given bit buffer is moved and stored.
  */
-#if __cplusplus >= 201103L
+#ifdef CPP11
 QrSegment::QrSegment(Mode md, int numCh, std::vector<bool> &&dt)
   :
     mode(md),
@@ -484,7 +484,7 @@ QrCode QrCode::encodeSegments(const vector<QrSegment> &segs, Ecc ecl,
     if (bb.size() > dataCapacityBits)
         throw std::logic_error("Assertion error");
 
-    bb.appendBits(0, std::min(4, static_cast<int>(dataCapacityBits - bb.size())));
+    bb.appendBits(0, mynMin(4, static_cast<int>(dataCapacityBits - bb.size())));
     bb.appendBits(0, (8 - static_cast<int>(bb.size() % 8)) % 8);
 
     if (bb.size() % 8 != 0)
@@ -560,7 +560,7 @@ QrCode::QrCode(int ver, Ecc ecl, const vector<BYTE> &dataCodewords, int msk)
 	drawFormatBits(msk);  // Overwrite old format bits
 	
 	isFunction.clear();
-#ifndef WINCE
+#ifdef CPP11
 	isFunction.shrink_to_fit();
 #endif
 }
@@ -757,7 +757,7 @@ void QrCode::drawFinderPattern(int x, int y)
         for (int dx = -4; dx <= 4; dx++)
         {
             // Chebyshev/infinity norm
-            int dist = std::max(std::abs(dx), std::abs(dy));
+            int dist = mynMax(std::abs(dx), std::abs(dy));
 			int xx = x + dx, yy = y + dy;
 
 			if (0 <= xx && xx < size && 0 <= yy && yy < size)
@@ -773,7 +773,7 @@ void QrCode::drawAlignmentPattern(int x, int y)
     for (int dy = -2; dy <= 2; dy++)
     {
         for (int dx = -2; dx <= 2; dx++)
-            setFunctionModule(x + dx, y + dy, std::max(std::abs(dx), std::abs(dy)) != 1);
+            setFunctionModule(x + dx, y + dy, mynMax(std::abs(dx), std::abs(dy)) != 1);
     }
 }
 

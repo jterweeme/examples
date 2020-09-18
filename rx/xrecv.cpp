@@ -39,6 +39,7 @@ void XReceiver::receive(std::ostream &os)
         {
         case Packet::SOH:
             _packets++;
+            packet.check();
             //_log->logf("Write packet %d %d...", _packets, packet.volgnummer());
             packet.writeData(os);
             _os->put(ACK);

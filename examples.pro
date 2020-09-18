@@ -24,7 +24,7 @@ SUBDIRS = bgcolor\
     tabs1\
     tictac\
     winanim\
-    wsclient\
-    wsserver\
+    ws2client\
+    ws2server\
     zeit
 

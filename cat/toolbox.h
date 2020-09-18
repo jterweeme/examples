@@ -5,11 +5,15 @@
 #include <iostream>
 #include <vector>
 
+#if __cplusplus >= 201103L
+#define CPP11
+#endif
+
 #ifdef WINCE
 #include <windows.h>
 #endif
 
-#if __cplusplus >= 201103L
+#ifdef CPP11
 #define CONSTEXPR constexpr
 #define NULLPTR nullptr
 #else
@@ -17,11 +21,11 @@
 #define NULLPTR NULL
 #endif
 
-#ifdef WINCE
-typedef BYTE uint8_t;
-typedef WORD uint16_t;
-typedef DWORD uint32_t;
-typedef DWORD64 uint64_t;
+#ifndef CPP11
+typedef unsigned char uint8_t;
+typedef unsigned short uint16_t;
+typedef unsigned long uint32_t;
+typedef unsigned long long uint64_t;
 #endif
 
 class Toolbox

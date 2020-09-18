@@ -6,6 +6,10 @@
 #include <windows.h>
 
 #if __cplusplus >= 201103L
+#define CPP11
+#endif
+
+#ifdef CPP11
 #define CONSTEXPR constexpr
 #define NULLPTR nullptr
 #else

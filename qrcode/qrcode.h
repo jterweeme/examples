@@ -92,7 +92,7 @@ private:
     std::vector<bool> data;
 public:
     QrSegment(Mode md, int numCh, const std::vector<bool> &dt);
-#if __cplusplus >= 201103L
+#ifdef CPP11
     QrSegment(Mode md, int numCh, std::vector<bool> &&dt);
 #endif
     Mode getMode() const;

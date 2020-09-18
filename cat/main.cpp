@@ -2,8 +2,10 @@
 #include "options.h"
 #include <fstream>
 
+#if 0
 #ifdef WINCE
 #include <windows.h>
+#endif
 #endif
 
 static void cat(Options &options)
@@ -25,7 +27,7 @@ static void cat(Options &options)
     for (Options::si it = options._fnBegin(); it != options._fnEnd(); ++it)
     {
         std::ifstream ifs;
-#ifdef WINCE
+#ifndef CPP11
         ifs.open(it->c_str(), std::ifstream::in);
 #else
         ifs.open(*it, std::ifstream::in);

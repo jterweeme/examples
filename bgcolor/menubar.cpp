@@ -12,7 +12,7 @@ HINSTANCE AbstractMenuBar::hInstance() const
     return _hInstance;
 }
 
-WINBOOL AbstractMenuBar::enableItem(UINT id)
+BOOL AbstractMenuBar::enableItem(UINT id)
 {
     return enableItem(id, TRUE);
 }
@@ -40,7 +40,7 @@ UINT MenuBarCE::check(UINT id, BOOL check)
     return 0;
 }
 
-WINBOOL MenuBarCE::enableItem(UINT id, BOOL en)
+BOOL MenuBarCE::enableItem(UINT id, BOOL en)
 {
     return 0;
 }
@@ -69,7 +69,7 @@ UINT MenuBar::check(UINT id, BOOL check)
     return CheckMenuItem(_hMenu, id, uCheck);
 }
 
-WINBOOL MenuBar::enableItem(UINT id, BOOL en)
+BOOL MenuBar::enableItem(UINT id, BOOL en)
 {
     UINT uEn = en ? MF_ENABLED : MF_DISABLED;
     return EnableMenuItem(_hMenu, id, uEn);

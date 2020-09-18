@@ -19,8 +19,8 @@ public:
     virtual void enable(HWND hwnd) = 0;
     virtual void disable(HWND hwnd) = 0;
     virtual UINT check(UINT id, BOOL check) = 0;
-    virtual WINBOOL enableItem(UINT id, BOOL en) = 0;
-    WINBOOL enableItem(UINT id);
+    virtual BOOL enableItem(UINT id, BOOL en) = 0;
+    BOOL enableItem(UINT id);
 };
 
 #ifdef WINCE
@@ -31,7 +31,7 @@ public:
     void enable(HWND hwnd) override;
     void disable(HWND hwnd) override;
     UINT check(UINT id, BOOL check) override;
-    WINBOOL enableItem(UINT id, BOOL en) override;
+    BOOL enableItem(UINT id, BOOL en) override;
 };
 #else
 class MenuBar : public AbstractMenuBar
@@ -43,7 +43,7 @@ public:
     void enable(HWND hwnd) override;
     void disable(HWND hwnd) override;
     UINT check(UINT id, BOOL check) override;
-    WINBOOL enableItem(UINT id, BOOL en) override;
+    BOOL enableItem(UINT id, BOOL en) override;
 };
 #endif
 
