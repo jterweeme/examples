@@ -44,6 +44,7 @@ rm -Rvf chess1/Debug
 rm -Rvf chess1/Release
 rm -Rvf chess1/resource.aps
 rm -Rvf chess1/STANDARDSDK_500\ \(x86\)/
+rm -Rvf chess1/Win32
 rm -Rvf chess1/x64
 
 rm -Rvf cmdbar/cmdbar.vcproj.DESKTOP-LGKFQ39.jasper.user
@@ -62,6 +63,11 @@ rm -Rvf md5sum/md5sum.pro.user
 rm -Rvf md5sum/STANDARDSDK_500\ \(x86\)
 rm -Rvf md5sum/x64
 
+rm -Rvf netkatd/Debug
+rm -Rvf netkatd/netkatd.vcproj.DESKTOP-LGKFQ39.jasper.user
+rm -Rvf netkatd/Release
+rm -Rvf netkatd/STANDARDSDK_500\ \(x86\)
+
 rm -Rvf qrcode/Debug
 rm -Rvf qrcode/Release
 rm -Rvf qrcode/STANDARDSDK_500\ \(x86\)
@@ -74,6 +80,13 @@ rm -Rvf rx/xrecv.log
 rm -Rvf rx/.qmake.stash
 rm -Rvf rx/*.o
 rm -Rvf rx/Makefile
+
+rm -Rvf tftpd/Debug
+rm -Rvf tftpd/Release
+rm -Rvf tftpd/STANDARDSDK_500\ \(x86\)
+rm -Rvf tftpd/tftpd.suo
+rm -Rvf tftpd/tftpd.ncb
+rm -Rvf tftpd/tftpd.vcproj.DESKTOP-LGKFQ39.jasper.user
 
 rm -Rvf tictac/Debug
 rm -Rvf tictac/Release

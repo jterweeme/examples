@@ -9,10 +9,12 @@ SUBDIRS = bgcolor\
     colorbtn\
     commctrl1\
     contimeout\
+    echosvr\
     FileEditor\
     md5sum\
     mdiapp\
     memdc\
+    netkatd\
     opengl1\
     overlap\
     property1\

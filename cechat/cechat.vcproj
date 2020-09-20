@@ -142,6 +142,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="ws2_32.lib comctl32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
