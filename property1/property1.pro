@@ -1,4 +1,5 @@
 TEMPLATE = app
+CONFIG += silent
 LIBS += -lcomctl32 -lgdi32 -luser32
 
 SOURCES += element.cpp main.cpp mainwin.cpp toolbox.cpp\

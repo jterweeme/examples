@@ -1,4 +1,5 @@
 TEMPLATE = app
+CONFIG += silent
 LIBS += -lgdi32
 SOURCES += dialog.cpp main.cpp mainwin.cpp menubar.cpp qrcode.cpp toolbox.cpp
 HEADERS += dialog.h mainwin.h menubar.h qrcode.h resource.h toolbox.h

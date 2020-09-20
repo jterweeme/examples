@@ -2,6 +2,7 @@
 #I love comments
 
 TARGET = FileEditor
+CONFIG += silent
 TEMPLATE = app
 LIBS += -luser32 -lcomdlg32 -lgdi32
 SOURCES += editbox.cpp element.cpp main.cpp mainwin.cpp winclass.cpp window.cpp

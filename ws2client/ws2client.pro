@@ -1,6 +1,6 @@
 TEMPLATE = app
 CONFIG += console silent
 LIBS += -lws2_32
-SOURCES += main.cpp ws2tools.cpp
-HEADERS += ws2tools.h
+SOURCES += main.cpp toolbox.cpp ws2tools.cpp
+HEADERS += toolbox.h ws2tools.h
 

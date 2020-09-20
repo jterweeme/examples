@@ -1,6 +1,7 @@
 TEMPLATE = subdirs
 
-SUBDIRS = bgcolor\
+SUBDIRS = base64\
+    bgcolor\
     bitmap\
     cat\
     cechat\
@@ -15,6 +16,7 @@ SUBDIRS = bgcolor\
     mdiapp\
     memdc\
     netkatd\
+    od\
     opengl1\
     overlap\
     property1\

@@ -68,6 +68,11 @@ rm -Rvf netkatd/netkatd.vcproj.DESKTOP-LGKFQ39.jasper.user
 rm -Rvf netkatd/Release
 rm -Rvf netkatd/STANDARDSDK_500\ \(x86\)
 
+rm -Rvf od/Debug
+rm -Rvf od/od.vcproj.DESKTOP-LGKFQ39.jasper.user
+rm -Rvf od/Release
+rm -Rvf od/STANDARDSDK_500\ \(x86\)
+
 rm -Rvf qrcode/Debug
 rm -Rvf qrcode/Release
 rm -Rvf qrcode/STANDARDSDK_500\ \(x86\)

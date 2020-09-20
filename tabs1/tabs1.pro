@@ -1,5 +1,5 @@
 TEMPLATE = app
-
+CONFIG += silent
 LIBS += -lcomctl32 -luser32
 
 SOURCES += element.cpp\
