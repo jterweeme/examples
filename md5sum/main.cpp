@@ -1,6 +1,11 @@
 #include "hasher.h"
 #include <fstream>
 
+#ifdef WIN32
+#include <io.h>
+#include <fcntl.h>
+#endif
+
 #ifdef WINCE
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, INT nCmdShow)
 {
@@ -32,29 +37,13 @@ int main(int argc, char **argv)
 {
     (void)argc;
     (void)argv;
-
-    std::ifstream ifs;
-    ifs.open("baku.png", std::ifstream::in | std::ifstream::binary);
-#if 0
-    size_t n = 0;
-
-    while (ifs.good())
-    {
-        ifs.get();
-        n++;
-    }
-
-    std::cout << ifs.fail() << "\r\n";
-    std::cout << n << "\r\n";
-    std::cout.flush();
+#ifdef WIN32
+    _setmode(_fileno(stdin), _O_BINARY);
 #endif
-#if 1
-    Hash hash = Hasher::stream(ifs);
+    Hash hash = Hasher::stream(std::cin);
     hash.dump(std::cout);
     std::cout << "\n";
     std::cout.flush();
-#endif
-
     return 0;
 }
 #endif

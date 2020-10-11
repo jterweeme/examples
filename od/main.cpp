@@ -2,6 +2,10 @@
 #include <vector>
 #include <fstream>
 
+#ifdef WIN32
+#include <fcntl.h>
+#endif
+
 class Options
 {
 private:
@@ -83,8 +87,11 @@ static void hexDump(std::ostream &os, std::istream &is)
 
         for (std::streamsize i = 0; i < gcnt; ++i)
             os.put(isprint(buf[i]) ? buf[i] : '.');
-
+#if 1
         os << std::endl;
+#else
+        os.put('\n');
+#endif
     }
 }
 
@@ -114,7 +121,12 @@ int main(int argc, char **argv)
     options.parse(argc, argv);
 
     if (options.fStdin())
+    {
+#ifdef WIN32
+        _setmode(_fileno(stdin), _O_BINARY);
+#endif
         hexDump(std::cout, std::cin);
+    }
 
     for (Options::fi it = options.begin(); it != options.end(); ++it)
     {

@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="netkatd"
-	ProjectGUID="{999DA921-ABCD-4534-ADEC-0D772DDC4951}"
+	Name="rx"
+	ProjectGUID="{A99DA321-ABCD-4534-ADEC-0D772DDC4951}"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -67,7 +67,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,5.00 /nodefaultlib:libc.lib"
-				AdditionalDependencies="ws2.lib mmtimer.lib"
 				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories=""
@@ -142,7 +141,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -191,9 +189,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				ExecutionBucket="7"
-				Optimization="0"
-				AdditionalIncludeDirectories="..\common"
+				Optimization="2"
+				AdditionalIncludeDirectories=""
 				PreprocessorDefinitions="_WIN32_WCE=$(CEVER);UNDER_CE;WINCE;_WINDOWS;$(ARCHFAM);$(_ARCHFAM_);_UNICODE;UNICODE;STANDARDSHELL_UI_MODEL"
 				MinimalRebuild="false"
 				RuntimeLibrary="0"
@@ -217,7 +214,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions=" /subsystem:windowsce,5.00 /nodefaultlib:libc.lib"
-				AdditionalDependencies="ws2.lib mmtimer.lib"
 				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories=""
@@ -262,8 +258,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			>
 			<Tool
@@ -283,6 +279,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				PreprocessorDefinitions="WIN32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -328,7 +325,19 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\input.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\logger.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\main.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\packet.cpp"
 				>
 			</File>
 			<File
@@ -336,7 +345,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\ws2tools.cpp"
+				RelativePath=".\xrecv.cpp"
 				>
 			</File>
 		</Filter>
@@ -346,11 +355,23 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath=".\input.h"
+				>
+			</File>
+			<File
+				RelativePath=".\logger.h"
+				>
+			</File>
+			<File
+				RelativePath=".\packet.h"
+				>
+			</File>
+			<File
 				RelativePath=".\toolbox.h"
 				>
 			</File>
 			<File
-				RelativePath=".\ws2tools.h"
+				RelativePath=".\xrecv.h"
 				>
 			</File>
 		</Filter>

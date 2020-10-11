@@ -1,5 +1,24 @@
 #include "toolbox.h"
 
+StrException::StrException(const char *fmt, ...)
+{
+    char buf[100];
+    va_list vl;
+    va_start(vl, fmt);
+#ifdef CPP11
+    vsnprintf(buf, 100, fmt, vl);
+#else
+    vsprintf(buf, fmt, vl);
+#endif
+    va_end(vl);
+    _s = std::string(buf);
+}
+
+const char *StrException::what() const NOEXCEPT
+{
+    return _s.c_str();
+}
+
 char Toolbox::nibble(BYTE n)
 {
     return n <= 9 ? '0' + char(n) : 'A' + char(n - 10);

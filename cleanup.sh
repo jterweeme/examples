@@ -61,6 +61,7 @@ rm -Rvf md5sum/Release
 rm -Rvf md5sum/md5sum.vcproj.DESKTOP-LGKFQ39.jasper.user
 rm -Rvf md5sum/md5sum.pro.user
 rm -Rvf md5sum/STANDARDSDK_500\ \(x86\)
+rm -Rvf md5sum/Win32
 rm -Rvf md5sum/x64
 
 rm -Rvf netkatd/Debug
@@ -85,6 +86,8 @@ rm -Rvf rx/xrecv.log
 rm -Rvf rx/.qmake.stash
 rm -Rvf rx/*.o
 rm -Rvf rx/Makefile
+rm -Rvf rx/rx.vcproj.DESKTOP-LGKFQ39.jasper.user
+rm -Rvf rx/Win32
 
 rm -Rvf tftpd/Debug
 rm -Rvf tftpd/Release

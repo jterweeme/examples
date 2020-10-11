@@ -23,10 +23,25 @@ uint8_t Packet::header() const
     return _buf[0];
 }
 
+void Packet::_debug(int ret)
+{
+    _log->logf("got %d out of %u bytes!", ret, FULLSIZE);
+
+    std::string s;
+
+    for (int i = 0; i < ret; ++i)
+    {
+        s.append(Toolbox::hex8(_buf[i]));
+        s.push_back(' ');
+    }
+
+    _log->log(s.c_str());
+}
+
 int Packet::read(InputStream *is, int timeout)
 {
     int ret = is->get(_buf, FULLSIZE, timeout);
-    //_log->logf("got %d out of %u bytes!", ret, FULLSIZE);
+    _debug(ret);
     return ret == FULLSIZE ? ret : -1;
 }
 

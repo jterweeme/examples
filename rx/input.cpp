@@ -1,8 +1,15 @@
 #include "input.h"
 #include "logger.h"
 #include "toolbox.h"
-#include <unistd.h>
 #include <iostream>
+
+#ifndef WIN32
+#define UNIX
+#endif
+
+#ifdef UNIX
+#include <unistd.h>
+#endif
 
 #ifdef WIN32
 InputStreamWin::InputStreamWin(DWORD fd, Logger *log)
@@ -20,7 +27,7 @@ void InputStreamWin::init()
 
 BOOL InputStreamWin::thereIsCharEvents() const
 {
-    constexpr DWORD MAX_RECORDS = 16;
+    CONSTEXPR DWORD MAX_RECORDS = 16;
     INPUT_RECORD tInput[MAX_RECORDS];
     DWORD dwEvents = 0;
 #if 0
@@ -97,7 +104,7 @@ int InputStreamWin::getc(int timeout)
             char buf[200];
             DWORD read = 0;
             BOOL rf = ReadFile(_handle, buf, 200, &read, NULL);
-            _log->logf("characters   read: %u", read);
+            _log->logf("characters read: %u", read);
             std::string s;
 
             for (DWORD i = 0; i < read; i++)
@@ -130,6 +137,7 @@ int InputStreamWin::getc(int timeout)
 int InputStreamWin::get(char *buf, size_t n, int timeout)
 {
     _log->logf("getting %u bytes, timeout %ds...", n, timeout);
+
     for (size_t i = 0; i < n; ++i)
     {
         int c = getc(timeout);
@@ -141,7 +149,67 @@ int InputStreamWin::get(char *buf, size_t n, int timeout)
     }
     return n;
 }
-#else
+
+InputStreamThread::InputStreamThread(DWORD fd, Logger *log) : _fd(fd), _log(log)
+{
+
+}
+
+void InputStreamThread::init()
+{
+
+}
+
+DWORD WINAPI testThread(LPVOID lpParam)
+{
+    int c = std::cin.get();
+    int *foo = (int *)lpParam;
+    *foo = c;
+    return 0;
+}
+
+DWORD WINAPI getPacket(LPVOID lpParam)
+{
+    char *buf = (char *)lpParam;
+    std::cin.read(buf, 133);
+    return 0;
+}
+
+int InputStreamThread::getc(int timeout)
+{
+    int c = -1;
+    HANDLE t = CreateThread(NULL, 0, testThread, &c, 0, 0);
+    WaitForSingleObject(t, timeout * 1000);
+    return c;
+}
+
+int InputStreamThread::get(char *buf, size_t n, int timeout)
+{
+    _log->logf("getting %u bytes, timeout %ds...", n, timeout);
+
+    if (n == 133)
+    {
+        HANDLE t = CreateThread(NULL, 0, getPacket, buf, 0, 0);
+        WaitForSingleObject(t, timeout * 1000);
+        return n;
+    }
+
+    for (size_t i = 0; i < n; ++i)
+    {
+        int c = getc(timeout);
+
+        if (c == -1)
+            return i;
+
+        buf[i] = c;
+    }
+
+    return n;
+}
+
+#endif
+
+#ifdef UNIX
 InputStreamUnix::InputStreamUnix(int fd, Logger *log)
     : _fd(fd), _log(log)
 {

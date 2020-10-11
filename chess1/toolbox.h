@@ -5,6 +5,31 @@
 #include <iostream>
 #include <windows.h>
 
+#if __cplusplus >= 201103L
+#define CPP11
+#endif
+
+#ifdef CPP11
+#define CONSTEXPR constexpr
+#define NULLPTR nullptr
+#define NOEXCEPT noexcept
+#define MAKRO constexpr
+#else
+#define CONSTEXPR const
+#define NULLPTR NULL
+#define NOEXCEPT
+#define MAKRO inline
+#endif
+
+class StrException : public std::exception
+{
+private:
+    std::string _s;
+public:
+    StrException(const char *fmt, ...);
+    const char *what() const NOEXCEPT override;
+};
+
 class Toolbox
 {
 public:

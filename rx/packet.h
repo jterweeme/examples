@@ -1,22 +1,22 @@
 #ifndef PACKET_H
 #define PACKET_H
 
-#include <iostream>
+#include "toolbox.h"
 
 class InputStream;
-
 class Logger;
 
 class Packet
 {
 private:
-    static constexpr uint16_t SIZE = 128;
-    static constexpr uint16_t FULLSIZE = 128 + 5;
+    static CONSTEXPR uint16_t SIZE = 128;
+    static CONSTEXPR uint16_t FULLSIZE = 128 + 5;
     Logger *_log;
     char _buf[FULLSIZE];
     uint16_t _crc;
+    void _debug(int ret);
 public:
-    static constexpr uint8_t SOH = 1, EOT = 4, ETB = 0x17;
+    static CONSTEXPR uint8_t SOH = 1, EOT = 4, ETB = 0x17;
 
     Packet(Logger *log);
     virtual ~Packet();

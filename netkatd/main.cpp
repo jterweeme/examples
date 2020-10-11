@@ -162,7 +162,7 @@ int main(int argc, char **argv)
     }
 
     std::ofstream ofs;
-    ofs.open(o.outputFn(), std::ofstream::out | std::ofstream::binary);
+    ofs.open(o.outputFn().c_str(), std::ofstream::out | std::ofstream::binary);
     server.run(ofs);
     ofs.close();
     return 0;

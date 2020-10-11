@@ -3,7 +3,7 @@
 #include "packet.h"
 
 XReceiver::XReceiver(InputStream *is, std::ostream *os, Logger *log)
-    : _is(is), _os(os), _log(log)
+    : _is(is), _os(os), _log(log), _packets(0), _timeouts(0)
 {
 
 }

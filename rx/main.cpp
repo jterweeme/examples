@@ -5,6 +5,8 @@
 
 #ifdef WIN32
 #include <windows.h>
+#include <io.h>
+#include <fcntl.h>
 #else
 #include <termios.h>
 #endif
@@ -25,7 +27,8 @@ int main(int argc, char **argv)
     Logger logger(&logfile);
     logger.log("Startup...");
 #ifdef WIN32
-    InputStreamWin is(STD_INPUT_HANDLE, &logger);
+    _setmode(_fileno(stdin), _O_BINARY);
+    InputStreamThread is(STD_INPUT_HANDLE, &logger);
     is.init();
 #else
     struct termios old_tty, tty;

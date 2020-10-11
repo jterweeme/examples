@@ -7,11 +7,14 @@ SUBDIRS = base64\
     cechat\
     chatclient\
     chess1\
+    chessvalid\
     colorbtn\
     commctrl1\
     contimeout\
     echosvr\
+    exception\
     FileEditor\
+    head\
     md5sum\
     mdiapp\
     memdc\
@@ -26,8 +29,11 @@ SUBDIRS = base64\
     sb\
     sx\
     tabs1\
+    tail\
     tictac\
+    wc\
     winanim\
+    winthread\
     ws2client\
     ws2server\
     zeit

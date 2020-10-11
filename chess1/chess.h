@@ -22,7 +22,7 @@
 
 #ifndef CHESS_H
 #define CHESS_H
-#include <windows.h>
+#include "toolbox.h"
 
 #define EXE_NAME_MAX_SIZE  128
 #define BLACK 1
@@ -31,18 +31,6 @@
 #define TTBLSZ (1 << 16)
 #define white 0
 #define black 1
-
-#if __cplusplus >= 201103L
-#define CONSTEXPR constexpr
-#else
-#define CONSTEXPR const
-#endif
-
-#if __cplusplus >= 201103L
-#define MAKRO constexpr
-#else
-#define MAKRO inline
-#endif
 
 static CONSTEXPR short PROMOTE = 0x0008, NEUTRAL = 2;
 static CONSTEXPR short NO_PIECE = 0, PAWN = 1, KNIGHT = 2, BISHOP = 3, ROOK = 4, QUEEN = 5, KING = 6;
