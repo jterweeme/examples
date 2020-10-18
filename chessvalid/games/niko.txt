@@ -1,0 +1,9 @@
+;this is a comment
+;i love comments
+
+
+#Stockfish:                 1.e4!! c5 2.Nf3! e6 3.d4 cxd4 4.Nxd4 Bd6 5.Nb5 Qb6 6.Nxd6+ Qxd6 7.Qxd6 a6 8.Qg3 f6 9.Qxg7 d5 10.Qxh8 h5 11.Qxg8+ Kd7 12.exd5 h4 13.Qxe6+ Kd8 14.Qxf6+ Ke8 15.Bg5 Nc6 16.dxc6 bxc6 17.Qe7#
+B50 Sicilian:               1.e4!! c5 2.Nf3! d6
+#Stockfish:                 1.e4!! c5 2.Nf3! d6 3.d4 cxd4 4.Nxd4 a6 5.c4 Qc7 6.Nc3 Bg4 7.Qxg4 Nd7 8.Be2 a5 9.Ndb5 Kd8 10.Nxc7 f5 11.Ne6+ Kc8 12.Qxf5 Kb8 13.Nxf8 b6 14.Nxd7+ Ka7 15.Qb5 Rb8 16.c5 Kb7 17.Qxb6+ Kc8 18.Nxb8 dxc5 19.Ba6#
+
+

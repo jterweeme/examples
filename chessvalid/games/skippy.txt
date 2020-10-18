@@ -1,0 +1,10 @@
+;this is a comment
+;i love comments
+
++B00 King's Pawn:           1.e4
++C20 Open Game:             1.e4 e5
+B02 Alekhine's Defence:     1.e4 Nf6
++Stockfish:                 1.e4 Nf6 2.e5
+Skippy9K:                   1.e4 Nf6 2.e5 Nc6 3.exf6 d6 4.d4 b6 5.Bb5 d5 6.Bxc6+ Bd7 7.Bxa8 g6 8.Bxd5 exf6 9.Qe2+ Be6 10.Bc6+ Ke7 11.d5 b5 12.Qxb5 Bg4 13.Qb4+ Qd6 14.Qxg4 Kd8 15.Bf4 f5 16.Qe2 Bg7 17.Bxd6 cxd6 18.Qa6 h5 19.Qb7 Re8+ 20.Ne2 Rxe2+ 21.Kxe2 Bxb2
+#MATE:                      1.e4 Nf6 2.e5 Nc6 3.exf6 d6 4.d4 b6 5.Bb5 d5 6.Bxc6+ Bd7 7.Bxa8 g6 8.Bxd5 exf6 9.Qe2+ Be6 10.Bc6+ Ke7 11.d5 b5 12.Qxb5 Bg4 13.Qb4+ Qd6 14.Qxg4 Kd8 15.Bf4 f5 16.Qe2 Bg7 17.Bxd6 cxd6 18.Qa6 h5 19.Qb7 Re8+ 20.Ne2 Rxe2+ 21.Kxe2 Bxb2 22.Qd7#
+

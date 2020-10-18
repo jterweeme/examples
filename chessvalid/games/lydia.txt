@@ -1,0 +1,123 @@
+;this is a comment
+;i love comments
+
+
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.0-0 Nxe4
+Lydia9K:                    1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.0-0 Be7
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.0-0 Be7 6.Re1
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.0-0 Be7 6.Re1 b5
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.0-0 Be7 6.Re1 b5 7.Bb3
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.0-0 Be7 6.Re1 b5 7.Bb3 d6
+Lydia9K:                    1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.0-0 Be7 6.Re1 b5 7.Bb3 0-0
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 5.0-0 Be7 6.Re1 b5 7.Bb3 0-0 8.c3
+Lydia9K:                    1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 d6
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 d6 5.c3
+Lydia9K:                    1.e4 e5 2.Nf3 Nc6 3.Bb5 Bc5
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 Bc5 4.c3
+Lydia9K:                    1.e4 e5 2.Nf3 Nc6 3.Bb5 Nf6
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 Nf6 4.0-0
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 Nf6 4.0-0 Nxe4
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 Nf6 4.0-0 Nxe4 5.Re1
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 Nf6 4.0-0 Nxe4 5.Re1 Nd6
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 Nf6 4.0-0 Nxe4 5.Re1 Nd6 6.Nxe5
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 Nf6 4.0-0 Nxe4 5.Re1 Nd6 6.Nxe5 Be7
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 Nf6 4.0-0 Nxe4 5.Re1 Nd6 6.Nxe5 Be7 7.Bf1
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 Nf6 4.0-0 Nxe4 5.Re1 Nd6 6.Nxe5 Be7 7.Bf1 Nxe5
+Lydia9K:                    1.e4 e5 2.Nf3 Nc6 3.Bb5 Nf6 4.0-0 Nxe4 5.Re1 Nd6 6.Nxe5 Be7 7.Bf1 Nf5
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 Nf6 4.0-0 Nxe4 5.Re1 Nd6 6.Nxe5 Be7 7.Bf1 Nf5 8.Nf3
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 Nf6 4.0-0 Nxe4 5.Re1 Nd6 6.Nxe5 Be7 7.Bf1 Nf5 8.Nf3 d5
+Lydia9K:                    1.e4 e5 2.Nf3 Nc6 3.Bb5 Nf6 4.0-0 Nxe4 5.Re1 Nd6 6.Nxe5 Be7 7.Bf1 Nf5 8.Nf3 b5
+#Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 Nf6 4.0-0 Nxe4 5.Re1 Nd6 6.Nxe5 Be7 7.Bf1 Nf5 8.Nf3 b5 9.d4! g6 10.d5 h6 11.dxc6 d5 12.Nc3 Be6 13.Bd3 0-0 14.Bxf5 Rb8 15.Bxe6 fxe6 16.Rxe6 Rf5 17.Rxg6+ Kf8 18.Qd3 Rh5 19.Bxh6+ Kf7 20.Rg7+ Kf8 21.Qg6 Rxh6 22.Rg8#
+B20 Sicilian DEF:           1.e4 c5
++B27 Sicilian DEF:          1.e4 c5 2.Nf3
++B40 Sicilian DEF:          1.e4 c5 2.Nf3 e6
++Open Sicilian:             1.e4 c5 2.Nf3 e6 3.d4
++Stockfish:                 1.e4 c5 2.Nf3 e6 3.d4 cxd4
++Stockfish:                 1.e4 c5 2.Nf3 e6 3.d4 cxd4 4.Nxd4
++C40 Anderssen VAR:         1.e4 c5 2.Nf3 e6 3.d4 cxd4 4.Nxd4 Nf6
+Lydia9K:                    1.e4 c5 2.Nf3 e6 3.d4 cxd4 4.Nxd4 a6
++Stockfish:                 1.e4 c5 2.Nf3 e6 3.d4 cxd4 4.Nxd4 a6 5.Bd3
++Stockfish:                 1.e4 c5 2.Nf3 e6 3.d4 cxd4 4.Nxd4 a6 5.Bd3 d5
+Lydia9K:                    1.e4 c5 2.Nf3 e6 3.d4 cxd4 4.Nxd4 a6 5.Bd3 Nc6
++Stockfish:                 1.e4 c5 2.Nf3 e6 3.d4 cxd4 4.Nxd4 a6 5.Bd3 Nc6 6.Nxc6
++Stockfish:                 1.e4 c5 2.Nf3 e6 3.d4 cxd4 4.Nxd4 a6 5.Bd3 Nc6 6.Nxc6 bxc6
+Lydia9K:                    1.e4 c5 2.Nf3 e6 3.d4 cxd4 4.Nxd4 a6 5.Bd3 Nc6 6.Nxc6 dxc6
++Stockfish:                 1.e4 c5 2.Nf3 e6 3.d4 cxd4 4.Nxd4 a6 5.Bd3 Nc6 6.Nxc6 dxc6 7.Nd2
+Lydia9K:                    1.e4 c5 2.Nf3 e6 3.d4 cxd4 4.Nxd4 a6 5.Bd3 Nc6 6.Nxc6 dxc6 7.Nd2 e5 8.0-0 Qc7 9.Qf3 Ba3 10.bxa3 Ra7 11.Qg3 Qd8 12.Qxe5+ Be6 13.Qxg7 Qb6 14.Qxh8 Qa5 15.Qxg8+ Kd7 16.Qb8 Qb6 17.Rb1 Qxb1 18.Nxb1 h6 19.Bf4 a5 20.Qc7+ Ke8 21.Bd6 b5 22.Qxa7 Bd7 23.Qa8+ Bc8
+#Stockfish:                 1.e4 c5 2.Nf3 e6 3.d4 cxd4 4.Nxd4 a6 5.Bd3 Nc6 6.Nxc6 dxc6 7.Nd2 e5 8.0-0 Qc7 9.Qf3 Ba3 10.bxa3 Ra7 11.Qg3 Qd8 12.Qxe5+ Be6 13.Qxg7 Qb6 14.Qxh8 Qa5 15.Qxg8+ Kd7 16.Qb8 Qb6 17.Rb1 Qxb1 18.Nxb1 h6 19.Bf4 a5 20.Qc7+ Ke8 21.Bd6 b5 22.Qxa7 Bd7 23.Qa8+ Bc8 24.Qxc8#
+B50 Sicilian:               1.e4 c5 2.Nf3 d6
++Open Sicilian:             1.e4 c5 2.Nf3 d6 3.d4
++Stockfish:                 1.e4 c5 2.Nf3 d6 3.d4 cxd4
++B54 Sicilian:              1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4
++Stockfish:                 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6
++Stockfish:                 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3
++B90 Najdorf:               1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 a6
++Stockfish:                 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 a6 6.Be3!
++Stockfish:                 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 a6 6.Be3! e6!
+Lydia9K:                    1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 a6 6.Be3! e5
++Stockfish:                 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 a6 6.Be3! e5 7.Nb3!
+Spassky:                    1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 Nc6
++Stockfish:                 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 Nc6 6.Bg5
++Stockfish:                 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 Nc6 6.Bg5 e6
++Stockfish:                 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 Nc6 6.Bg5 e6 7.Qd3
++Stockfish:                 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 Nc6 6.Bg5 e6 7.Qd3 a6
+Lydia9K:                    1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 Nc6 6.Bg5 e6 7.Qd3 Be7
++Stockfish:                 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 Nc6 6.Bg5 e6 7.Qd3 Be7 8.0-0-0
++Stockfish:                 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 Nc6 6.Bg5 e6 7.Qd3 Be7 8.0-0-0 0-0
++Stockfish:                 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 Nc6 6.Bg5 e6 7.Qd3 Be7 8.0-0-0 0-0 9.Ndb5
++Stockfish:                 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 Nc6 6.Bg5 e6 7.Qd3 Be7 8.0-0-0 0-0 9.Ndb5 Qa5
+Lydia9K:                    1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 Nc6 6.Bg5 e6 7.Qd3 Be7 8.0-0-0 0-0 8.Ndb5 Nb4
++Stockfish:                 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 Nc6 6.Bg5 e6 7.Qd3 Be7 8.0-0-0 0-0 8.Ndb5 Nb4 9.Ndb5
+Lydia9K:                    1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 Nc6 6.Bg5 e6 7.Qd3 Be7 8.0-0-0 0-0 8.Ndb5 Nb4 9.Ndb5 Nb4 10.Qg3 d5 11.a3 e5 12.exd5 Nfxd5 13.Bh6 g6 14.axb4 Bd7 15.Nxd5 Bf6 16.Nxf6+ Qxf6 17.Rxd7 Rfd8 18.Rxd8+ Rxd8 19.Bg5 Qf5 20.Bxd8 h6 21.Bc4 Kh7 22.Nd6 h5 23.Nxf5 gxf5 24.Bf6 a6
+#Stockfish:                 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 Nc6 6.Bg5 e6 7.Qd3 Be7 8.0-0-0 0-0 8.Ndb5 Nb4 9.Ndb5 Nb4 10.Qg3 d5 11.a3 e5 12.exd5 Nfxd5 13.Bh6 g6 14.axb4 Bd7 15.Nxd5 Bf6 16.Nxf6+ Qxf6 17.Rxd7 Rfd8 18.Rxd8+ Rxd8 19.Bg5 Qf5 20.Bxd8 h6 21.Bc4 Kh7 22.Nd6 h5 23.Nxf5 gxf5 24.Bf6 a6 25.Qg7#
+B70 dragon VAR:             1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 g6
++Stockfish:                 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 g6 6.f3
++Stockfish:                 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 g6 6.f3 Bg7
++Stockfish:                 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 g6 6.f3 Bg7 7.Be3
++Stockfish:                 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 g6 6.f3 Bg7 7.Be3 a6
+Lydia9K:                    1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 g6 6.f3 Bg7 7.Be3 Nc6
++Stockfish:                 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 g6 6.f3 Bg7 7.Be3 Nc6 8.???
+Lydia9K:                    1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 g6 6.f3 Bg7 7.Be3 0-0
++Stockfish:                 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 g6 6.f3 Bg7 7.Be3 0-0 8.Qd2
+Lydia9K:                    1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 g6 6.f3 Bg7 7.Be3 0-0 8.Qd2 Nc6 9.0-0-0 d5 10.exd5 Nxd5 11.Nxc6 bxc6 12.Bd4 Bxd4 13.Qxd4 Qc7 14.Bc4 Nb6 15.Bd3 Bd7 16.h4 Bf5 17.Bxf5 gxf5 18.Qc5 e5 19.g4 Rad8 20.gxf5 f6 21.Ne4 Nd5 22.Rhg1+ Qg7 23.c4 Qxg1 24.Rxg1+ Kh8 25.cxd5 cxd5 26.Qe7 Rc8+ 27.Nc5 Rf7 28.Qxf7 Rxc5+ 29.Kd2 Rc2+ 30.Kxc2 a6
+#Stockfish:                 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Nf6 5.Nc3 g6 6.f3 Bg7 7.Be3 0-0 8.Qd2 Nc6 9.0-0-0 d5 10.exd5 Nxd5 11.Nxc6 bxc6 12.Bd4 Bxd4 13.Qxd4 Qc7 14.Bc4 Nb6 15.Bd3 Bd7 16.h4 Bf5 17.Bxf5 gxf5 18.Qc5 e5 19.g4 Rad8 20.gxf5 f6 21.Ne4 Nd5 22.Rhg1+ Qg7 23.c4 Qxg1 24.Rxg1+ Kh8 25.cxd5 cxd5 26.Qe7 Rc8+ 27.Nc5 Rf7 28.Qxf7 Rxc5+ 29.Kd2 Rc2+ 30.Kxc2 a6 31.Qxf6#
+Lydia9K:                    1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 a6
++Stockfish:                 1.e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 a6 5.c4
+C00 French DEF:             1.e4 e6
++C00 French DEF:            1.e4 e6 2.d4
++Stockfish:                 1.e4 e6 2.d4 d5
++Stockfish:                 1.e4 e6 2.d4 d5 3.Nc3
++C11 French DEF:            1.e4 e6 2.d4 d5 3.Nc3 Nf6
+Lydia9K:                    1.e4 e6 2.d4 d5 3.Nc3 Bb4
++Stockfish:                 1.e4 e6 2.d4 d5 3.Nc3 Bb4 4.e5
++Stockfish:                 1.e4 e6 2.d4 d5 3.Nc3 Bb4 4.e5 Ne7
++Stockfish:                 1.e4 e6 2.d4 d5 3.Nc3 Bb4 4.e5 Ne7 5.Bd3
++Stockfish:                 1.e4 e6 2.d4 d5 3.Nc3 Bb4 4.e5 Ne7 5.Bd3 c5
++Stockfish:                 1.e4 e6 2.d4 d5 3.Nc3 Bb4 4.e5 Ne7 5.Bd3 c5 6.a3
++Stockfish:                 1.e4 e6 2.d4 d5 3.Nc3 Bb4 4.e5 Ne7 5.Bd3 c5 6.a3 Bcx3+
+Lydia9K:                    1.e4 e6 2.d4 d5 3.Nc3 Bb4 4.e5 Ne7 5.Bd3 c5 6.a3 Kf8
++Stockfish:                 1.e4 e6 2.d4 d5 3.Nc3 Bb4 4.e5 Ne7 5.Bd3 c5 6.a3 Kf8 7.axb4
+Lydia9K:                    1.e4 e6 2.d4 d5 3.Nc3 Bb4 4.e5 c5
++Stockfish:                 1.e4 e6 2.d4 d5 3.Nc3 Bb4 4.e5 c5 5.a3
+B10 Caro-Kann DEF:          1.e4 c6
++B12 Caro-Kann DEF:         1.e4 c6 2.d4
++B12 Caro-Kann DEF:         1.e4 c6 2.d4 d5
++Stockfish:                 1.e4 c6 2.d4 d5 3.e5
++Stockfish:                 1.e4 c6 2.d4 d5 3.e5 Bf5
++Stockfish:                 1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3
++Stockfish:                 1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 e6
++Stockfish:                 1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 e6 5.Be2
++Stockfish:                 1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 e6 5.Be2 c5
++Stockfish:                 1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 e6 5.Be2 c5 6.Be3
++Stockfish:                 1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 e6 5.Be2 c5 6.Be3 cxd4
++Stockfish:                 1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 e6 5.Be2 c5 6.Be3 cxd4 7.Nxd4
++Stockfish:                 1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 e6 5.Be2 c5 6.Be3 cxd4 7.Nxd4 Ne7
++Stockfish:                 1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 e6 5.Be2 c5 6.Be3 cxd4 7.Nxd4 Ne7 8.Nd2
++Stockfish:                 1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 e6 5.Be2 c5 6.Be3 cxd4 7.Nxd4 Ne7 8.Nd2 Nbc6
+Lydia9K:                    1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 e6 5.Be2 c5 6.Be3 cxd4 7.Nxd4 Ne7 8.Nd2 Nd7
++Stockfish:                 1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 e6 5.Be2 c5 6.Be3 cxd4 7.Nxd4 Ne7 8.Nd2 Nd7 9.c4
+Lydia9K:                    1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 e6 5.Be2 c5 6.Be3 cxd4 7.Nxd4 Ne7 8.Nd2 Nd7 9.c4 h5
++Stockfish:                 1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 e6 5.Be2 c5 6.Be3 cxd4 7.Nxd4 Ne7 8.Nd2 Nd7 9.c4 h5 10.0-0
+Lydia9K:                    1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 e6 5.Be2 c5 6.Be3 Ne7
++Stockfish:                 1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 e6 5.Be2 c5 6.Be3 Ne7 7.dxc5
+

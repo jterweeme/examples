@@ -1,0 +1,13 @@
+;this is a comment
+;i love comments
+
++B00 King's Pawn:           1.e4
+C00 French DEF:             1.e4 e6
++C00 French DEF:            1.e4 e6 2.d4
++Stockfish:                 1.e4 e6 2.d4 d5
++Stockfish:                 1.e4 e6 2.d4 d5 3.Nc3
++C11 French DEF:            1.e4 e6 2.d4 d5 3.Nc3 Nf6
++Stockfish:                 1.e4 e6 2.d4 d5 3.Nc3 Nf6 4.e5
+Lisa9K:                     1.e4 e6 2.d4 d5 3.Nc3 Nf6 4.e5 c6
++Stockfish:                 1.e4 e6 2.d4 d5 3.Nc3 Nf6 4.e5 c6 5.exf6
+

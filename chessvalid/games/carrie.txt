@@ -1,0 +1,42 @@
+;this is a comment
+;i love comments
+
+#Stockfish:                 1.e4! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Ba4! Bd6 5.0-0! Nge7 6.c3 Kf8 7.d4 Kg8 8.Bb3 Kf8 9.Ng5 Nxd4 10.cxd4 Ng6 11.Nxf7 Nf4 12.Nxd8 h5 13.dxe5 Ke8 14.exd6 Kxd8 15.Bxf4 Rh6 16.Bxh6 gxh6 17.Qf3 cxd6 18.Rc1 Ke7 19.Qf7+ Kd8 20.Qf8#
+B20 Sicilian Defense:       1.e4! c5
++B27 Sicilian Defense:      1.e4! c5 2.Nf3
+B30 Sicilian Defense:       1.e4! c5 2.Nf3 Nc6
++B32 Open Sicilian:         1.e4! c5 2.Nf3 Nc6 3.d4
++Stockfish:                 1.e4! c5 2.Nf3 Nc6 3.d4 cxd4
++Stockfish:                 1.e4! c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4
+Carrie9K:                   1.e4! c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 Qb6
++Stockfish:                 1.e4! c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 Qb6 5.Be3
+Carrie9K:                   1.e4! c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 Qb6 5.Be3 e5
++Stockfish:                 1.e4! c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 Qb6 5.Be3 e5 6.Nb5
+Carrie9K:                   1.e4! c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 Qb6 5.Be3 e5 6.Nb5 Bb4+
++Stockfish:                 1.e4! c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 Qb6 5.Be3 e5 6.Nb5 Bb4+ 7.c3
+Carrie9K:                   1.e4! c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 Qb6 5.Be3 e5 6.Nb5 Bb4+ 7.c3 Nd4
++Stockfish:                 1.e4! c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 Qb6 5.Be3 e5 6.Nb5 Bb4+ 7.c3 Nd4 8.cxb4
+Carrie9K:                   1.e4! c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 Qb6 5.Be3 e5 6.Nb5 Bb4+ 7.c3 Nd4 8.cxb4 Nf6
++Stockfish:                 1.e4! c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 Qb6 5.Be3 e5 6.Nb5 Bb4+ 7.c3 Nd4 8.cxb4 Nf6 9.N1c3! 0-0 10.Nxd4!
+B10 Caro-Kann Defense:      1.e4! c6
++B12 Caro-Kann Defense:     1.e4! c6 2.d4
++B12 Caro-Kann Defense:     1.e4! c6 2.d4 d5
++Stockfish:                 1.e4! c6 2.d4 d5 3.e5
++Stockfish:                 1.e4! c6 2.d4 d5 3.e5 Bf5
++Stockfish:                 1.e4! c6 2.d4 d5 3.e5 Bf5 4.Nf3
+Carrie9K:                   1.e4! c6 2.d4 d5 3.e5 Bf5 4.Nf3 a6
+C00 French defense:         1.e4! e6
++Stockfish:                 1.e4! e6 2.d4
++Stockfish:                 1.e4! e6 2.d4 d5
++Stockfish:                 1.e4! e6 2.d4 d5 3.Nc3
++C11 French defense:        1.e4! e6 2.d4 d5 3.Nc3 Nf6
++Stockfish:                 1.e4! e6 2.d4 d5 3.Nc3 Nf6 4.e5
+Carrie9K:                   1.e4! e6 2.d4 d5 3.Nc3 Nf6 4.e5 c6
++Stockfish:                 1.e4! e6 2.d4 d5 3.Nc3 Nf6 4.e5 c6 5.???
+Carrie9K:                   1.Nf3 Nf6 2.c4
++Stockfish:                 1.Nf3 Nf6 2.c4 e6!
++Stockfish:                 1.Nf3 Nf6 2.c4 e6! 3.d4!
+Carrie9K:                   1.Nf3 Nf6 2.c4 e6! 3.Nc3
++Stockfish:                 1.Nf3 Nf6 2.c4 e6! 3.Nc3 c5!
+Carrie9K:                   1.Nf3 Nf6 2.c4 e6! 3.g3
+#Stockfish:                 1.Nf3 Nf6 2.c4 e6! 3.g3 d5! 4.Bg2 dxc4 5.Ne5 Qd4 6.e3 Qxe5 7.O-O h5 8.Qe2 h4 9.Qf3 Nbd7 10.d4 cxd3ep 11.Qxf6 Nxf6 12.Bd2 hxg3 13.fxg3 Qxb2 14.h3 Qxa1 15.Rd1 Qxa2 16.Nc3 Qc2 17.Re1 Qxd2 18.Ra1 Qxe3+ 19.Kh1 Qxg3 20.Ne4 Nxe4 21.Rf1 Bc5 22.Rxf7 Rxh3+ 23.Bxh3 Qxh3#

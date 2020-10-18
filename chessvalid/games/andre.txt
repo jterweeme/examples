@@ -1,0 +1,15 @@
+;this is a comment
+;i love comments
+
++Stockfish:                 1.e4!! Nc6 2.d4!! e6 3.Nf3!! Bb4+ 4.c3!! Bxc3+ 5.Nxc3!! Nxd4 6.Qxd4!! f6!
+Andre9K:                    1.e4!! Nc6 2.d4!! e6 3.Nf3!! Bb4+ 4.c3!! Bxc3+ 5.Nxc3!! Nxd4 6.Qxd4!! Qf6
+#Stockfish:                 1.e4!! Nc6 2.d4!! e6 3.Nf3!! Bb4+ 4.c3!! Bxc3+ 5.Nxc3!! Nxd4 6.Qxd4!! Qf6 7.e5! Qxf3 8.gxf3!! Nh6 9.Nb5!! Nf5 10.Nxc7+!! Kd8 11.Qc3!! h6! 12.Nxa8! b6! 13.Qc7+! Ke7! 14.Qxa7! f6! 15.Nxb6! Nh4! 16.exf6+! Kxf6! 17.Qc7! Rf8! 18.f4! Nf3+! 19.Kd1! g6! 20.Qc3+! Kf7! 21.Qxf3! d5! 22.Qc3! Re8! 23.Qxc8! Rxc8! 24.Nxc8! Kg7! 25.Bh3! g5! 26.fxg5! hxg5! 27.Re1! e5! 28.Bxg5! e4! 29.Rc1! Kg6! 30.Rg1! e3! 31.Be7+! Kf7! 32.Rc7! e2+! 33.Kxe2! d4! 34.Nd6#
+Andre9K:                    1.e4!! Nc6 2.d4!! e6 3.Nf3!! Bb4+ 4.c3!! Bxc3+ 5.Nxc3!! Nxd4 6.Qxd4!! Qf6 7.e5! Qxf3 8.gxf3!! Nh6 9.Nb5!! Nf5 10.Nxc7+!! Kd8 11.Qc3!! Rg8
+#Stockfish:                 1.e4!! Nc6 2.d4!! e6 3.Nf3!! Bb4+ 4.c3!! Bxc3+ 5.Nxc3!! Nxd4 6.Qxd4!! Qf6 7.e5! Qxf3 8.gxf3!! Nh6 9.Nb5!! Nf5 10.Nxc7+!! Kd8 11.Qc3!! Rg8 12.Bg5+! f6 13.exf6! gxf6 14.Qxf6+! Kxc7 15.Rc1+! Kb8 16.Bf4+! d6 17.Qxf5! e5 18.Qc2! a6 19.Qc7+! Ka7 20.Be3#
+Andre9K:                    1.e4!! Nc6 2.d4!! e6 3.Nf3!! Bb4+ 4.c3!! Bxc3+ 5.Nxc3!! Nxd4 6.Qxd4!! Qf6 7.e5! Qxf3 8.gxf3!! Nh6 9.Nb5!! Nf5 10.Nxc7+!! Kd8 11.Qc3!! Rf8
+#Stockfish:                 1.e4!! Nc6 2.d4!! e6 3.Nf3!! Bb4+ 4.c3!! Bxc3+ 5.Nxc3!! Nxd4 6.Qxd4!! Qf6 7.e5! Qxf3 8.gxf3!! Nh6 9.Nb5!! Nf5 10.Nxc7+!! Kd8 11.Qc3!! Rf8 12.Bg5+! f6 13.Bf4! Ne3 14.Bxe3! b6 15.Nxa8! a5 16.Rc1! Bb7 17.Qc7+! Ke8 18.Nxb6! Kf7 19.Qxd7+! Kg6 20.Rg1+! Kh5 21.Qxg7! fxe5 22.Qg5#
+Andre9K:                    1.e4!! Nc6 2.d4!! e6 3.Nf3!! Bb4+ 4.c3!! Bxc3+ 5.Nxc3!! Nxd4 6.Qxd4!! Rb8
+#Stockfish:                 1.e4!! Nc6 2.d4!! e6 3.Nf3!! Bb4+ 4.c3!! Bxc3+ 5.Nxc3!! Nxd4 6.Qxd4!! Rb8 7.Qxa7! Qg5 8.Bxg5! Nf6 9.Qxb8! Ke7 10.e5! Re8 11.Qxc7! Kf8 12.exf6! Kg8 13.Bh6! d6 14.Ng5! Bd7 15.Qxd7! Rf8 16.fxg7! b6 17.gxf8=Q#
+A00 Van't Kruijs OPN:       1.e3
+#Stockfish:                 1.e3 e6! 2.h4 Nf6! 3.d3 d5! 4.b3 e5! 5.f3 Bd6! 6.Nc3 Nc6! 7.Nxd5 Nxd5! 8.c4 Nde7! 9.g3 Nf5! 10.Bg2 Nxg3! 11.c5 Bxc5! 12.Rh3 Bxh3! 13.Bxh3 Qxh4! 14.Qd2 Ne4+! 15.Kf1 Nxd2+! 16.Kg2 Bxe3! 17.Bd7+ Kxd7! 18.Bxd2 Qf2+! 19.Kh1 Bxd2! 20.Rf1 Qxf1! 21.Kh2 Bf4+! 22.Kh1 Qf2! 23.a3 Qh2#
+

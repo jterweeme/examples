@@ -1,0 +1,26 @@
+;this is a comment
+;i love comments
+
+
+#Stockfish:                 1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! Ke7 6.d4! Ke8 7.Nxe5 Nxe5 8.dxe5 d5 9.exd6ep Be6 10.Bxe6 fxe6 11.Qh5+ g6 12.Qe5 cxd6 13.Qxh8 Nf6 14.Bg5 h6 15.Bxf6 Qc7 16.Qg8 Qf7 17.Qxf7+ Kxf7 18.Bd4 Kg8 19.Ke2 Bg7 20.Bxg7 d5 21.Bxh6 Kh7 22.Be3 Rc8 23.Rc1 b4 24.Nd2 d4 25.Bxd4 e5 26.Bxe5 g5 27.Kd3 Re8 28.Bd4 a5 29.a4 bxa3ep 30.Rxa3 a4 31.Rxa4 Re7 32.Ra7 Rxa7 33.Bxa7 Kg7 34.c4 Kh7 35.c5 Kg7 36.c6 Kg8 37.c7 Kh7 38.c8=Q g4 39.Qxg4 Kh6 40.Rc5 Kh7 41.Rh5#
+Kendra9K:                   1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.b3
+#Stockfish:                 1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.b3 axb5!! 5.Nc3 Nf6! 6.g3 d5! 7.h3 dxe4!! 8.a4 b4! 9.0-0 bxc3!! 10.d3 exf3!! 11.Rb1 Bxh3! 12.Qe1 Bxf1! 13.Qxf1 Nd4! 14.Kh1 Ng4! 15.Ba3 Qg5!! 16.Be7 Bxe7!! 17.Qh3 Ne2! 18.Rf1 Qf5! 19.Qh4 Bxh4!! 20.a5 Bf6! 21.a6 Qh5#
+B20 Sicilian DEF:           1.e4!! c5
++B40 Sicilian DEF:          1.e4!! c5 2.Nf3! e6! 3.d4! cxd4! 4.Nxd4! Nf6! 5.Nc3! Nc6! 6.Ndb5! d6!
+B30 Sicilian DEF:           1.e4!! c5 2.Nf3! Nc6
+#Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4 4.Nxd4!! Qb6 5.Be3! e5 6.Nb5!! Bb4+ 7.c3!! Nd4 8.cxb4!! Nf6 9.N1c3 Qc6 10.Nxd4!! exd4 11.Bxd4! a5 12.Rc1!! Qe6 13.Bxf6!! Qxf6 14.Nd5!! Qe5 15.Nc7+!! Kf8 16.Nxa8!! Qxe4+ 17.Qe2!! Qxb4+ 18.Qd2! Qe4+ 19.Be2! g5 20.Rxc8+! Kg7 21.Qxg5+!! Qg6 22.Qe5+!! f6 23.Qe7+!! Kh6 24.Rxh8 Qb1+ 25.Bd1! Qg6 26.Rf8 d5 27.Rxf6!! a4 28.Qf8+ Kg5 29.h4#
+B50 Sicilian:               1.e4!! c5 2.Nf3! d6
+#Stockfish:                 1.e4!! c5 2.Nf3! d6 3.Nc3!? e6!? 4.d4! Nc6 5.dxc5 Qa5 6.cxd6 Bd7 7.Nd2 Qb4 8.Nc4 b5 9.a3 Qc5 10.Be3 Nd4 11.Bxd4 Qc6 12.Ne5 Qb7 13.Nxf7 g6 14.Qf3 Nf6 15.Qxf6 Rb8 16.Ne5 Rc8 17.Qf7+ Kd8 18.Nxd7 Rxc3 19.Bf6+ Be7 20.dxe7+ Kc8 21.e8=Q+ Rxe8 22.Qxe8+ Kc7 23.Be5+ Kc6 24.Qxe6#
+C00 French DEF:             1.e4!! e6
+#Stockfish:                 1.e4!! e6 2.d4! d5! 3.Nc3! Nf6! 4.e5! Nfd7! 5.Nce2 a5 6.c3 Bb4 7.cxb4 Na6 8.bxa5 Qe7 9.Nf3 b5 10.Nf4 Bb7 11.Nd2 Ra7 12.Bxb5 Bc6 13.Bxc6 Ra8 14.Bxa8 Qd8 15.Bb7 Nac5 16.dxc5 Nxc5 17.Bc6+ Kf8 18.0-0 Kg8 19.Nf3 g6 20.Be3 h6 21.Bxc5 Rh7 22.a6 Qa8 23.Bxa8 c6 24.a7 Rh8 25.Bxc6 Kh7 26.Qa4 Ra8 27.Bxa8 g5 28.Qe8 gxf4 29.Qxf7+ Kh8 30.Bxd5 exd5 31.a8=Q#
+B10 Caro-Kann DEF:          1.e4!! c6
+#Stockfish:                 1.e4!! c6 2.d4! d5! 3.e5! Bf5! 4.Nf3! a5!? 5.Nh4! Bc8 6.c4 Bg4 7.Qxg4 Nh6 8.Bxh6 c5 9.cxd5 Nc6 10.dxc6 bxc6 11.Be3 Qb6 12.Qe4 f5 13.dxc5 Qc7 14.Nxf5 Rd8 15.Nd6+ Rxd6 16.exd6 Qd7 17.Nc3! e6 18.Bc4 Qf7 19.Qxe6+ Qxe6 20.Bxe6 h5 21.Bg5 Be7 22.d7+ Kd8 23.Ne4 Bxg5 24.Nxg5 Rf8 25.0-0-0 h4 26.Bc4 Kc7 27.Ne6+ Kb8 28.Nxf8 Ka7 29.d8=Q a4 30.Rd7#
+A40 Queen's Pawn:           1.d4
+#Stockfish:                 1.d4 Nf6! 2.c4!! e6!! 3.Nf3! d5! 4.Bd2!? c5! 5.Ng5 cxd4! 6.f3 h6! 7.Nc3 dxc3! 8.Bxc3 hxg5! 9.Qb3 Nbd7! 10.Bxf6 Nxf6! 11.Qc3 Qc7! 12.a4 Rxh2! 13.Rxh2 Qxh2! 14.0-0-0 Bd7!! 15.Rd2 Rc8! 16.c5 Qg1! 17.b4 Qxf1+! 18.Kb2 Qxg2! 19.b5 Bxc5!! 20.a5 Qf2! 21.Ka2 Bxb5! 22.e3 Bc4+! 23.Kb2 Qxe3! 24.Qxe3 Bxe3! 25.Rd1 Rc5! 26.Re1 Bd4+! 27.Kc2 Ke7! 28.Rc1 Be2+! 29.Kd2 Rxc1! 30.Kxc1 Bxf3! 31.a6 bxa6! 32.Kd2 Ne4+! 33.Kc2 g4! 34.Kc1 g3! 35.Kb1 g2! 36.Kc2 Nc5! 37.Kd2 g1=Q! 38.Kc2 Qd1#
+Kendra9K:                   1.d4 Nf6! 2.c4!! e6!! 3.Nc3
+#Stockfish:                 1.d4 Nf6! 2.c4!! e6!! 3.Nc3 Bb4! 4.Bd2 0-0! 5.Rb1 c5! 6.d5 d6! 7.dxe6 Bxe6! 8.Qc1 Bxc4! 9.b3 Be6! 10.f3 Nc6! 11.Rb2 d5! 12.e4 Re8! 13.h4 dxe4! 14.a4 Bf5! 15.Kd1 exf3! 16.Nxf3 Ng4! 17.Qb1 Bxb1! 18.Kc1 Bf5! 19.Bc4 Nf2! 20.Bg5 Nd3+! 21.Bxd3 Qxd3! 22.Nd5 Ba3! 23.Ne3 Rxe3! 24.Nd4 Qxd4! 25.Bxe3 Bxb2#
+A04 Reti OPN:               1.Nf3
+#Stockfish:                 1.Nf3 Nf6! 2.c4 e6! 3.Nc3 c5! 4.Nb5 d5! 5.a3 d4! 6.Qa4 Bd7! 7.e4 Nxe4! 8.Bd3 Nf6! 9.Ng1 a6! 10.Ra2 Bc6! 11.Bb1 Nbd7! 12.Qc2 Bxg2! 13.Qd1 axb5! 14.Bf5 exf5! 15.Ne2 Ne5! 16.Qb3 bxc4! 17.Qg3 Nf3+! 18.Kd1 Bxh1! 19.Nf4 Qe7! 20.Ne6 Qxe6! 21.Ra1 d3! 22.Qe5 Qxe5! 23.a4 Qe1#
+English OPN:                1.c4
+#Stockfish:                 1.c4 c5! 2.g3 g6! 3.Bg2 Bg7! 4.g4 Nc6! 5.f4 e5! 6.g5 h6 7.Bxc6 dxc6! 8.e3 exf4! 9.Qa4 Qxg5! 10.Nf3 Qg2! 11.Rg1 Qxf3! 12.Rf1 Qg4! 13.Rxf4 Qg1+! 14.Rf1 Qxh2! 15.Rf3 Bg4! 16.Rf2 Qg1+! 17.Rf1 Qg3+! 18.Rf2 Qg1+! 19.Rf1 Qg3+! 20.Rf2 Bf6! 21.Kf1 Bh4! 22.Rf4 Qh2! 23.Re4+ Kf8! 24.Re8+ Rxe8! 25.Qxa7 Be2#
+

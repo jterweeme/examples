@@ -1,0 +1,379 @@
+;Schaakspellen uit de Battle Chess 1988 handleiding
+
+;P-K4 P-K4 = e4 e5
+;P-K4 P-QB4 = e4 c5
+
+
+Fischer vs. Olafsson:   1.e4 c5 2.Nf3 g6
+Petrosian vs. Schmid:   1.d4 c5 2.d5
+
+(1)  Fischer -- Olafsson, Bled 1961, Sicilian Defense
+
+ #  White     Black           White     Black            White     Black
+
+ 1. P-K4      P-QB4       15. R-Q2      KR-Q1        29. BPxP      KRPxP
+ 2. N-KB3     P-KN3       16. K-R1      B-B3         30. PxP       BxP
+ 3. P-Q4      PxP         17. Q-KN1     N-Q2         31. R-R1      Q-B1
+ 4. NxP       B-N2        18. P-B5      P-N3         32. B-Q5!!    B-R3
+ 5. N-QB3     N-QB3       19. R1-Q1     N-B4         33. RxR       BxQ
+ 6. B-K3      N-B3        20. N-N5!     Q-K2         34. R4xB      Q-R3
+ 7. B-QB4     Q-R4        21. NxQP      NxBP         35. R-KB1     B-B5
+ 8. O-O       P-Q3        22. NxN       NxB          36. P-N3      Q-R6
+ 9. N-N3      Q-B2        23. QxN       PxN          37. R4-R1     BxP
+10. B-K2      0-0         24. B-K2      BxRP         38. R-R8+     K-N2
+11. P-B4      P-QR4       25. P-QN3     B-K1         39. RxP+      K-R3
+12. P-QR4     N-QN5       26. B-B4      P-R5         40. R-R8+     1-0
+13. R-B2!     P-K4?       27. B-Q5      RxN
+14. B-B3      B-Q2        28. BxR       R-Q5
+
+
+
+
+(2) Petrosian -- Schmid, Zurich 1961, Modern Benoni Defense
+
+ #  White     Black           White     Black            White     Black
+ 
+ 1. P-Q4      P-QB4       12. P-QR4     P-N3         23. R-N1+     K-R1
+ 2. P-Q5      P-Q3        13. N-B4      B-QR3        24. R-N3      R-K2
+ 3. P-QB4     P-KN3       14. B-N5      BxN          25. R1-N1     R-KN2
+ 4. N-QB3     B-N2        15. BxB       P-QR3        26. P-K5      PxP
+ 5. P-K4      N-KB3       16. K-R1      R-N1         27. QxP       N2-K1
+ 6. B-K2      0-0         17. Q-K2!     Q-B1         28. RxR       BxR
+ 7. N-B3      P-K3        18. B-B4      B-B1         29. RxB!      KxR
+ 8. O-O       PxP         19. QR-N1     N-R4         30. Q-K7+     K-N3
+ 9. BPxP      R-K1        20. B-Q2      P-B4?        31. P-Q6!     Q-N2
+10. N-Q2      N-R3        21. P-KN4!    N-B3         32. Q-K3!     1-0
+11. P-B3!     N-B2?       22. NPxP      PxP
+     
+
+(3) Spassky -- Ghitescu, Beverwijk 1967, Old Benoni Defense
+
+ #  White     Black           White     Black            White     Black
+
+ 1. P-Q4      N-KB3       13. RQ1-N1    B-Q2         25. Q-N2      NxR
+ 2. P-QB4     P-QB4       14. N-Q2      K-R1         26. P-K5      R-B2
+ 3. P-Q5      P-K4        15. P-KR4     N-N1         27. QxN       R-KR2
+ 4. N-QB3     P-Q3        16. B-K3      P-KR4        28. P-K6      B-KN4
+ 5. P-K4      B-K2        17. P-N5      B-K1         29. Q-K4      BxB+
+ 6. N-B3      0-0         18. P-B4      P-B4         30. QxB       Q-K2
+ 7. B-Q3      QN-Q2       19. NPxPep    NxP          31. N-K4      RxP
+ 8. Q-K2      N-K1        20. PxP       PxP          32. NK4-B6    Q-QB2
+ 9. P-KN4!    P-KN3       21. N-B3      N-N5         33. B-K4      Q-R4
+10. B-R6      N-N2        22. RxN       PxR          34. Q-KN3     P-KN4
+11. 0-0-0     N-B3        23. NxP       N-R4         35. NxB       RR1xN
+12. P-KR3     P-R3        24. NxP/N4!   N-N6         36. Q-K5+     1-0
+
+
+(4)  Burn -- Duras, Breslau 1912, Queen's Gambit Declined
+
+ #  White     Black           White     Black            White     Black
+
+ 1. P-Q4      P-Q4        13. B-K1      P-B5!        25. R-R2       BxP
+ 2. P-QB4     P-K3        14. B-B2      P-N5         26. P-K5       N-Q4
+ 3. N-QB3     P-QR3       15. N-N1      Q-N4         27. N-K4       B-B5
+ 4. P-K3      N-KB3       16. QN-Q2     KR-B1        28. RxB        RxR
+ 5. N-B3      B-K2        17. N-B1      P-QR4        29. N-Q6       R-B2
+ 6. B-Q3      PxP         18. N-N3      B-R3         30. N-KN5      B-Q6
+ 7. BxBP      P-QN4       19. P-K4      P-R5         31. R-K1       BxB
+ 8. B-N3      B-N2        20. B-Q2      P-N6!        32. N-N5       R-R8
+ 9. 0-0       QN-q2       21. PxP       BPxP         33. NxR        B-B4
+10. Q-K2      P-B4        22. QxQ       BxQ          34. NxN        RxR ch
+11. R-Q1      Q-N3        23. B-N1      P-R6!        35. BxR        P-N8=Q
+12. B-Q2      0-0         24. PxP       P-N7!        36. N-N7 ch    K-B1
+                                                         Resigns
+
+(5)  Benko -- Petrosian, Bled 1959, Reti Opening
+
+ #  White     Black           White     Black            White     Black
+
+ 1. N-KB3     N-KB3       13. Q-B2      Q-B2         25. P-QR4     R-N1
+ 2. P-KN3     P-Q4        14. B-K3      P-B4!        26. PxP       PxP
+ 3. B-N2      P-B3        15. BxB       QxB          27. R-R7      P-N4!
+ 4. P-B4      PxP         16. BxP       R-B1         28. P-R4      P-QN5
+ 5. N-R3      P-QN4       17. P-QN4     N-K5         29. R-K5      P-N6!!
+ 6. P-Q3      PxP         18. Q-N2      BxB!         30. RxP ch    K-B1
+ 7. N-K5!     P-QR3!      19. PxB       0-0          31. R-KR5     P-R3!
+ 8. 0-0       B-N2        20. N-B4      RxP          32. RxP       K-N2
+ 9. Q-N3      P-K3        21. N-Q6      Q-B3         33. RxP       R-R7
+10. R-Q1      Q-B2        22. NxN       QxN          34. R-B7      P-N7
+11. QxQP!     QN-Q2       23. R-Q4      R-B7!            Resigns
+12. NxN       QnN         24. RxQ       RxQ
+
+
+(6)  Flamberg -- Alekhine, Mannheim 1914, Ruy Lopez
+
+ #  White     Black           White     Black            White     Black
+
+ 1. P-K4      P-K4        14. R-K3      N-B5         27. Q-R5      P-N6
+ 2. N-KB3     N-QB3       15. B-B2      P-QB4!       28. PxP       BPxP
+ 3. B-N5      P-QR3       16. N-N3      P-B5!        29. B-Q3      P-R6!
+ 4. B-R4      N-B#        17. N-Q2      P-B4         30. RxRP      RxR
+ 5. 0-0       NxP         18. N-B1      R-B2         31. PxR       P-N7
+ 6. P-Q4      P-QN4       19. R-KN3     N-N3         32. Q-Q1      R-B1!
+ 7. B-N3      P-Q4        20. P-B4      P-QR4        33. R-N3      R-R1
+ 8. PxP       B-K3        21. B-K3      P-N5         34. B-QN1     RxP
+ 9. P-B3      B-K2        22. N-Q2      Q-N3         35. B-N1      R-R8
+10. R-K1      0-0         23. N-B3      B-Q2         36. R-Qb3     B-R5
+11. QN-Q2     N-B4        24. N-N5      BxN          37. Q-Q3      B-N4
+12. N-Q4      NxN         25. RxB       P-R5         38. Q-Q1      Q-R3
+13. PxN       N-Q6        26. K-R1      N-K2             Resigns
+
+
+(7)  Benko -- Taimanov, Buenos Aries, 1960, English Opening
+
+ #  White     Black           White     Black            White     Black
+
+ 1. P-QB4     P-K3        14. P-N5!     R-K1         27. KR-N1     N-K2
+ 2. P-KN3     P-Q4        15. PxBP      PxP          28. B-B1      N-B1
+ 3. B-N2      N-KB3       16. P-K3      P-KR4        29. RxRP      RxR
+ 4. N-KB3     N-B3        17. N-K2      Q-Q3         30. BxR       Q-Q1
+ 5. 0-0       B-K2        18. N-B4      P-R5         31. BxKT      QxB
+ 6. P-Q4      0-0         19. P-N4!     P-N4         32. P-R6      B-K2
+ 7. PxP       PxP         20. P-R3      N-N3         33. R-N7      Q-Q1
+ 8. B-N5      P-KR3       21. P-R3      N-N3         34. P-R7      B-B1
+ 9. BxN       BxB         22. Q-B2      B-Q2         35. Q-B5!     B-K2
+10. N-B3      N-K2        23. N-B5      KR-QB1       36. NxNP!!    BxKN
+11. R-B1      P-B3        24. R-N1      B-K1         37. N-K6!!    Q-B3
+12. P-QN4!    P-R3        25. P-R5      R-B2         38. QxQ       BxQ
+13. P-QR4!    N-B4        26. R-N6      R(B2)-R2     39. N-B7      Resigns
+
+
+(8)  Anderson -- Kieseritzky,  London 1851, Bishop's Gambit
+
+#   White     Black           White     Black            White     Black
+
+ 1. P-K4      P-K4         9. N-B5      P-QB3        17. N-Q5!     QxP
+ 2. P-KB4     PxP         10. P-NK4     N-B3         18. B-Q6!!    BxR
+ 3. B-B4      Q-R5 ch     11. R-N1!     PxB          19. P-K5!!    QxR ch
+ 4. K-B1      P-QN4       12. P-KR4     Q-N3         20. K-K2      N-QR3
+ 5. Bxp       N-KB3       13. P-R5      Q-N4         21. NxP ch    K-Q1
+ 6. N-KB3     Q-R3        14. Q-B3      N-N1         22. Q-B6 ch   NxQ
+ 7. P-Q3      N-R4        15. BxP       Q-B3         23. B-K7      1-0
+ 8. N-R4!     Q-N4        16. N-B3      B-B4
+
+
+(9)  Paulsen -- Morphy, New York 1857, Four Knights' Game
+
+ #  White     Black           White     Black           White     Black
+
+ 1. P-K4      P-K4        11. B-B3      R-K3        21. K-R1      B-R6
+ 2. N-KB3     N-QB3       12. P-B3?     Q-Q6!       22. K-B1      B-N7 ch
+ 3. N-B3      N-B3        13. P-QN4     B-N3        23. K-N1      B-R6 ch
+ 4. B-N5      B-B4        14. P-QR4     PxP         24. K-R1      BxP
+ 5. 0-0       0-0         15. QxP       B-Q2        25. Q-B1      BxQ
+ 6. NxP       R-K1        16. R-R2?     QR-K1       26. RxB       R-K7
+ 7. NxKT      QPxN        17. Q-R6      QxB!!       27. R-R1      R-R3
+ 8. B-B4      P-QN4       18. PxQ       R-N3 ch     28. P-Q4      B-K6!
+ 9. B-K2      NxP         19. K-R1      B-R6            Resigns
+10. NxN       RxN         20. R-Q1      B-N7 ch
+
+
+(10)  Bird -- Morphy, London 1858, Philidor Defense
+
+ #  White     Black           White     Black           White     Black
+
+ 1. P-K4      P-K4        11. P-KN4     NxP         21. K-B2      Q-R5 ch
+ 2. N-KB3     P-Q3        12. NxN       QxN         22. K-N2?     BxNP!
+ 3. P-Q4      P-KB4       13. N-K5      N-B3        23. PxB       RxP ch
+ 4. N-B3      BPxP        14. B-K2      Q-R6        24. QxR       QxQ ch
+ 5. QNxP      P-Q4        15. NxN       PxN         25. K-B2      P-K6!
+ 6. N-N3      P-K5        16. B-K3      R-N1        26. BxP       B-B4 ch
+ 7. N-K5      N-KB3       17. 0-0-0     RxBP!!      27. R-Q3      Q-B5 ch
+ 8. B-KN5     B-Q3        18. BxR       Q-R6!       28. K-Q2      Q-R7 ch
+ 9. N-R5      0-0         19. P-B3      QxP         29. K-Q1      Q-N8 ch
+10. Q-Q2      Q-K1        20. P-N4      Q-R8 ch         Resigns
+
+
+(11)  Zimmer -- Thiamann, San Diego Freeway 1988, English Opening
+                                                         
+ #  White     Black           White     Black           White     Black
+
+ 1. P-QB4     P-K3        12. N-Q2      QN-B3       23. P-B5!     N-K5
+ 2. P-K3      N-KB3       13. P-B3      NxN         24. BxN       PxB
+ 3. N-KB3     P-QN3       14. QxN       PxP         25. PxNP!     R-B7
+ 4. B-K2      B-K2        15. BxP       P-Q4?       26. PxP ch    K-R1
+ 5. 0-0       P-Q4        16. B-Q3      KR-B1       27. P-Q5 ch   P-K4
+ 6. P-Q4      B-Q3        17. QR-K1     R-B2        28. Q-N4!!    R(B1)-B4
+ 7. N-B3      0-0         18. P-K4      QR-QB1      29. R-B8 ch!  KxP
+ 8. P-QN3     QN-Q2       19. P-K5      N-K1        30. QxP ch    K-N2
+ 9. B-N2      Q-K2        20. P-B4      P-N3        31. BxP ch!   KxR
+10. N-QN5     N-K5        21. R-K3!     P-B4        32. B-N7 ch!  QxB
+11. NxB       PxN         22. PxP       NxP         33. Q-K8      1-0
+
+
+(12)  Bogolyubov -- Alekhine, Hastings 1922, Dutch Defense
+
+ #  White     Black           White     Black           White     Black
+
+ 1. P-Q4      P-KB4       19. N-R3      P-Q4!       37. RxB       QxR
+ 2. P-QB4     N-KB3       20. N-B1      N-K2        38. P-N4      N-B6 ch!
+ 3. P-KN3     P-K3        21. P-R4      N-B3        39. BxN       PxB
+ 4. B-N2      B-N5 ch     22. R-Q2      N-QN5       40. PxP       Q-K7!!
+ 5. B-Q2      BxB ch      23. B-R1      Q-K1!       41. P-Q5      K-N11
+ 6. NxB       N-B3        24. R-KN2     PxP         42. P-R5      K-R2
+ 7. KN-B3     0-0         25. PxP       BxP         43. P-K4      NxKP
+ 8. 0-0       P-Q3        26. N-B2      B-Q2        44. NxN       QxN
+ 9. Q-N3      K-R1        27. N-Q2      P-QN4!      45. P-Q6      PxP
+10. Q-B3      P-K4!       28. N-Q1      N-Q6        46. P-B6      PxP
+11. P-K3      P-QR4!      29. RxP       P-N5!       47. R-Q2      Q-K7!
+12. P-N3      Q-K1!       30. RxR       PxQ!        48. RxQ       PxR
+13. P-QR3     Q-R4!       31. RxQ       P-B7!!      49. K-B2      K-B2
+14. P-KR4     N-KN5       32. RxR ch    K-R2        50. KxQ       K-N2
+15. N-N5      B-Q2        33. N-B2      P-B(8)Q ch  51. K-B2      K-B2
+16. P-B3      N-B3        34. N-B1      N-K8!       52. K-K3      K-K3
+17. P-B4      P-K5        35. R-R2      QxBP        53. K-K4      P-Q4 ch
+18. KR-Q1     P-R3        36. R-QN8     B-N4            Resigns
+
+
+
+(13)  Saemish -- Nimovich, Copenhagen 1923, Queens Indians Defence
+
+ #  White     Black           White     Black           White     Black
+
+ 1. P-Q4      N-KB3       10. B-B4      P-QR3!      19. R-N1      B-Q3!! 
+ 2. P-QB4     P-K3        11. R-B1      P-QN4       20. P-K4      BPxP!
+ 3. P-KB3     P-QN3       12. Q-N3      N-B3        21. QxN       RxP
+ 4. P-KN3     B-N2        13. NxN       BxN         22. Q-N5      QR-KB1      
+ 5. B-N2      B-K2        14. P-KR3     Q-Q2        23. K-R1      R(B1)-B4
+ 6. N-B3      O-O         15. K-R2      N-R4!       24. Q-K3      B-Q6!
+ 7. O-O       P-Q4        16. B-Q2      P-B4!       25. QR-K1     P-R3!!!
+ 8. N-K5      P-B3        17. Q-Q1      P-N5!           Resigns
+ 9. PxP       BPxP        18. N-N1      B-QN4      
+
+
+(14)  Chekhover -- Botvinnik, Lenengrad 1931, Reti Opening
+
+ #  White     Black           White     Black           White     Black
+
+ 1. P-Q4      N-KB3       18. N-R2      B-QR3       35. R-B2      R-R2
+ 2. N-KB3     P-QN3       19. P-B4      N-R4        36. QR-KB1    R-B5
+ 3. P-KN3     P-QN3       20. B-KB1     P-B5        37. N-B6      R-B2
+ 4. B-N2      0-0         21. K-N2      KR-B1       38. P-K5      PxP
+ 5. 0-0       B-N2        22. B-K3      N-B4        39. NxKP      P-B7
+ 6. P-B4      0-0         23. P-N4      N-B3        40. NxR       RxN
+ 7. QN-Q2     P-B4        24. BxN       RxB         41. RxKBP     P-B8=Q
+ 8. P-Q5      P-K3        25. P-N5      N-R4        42. R-B8 ch   K-N2
+ 9. P-K4      PxP         26. P-B5      Q-Q1        43. R(B8)-B7  K-R3
+10. BPxP      P-Q3        27. P-B6      NxP         44. RxQ       RxR
+11. R-K1      R-K1        28. PxN       QxP         45. N-N4      K-N4
+12. N-R4      Q-K2        29. N(R4)-B3  QxP         46. P-Q6      P-N6
+13. QN-B3     QN-Q2       30. QxQ       BxQ         47. P-Q7      R-Q8
+14. B-Q2      P-QN4       31. QR-N1     P-B6        48. K-N3      P-R3
+15. Q-B1      Q-B1        32. BxB       RxB         49. R-B3      PxP
+16. Q-B2      P-QR4       33. N-Q4      P-R5            Resigns
+17. P-KR3     P-N5        34. R-KB1     P-R6
+
+
+(15)  Reti -- Alekhine, Baden-Baden 1925, King's Fianchetto
+
+ #  White     Black           White     Black           White     Black
+
+ 1. P-KN3     P-K4        15. R-Q2      Q-B1        29. QxP       QxQ
+ 2. N-KB3     P-K5        16. N-QB5     B-R6!!      30. NxQ       NxP ch
+ 3. N-Q4      P-Q4        17. B-B3      B-N5        31. K-R2      N-K5!
+ 4. P-Q3      PxP         18. B-N2      B-R6        32. R-B4      NxBP
+ 5. QxP       N-KB3       19. B-B3      B-N5        33. B-N2      B-K3!
+ 6. B-N2      B-N5 ch     20. B-R1      P-KR4!      34. R(B4)-B2  N-N5 ch
+ 7. B-Q2      BxB ch      21. P-N4      P-R3        35. K-R3      N-K4 ch
+ 8. NxB       0-0         22. R-QB1     P-R5        36. K-R2      RxN!
+ 9. P-QB4     N-R3!       23. P-R4      PxP         37. RxN       N-N5 ch
+10. PxP       N-QN5       24. RPxP      Q-B2        38. K-R3      N-K6 ch
+11. Q-B4      N(5)xQP     25. P-N5      RPxP        39. K-R2      NxR
+12. N(2)-N3   P-B3        26. PxP       R-K6!!      40. BxR       N-Q5!!
+13. 0-0       R-K1        27. N-B3      PxP             Resigns
+14. KR-Q1     B-N5        28. QxP       N-B6!
+
+
+(16)   Spielman -- Eliskases, Match 1932, Queen's Gambit  Declined
+
+ #  White     Black           White     Black           White     Black
+
+ 1. P-Q4      P-Q4        12. P-B5!     KPxP!       23. K-B2      KR-K1
+ 2. N-KB3     P-K3        13. P-K6      PxP         24. N-B5      B-B1
+ 3. P-B4      P-QB3       14. NxKP      Q-N3        25. P-QN4     K-N1
+ 4. N-B3      PxP         15. P-QR4     PxN!        26. B-N2      R(K8)-K6
+ 5. P-K4      P-QN4       16. P-R5      Q-R3        27. Q-Q1      P-B6
+ 6. P-K5      B-N2        17. Q-B2      N(Q2)-B3    28. B-B1      P-B7!!
+ 7. B-K2      N-K2        18. RxN       BxR         29. QxP       R-K7 ch
+ 8. N-K4      N-Q4        19. QxKP      K-B2!       30. QxR       BxP ch
+ 9. 0-0       N-Q2        20. N-B5      QR-K1       31. B-K3      RxB
+10. N-N5      B-K2        21. Q-B3      RxB!        32. Q-B1      R-QR6 ch
+11. P-B4      P-N3        22. NxQ       R-K8 ch         Resigns
+
+
+(17)   Mannheimer -- Nimzovitch, Frankfurt 1930, French Defense
+
+ #  White     Black           White     Black           White     Black
+
+ 1. P-K4      P-K3        16. N-R2      Q-R1        31. PxP       RxP
+ 2. P-Q4      P-Q4        17. Q-K3      Q-N2        32. N-N1      R(B3)-N3
+ 3. N-QB3     B-N5        18. Q-B3      N-K5        33. R-B3      Q-N1
+ 4. PxP       PxP         19. B-B1      P-B4        34. N-K2      P-KR4!
+ 5. N-B3      N-K2        20. Q-Q3      N-R4        35. K-N2      P-R5
+ 6. B-Q3      QN-B3       21. P-KB4     Q-Q2        36. R-R1      R-KR3
+ 7. P-KR3     B-KB4       22. N-B3      Q-B3        37. R-R3      Q-N3!
+ 8. BxB       NxB         23. N-K5      Q-K3        38. B-K3      Q-R3!!
+ 9. 0-0       BxN         24. R-N1      P-N3        39. B-B2      QxP
+10. PxP       0-0         25. K-R2      N-B5        40. B-K1      P-R4!
+11. Q-Q3      N-Q3        26. B-K3      P-KN4!      41. K-B1      Q-N8!
+12. N-N5      P-KN3       27. P-N3      R-B3        42. N-N1      P-R5
+13. B-B4      Q-B3        28. QR-K1     R-KN1       43. K-K2      P-R6
+14. B-Q2      P-KR3       29. B-B1      P-N4!       44. R-B1      P-R7
+15. N-B3      K-R2        30. N-B3      P-KN5           Resigns
+
+
+(18)   Labourdonnais -- MacDonnell, Londen 1834, Bishop's Opening
+
+ #  White     Black           White     Black           White     Black
+
+ 1. P-K4      P-K4        14. K-N1      PxP         27. Q-B3      NxB
+ 2. B-B4      B-B4        15. PxP       P-QR4       28. P-Q5      NxQP
+ 3. Q-K2      N-KB3       16. KN-B3     B-Q2        29. KR-N1     N-B6 ch
+ 4. P-Q3      N-B3        17. P-KN4     P-R3        30. K-R1      BxP
+ 5. P-QB3     N-K2        18. QR-N1     P-R5        31. RxP ch    K-R1
+ 6. P-B4      PxP         19. P-N5      PxP         32. Q-N3      B-N3
+ 7. P-Q4      B-N3        20. BxP       P-R6        33. PxB       Q-K8 ch
+ 8. BxP       P-Q3        21. P-N3      B-B3        34. RxQ       RxR ch
+ 9. B-Q3      N-N3        22. R-N4      B-R4        35. QxR       NxQ
+10. B-K3      0-0         23. P-R4      BxN         36. R-R7 ch   K-N1
+11. P-KR3     R-K1        24. NxB       R-R4        37. PxP ch    KxR
+12. N-Q2      Q-K2        25. P-R5      RxB         38. P-B8=Q    N-B7
+13. 0-0-0     P-B4        26. RxR       N-B5        39. 0-1
+
+
+(19)   Goglidze -- Smorodsky, Tiflis 1928, Queen's Gambit Declined
+
+ #  White     Black           White     Black           White     Black
+
+ 1. P-Q4      P-Q4        14. P-QN4!    P-R3        27. P-R3      R-Q2
+ 2. N-KB3     N-KB3       15. P-QR4!    N-B1        28. Q-N1!     Q-KB1
+ 3. P-B4      P-K3        16. Q-N2!     N-K1        29. Q-N6      R-K2
+ 4. N-B3      QN-Q2       17. P-N5!     RPxP        30. R-R5      Q-B1
+ 5. B-N5      B-K2        18. PxP       PxP         31. R-B5      Q-Q2
+ 6. P-K3      0-0         19. NxNP      N-Q3        32. Q-R5!     K-R1
+ 7. R-B1      P-B3        20. R-B5      NxN         33. Q-R8 ch   B-N1
+ 8. PxP       KPxP        21. QxN       B-K3        34. Q-KB8!    P-B5
+ 9. B-Q3      R-K1        22. N-K5      P-B3        35. R-B8      Q-K3
+10. Q-B2      P-KR3       23. N-N6      NxN         36. B-B5      Q-B2
+11. B-R4      N-R4        24. BxN       R-B1        37. QxQ       RxQ
+12. BxB       RxB         25. KR-B1     RxR         38. B-K6      1-0
+13. 0-0       KN-B3       26. RxR       P-B4
+
+
+(20)   Euwe -- Keres, Match 1940, Queen's Indian Defense
+
+ #  White     Black           White     Black           White     Black
+
+ 1. P-Q4      N-KB3       13. P-Q5      BPxP        25. R-B2       RxB
+ 2. P-QB4     P-K3        14. QxP       N-B4        26. K-B1       QR-K1!
+ 3. N-KB3     P-QN3       15. Q-K2      B-KB3!      27. P-B5       R-K4
+ 4. P-KN3     B-N2        16. B-R3      R-K1        28. P-B6       PxP
+ 5. B-N2      B-K2        17. B-K3      Q-Q1!       29. R-Q2       B-B1!
+ 6. 0-0       0-0         18. BxN       PxP!        30. N-B4       R-K6!
+ 7. N-B3      N-K5        19. B-K6 ch   K-R1        31. Q-N1       R-B6 ch
+ 8. Q-B2      NxN         20. R-Q1      QPxB        32. K-N2       RxN!!
+ 9. QxN       P-Q3        21. N-N2      P-Q5        33. PxR        R-N1 ch
+10. Q-B2      P-KB4       22. P-B4      P-Q6!!      34. K-B3       B-N5 ch
+11. N-K1      Q-B1        23. RxP       QxR!!           Resigns
+12. P-K4      N-Q2        24. QxQ       B-Q5 ch
+

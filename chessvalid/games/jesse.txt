@@ -1,0 +1,32 @@
+;this is a comment
+;i love comments
+
++B00 King's Pawn:           1.e4
+B02 Alekhine's Defence:     1.e4 Nf6
++Stockfish:                 1.e4 Nf6 2.e5
+Jesse9K:                    1.e4 Nf6 2.e5 c5
++Stockfish:                 1.e4 Nf6 2.e5 c5 3.exf6
+Jesse9K:                    1.e4 Nf6 2.e5 c5 3.exf6 g5
++Stockfish:                 1.e4 Nf6 2.e5 c5 3.exf6 g5 4.d4
+Jesse9K:                    1.e4 Nf6 2.e5 c5 3.exf6 g5 4.d4 Qc7
++Stockfish:                 1.e4 Nf6 2.e5 c5 3.exf6 g5 4.d4 Qc7 5.Nc3
+Jesse9K:                    1.e4 Nf6 2.e5 c5 3.exf6 g5 4.d4 Qc7 5.Nc3 e6
++Stockfish:                 1.e4 Nf6 2.e5 c5 3.exf6 g5 4.d4 Qc7 5.Nc3 e6 6.d5
+Jesse9K:                    1.e4 Nf6 2.e5 c5 3.exf6 g5 4.d4 Qc7 5.Nc3 e6 6.d5 Qd8
++Stockfish:                 1.e4 Nf6 2.e5 c5 3.exf6 g5 4.d4 Qc7 5.Nc3 e6 6.d5 Qd8 7.Bxg5
+Jesse9K:                    1.e4 Nf6 2.e5 c5 3.exf6 g5 4.d4 Qc7 5.Nc3 e6 6.d5 Qd8 7.Bxg5 Qb6
++Stockfish:                 1.e4 Nf6 2.e5 c5 3.exf6 g5 4.d4 Qc7 5.Nc3 e6 6.d5 Qd8 7.Bxg5 Qb6 8.Nf3
+Jesse9K:                    1.e4 Nf6 2.e5 c5 3.exf6 g5 4.d4 Qc7 5.Nc3 e6 6.d5 Qd8 7.Bxg5 Qb6 8.Nf3 c4
++Stockfish:                 1.e4 Nf6 2.e5 c5 3.exf6 g5 4.d4 Qc7 5.Nc3 e6 6.d5 Qd8 7.Bxg5 Qb6 8.Nf3 c4 9.Bxc4
+Jesse9K:                    1.e4 Nf6 2.e5 c5 3.exf6 g5 4.d4 Qc7 5.Nc3 e6 6.d5 Qd8 7.Bxg5 Qb6 8.Nf3 c4 9.Bxc4 Bb4
++Stockfish:                 1.e4 Nf6 2.e5 c5 3.exf6 g5 4.d4 Qc7 5.Nc3 e6 6.d5 Qd8 7.Bxg5 Qb6 8.Nf3 c4 9.Bxc4 Bb4 10.0-0
+Jesse9K:                    1.e4 Nf6 2.e5 c5 3.exf6 g5 4.d4 Qc7 5.Nc3 e6 6.d5 Qd8 7.Bxg5 Qb6 8.Nf3 c4 9.Bxc4 Bb4 10.0-0 e5
++Stockfish:                 1.e4 Nf6 2.e5 c5 3.exf6 g5 4.d4 Qc7 5.Nc3 e6 6.d5 Qd8 7.Bxg5 Qb6 8.Nf3 c4 9.Bxc4 Bb4 10.0-0 e5 11.Nxe5
+Jesse9K:                    1.e4 Nf6 2.e5 c5 3.exf6 g5 4.d4 Qc7 5.Nc3 e6 6.d5 Qd8 7.Bxg5 Qb6 8.Nf3 c4 9.Bxc4 Bb4 10.0-0 e5 11.Nxe5 Bc5
++Stockfish:                 1.e4 Nf6 2.e5 c5 3.exf6 g5 4.d4 Qc7 5.Nc3 e6 6.d5 Qd8 7.Bxg5 Qb6 8.Nf3 c4 9.Bxc4 Bb4 10.0-0 e5 11.Nxe5 Bc5 12.d6
+Jesse9K:                    1.e4 Nf6 2.e5 c5 3.exf6 g5 4.d4 Qc7 5.Nc3 e6 6.d5 Qd8 7.Bxg5 Qb6 8.Nf3 c4 9.Bxc4 Bb4 10.0-0 e5 11.Nxe5 Bc5 12.d6 Rf8
++Stockfish:                 1.e4 Nf6 2.e5 c5 3.exf6 g5 4.d4 Qc7 5.Nc3 e6 6.d5 Qd8 7.Bxg5 Qb6 8.Nf3 c4 9.Bxc4 Bb4 10.0-0 e5 11.Nxe5 Bc5 12.d6 Rf8 13.Na4
+Jesse9K:                    1.e4 Nf6 2.e5 c5 3.exf6 g5 4.d4 Qc7 5.Nc3 e6 6.d5 Qd8 7.Bxg5 Qb6 8.Nf3 c4 9.Bxc4 Bb4 10.0-0 e5 11.Nxe5 Bc5 12.d6 Rf8 13.Na4 Bxf2+
++Stockfish:                 1.e4 Nf6 2.e5 c5 3.exf6 g5 4.d4 Qc7 5.Nc3 e6 6.d5 Qd8 7.Bxg5 Qb6 8.Nf3 c4 9.Bxc4 Bb4 10.0-0 e5 11.Nxe5 Bc5 12.d6 Rf8 13.Na4 Bxf2+ 14.Rxf2
+
+

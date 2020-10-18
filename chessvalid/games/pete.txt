@@ -1,0 +1,9 @@
+;this is a comment
+;i love comments
+
+
+#Stockfish:                 1.e4!! b6 2.d4! a5 3.Bg5! f6 4.Bf4! Bb7 5.Nc3! h5 6.Be2!! d5 7.Bxh5+!! Kd7 8.Bf7! Nh6 9.Bxh6!! f5 10.Bf4! Rh7 11.Nf3!! fxe4 12.Ne5+!! Kc8 13.Be6+!! Nd7 14.Qg4! Rxh2 15.Bxd7+! Qxd7 16.Qxd7+!! Kb8 17.Nc6+!! Bxc6 18.Qxc7#
+Pete9K:                     1.d4
+#Stockfish:                 1.d4 Nf6 2.Be3 d5 3.g3 c5 4.f4 Ng4 5.dxc5 Nxe3 6.Nd2 Nxd1 7.h3 Nxb2 8.Rc1 Qa5 9.Nf3 Qxc5 10.Ne5 Bf5 11.Rd1 Nxd1 12.g4 Bxc2 13.Nd3 Bxd3 14.e3 Nb2 15.Nc4 Nxc4 16.Bxd3 Qxe3+ 17.Kf1 Nd2+ 18.Kg2 Qf3+ 19.Kg1 Qg3#
+
+

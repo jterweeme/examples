@@ -1,0 +1,11 @@
+;this is a comment
+;i love comments
+
++Stockfish:                 1.e4!! c6 2.d4! Qa5+ 3.Bd2! Qxd2+ 4.Qxd2! e6 5.Nc3! Nh6 6.f3! Bb4 7.Nge2! f5!
+Parker9K:                   1.e4!! c6 2.d4! Qa5+ 3.Bd2! Qxd2+ 4.Qxd2! e6 5.Nc3! Nh6 6.f3! Bb4 7.Nge2! Rg8
+#Stockfish:                 1.e4!! c6 2.d4! Qa5+ 3.Bd2! Qxd2+ 4.Qxd2! e6 5.Nc3! Nh6 6.f3! Bb4 7.Nge2! Rg8 8.0-0-0! Bxc3 9.Qxc3! a6 10.d5! b6 11.Nf4! g5 12.Nh5! Bb7 13.Nf6+! Kf8 14.Qb4+! c5 15.Qxb6! Kg7 16.Nxg8! a5 17.Qxb7! Nxg8 18.Qxa8! exd5 19.Qxb8! Nf6 20.e5! c4 21.exf6+! Kg6 22.Rxd5! h6 23.Qh8! d6 24.g4! a4 25.Qg7#
+Parker9K:                   1.e4!! c6 2.d4! Qa5+ 3.Bd2! Qxd2+ 4.Qxd2! e6 5.Nc3! Nh6 6.f3! Bb4 7.Nge2! d6
+#Stockfish:                 1.e4!! c6 2.d4! Qa5+ 3.Bd2! Qxd2+ 4.Qxd2! e6 5.Nc3! Nh6 6.f3! Bb4 7.Nge2! d6 8.g4! a5 9.0-0-0! a4 10.a3! Bxc3 11.Nxc3! g6 12.Qxh6! b6 13.d5! Ba6 14.dxe6! d5 15.exd5! fxe6 16.Qg7! Rf8 17.d6! Ra7 18.Qxa7! Nd7 19.Qxa6! Kf7 20.Qb7! Rb8 21.Qxd7+! Kf8 22.Ne4! Rb7 23.Qxb7! c5 24.Nf6! b5 25.Qe7#
+
+
+

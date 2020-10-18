@@ -1,0 +1,23 @@
+;this is a comment
+;i love comments
+
++B00 King's Pawn:           1.e4
++C20 Open Game:             1.e4 e5
++C40 King's Knight:         1.e4 e5 2.Nf3
++C44 King's pawn game:      1.e4 e5 2.Nf3 Nc6
+Manny9K:                    1.e4 e5 2.Nf3 Bc5
+Manny9K:                    1.e4 e5 2.Nf3 Bc5 3.Nxe5 a5 4.d4 Bb4+ 5.c3 Nf6 6.cxb4 Nc6 7.b5 Nxe5 8.dxe5 Kf8 9.exf6 Qxf6 10.Nc3 h6 11.Nd5 Qe7 12.Nxe7 Kxe7 13.Bf4 h5 14.Qd5 f6 15.Bxc7 Ke8 16.Bc4 Rf8 17.Bd6 g6 18.Bxf8 Kd8 19.Bd6 a4
+#Stockfish:                 1.e4 e5 2.Nf3 Bc5 3.Nxe5 a5 4.d4 Bb4+ 5.c3 Nf6 6.cxb4 Nc6 7.b5 Nxe5 8.dxe5 Kf8 9.exf6 Qxf6 10.Nc3 h6 11.Nd5 Qe7 12.Nxe7 Kxe7 13.Bf4 h5 14.Qd5 f6 15.Bxc7 Ke8 16.Bc4 Rf8 17.Bd6 g6 18.Bxf8 Kd8 19.Bd6 a4 20.Qg8#
+B20 Sicilian Defense:       1.e4 c5
++B27 Sicilian Defense:      1.e4 c5 2.Nf3
++B40 Sicilian DEF:          1.e4 c5 2.Nf3 e6
+Manny9K:                    1.e4 c5 2.Nf3 Qc7
++Stockfish:                 1.e4 c5 2.Nf3 Qc7 3.c3
+Manny9K:                    1.e4 c5 2.Nf3 Qc7 3.c3 b5 4.Bxb5 Nh6 5.d4 Qd8 6.dxc5 Ba6 7.Na3 Bxb5 8.Nxb5 e6 9.Bf4 Ng4 10.Nc7+ Qxc7 11.Bxc7 Nxf2 12.Kxf2 Bxc5+ 13.Kf1 a5 14.Qa4 Ra6 15.Qb5 0-0 16.Qxc5 d6 17.Qb5 d5 18.Bxb8 g6 19.Nd4 Rb6 20.Qxb6 e5 21.Bxe5 f6 22.Bxf6 Rxf6+ 23.Qxf6 dxe4 24.Ne6 a4
+#Stockfish:                 1.e4 c5 2.Nf3 Qc7 3.c3 b5 4.Bxb5 Nh6 5.d4 Qd8 6.dxc5 Ba6 7.Na3 Bxb5 8.Nxb5 e6 9.Bf4 Ng4 10.Nc7+ Qxc7 11.Bxc7 Nxf2 12.Kxf2 Bxc5+ 13.Kf1 a5 14.Qa4 Ra6 15.Qb5 0-0 16.Qxc5 d6 17.Qb5 d5 18.Bxb8 g6 19.Nd4 Rb6 20.Qxb6 e5 21.Bxe5 f6 22.Bxf6 Rxf6+ 23.Qxf6 dxe4 24.Ne6 a4 Qg7#
+C00 French defense:         1.e4 e6
++Stockfish:                 1.e4 e6 2.d4
++Stockfish:                 1.e4 e6 2.d4 d5
+Manny9K:                    1.e4 e6 2.d4 Bb4+ 3.c3 Bxc3+ 4.Nxc3 Qh4 5.d5 Kd8 6.Nf3 Qh6 7.Bxh6 Ke8 8.Bxg7 a5 9.Bxh8 c6 10.Ne5 d6 11.Nc4 h6 12.Nxd6+ Kd8 13.Qg4 Ne7 14.Nxf7+ Ke8 15.d6 e5 16.Qh4 Nf5 17.exf5 Kf8 18.Nxh6 Bxf5
+#Stockfish:                 1.e4 e6 2.d4 Bb4+ 3.c3 Bxc3+ 4.Nxc3 Qh4 5.d5 Kd8 6.Nf3 Qh6 7.Bxh6 Ke8 8.Bxg7 a5 9.Bxh8 c6 10.Ne5 d6 11.Nc4 h6 12.Nxd6+ Kd8 13.Qg4 Ne7 14.Nxf7+ Ke8 15.d6 e5 16.Qh4 Nf5 17.exf5 Kf8 18.Nxh6 Bxf5 19.Qe7#
+

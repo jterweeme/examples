@@ -1,0 +1,26 @@
+Lucy9K:                     1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Bxc6
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Bxc6 dxc6
+Lucy9K:                     1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Bxc6 dxc6 5.g3
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Bxc6 dxc6 5.g3 c5
+Lucy9K:                     1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Bxc6 dxc6 5.g3 c5 6.d3
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Bxc6 dxc6 5.g3 c5 6.d3 Bd6
+Lucy9K:                     1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Bxc6 dxc6 5.g3 c5 6.d3 Bd6 7.b3
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Bxc6 dxc6 5.g3 c5 6.d3 Bd6 7.b3 h5
+Lucy9K:                     1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Bxc6 dxc6 5.g3 c5 6.d3 Bd6 7.b3 h5 8.Bd2
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Bxc6 dxc6 5.g3 c5 6.d3 Bd6 7.b3 h5 8.Bd2 f6
+Lucy9K:                     1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Bxc6 dxc6 5.g3 c5 6.d3 Bd6 7.b3 h5 8.Bd2 f6 9.a3
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Bxc6 dxc6 5.g3 c5 6.d3 Bd6 7.b3 h5 8.Bd2 f6 9.a3 Bg4
+Lucy9K:                     1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Bxc6 dxc6 5.g3 c5 6.d3 Bd6 7.b3 h5 8.Bd2 f6 9.a3 Bg4 10.Nc3
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Bxc6 dxc6 5.g3 c5 6.d3 Bd6 7.b3 h5 8.Bd2 f6 9.a3 Bg4 10.Nc3 Ne7
+Lucy9K:                     1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Bxc6 dxc6 5.g3 c5 6.d3 Bd6 7.b3 h5 8.Bd2 f6 9.a3 Bg4 10.Nc3 Ne7 11.h4
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Bxc6 dxc6 5.g3 c5 6.d3 Bd6 7.b3 h5 8.Bd2 f6 9.a3 Bg4 10.Nc3 Ne7 11.h4 Nc6
+Lucy9K:                     1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Bxc6 dxc6 5.g3 c5 6.d3 Bd6 7.b3 h5 8.Bd2 f6 9.a3 Bg4 10.Nc3 Ne7 11.h4 Nc6 12.Bh6
++Stockfish:                 1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Bxc6 dxc6 5.g3 c5 6.d3 Bd6 7.b3 h5 8.Bd2 f6 9.a3 Bg4 10.Nc3 Ne7 11.h4 Nc6 12.Bh6 Rxh6
+John Doe:                   e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Bd7 5.Be3 e5 6.Nb5 Be6 7.f4 Nh6
+John Doe:                   e4 c5 2.Nf3 d6 3.d4 cxd4 4.Nxd4 Bd7 5.Be3 e5 6.Nb5 Be6 7.f4 Nh6 8.f5
+Jonesie9K:                  e4 c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 e5 5.Nb5 Rb8
++Stockfish:                 e4 c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 e5 5.Nb5 Rb8 6.N1c3
+Jonesie9K:                  e4 c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 e5 5.Nb5 Rb8 6.N1c3 Ra8
++Stockfish:                 e4 c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 e5 5.Nb5 Rb8 6.N1c3 Ra8 7.Nd5
+Jonesie9K:                  e4 c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 e5 5.Nb5 Rb8 6.N1c3 Ra8 7.Nd5 Qa5+
++Stockfish:                 e4 c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 e5 5.Nb5 Rb8 6.N1c3 Ra8 7.Nd5 Qa5+ 8.Bd2

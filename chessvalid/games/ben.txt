@@ -1,0 +1,6 @@
+;this is a comment
+;I love comments
+
+
+#Stockfish:                 1.e4!! e5!! 2.Nf3!! c5 3.Nxe5!! Nh6 4.Nc3 Qa5 5.Nc4 Na6 6.Nxa5!! b5 7.Nxb5!! Nb4 8.Nc7+!! Kd8 9.Nxa8!! Nxc2+ 10.Qxc2!! Ng4 11.d4 Nxh2 12.Rxh2!! c4 13.Qxc4!! Bb4+ 14.Qxb4!! a6 15.Qd6 f6 16.Nc6+!! Ke8 17.Qe7#
+

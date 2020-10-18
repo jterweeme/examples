@@ -1,0 +1,11 @@
+;this is a comment
+;i love comments
+
++Stockfish:                 1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Ba4! Nf6! 5.0-0! Nxe4! 6.d4! b5! 7.Bb3! d5! 8.dxe5! Be6! 9.c3! Be7! 10.Re1! 0-0! 11.h3! Re8! 12.Bc2! Bf5! 13.Nbd2! Bg6! 14.Kf1! Nc5! 15.Bxg6! hxg6! 16.Nb3! Ne6! 17.Qd3! Qd7! 18.Be3! Ncd8! 19.Red1! c6! 20.Kg1! Nf8! 21.Nc5! Qc8! 22.a4! Bxc5! 23.Bxc5! Nd7! 24.Bd4! Ne6! 25.b4! Qc7! 26.Ra2! c5! 27.Be3! cxb4! 28.cxb4! Nxe5! 29.Nxe5! d4! 30.Bxd4! Nxd4!
+C00 French DEF:             1.e4!! e6
+#Stockfish:                 1.e4!! e6 2.d4! a6 3.Nf3! Nf6 4.e5! Qe7 5.exf6! c5 6.fxe7! Bxe7 7.d5! b5 8.d6! e5 9.Nxe5! Bh4 10.Qf3! Bf6 11.Qxa8! Bd8 12.Qxb8! 0-0 13.Nd3! Be7 14.dxe7! Re8 15.Nxc5! a5 16.Qd6! Ba6 17.Qxd7! h5 18.Qxe8+! Kh7 19.Bd3+! g6 20.Qxf7+! Kh8 21.e8=Q#
+B00 Lemming DEF:            1.e4!! Na6
+#Stockfish:                 1.e4!! Na6 2.Nc3!! c6!? 3.Bxa6!! b5?? 4.Bxc8!! Rb8?? 5.Bxd7+!! Kxd7!? 6.Nf3!! Qc7 7.d4!! h5 8.Ne5+!! Ke8 9.Bf4!! Qc8 10.Qf3! h4 11.Nxf7 a5 12.Nxh8 Qc7 13.Bxc7 Nh6 14.e5 Kd7 15.Bxb8 b4 16.e6+ Kc8 17.Qf4 Kb7 18.Qc7+ Ka6 19.Qxc6#
+Stanley9K:                  1.e4!! Na6 2.Qe2
+#Stockfish:                 1.e4!! Na6 2.Qe2 Nh6 3.Qxa6 c6 4.Qxb7 e6 5.Qxc8 g5 6.Qxa8 Bd6 7.Qxc6 Qb8 8.Qxd6 Qxb2 9.Bxb2 g4 10.Qb8+ Ke7 11.Qxh8 a5 12.Bf6+ Kd6 13.Qb8+ Kc6 14.d4 a4 15.Bb5#
+

@@ -1,0 +1,31 @@
+;this is a comment
+;i love comments
+
++B00 King's Pawn:           1.e4
++C20 Open Game:             1.e4 e5
+B20 Sicilian Defense:       1.e4 c5
++B27 Sicilian Defense:      1.e4 c5 2.Nf3
++B40 Sicilian DEF:          1.e4 c5 2.Nf3 e6
+B30 Sicilian Defense:       1.e4 c5 2.Nf3 Nc6
++B32 Open Sicilian:         1.e4 c5 2.Nf3 Nc6 3.d4
++Stockfish:                 1.e4 c5 2.Nf3 Nc6 3.d4 cxd4
++Stockfish:                 1.e4 c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4
+Simon9K:                    1.e4 c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 Qb6
++Stockfish:                 1.e4 c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 Qb6 5.Be3
+Simon9K:                    1.e4 c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 Qb6 5.Be3 Nxd4 6.Bxd4 Qc7 7.b3 Nh6 8.Bc4 Qf4 9.Nd2 Ng4 10.g3 a5 11.gxf4 Nxf2 12.Kxf2 e6 13.Bb5 Bd6 14.Nc4 Bf8 15.Nb6 Bc5 16.Bxc5 Kd8 17.Nxd7 b6 18.Ne5+ Kc7 19.Qd6+ Kb7
+#Stockfish:                 1.e4 c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 Qb6 5.Be3 Nxd4 6.Bxd4 Qc7 7.b3 Nh6 8.Bc4 Qf4 9.Nd2 Ng4 10.g3 a5 11.gxf4 Nxf2 12.Kxf2 e6 13.Bb5 Bd6 14.Nc4 Bf8 15.Nb6 Bc5 16.Bxc5 Kd8 17.Nxd7 b6 18.Ne5+ Kc7 19.Qd6+ Kb7 20.Qxb6#
+B10 Caro-Kann Defense:      1.e4 c6
++B12 Caro-Kann Defense:     1.e4 c6 2.d4
++B12 Caro-Kann Defense:     1.e4 c6 2.d4 d5
++Stockfish:                 1.e4 c6 2.d4 d5 3.e5
++Stockfish:                 1.e4 c6 2.d4 d5 3.e5 Bf5
++Stockfish:                 1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3
+Simon9K:                    1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 Nd7
++Stockfish:                 1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 Nd7 5.Nh4
+Simon9K:                    1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 Nd7 5.Nh4 Bd3
++Stockfish:                 1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 Nd7 5.Nh4 Bd3 6.Bxd3
+Simon9K:                    1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 Nd7 5.Nh4 Bd3 6.Bxd3 e6 7.Nf3 Be7 8.0-0 g6 9.c4 Nb6 10.c5 g5 11.cxb6 Qd7 12.Nxg5 h6 13.Nxf7 Bb4 14.Nxh8 Qf7 15.Nxf7 Kd7 16.bxa7 Bd2 17.Qxd2 b6 18.Qb4 c5 19.Qxb6 c4 20.Qb7+ Ke8 21.Nd6+ Kd8 22.Qxa8+ Kc7 23.Qb8+ Kd7 24.Qb7+ Kd8
+#Stockfish:                 1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 Nd7 5.Nh4 Bd3 6.Bxd3 e6 7.Nf3 Be7 8.0-0 g6 9.c4 Nb6 10.c5 g5 11.cxb6 Qd7 12.Nxg5 h6 13.Nxf7 Bb4 14.Nxh8 Qf7 15.Nxf7 Kd7 16.bxa7 Bd2 17.Qxd2 b6 18.Qb4 c5 19.Qxb6 c4 20.Qb7+ Ke8 21.Nd6+ Kd8 22.Qxa8+ Kc7 23.Qb8+ Kd7 24.Qb7+ Kd8 25.a8=Q#
+Simon9K:                    1.d4 Nf6 2.c4 e6 3.Nf3 b6 4.c5 bxc5 5.Qc2 cxd4 6.Bd2 Nc6 7.a4 Nb4 8.Kd1 Nxc2 9.b3 Nxa1 10.e3 dxe3 11.Bxe3 Nxb3 12.Nc3 c6 13.Bg5 h6 14.Nd2 hxg5 15.f4 Nxd2 16.g4 Nxf1 17.Rxf1 Nxg4 18.Ne4 Nxh2 19.Rf2 Rb8 20.Rb2 Rxb2 21.f5 exf5 22.Kc1 Re2 23.Kd1 Rxe4 24.Kc1 g4 25.a5 Qg5+ 26.Kb1 Re1+ 27.Kc2 Nf3 28.Kb2 Rh2+ 29.Kc3 Qe3+ 30.Kc4
+#Jasper:                    1.d4 Nf6 2.c4 e6 3.Nf3 b6 4.c5 bxc5 5.Qc2 cxd4 6.Bd2 Nc6 7.a4 Nb4 8.Kd1 Nxc2 9.b3 Nxa1 10.e3 dxe3 11.Bxe3 Nxb3 12.Nc3 c6 13.Bg5 h6 14.Nd2 hxg5 15.f4 Nxd2 16.g4 Nxf1 17.Rxf1 Nxg4 18.Ne4 Nxh2 19.Rf2 Rb8 20.Rb2 Rxb2 21.f5 exf5 22.Kc1 Re2 23.Kd1 Rxe4 24.Kc1 g4 25.a5 Qg5+ 26.Kb1 Re1+ 27.Kc2 Nf3 28.Kb2 Rh2+ 29.Kc3 Qe3+ 30.Kc4 Ba6#
+

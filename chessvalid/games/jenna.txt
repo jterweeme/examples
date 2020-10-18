@@ -1,0 +1,18 @@
+;this is a comment
+;i love comments
+
+
+#Stockfish:                 1.e4 c5 2.Nf3 e6 3.d4 cxd4 4.Nxd4 Nc6 5.Nc3 Qf6 6.Ndb5! Kd8 7.Be3 Bb4 8.Qd2 Ne5 9.Bg5 Qxg5 10.Qxg5+ f6 11.Qxg7 b6 12.Qxh8 Bf8 13.Qxg8 Ke8 14.Nd6+ Ke7 15.0-0-0 Bh6+ 16.Kb1 Bb7 17.Qxh8+ Kd8 18.Qxh6 Bc6 19.Qf8+ Kc7 20.Ncb5+ Bxb5 21.Qxa8 Bxf1 22.Ne8#
+B30 Sicilian DEF:           1.e4 c5 2.Nf3 Nc6
+#Stockfish:                 1.e4 c5 2.Nf3 Nc6 3.d4! cxd4! 4.Nxd4! e6 5.Nc3 Qf6 6.Be3 Nxd4 7.Bxd4 Bb4 8.Bxf6 Nxf6 9.Qd4 b6 10.Qxb4 d6 11.Qxd6 Bd7 12.0-0-0 Rc8 13.Bb5 Bxb5 14.Nxb5 Nd5 15.Rxd5 exd5 16.exd5 f6 17.Qe6+ Kd8 18.Re1 Rc6 19.dxc6 a6 20.c7#
+B10 Caro-Kann Defense:      1.e4 c6
+#Stockfish:                 1.e4 c6 2.d4! d5! 3.e5! Bf5! 4.Nf3! Na6 5.Nh4! Qa5+ 6.Nd2 e6 7.c3 Bc2 8.Qxc2 Nh6 9.Ndf3 Qc7 10.Bxh6 gxh6 11.Bxa6 bxa6 12.g3 Qb6 13.0-0 a5 14.Ng2 0-0-0 15.b4 h5 16.bxa5 Qa6 17.Rfb1 f6 18.Rb3 h6 19.Rab1 fxe5 20.Rb8+ Kc7 21.Rxd8 Kxd8 22.Qg6 e4 23.Ne5 Qc8 24.Nf4 Rh7 25.Qxh7 Be7 26.Qg8+ Kc7 27.Nxe6+ Kd6 28.Qxc8 a6 29.Qxc6#
+C00 French defense:         1.e4 e6
++Stockfish:                 1.e4 e6 2.d4
++Stockfish:                 1.e4 e6 2.d4 d5
++Stockfish:                 1.e4 e6 2.d4 d5 3.Nc3
++C11 French defense:        1.e4 e6 2.d4 d5 3.Nc3 Nf6
++Stockfish:                 1.e4 e6 2.d4 d5 3.Nc3 Nf6 4.e5
+Jenna9K:                    1.e4 e6 2.d4 d5 3.Nc3 Bb4
++Stockfish:                 1.e4 e6 2.d4 d5 3.Nc3 Bb4 4.???
+
