@@ -9,24 +9,42 @@ Petrosian vs. Schmid:   1.d4 c5 2.d5
 
 (1)  Fischer -- Olafsson, Bled 1961, Sicilian Defense
 
- #  White     Black           White     Black            White     Black
-
- 1. P-K4      P-QB4       15. R-Q2      KR-Q1        29. BPxP      KRPxP
- 2. N-KB3     P-KN3       16. K-R1      B-B3         30. PxP       BxP
- 3. P-Q4      PxP         17. Q-KN1     N-Q2         31. R-R1      Q-B1
- 4. NxP       B-N2        18. P-B5      P-N3         32. B-Q5!!    B-R3
- 5. N-QB3     N-QB3       19. R1-Q1     N-B4         33. RxR       BxQ
- 6. B-K3      N-B3        20. N-N5!     Q-K2         34. R4xB      Q-R3
- 7. B-QB4     Q-R4        21. NxQP      NxBP         35. R-KB1     B-B5
- 8. O-O       P-Q3        22. NxN       NxB          36. P-N3      Q-R6
- 9. N-N3      Q-B2        23. QxN       PxN          37. R4-R1     BxP
-10. B-K2      0-0         24. B-K2      BxRP         38. R-R8+     K-N2
-11. P-B4      P-QR4       25. P-QN3     B-K1         39. RxP+      K-R3
-12. P-QR4     N-QN5       26. B-B4      P-R5         40. R-R8+     1-0
-13. R-B2!     P-K4?       27. B-Q5      RxN
-14. B-B3      B-Q2        28. BxR       R-Q5
-
-
+1.P-K4 P-QB4 2.N-KB3 P-KN3 3.P-Q4 PxP 4.NxP B-N2 5.N-QB3 N-QB3                
+ 6. B-K3      N-B3                 
+ 7. B-QB4     Q-R4                
+ 8. O-O       P-Q3                  
+ 9. N-N3      Q-B2                  
+10. B-K2      0-0                  
+11. P-B4      P-QR4                
+12. P-QR4     N-QN5                
+13. R-B2!     P-K4?       
+14. B-B3      B-Q2        
+15. R-Q2      KR-Q1
+16. K-R1      B-B3
+17. Q-KN1     N-Q2
+18. P-B5      P-N3 
+19. R1-Q1     N-B4
+20. N-N5!     Q-K2
+21. NxQP      NxBP
+22. NxN       NxB
+23. QxN       PxN
+24. B-K2      BxRP
+25. P-QN3     B-K1
+26. B-B4      P-R5
+27. B-Q5      RxN
+28. BxR       R-Q5
+29. BPxP      KRPxP
+30. PxP       BxP
+31. R-R1      Q-B1
+32. B-Q5!!    B-R3
+33. RxR       BxQ
+34. R4xB      Q-R3
+35. R-KB1     B-B5
+36. P-N3      Q-R6
+37. R4-R1     BxP
+38. R-R8+     K-N2
+39. RxP+      K-R3
+40. R-R8+     1-0
 
 
 (2) Petrosian -- Schmid, Zurich 1961, Modern Benoni Defense

@@ -1,220 +1,120 @@
-;this is a comment
-;i love comments
+;Chessmaster 9000
 
-+Stockfish:                 1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! Nf6! 5.0-0! Nxe4! 6.d4! b5! 7.Bb3! d5! 8.dxe5! Be6! 9.c3! Be7! 10.Re1! 0-0! 11.h3! Re8! 12.Bc2! Bf5! 13.Nbd2! Bg6! 14.Kf1! Nc5! 15.Bxg6! hxg6! 16.Nb3! Ne6! 17.Qd3! Qd7! 18.Be3! Ncd8! 19.Red1! c6! 20.Kg1! Nf8! 21.Nc5! Qc8! 22.a4! Bxc5! 23.Bxc5! Nd7! 24.Bd4! Ne6!
-Jonesie9K:                  1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5
-+Stockfish:                 1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! Nf6!
-Jonesie9K:                  1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! b4
-+Stockfish:                 1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! b4 6.0-0! g6!
-Jonesie9K:                  1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! b4 6.0-0! a5
-+Stockfish:                 1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! b4 6.0-0! a5 7.c3! bxc3! 8.bxc3! a4!
-Jonesie9K:                  1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! b4 6.0-0! a5 7.c3! bxc3! 8.bxc3! Bb7
-#Stockfish:                 1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! b4 6.0-0! a5 7.c3! bxc3! 8.bxc3! Bb7 9.Bxf7+! Kxf7 10.Qb3+ Kg6 11.Qxb7 Qb8 12.Qb3 Qxb3 13.axb3 d6 14.d3 Be7 15.Ra4 Ra7 16.Be3 Rb7 17.Nbd2 d5 18.exd5 Rb5 19.dxc6 Bg5 20.Bxg5 h6 21.Bd8 Kh7 22.c4 Rb8 23.Bxc7 Rc8 24.Bxa5 Ne7 25.c7 Nc6 26.Bb6 Rhe8 27.Ne4 Kh8 28.Nd6 Re6 29.Nxc8 Kh7 30.c5 Re8 31.Nd6 Rg8 32.c8=R Rxc8 33.Nxc8 e4 34.Rxe4 Kh8 35.b4 Kg8 36.b5 Nb4 37.Rxb4 Kh7 38.Rf4 h5 39.Re1 g5 40.Re7+ Kg8 41.Rd4 g4 42.Rd8#
-Jonesie9K:                  1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! Bc5
-+Stockfish:                 1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! Bc5 6.c3! Bb6!
-Jonesie9K:                  1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! Bc5 6.c3! Qh4
-+Stockfish:                 1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! Bc5 6.c3! Qh4 7.Nxh4! Nf6! 8.d3!
-Jonesie9K:                  1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! Bc5 6.c3! Qh4 7.Nxh4! Na5
-+Stockfish:                 1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! Bc5 6.c3! Qh4 7.Nxh4! Na5 8.Qh5! Nxb3!
-Jonesie9K:                  1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! Bc5 6.c3! Qh4 7.Nxh4! Na5 8.Qh5! Kd8
-#Stockfish:                 1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! Bc5 6.c3! Qh4 7.Nxh4! Na5 8.Qh5! Kd8 9.Qg5+! Ne7 10.Bxf7 Rf8 11.Qxg7 Re8 12.b4 Ra7 13.Bxe8 Kxe8 14.Qh8+ Kf7 15.Qxh7+ Ke8 16.Qh5+ Kf8 17.Qh8+ Ng8 18.Ng6+ Kf7 19.Nxe5+ Kf8 20.Qh7 Ke8 21.Qxg8+ Ke7 22.d4 c6 23.bxc5 b4 24.Bg5#
-Jonesie9K:                  1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! Na5
-+Stockfish:                 1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! Na5 6.0-0! Nxb3 7.axb3! c5 8.Nxe5! d6!
-Jonesie9K:                  1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! Na5 6.0-0! Nxb3 7.axb3! c5 8.Nxe5! Qe7
-#Stockfish:                 1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! Na5 6.0-0! Nxb3 7.axb3! c5 8.Nxe5! Qe7 9.d4! Qg5 10.Bxg5! f6 11.Qh5+! g6 12.Nxg6! hxg6 13.Qxh8! fxg5 14.Qxg8! Rb8 15.dxc5! Ke7 16.Qh7+! Kd8 17.Qh8! Kc7 18.Qxf8! Bb7 19.Qd6+! Kc8 20.Rd1! Bc6 21.Rxa6! Kd8 22.Qf8+! Kc7 23.Rxc6+! Kxc6 24.Qxb8! Kxc5 25.Qd6#
-Jonesie9K:                  1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! Na5 6.0-0! Nxb3 7.axb3! c5 8.Nxe5! Qf6
-#Stockfish:                 1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! Na5 6.0-0! Nxb3 7.axb3! c5 8.Nxe5! Qf6 9.Nf3! Ne7 10.Nc3 Qxc3 11.dxc3 c4 12.bxc4 f5 13.exf5 d5 14.Re1 Be6 15.Rxe6 Rb8 16.Ne5 Rd8 17.Raxa6 h5 18.Ra8 Rxa8 19.Qxd5 Ra7 20.Qc6+ Rd7 21.Qxd7#
-Jonesie9K:                  1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! Qf6
-+Stockfish:                 1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! Qf6 6.c3! d6! 7.a4! b4!
-&QuickHint9K:               1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! Qf6 6.d3
-+Stockfish:                 1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! Qf6 6.d3 Bc5!
-Jonesie9K:                  1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! Qg5
-#Stockfish:                 1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Ba4! b5 5.Bb3! Qg5 6.Nxg5! d5 7.exd5 Nd8 8.d4 Bd6 9.dxe5 Bxe5 10.Qe2 Ne7 11.Qxe5 f6 12.Qxc7 Bd7 13.Ne4 Kf8 14.Qxd7 Nf7 15.d6 Nxd6 16.Nxd6 g5 17.Qe6 Kg7 18.Qxe7+ Kh6 19.Qxf6+ Kh5 20.Qxg5#
-Jonesie9K:                  1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Bxc6
-#Stockfish:                 1.e4!! e5!! 2.Nf3! Nc6! 3.Bb5! a6! 4.Bxc6 dxc6! 5.b3 c5! 6.g3 Ne7! 7.a4 f6! 8.Qe2 Nc6! 9.d4 exd4! 10.Bb2 Bg4! 11.Nh4 Bxe2! 12.Na3 d3! 13.cxd3 Qxd3! 14.f3 Bxf3! 15.Nxf3 Qe3+! 16.Kf1 Qxf3+! 17.Kg1 c4! 18.Nc2 Bc5+! 19.Nd4 Nxd4! 20.h3 Ne2+! 21.Kh2 Qxg3#
+;Jonesie (904)
+
+;Sacrifices queen.
+
+
+
+!Stockfish:                 1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Ba4! b5!? 5.Bb3!! Nf6! 6.d4! d6! 7.c3! Bg4! 8.Be3! Na5!
+Jonesie9K:                  1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Ba4! b5!? 5.Bb3!! b4
+#Stockfish:                 1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Ba4! b5!? 5.Bb3!! b4 6.O-O! a5!? 7.c3! bxc3! 8.bxc3! Bb7!? 9.Bxf7+! Kxf7 10.Qb3+! Kg6 11.Qxb7! Qb8 12.Qb3! Qxb3 13.axb3! d6 14.d3! Be7 15.Ra4! Ra7 16.Be3! Rb7 17.Nbd2! d5 18.exd5! Rb5 19.dxc6! Bg5 20.Bxg5! h6 21.Bd8! Kh7 22.c4! Rb8 23.Bxc7! Rc8 24.Bxa5! Ne7 25.c7! Nc6 26.Bb6! Rhe8 27.Ne4! Kh8 28.Nd6! Re6 29.Nxc8! Kh7 30.c5! Re8 31.Nd6! Rg8 32.c8=R! Rxc8 33.Nxc8! e4 34.Rxe4! Kh8 35.b4! Kg8 36.b5! Nb4 37.Rxb4! Kh7 38.Rf4! h5 39.Re1! g5 40.Re7+! Kg8 41.Rd4! g4 42.Rd8#
+Jonesie9K:                  1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Ba4! b5!? 5.Bb3!! Bc5
+#Stockfish:                 1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Ba4! b5!? 5.Bb3!! Bc5 6.c3! Qh4!? 7.Nxh4! Na5!? 8.Qh5! Kd8!? 9.Qg5+! Ne7 10.Bxf7 Rf8 11.Qxg7 Re8 12.b4 Ra7 13.Bxe8 Kxe8 14.Qh8+ Kf7 15.Qxh7+ Ke8 16.Qh5+ Kf8 17.Qh8+ Ng8 18.Ng6+ Kf7 19.Nxe5+ Kf8 20.Qh7 Ke8 21.Qxg8+ Ke7 22.d4 c6 23.bxc5 b4 24.Bg5#
+Jonesie9K:                  1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Ba4! b5!? 5.Bb3!! Na5
+!Stockfish:                 1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Ba4! b5!? 5.Bb3!! Na5 6.O-O! Nxb3!? 7.axb3!! c5!? 8.Nxe5! d6! 9.Nf3! Be7! 10.d4! Nf6! 11.dxc5! dxc5!
+Jonesie9K:                  1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Ba4! b5!? 5.Bb3!! Na5 6.O-O! Nxb3!? 7.axb3!! c5!? 8.Nxe5! Qe7
+#Stockfish:                 1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Ba4! b5!? 5.Bb3!! Na5 6.O-O! Nxb3!? 7.axb3!! c5!? 8.Nxe5! Qe7 9.d4! Qg5 10.Bxg5! f6 11.Qh5+! g6 12.Nxg6! hxg6 13.Qxh8! fxg5 14.Qxg8! Rb8 15.dxc5! Ke7 16.Qh7+! Kd8 17.Qh8! Kc7 18.Qxf8! Bb7 19.Qd6+! Kc8 20.Rd1! Bc6 21.Rxa6! Kd8 22.Qf8+! Kc7 23.Rxc6+! Kxc6 24.Qxb8! Kxc5 25.Qd6#
+Jonesie9K:                  1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Ba4! b5!? 5.Bb3!! Na5 6.O-O! Nxb3!? 7.axb3!! c5!? 8.Nxe5! Qf6
+#Stockfish:                 1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Ba4! b5!? 5.Bb3!! Na5 6.O-O! Nxb3!? 7.axb3!! c5!? 8.Nxe5! Qf6 9.Nf3! Ne7 10.Nc3 Qxc3 11.dxc3 c4 12.bxc4 f5 13.exf5 d5 14.Re1 Be6 15.Rxe6 Rb8 16.Ne5 Rd8 17.Raxa6 h5 18.Ra8 Rxa8 19.Qxd5 Ra7 20.Qc6+ Rd7 21.Qxd7#
+Jonesie9K:                  1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Ba4! b5!? 5.Bb3!! Na5 6.O-O! Nxb3!? 7.axb3!! c5!? 8.Nxe5! Qh4
+#Stockfish:                 1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Ba4! b5!? 5.Bb3!! Na5 6.O-O! Nxb3!? 7.axb3!! c5!? 8.Nxe5! Qh4 9.Nc3! Bd6 10.Nf3! Qh5 11.Nxb5! Bxh2+ 12.Nxh2! Qxd1 13.Rxd1! Kf8 14.d3! Nf6 15.Nc7! d6 16.Nxa8! h6 17.Nb6! a5 18.Nxc8! Ng8 19.Nxd6! Rh7 20.Rxa5! Ke7 21.Nf5+! Kd8 22.Ra8+! Kd7 23.Rxg8! g5 24.Ng4! Kc7 25.Nf6! Kb6 26.Bf4! gxf4 27.Rc8! c4 28.Nd5+! Ka5 29.Ra1+! Kb5 30.bxc4#
+Jonesie9K:                  1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Ba4! b5!? 5.Bb3!! Qg5
+#Stockfish:                 1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Ba4! b5!? 5.Bb3!! Qg5 6.Nxg5! d5 7.exd5 Nd8 8.d4!! Bd6 9.dxe5 Bxe5 10.Qe2 Ne7 11.Qxe5 f6 12.Qxc7 Bd7 13.Ne4 Kf8 14.Qxd7 Nf7 15.d6 Nxd6 16.Nxd6 g5 17.Qe6 Kg7 18.Qxe7+ Kh6 19.Qxf6+ Kh5 20.Qxg5#
+Jonesie9K:                  1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Bxc6
+!Stockfish:                 1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Bxc6 dxc6!! 5.b3!? c5! 6.g3!? Ne7! 7.a4 f6! 8.Na3!
+Jonesie9K:                  1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Bxc6 dxc6!! 5.b3!? c5! 6.g3!? Ne7! 7.a4 f6! 8.h3
+#Stockfish:                 1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Bxc6 dxc6!! 5.b3!? c5! 6.g3!? Ne7! 7.a4 f6! 8.h3 Be6! 9.Nc3 Qd7! 10.h4 Bg4! 11.Nh2 Bxd1! 12.Kxd1 Qh3! 13.Bb2 Nc6! 14.d3 Qg2! 15.Re1 Qxh2! 16.Ba3 Qxf2! 17.Ne2 O-O-O! 18.Bxc5 Bxc5! 19.g4 Bb4! 20.Rh1 Qe3! 21.c3 Bxc3! 22.Ra2 Nb4! 23.Nc1 Qf3+! 24.Ne2 Qxd3+! 25.Rd2 Qxd2#
+Jonesie9K:                  1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Bxc6 dxc6!! 5.b3!? c5! 6.g3!? Ne7! 7.a4 f6! 8.Qe2
+!Stockfish:                 1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Bxc6 dxc6!! 5.b3!? c5! 6.g3!? Ne7! 7.a4 f6! 8.Qe2 Nc6!! 9.Bb2! Bg4!
+Jonesie9K:                  1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Bxc6 dxc6!! 5.b3!? c5! 6.g3!? Ne7! 7.a4 f6! 8.Qe2 Nc6!! 9.d4
+#Stockfish:                 1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Bxc6 dxc6!! 5.b3!? c5! 6.g3!? Ne7! 7.a4 f6! 8.Qe2 Nc6!! 9.d4 exd4! 10.Bb2 Bg4! 11.Nh4 Bxe2! 12.Na3 d3! 13.cxd3 Qxd3! 14.f3 Bxf3! 15.Nxf3 Qe3+! 16.Kf1 Qxf3+! 17.Kg1 c4! 18.Nc2 Bc5+! 19.Nd4 Nxd4! 20.h3 Ne2+! 21.Kh2 Qxg3#
+Jonesie9K:                  1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Bxc6 dxc6!! 5.b3!? c5! 6.g3!? Ne7! 7.a4 f6! 8.Qe2 Nc6!! 9.Ba3
+#Stockfish:                 1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Bxc6 dxc6!! 5.b3!? c5! 6.g3!? Ne7! 7.a4 f6! 8.Qe2 Nc6!! 9.Ba3 Bg4 10.Qd3 Qxd3 11.cxd3 Bxf3 12.Rg1 Nd4 13.Ra2 b5 14.h4 h5 15.Bb4 cxb4 16.axb5 Ne2 17.Rb2 Nxg1 18.bxa6 Rxa6 19.g4 Rc6 20.Nc3 bxc3 21.Ra2 c2 22.Ra8+ Kf7 23.Rxf8+ Rxf8 24.gxh5 c1=Q#
 B20 Sicilian DEF:           1.e4!! c5
-+Stockfish:                 1.e4!! c5 2.Nf3! e6! 3.d4! cxd4! 4.Nxd4! Nf6!
-Jonesie9K:                  1.e4!! c5 2.Nf3! e6! 3.d4! cxd4! 4.Nxd4! Qh4
-+Stockfish:                 1.e4!! c5 2.Nf3! e6! 3.d4! cxd4! 4.Nxd4! Qh4 5.Nb5!
-C41 Philidor's DEF:         1.e4!! e5 2.Nf3! d6
-+Stockfish:                 1.e4!! c5 2.Nf3! d6 3.d4
-+Stockfish:                 1.e4!! c5 2.Nf3! d6 3.d4 cxd4! 4.Nxd4! Nf6!
-Jonesie9K:                  1.e4!! c5 2.Nf3! d6 3.d4 cxd4! 4.Nxd4! Bd7
-+Stockfish:                 1.e4!! c5 2.Nf3! d6 3.d4 cxd4! 4.Nxd4! Bd7 5.Be3! Nf6!
-Jonesie9K:                  1.e4!! c5 2.Nf3! d6 3.d4 cxd4! 4.Nxd4! Bd7 5.Be3! Qb6
-+Stockfish:                 1.e4!! c5 2.Nf3! d6 3.d4 cxd4! 4.Nxd4! Bd7 5.Be3! Qb6 6.Nc3! Nf6!
-Jonesie9K:                  1.e4!! c5 2.Nf3! d6 3.d4 cxd4! 4.Nxd4! Bd7 5.Be3! Qb6 6.Nc3! Qxb2
-+Stockfish:                 1.e4!! c5 2.Nf3! d6 3.d4 cxd4! 4.Nxd4! Bd7 5.Be3! Qb6 6.Nc3! Qxb2 7.Nd5!
-Jonesie9K:                  1.e4!! c5 2.Nf3! d6 3.d4 cxd4! 4.Nxd4! Bd7 5.Be3! Qb6 6.Nb5
-+Stockfish:                 1.e4!! c5 2.Nf3! d6 3.d4 cxd4! 4.Nxd4! Bd7 5.Be3! Qb6 6.Nb5 Qa5+!
-Jonesie9K:                  1.e4!! c5 2.Nf3! d6 3.d4 cxd4! 4.Nxd4! Bd7 5.Be3! Qb6 6.Nb5 Bxb5
-+Stockfish:                 1.e4!! c5 2.Nf3! d6 3.d4 cxd4! 4.Nxd4! Bd7 5.Be3! Qb6 6.Nb5 Bxb5 7.Bxb6! Bxf1! 8.Rxf1! axb6! 9.Nc3! Nc6!
-Jonesie9K:                  1.e4!! c5 2.Nf3! d6 3.d4 cxd4! 4.Nxd4! Bd7 5.Be3! Qb6 6.Nb5 Bxb5 7.Bxb6! Bxf1! 8.Rxf1! axb6! 9.Nc3! Nd7
-#Stockfish:                 1.e4!! c5 2.Nf3! d6 3.d4 cxd4! 4.Nxd4! Bd7 5.Be3! Qb6 6.Nb5 Bxb5 7.Bxb6! Bxf1! 8.Rxf1! axb6! 9.Nc3! Nd7 10.f4! e6 11.Qe2 Rc8 12.O-O-O Rc6 13.Nb5 Ke7 14.Qd3 Ngf6 15.Nxd6 Nc5 16.Qd4 Nfd7 17.Nxb7 e5 18.Qd5 Rc7 19.Qd6+ Ke8 20.Qxc7 f6 21.Rxd7 Nxd7 22.Qd8+ Kf7 23.Qxd7+ Kg6 24.Nd8 Kh5 25.Qh3+ Kg6 26.f5+ Kg5 27.Ne6#
-Jonesie9K:                  1.e4!! c5 2.Nf3! d6 3.d4 cxd4! 4.Nxd4! Bd7 5.Be3! Qc8
-#Stockfish:                 1.e4!! c5 2.Nf3! d6 3.d4 cxd4! 4.Nxd4! Bd7 5.Be3! Qc8 6.Qd2! Qc5 7.Nb5 Qxb5 8.Bxb5 Bxb5 9.Nc3 Bc4 10.b3 a6 11.bxc4 Nf6 12.Rb1 g6 13.e5 dxe5 14.Nd5 Nxd5 15.Qxd5 e6 16.Qxb7 h6 17.Qxa8 Ke7 18.Bc5+ Kf6 19.Qf3+ Kg7 20.Rb7 Nd7 21.Rxd7 Be7 22.Rxe7 Rf8 23.Ra7 Kg8 24.Bxf8 f5 25.Qb7 Kxf8 26.Ra8#
-Jonesie9K:                  1.e4!! c5 2.Nf3! d6 3.d4 cxd4! 4.Nxd4! Qb6
-#Stockfish:                 1.e4!! c5 2.Nf3! d6 3.d4 cxd4! 4.Nxd4! Qb6 5.Nc3! Qc6 6.Nxc6! Nxc6 7.Be3! a5 8.Nd5! Be6 9.Nc7+! Kd7 10.Nxa8! Kc8 11.Nb6+! Kb8 12.Bd5! Ne5 13.Qd2! Ng4 14.Bd4! h5 15.Qxa5! N8f6 16.Nd7+! Bxd7 17.Bxd7! b6 18.Qxb6+! Ka8 19.Bc6#
+!Stockfish:                 1.e4!! c5 2.Nf3! e6! 3.d4! cxd4! 4.Nxd4! Nf6! 5.Nc3! Nc6! 6.Ndb5! d6!
+John Doe:                   1.e4!! c5 2.Nf3! d6
+!Stockfish:                 1.e4!! c5 2.Nf3! d6 3.d4! cxd4! 4.Nxd4! Nf6! 5.Nc3! a6!
+Jonesie9K:                  1.e4!! c5 2.Nf3! d6 3.d4! cxd4! 4.Nxd4! Bd7
+!Stockfish:                 1.e4!! c5 2.Nf3! d6 3.d4! cxd4! 4.Nxd4! Bd7 5.Be3! Nf6! 6.f3! Nc6!
+Jonesie9K:                  1.e4!! c5 2.Nf3! d6 3.d4! cxd4! 4.Nxd4! Bd7 5.Be3! Qb6
+#Stockfish:                 1.e4!! c5 2.Nf3! d6 3.d4! cxd4! 4.Nxd4! Bd7 5.Be3! Qb6 6.Nc3! Qxb2 7.Nd5! Kd8 8.Rb1! Qxd4 9.Bxd4! Bg4 10.Qxg4! Nh6 11.Qh3! f5 12.Qb3! b5 13.Qc3! Na6 14.Qa5+! Kd7 15.Qxb5+! Kd8 16.Qxa6! Rc8 17.Bb5! Rxc2 18.Bxa7! Rc7 19.Bb6! fxe4 20.Bxc7#
+John Doe:                   1.e4!! c5 2.Nf3! d6 3.d4! cxd4! 4.Nxd4! Bd7 5.Be3! Qb6 6.Nb5
+#Stockfish:                 1.e4!! c5 2.Nf3! d6 3.d4! cxd4! 4.Nxd4! Bd7 5.Be3! Qb6 6.Nb5 Bxb5!? 7.Bxb6! Bxf1! 8.Rxf1! axb6! 9.Nc3! Nd7!? 10.f4! e6 11.Qe2 Rc8 12.O-O-O Rc6 13.Nb5 Ke7 14.Qd3 Ngf6 15.Nxd6 Nc5 16.Qd4 Nfd7 17.Nxb7 e5 18.Qd5 Rc7 19.Qd6+ Ke8 20.Qxc7 f6 21.Rxd7 Nxd7 22.Qd8+ Kf7 23.Qxd7+ Kg6 24.Nd8 Kh5 25.Qh3+ Kg6 26.f5+ Kg5 27.Ne6#
+Jonesie9K:                  1.e4!! c5 2.Nf3! d6 3.d4! cxd4! 4.Nxd4! Bd7 5.Be3! Qc8
+#Stockfish:                 1.e4!! c5 2.Nf3! d6 3.d4! cxd4! 4.Nxd4! Bd7 5.Be3! Qc8 6.Qd2! Qc5 7.Nb5 Qxb5 8.Bxb5 Bxb5 9.Nc3 Bc4 10.b3 a6 11.bxc4 Nf6 12.Rb1 g6 13.e5 dxe5 14.Nd5 Nxd5 15.Qxd5 e6 16.Qxb7 h6 17.Qxa8 Ke7 18.Bc5+ Kf6 19.Qf3+ Kg7 20.Rb7 Nd7 21.Rxd7 Be7 22.Rxe7 Rf8 23.Ra7 Kg8 24.Bxf8 f5 25.Qb7 Kxf8 26.Ra8#
+Jonesie9K:                  1.e4!! c5 2.Nf3! d6 3.d4! cxd4! 4.Nxd4! Qb6
+#Stockfish:                 1.e4!! c5 2.Nf3! d6 3.d4! cxd4! 4.Nxd4! Qb6 5.Nc3! Qc6 6.Nxc6! Nxc6 7.Be3! a5 8.Nd5! Be6 9.Nc7+! Kd7 10.Nxa8! Kc8 11.Nb6+! Kb8 12.Bd5! Ne5 13.Qd2! Ng4 14.Bd4! h5 15.Qxa5! N8f6 16.Nd7+! Bxd7 17.Bxd7! b6 18.Qxb6+! Ka8 19.Bc6#
 B30 Sicilian DEF:           1.e4!! c5 2.Nf3! Nc6
-+B32 Open Sicilian:         1.e4!! c5 2.Nf3! Nc6 3.d4
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5!
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5! 5.Nb5!
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5! 5.Nb5! Nf6!
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5! 5.Nb5! Qa5+
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5! 5.Nb5! Qa5+ 6.N1c3! a6!
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5! 5.Nb5! Qa5+ 6.N1c3! Kd8
-#Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5! 5.Nb5! Qa5+ 6.N1c3! Kd8 7.Bd2! Nge7 8.Nd6 Kc7 9.Ncb5+ Kb8 10.Bxa5 Nxa5 11.Nxc8 Nxc8 12.Qxd7 Bb4+ 13.c3 Bd6 14.Nxd6 Nb6 15.Qxf7 Rc8 16.b4 Rc7 17.Qe8+ Rc8 18.Nxc8 Kc7 19.bxa5 Nxc8 20.0-0-0 Nd6 21.Qe7+ Kc8 22.Rxd6 a6 23.Rd8#
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5! 5.Nb5! Qa5+ 6.N1c3! Qxb5
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5! 5.Nb5! Qa5+ 6.N1c3! Qxb5 7.Nxb5! Kd8! 8.Qh5! f5!
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5! 5.Nb5! Qa5+ 6.N1c3! Qxb5 7.Nxb5! Kd8! 8.Qh5! Nge7
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5! 5.Nb5! Qa5+ 6.N1c3! Qxb5 7.Nxb5! Kd8! 8.Qh5! Nge7 9.Nd6! Rg8! 10.Nxf7+! Kc7! 11.Bc4! b5!
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5! 5.Nb5! Qa5+ 6.N1c3! Qxb5 7.Nxb5! Kd8! 8.Qh5! Nf6
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5! 5.Nb5! Qa5+ 6.N1c3! Qxb5 7.Nxb5! Kd8! 8.Qh5! Nf6 9.Qxf7!
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5! 5.Nb5! Qa5+ 6.N1c3! Nf6
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5! 5.Nb5! Qa5+ 6.N1c3! Nf6 7.Bd2
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5! 5.Nb5! Rb8
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5! 5.Nb5! Rb8 6.N1c3! d6!
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5! 5.Nb5! Rb8 6.N1c3! Qf6
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5! 5.Nb5! Rb8 6.N1c3! Qf6 7.Be3
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5! 5.Nb5! Rb8 6.N1c3! Qf6 7.Be3 Kd8 8.Nxa7 Nb4 9.a3 b6 10.axb4 Bxb4 11.Bb5 Rb7 12.Nxc8 g6 13.Ra8 Qf5 14.exf5 Nf6 15.Bg5 Kc7 16.Bxf6 Bxc3+ 17.bxc3 d5 18.Qxd5 Rxc8
-#Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5! 5.Nb5! Rb8 6.N1c3! Qf6 7.Be3 Kd8 8.Nxa7 Nb4 9.a3 b6 10.axb4 Bxb4 11.Bb5 Rb7 12.Nxc8 g6 13.Ra8 Qf5 14.exf5 Nf6 15.Bg5 Kc7 16.Bxf6 Bxc3+ 17.bxc3 d5 18.Qxd5 Rxc8 19.Qxe5#
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5! 5.Nb5! Rb8 6.N1c3! Ra8
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5! 5.Nb5! Rb8 6.N1c3! Ra8 7.Nd5
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5! 5.Nb5! Rb8 6.N1c3! Ra8 7.Nd5 Qa5+ 8.Bd2 Nb8 9.Bxa5 Bb4+ 10.Bxb4 Na6 11.Bc3 Kf8 12.Bxe5 f5 13.Qf3 Nh6 14.Qg3 Ng4 15.exf5 Rb8 16.Qxg4 g5 17.Qxg5 b6 18.Bxh8 d6 19.Qg7+ Ke8 20.Nf6+ Kd8 21.Qxh7 Be6 22.fxe6 Rb7 23.Qxb7 d5
-#Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 e5! 5.Nb5! Rb8 6.N1c3! Ra8 7.Nd5 Qa5+ 8.Bd2 Nb8 9.Bxa5 Bb4+ 10.Bxb4 Na6 11.Bc3 Kf8 12.Bxe5 f5 13.Qf3 Nh6 14.Qg3 Ng4 15.exf5 Rb8 16.Qxg4 g5 17.Qxg5 b6 18.Bxh8 d6 19.Qg7+ Ke8 20.Nf6+ Kd8 21.Qxh7 Be6 22.fxe6 Rb7 23.Qxb7 d5 24.e7#
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 a6!
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qa5
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qa5 6.Bf4!
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qa5 6.Bf4! g5
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qa5 6.Bf4! g5 7.Bd2! Bg7 8.Nd5 Nxd5 9.Bxa5 Nf4 10.c3 h5 11.g3! Ng6! 12.Bg2!
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qa5 6.Bf4! g5 7.Bd2! Bg7 8.Nd5 Nxd5 9.Bxa5 Nf4 10.c3 h5 11.g3! Bh6
-#Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qa5 6.Bf4! g5 7.Bd2! Bg7 8.Nd5 Nxd5 9.Bxa5 Nf4 10.c3 h5 11.g3! Bh6 12.gxf4! Bg7 13.Nb5 Kf8 14.fxg5 b6 15.Qd5 Bb7 16.Qxb7 Re8 17.Bb4 a6 18.Nc7 Rd8 19.Qxb6 f5 20.Qc5 fxe4 21.Qf5+ Bf6 22.gxf6 d6 23.Qg6 exf6 24.Rg1 Rh7 25.Bxd6+ Rxd6 26.Qe8#
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qa5 6.Bf4! Qc5
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qa5 6.Bf4! Qc5 7.Ndb5! e5!
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qa5 6.Bf4! Qc5 7.Ndb5! Kd8
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qa5 6.Bf4! Qc5 7.Ndb5! Kd8 8.a3!
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qa5 6.Bf4! e5
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qa5 6.Bf4! e5 7.Qh5
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qa5 6.Bf4! e5 7.Qh5 Ne7
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qa5 6.Bf4! e5 7.Qh5 g6
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qa5 6.Bf4! e5 7.Qh5 g6 8.Qxe5+!
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qa5 6.Bf4! e5 7.Qh5 g6 8.Qxe5+! Qxe5
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qa5 6.Bf4! e5 7.Qh5 g6 8.Qxe5+! Qxe5 9.???
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qa5 6.Bf4! e5 7.Qh5 exf4
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qa5 6.Bf4! e5 7.Qh5 exf4 8.Qxa5
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qb6
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qb6 6.Be3
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qb6 6.Be3 Qa5
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qb6 6.Be3 e5
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qb6 6.Be3 e5 7.Ndb5!
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qb6 6.Be3 Qc5
-#QuickHint9K:               1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qb6 6.Be3 Qc5 7.Ndb5! e6 8.Bxc5 Bxc5 9.Nc7+ Ke7 10.Nxa8 Kf8 11.Na4 Bd4 12.c3 Nc6 13.cxd4 f5 14.exf5 e5 15.dxe5 d5 16.exd6ep Bd7 17.Nc5 Bxf5 18.Qd5 Bg4 19.Bc4 Nd8 20.Nc7 Nf6 21.Qe5 Nc6 22.d7 Be6 23.Qxe6 Nxd7 24.Qe8#
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qb6 6.Be3 g6
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qb6 6.Be3 g6 7.a3! Na6!
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qb6 6.Be3 g6 7.a3! Bg7
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Nb4 5.Nc3 Qb6 6.Be3 g6 7.a3! Bg7 8.axb4!
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Na5
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Na5 5.Nc3!
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Na5 5.Nc3! d6!
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Na5 5.Nc3! h5
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Na5 5.Nc3! h5 6.Bf4
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Na5 5.Nc3! h5 6.Bf4 e5 7.Bxe5 Qg5 8.f4 Qg4 9.Ndb5 Qxd1+ 10.Rxd1 Bc5 11.Nc7+ Kf8 12.Nxa8 Nc6 13.Bd6+ Bxd6 14.Rxd6 Nb4 15.a3 Rh7 16.axb4 a6 17.Nb6 Ke8 18.Nxc8 Kd8 19.Nb6 Ke7 20.Rxd7+ Ke8 21.Rxb7 f6 22.Rb8+ Ke7 23.Rxg8 Kf7 24.Bc4+ Kg6 25.Nd7 Kh6 26.Bf7 f5 27.Ne2 fxe4 28.Nd4 a5
-#Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Na5 5.Nc3! h5 6.Bf4 e5 7.Bxe5 Qg5 8.f4 Qg4 9.Ndb5 Qxd1+ 10.Rxd1 Bc5 11.Nc7+ Kf8 12.Nxa8 Nc6 13.Bd6+ Bxd6 14.Rxd6 Nb4 15.a3 Rh7 16.axb4 a6 17.Nb6 Ke8 18.Nxc8 Kd8 19.Nb6 Ke7 20.Rxd7+ Ke8 21.Rxb7 f6 22.Rb8+ Ke7 23.Rxg8 Kf7 24.Bc4+ Kg6 25.Nd7 Kh6 26.Bf7 f5 27.Ne2 fxe4 28.Nd4 a5 29.Nf5#
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Na5 5.Nc3! g6
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Na5 5.Nc3! g6 6.h4!
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Qb6
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Qb6 5.Nb3!
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Qb6 5.Nb3! e5 6.a3 Rb8
-+Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Qb6 5.Nb3! e5 6.a3 Rb8 7.Nc3
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Qb6 5.Nb3! e5 6.a3 Rb8 7.Nc3 Nd8 8.Be3 Qd6 9.Qxd6 Bxd6 10.0-0-0 h6 11.Rxd6 f5 12.Bxa7 Ra8 13.Nb5 Kf8 14.Bc5 Ne7 15.Nc7 Ra4 16.Bb5 Rxe4 17.f3 Rf4 18.Nd5 Nf7 19.Rxd7 Kg8 20.Nxe7+ Kh7 21.Nxc8 Rxc8 22.Rxf7 Kg6 23.Rxb7 Kh5 24.Be3 Rh4 25.Rxg7 f4 26.Be2 Rc3 27.g4+ Rxg4 28.fxg4+ Kh4 29.Bf2+ Rg3
-#Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Qb6 5.Nb3! e5 6.a3 Rb8 7.Nc3 Nd8 8.Be3 Qd6 9.Qxd6 Bxd6 10.0-0-0 h6 11.Rxd6 f5 12.Bxa7 Ra8 13.Nb5 Kf8 14.Bc5 Ne7 15.Nc7 Ra4 16.Bb5 Rxe4 17.f3 Rf4 18.Nd5 Nf7 19.Rxd7 Kg8 20.Nxe7+ Kh7 21.Nxc8 Rxc8 22.Rxf7 Kg6 23.Rxb7 Kh5 24.Be3 Rh4 25.Rxg7 f4 26.Be2 Rc3 27.g4+ Rxg4 28.fxg4+ Kh4 29.Bf2+ Rg3 30.hxg3#
-Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Qb6 5.Nb3! e5 6.a3 Qd8
-#Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4 cxd4 4.Nxd4 Qb6 5.Nb3! e5 6.a3 Qd8 7.Be3! Qg5 8.Bxg5 h6 9.Be3 a6 10.N3d2 Be7 11.Nc4 Bf6 12.Nd6+ Kf8 13.Nc3 Nge7 14.Na4 a5 15.Nb6 h5 16.Nxa8 Kg8 17.Nb6 Na7 18.Bc4 g6 19.Nd5 Kf8 20.Nxf6 b6 21.Nxf7 Kg7 22.Qd6 Nac6 23.Nxh8 Kxh8 24.Ne8 Kh7 25.Qf6 Nf5 26.Qf7+ Ng7 27.Qxg7#
+!Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! e5! 5.Nb5! Nf6! 6.Bg5! Bb4+!
+Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! e5! 5.Nb5! Qa5+
+#Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! e5! 5.Nb5! Qa5+ 6.N1c3! Kd8!? 7.Bd2! Nge7 8.Nd6 Kc7 9.Ncb5+ Kb8 10.Bxa5 Nxa5 11.Nxc8 Nxc8 12.Qxd7 Bb4+ 13.c3 Bd6 14.Nxd6 Nb6 15.Qxf7 Rc8 16.b4 Rc7 17.Qe8+ Rc8 18.Nxc8 Kc7 19.bxa5 Nxc8 20.0-0-0 Nd6 21.Qe7+ Kc8 22.Rxd6 a6 23.Rd8#
+Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! e5! 5.Nb5! Rb8
+!Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! e5! 5.Nb5! Rb8 6.N1c3! d6! 7.Nd5! Be6! 8.Be3! Nf6!
+Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! e5! 5.Nb5! Rb8 6.N1c3! Qf6
+!Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! e5! 5.Nb5! Rb8 6.N1c3! Qf6 7.Be3! Kd8 8.Nxa7! Nxa7! 9.Bxa7! Ra8! 10.Nd5! Rxa7! 11.Nxf6! Nxf6!
+Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! e5! 5.Nb5! Rb8 6.N1c3! Qf6 7.Be3! Kd8 8.Nxa7! Nb4
+#Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! e5! 5.Nb5! Rb8 6.N1c3! Qf6 7.Be3! Kd8 8.Nxa7! Nb4 9.a3 b6 10.axb4 Bxb4 11.Bb5 Rb7 12.Nxc8 g6 13.Ra8 Qf5 14.exf5 Nf6 15.Bg5 Kc7 16.Bxf6 Bxc3+ 17.bxc3 d5 18.Qxd5 Rxc8 19.Qxe5#
+Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! e5! 5.Nb5! Rb8 6.N1c3! Qf6 7.Be3! Kd8 8.Nxa7! Na5
+#Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! e5! 5.Nb5! Rb8 6.N1c3! Qf6 7.Be3! Kd8 8.Nxa7! Na5 9.Nd5 Ra8 10.Nxf6 Bb4+ 11.c3 gxf6 12.cxb4 Rb8 13.Qd6 Ne7 14.bxa5 Ra8 15.Qxf6 Rg8 16.Bc5 Rg6 17.Qxe7+ Kc7 18.Bd6+ Rxd6 19.Nb5+ Kb8 20.Qxd6#
+Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! e5! 5.Nb5! Rb8 6.N1c3! Ra8
+#Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! e5! 5.Nb5! Rb8 6.N1c3! Ra8 7.Nd5! Qa5+ 8.Bd2 Nb8 9.Bxa5 Bb4+ 10.Bxb4 Na6 11.Bc3 Kf8 12.Bxe5 f5 13.Qf3 Nh6 14.Qg3 Ng4 15.exf5 Rb8 16.Qxg4 g5 17.Qxg5 b6 18.Bxh8 d6 19.Qg7+ Ke8 20.Nf6+ Kd8 21.Qxh7 Be6 22.fxe6 Rb7 23.Qxb7 d5 24.e7#
+Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! Nb4
+!Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! Nb4 5.Nc3!! a6! 6.Be3! e6! 7.Qd2! b5!
+Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! Nb4 5.Nc3!! Qa5
+#Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! Nb4 5.Nc3!! Qa5 6.Bf4! g5! 7.Bd2! Bg7 8.Nd5!! Nxd5 9.Bxa5!! Nf4 10.c3 h5 11.g3!! Ng6! 12.Bg2 Bxd4 13.cxd4!! b6 14.Bd2 Bb7! 15.Bxg5 Ba6 16.e5 Rb8 17.Qa4 f6 18.Be4 f5 19.Bxf5 Kf7 20.Qxa6 Nh6 21.Bxd7 Rbd8 22.Qxa7 Ra8 23.Qxb6 Nf8 24.Bc6 Ra6 25.Qxa6 Ng4 26.Be4 Kg7 27.Bxe7 Rh6 28.Qb7 Ne6 29.Rc1 Nxe5 30.Bf8+ Kg8 31.Bxh6 Nd7 32.Qxd7 Nxd4 33.Rc8#
+Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! Nb4 5.Nc3!! Qa5 6.Bf4! g5! 7.Bd2! Bg7 8.Nd5!! Nxd5 9.Bxa5!! Nf4 10.c3 h5 11.g3!! Ng6! 12.Bg2 Bxd4 13.cxd4!! b6 14.Bd2 Ba6
+#Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! Nb4 5.Nc3!! Qa5 6.Bf4! g5! 7.Bd2! Bg7 8.Nd5!! Nxd5 9.Bxa5!! Nf4 10.c3 h5 11.g3!! Ng6! 12.Bg2 Bxd4 13.cxd4!! b6 14.Bd2 Ba6 15.e5 Rd8 16.Qa4 h4 17.Qxa6 Kf8 18.Qxa7 Kg7 19.Qxb6 Rc8 20.O-O e6 21.Bxg5 h3 22.Bf3 d6 23.Qxd6 Re8 24.Bc6 Rf8 25.g4 Kh7 26.f4 Nh6 27.f5 Nxe5 28.Qxe5 Nxg4 29.Qe4 Ne5 30.dxe5 exf5 31.Qxf5+ Kg8 32.Be4 Rh5 33.e6 Rh6 34.Bxh6 fxe6 35.Qxf8#
+Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! Nb4 5.Nc3!! Qa5 6.Bf4! g5! 7.Bd2! Bg7 8.Nd5!! Nxd5 9.Bxa5!! Nf4 10.c3 h5 11.g3!! Bh6
+#Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! Nb4 5.Nc3!! Qa5 6.Bf4! g5! 7.Bd2! Bg7 8.Nd5!! Nxd5 9.Bxa5!! Nf4 10.c3 h5 11.g3!! Bh6 12.gxf4! Bg7 13.Nb5 Kf8 14.fxg5 b6 15.Qd5 Bb7 16.Qxb7 Re8 17.Bb4 a6 18.Nc7 Rd8 19.Qxb6 f5 20.Qc5 fxe4 21.Qf5+ Bf6 22.gxf6 d6 23.Qg6 exf6 24.Rg1 Rh7 25.Bxd6+ Rxd6 26.Qe8#
+Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! Nb4 5.Nc3!! Qb6
+#QuickHint9K:               1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! Nb4 5.Nc3!! Qb6 6.Be3! Qc5!? 7.Ndb5! e6 8.Bxc5 Bxc5 9.Nc7+ Ke7 10.Nxa8 Kf8 11.Na4 Bd4 12.c3 Nc6 13.cxd4 f5 14.exf5 e5 15.dxe5 d5 16.exd6ep Bd7 17.Nc5 Bxf5 18.Qd5 Bg4 19.Bc4 Nd8 20.Nc7 Nf6 21.Qe5 Nc6 22.d7 Be6 23.Qxe6 Nxd7 24.Qe8#
+Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! Na5
+#Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! Na5 5.Nc3! h5!? 6.Bf4! e5 7.Bxe5 Qg5 8.f4 Qg4 9.Ndb5 Qxd1+ 10.Rxd1 Bc5 11.Nc7+ Kf8 12.Nxa8 Nc6 13.Bd6+ Bxd6 14.Rxd6 Nb4 15.a3 Rh7 16.axb4 a6 17.Nb6 Ke8 18.Nxc8 Kd8 19.Nb6 Ke7 20.Rxd7+ Ke8 21.Rxb7 f6 22.Rb8+ Ke7 23.Rxg8 Kf7 24.Bc4+ Kg6 25.Nd7 Kh6 26.Bf7 f5 27.Ne2 fxe4 28.Nd4 a5 29.Nf5#
+Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! Qb6
+#Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! Qb6 5.Nb3! e5 6.a3 Rb8 7.Nc3! Nd8 8.Be3 Qd6 9.Qxd6 Bxd6 10.0-0-0 h6 11.Rxd6 f5 12.Bxa7 Ra8 13.Nb5 Kf8 14.Bc5 Ne7 15.Nc7 Ra4 16.Bb5 Rxe4 17.f3 Rf4 18.Nd5 Nf7 19.Rxd7 Kg8 20.Nxe7+ Kh7 21.Nxc8 Rxc8 22.Rxf7 Kg6 23.Rxb7 Kh5 24.Be3 Rh4 25.Rxg7 f4 26.Be2 Rc3 27.g4+ Rxg4 28.fxg4+ Kh4 29.Bf2+ Rg3 30.hxg3#
+Jonesie9K:                  1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! Qb6 5.Nb3! e5 6.a3 Qd8
+#Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! Qb6 5.Nb3! e5 6.a3 Qd8 7.Be3! Qg5 8.Bxg5 h6 9.Be3 a6 10.N3d2 Be7 11.Nc4 Bf6 12.Nd6+ Kf8 13.Nc3 Nge7 14.Na4 a5 15.Nb6 h5 16.Nxa8 Kg8 17.Nb6 Na7 18.Bc4 g6 19.Nd5 Kf8 20.Nxf6 b6 21.Nxf7 Kg7 22.Qd6 Nac6 23.Nxh8 Kxh8 24.Ne8 Kh7 25.Qf6 Nf5 26.Qf7+ Ng7 27.Qxg7#
 Jonesie9K:                  1.e4!! e5 2.Nf3! Nc6 3.Bb5
-+Stockfish:                 1.e4!! e5 2.Nf3! Nc6 3.Bb5 a6! 4.Ba4! Nf6!
-Jonesie9K:                  1.e4!! e5 2.Nf3! Nc6 3.Bb5 a6! 4.Ba4! b5
-+Stockfish:                 1.e4!! e5 2.Nf3! Nc6 3.Bb5 a6! 4.Ba4! b5 5.Bb3! Nf6!
-Jonesie9K:                  1.e4!! e5 2.Nf3! Nc6 3.Bb5 a6! 4.Ba4! b5 5.Bb3! a5
-+Stockfish:                 1.e4!! e5 2.Nf3! Nc6 3.Bb5 a6! 4.Ba4! b5 5.Bb3! a5 6.0-0!
-Jonesie9K:                  1.e4!! e5 2.Nf3! Nc6 3.Bb5 a6! 4.Ba4! b5 5.Bb3! Qg5
-#Stockfish:                 1.e4!! e5 2.Nf3! Nc6 3.Bb5 a6! 4.Ba4! b5 5.Bb3! Qg5 6.Nxg5 Nh6 7.Nf3 Na5 8.Nxe5 Nxb3 9.axb3 Be7 10.O-O c6 11.d4 b4 12.d5 Ra7 13.dxc6 d6 14.Qd4 Rc7 15.Nd3 Ng4 16.Nxb4 Bf6 17.Qb6 Re7 18.f3 Ne3 19.Bxe3 Bd4 20.Bxd4 f5 21.Nd5 f4 22.Nxe7 Kxe7 23.Qc7+ Ke6 24.Qxg7 Rf8 25.Qxf8 a5 26.Qf6#
-&B23 Sicilian closed:       1.e4!! c5 2.Nc3
-+Stockfish:                 1.e4!! c5 2.Nc3 a6!
+#Stockfish:                 1.e4!! e5 2.Nf3! Nc6 3.Bb5 a6! 4.Ba4! b5!? 5.Bb3! Qg5!? 6.Nxg5 Nh6 7.Nf3 Na5 8.Nxe5 Nxb3 9.axb3 Be7 10.O-O c6 11.d4 b4 12.d5 Ra7 13.dxc6 d6 14.Qd4 Rc7 15.Nd3 Ng4 16.Nxb4 Bf6 17.Qb6 Re7 18.f3 Ne3 19.Bxe3 Bd4 20.Bxd4 f5 21.Nd5 f4 22.Nxe7 Kxe7 23.Qc7+ Ke6 24.Qxg7 Rf8 25.Qxf8 a5 26.Qf6#
 C00 French DEF:             1.e4!! e6
-+Stockfish:                 1.e4!! e6 2.d4
-+Stockfish:                 1.e4!! e6 2.d4 d5
-+Stockfish:                 1.e4!! e6 2.d4 d5 3.Nc3
-+C11 French DEF:            1.e4!! e6 2.d4 d5 3.Nc3 Nf6
-+Stockfish:                 1.e4!! e6 2.d4 d5 3.Nc3 Nf6 4.e5
-+Stockfish:                 1.e4!! e6 2.d4 d5 3.Nc3 Nf6 4.e5 Nfd7
-+Stockfish:                 1.e4!! e6 2.d4 d5 3.Nc3 Nf6 4.e5 Nfd7 5.Nce2! c5!
-Jonesie9K:                  1.e4!! e6 2.d4 d5 3.Nc3 Nf6 4.e5 Nfd7 5.Nce2! c6
-+Stockfish:                 1.e4!! e6 2.d4 d5 3.Nc3 Nf6 4.e5 Nfd7 5.Nce2! c6 6.a3! c5!
-Jonesie9K:                  1.e4!! e6 2.d4 d5 3.Nc3 Nf6 4.e5 Nfd7 5.Nce2! c6 6.a3! a6
-+Stockfish:                 1.e4!! e6 2.d4 d5 3.Nc3 Nf6 4.e5 Nfd7 5.Nce2! c6 6.a3! a6 7.c3!
-Jonesie9K:                  1.e4!! e6 2.d4 d5 3.Nc3 Nf6 4.e5 Nfd7 5.Nce2! c6 6.a3! Nb6
-+Stockfish:                 1.e4!! e6 2.d4 d5 3.Nc3 Nf6 4.e5 Nfd7 5.Nce2! c6 6.a3! Nb6 7.c3! c5!
-Jonesie9K:                  1.e4!! e6 2.d4 d5 3.Nc3 Nf6 4.e5 Nfd7 5.Nce2! c6 6.a3! Nb6 7.c3! Rg8
-#Stockfish:                 1.e4!! e6 2.d4 d5 3.Nc3 Nf6 4.e5 Nfd7 5.Nce2! c6 6.a3! Nb6 7.c3! a6 8.Nf4 N6d7 9.Bd3 Be7 10.Qh5 Qc7 11.Nxe6 Qd8 12.Nxg7+ Kf8 13.e6 Ne5 14.dxe5 fxe6 15.Bh6 Kg8 16.Ne8 Bd7 17.Bg6 Bxe8 18.Bxe8 Qxe8 19.Qxe8+ Bf8 20.Qxf8#
-Jonesie9K:                  1.e4!! e6 2.d4 d5 3.Nc3 Bb4
-+Stockfish:                 1.e4!! e6 2.d4 d5 3.Nc3 Bb4 4.e5
-+Stockfish:                 1.e4!! e6 2.d4 d5 3.Nc3 Bb4 4.e5 Ne7
-Jonesie9K:                  1.e4!! e6 2.d4 d5 3.Nc3 Bb4 4.e5 Bd7
-+Stockfish:                 1.e4!! e6 2.d4 d5 3.Nc3 Bb4 4.e5 Bd7 5.Qg4
-+Stockfish:                 1.e4!! e6 2.d4 d5 3.Nc3 Bb4 4.e5 Bd7 5.Qg4 Bf8
-Jonesie9K:                  1.e4!! e6 2.d4 d5 3.Nc3 Bb4 4.e5 Bd7 5.Qg4 g6
-+Stockfish:                 1.e4!! e6 2.d4 d5 3.Nc3 Bb4 4.e5 Bd7 5.Qg4 g6 6.a3!
-+Stockfish:                 1.e4!! e6 2.d4 d5 3.Nc3 Bb4 4.e5 Bd7 5.Qg4 g6 6.a3! Bxc3+!
-Jonesie9K:                  1.e4!! e6 2.d4 d5 3.Nc3 Bb4 4.e5 Bd7 5.Qg4 g6 6.a3! h5
-+Stockfish:                 1.e4!! e6 2.d4 d5 3.Nc3 Bb4 4.e5 Bd7 5.Qg4 g6 6.a3! h5 7.Qf4!
-Jonesie9K:                  1.e4!! e6 2.d4 d5 3.Nc3 Bb4 4.e5 Bd7 5.Qg4 g6 6.a3! h6
-#Stockfish:                 1.e4!! e6 2.d4 d5 3.Nc3 Bb4 4.e5 Bd7 5.Qg4 g6 6.a3! h6 7.axb4! h5 8.Qd1 Qh4 9.Nf3 g5 10.Nxh4 gxh4 11.Bg5 f6 12.exf6 Kf7 13.Qd2 a6 14.Bxh4 Nh6 15.Bd3 Nf5 16.Bxf5 exf5 17.Nxd5 Ra7 18.Qg5 Re8+ 19.Ne7 Rxe7+ 20.fxe7 Be8 21.Qf6+ Kg8 22.Qf8+ Kh7 23.Bf6 a5 24.Qg7#
-Jonesie9K:                  1.e4!! e6 2.d4 d5 3.Nc3 Bb4 4.e5 b6
-+Stockfish:                 1.e4!! e6 2.d4 d5 3.Nc3 Bb4 4.e5 b6 5.h4
-John Doe:                   1.e4!! e6 2.d4 d5 3.Nc3 Bb4 4.e5 b6 5.a3
-+Stockfish:                 1.e4!! e6 2.d4 d5 3.Nc3 Bb4 4.e5 b6 5.a3 Bxc3+!
-Jonesie9K:                  1.e4!! e6 2.d4 d5 3.Nc3 Bb4 4.e5 b6 5.a3 Nc6
-#Jasper:                    1.e4!! e6 2.d4 d5 3.Nc3 Bb4 4.e5 b6 5.a3 Nc6 6.axb4! Nge7 7.b5 a6 8.bxc6 Ng6 9.b4 Nh4 10.g3 h6 11.gxh4 Qxh4 12.Nf3 Qd8 13.b5 Rb8 14.bxa6 Ra8 15.a7 b5 16.Nxb5 O-O 17.Qd2 Rxa7 18.Rxa7 Qe7 19.Rxc7 Qd8 20.Ba3 Ba6 21.Rg1 Kh8 22.Bxf8 Qxf8 23.Nd6 Bxf1 24.Nxf7+ Kh7 25.Kxf1 g6 26.Qxh6+ Qxh6 27.Nxh6+ Kh8 28.Nh4 g5 29.Ng6#
-Jonesie9K:                  1.e4!! e6 2.d4 d5 3.Nc3 Bb4 4.e5 Nd7
-+Stockfish:                 1.e4!! e6 2.d4 d5 3.Nc3 Bb4 4.e5 Nd7 5.a3
+#Stockfish:                 1.e4!! e6 2.d4! d5! 3.Nc3! Nf6! 4.e5! Nfd7! 5.Nce2! c6!? 6.a3! Nb6!? 7.c3! a6!? 8.Nf4 N6d7 9.Bd3 Be7 10.Qh5 Qc7 11.Nxe6 Qd8 12.Nxg7+ Kf8 13.e6 Ne5 14.dxe5 fxe6 15.Bh6 Kg8 16.Ne8 Bd7 17.Bg6 Bxe8 18.Bxe8 Qxe8 19.Qxe8+ Bf8 20.Qxf8#
+Jonesie9K:                  1.e4!! e6 2.d4! d5! 3.Nc3! Bb4
+!Stockfish:                 1.e4!! e6 2.d4! d5! 3.Nc3! Bb4 4.e5! Ne7! 5.a3! Bxc3+! 6.bxc3! c5!
+Jonesie9K:                  1.e4!! e6 2.d4! d5! 3.Nc3! Bb4 4.e5! Bd7
+#Stockfish:                 1.e4!! e6 2.d4! d5! 3.Nc3! Bb4 4.e5! Bd7 5.Qg4! g6!? 6.a3! h6!? 7.axb4! h5 8.Qd1 Qh4 9.Nf3 g5 10.Nxh4 gxh4 11.Bg5 f6 12.exf6 Kf7 13.Qd2 a6 14.Bxh4 Nh6 15.Bd3 Nf5 16.Bxf5 exf5 17.Nxd5 Ra7 18.Qg5 Re8+ 19.Ne7 Rxe7+ 20.fxe7 Be8 21.Qf6+ Kg8 22.Qf8+ Kh7 23.Bf6 a5 24.Qg7#
+Jonesie9K:                  1.e4!! e6 2.d4! d5! 3.Nc3! Bb4 4.e5! b6
+#Jasper:                    1.e4!! e6 2.d4! d5! 3.Nc3! Bb4 4.e5! b6 5.a3!? Nc6!? 6.axb4! Nge7 7.b5 a6 8.bxc6 Ng6 9.b4 Nh4 10.g3 h6 11.gxh4 Qxh4 12.Nf3 Qd8 13.b5 Rb8 14.bxa6 Ra8 15.a7 b5 16.Nxb5 O-O 17.Qd2 Rxa7 18.Rxa7 Qe7 19.Rxc7 Qd8 20.Ba3 Ba6 21.Rg1 Kh8 22.Bxf8 Qxf8 23.Nd6 Bxf1 24.Nxf7+ Kh7 25.Kxf1 g6 26.Qxh6+ Qxh6 27.Nxh6+ Kh8 28.Nh4 g5 29.Ng6#
 B10 Caro-Kann DEF:          1.e4!! c6
-+B12 Caro-Kann DEF:         1.e4!! c6 2.d4
-+B12 Caro-Kann DEF:         1.e4!! c6 2.d4 d5
-+Stockfish:                 1.e4!! c6 2.d4 d5 3.e5
-+Stockfish:                 1.e4!! c6 2.d4 d5 3.e5 Bf5
-+Stockfish:                 1.e4!! c6 2.d4 d5 3.e5 Bf5 4.Nf3
-+Stockfish:                 1.e4!! c6 2.d4 d5 3.e5 Bf5 4.Nf3 e6!
-Jonesie9K:                  1.e4!! c6 2.d4 d5 3.e5 Bf5 4.Nf3 h6
-+Stockfish:                 1.e4!! c6 2.d4 d5 3.e5 Bf5 4.Nf3 h6 5.Nh4! Bd7!
-Jonesie9K:                  1.e4!! c6 2.d4 d5 3.e5 Bf5 4.Nf3 h6 5.Nh4! Be4
-+Stockfish:                 1.e4!! c6 2.d4 d5 3.e5 Bf5 4.Nf3 h6 5.Nh4! Be4 6.e6!
-Jonesie9K:                  1.e4!! c6 2.d4 d5 3.e5 Bf5 4.Nf3 h6 5.Nh4! Bh7
-+Stockfish:                 1.e4!! c6 2.d4 d5 3.e5 Bf5 4.Nf3 h6 5.Nh4! Bh7 6.e6!
-Jonesie9K:                  1.e4!! c6 2.d4 d5 3.e5 Bf5 4.Nf3 h6 5.Nh4! Bc8
-+Stockfish:                 1.e4!! c6 2.d4 d5 3.e5 Bf5 4.Nf3 h6 5.Nh4! Bc8 6.c4! e6! 7.Nf3! Ne7!
-Jonesie9K:                  1.e4!! c6 2.d4 d5 3.e5 Bf5 4.Nf3 h6 5.Nh4! Bc8 6.c4! e6! 7.Nf3! a6
-+Stockfish:                 1.e4!! c6 2.d4 d5 3.e5 Bf5 4.Nf3 h6 5.Nh4! Bc8 6.c4! e6! 7.Nf3! a6 8.Nc3! Bb4 9.cxd5! cxd5! 10.Bd3! Ne7! 11.0-0! Bd7! 12.Ne2! Nc8!
-Jonesie9K:                  1.e4!! c6 2.d4 d5 3.e5 Bf5 4.Nf3 h6 5.Nh4! Bc8 6.c4! e6! 7.Nf3! a6 8.Nc3! Bb4 9.cxd5! Qxd5
-+Stockfish:                 1.e4!! c6 2.d4 d5 3.e5 Bf5 4.Nf3 h6 5.Nh4! Bc8 6.c4! e6! 7.Nf3! a6 8.Nc3! Bb4 9.cxd5! Qxd5 10.Bd3!
-Jonesie9K:                  1.e4!! c6 2.d4 d5 3.e5 Bf5 4.Nf3 h6 5.Nh4! Bc8 6.c4! e6! 7.Nf3! a6 8.Nc3! Bb4 9.cxd5! Qc7
-+Stockfish:                 1.e4!! c6 2.d4 d5 3.e5 Bf5 4.Nf3 h6 5.Nh4! Bc8 6.c4! e6! 7.Nf3! a6 8.Nc3! Bb4 9.cxd5! Qc7 10.d6 Qd7 11.Bd3 g6 12.0-0 h5 13.Na4 Nh6 14.Nb6 g5 15.Nxd7 Nxd7 16.Nxg5 Nxe5 17.dxe5 Bd7 18.Qb3 c5 19.a3 b5 20.Be4 Ra7 21.axb4 Rg8 22.Qe3 f5 23.Qxc5 Rb7 24.Bxb7 f4 25.Rxa6 Rxg5 26.Bxf4 Rf5 27.Qc7 Kf8 28.Bxh6+
-Jonesie9K:                  1.e4!! c6 2.d4 d5 3.e5 Bf5 4.Nf3 h6 5.Nh4! Bc8 6.c4! g5
-#Stockfish:                 1.e4!! c6 2.d4 d5 3.e5 Bf5 4.Nf3 h6 5.Nh4! Bc8 6.c4! g5 7.Nf3! a5 8.Nc3 Bg4 9.h4 Bxf3 10.Qxf3 Qb6 11.cxd5 g4 12.Qxg4 Kd8 13.Be2 Qc5 14.dxc5 b6 15.cxb6 h5 16.b7 hxg4 17.bxa8=Q Kc7 18.Ba6 Nxa6 19.dxc6 Nf6 20.Nd5+ Nxd5 21.Qb7+ Kd8 22.Qd7#
-Jonesie9K:                  1.e4!! c6 2.d4 d5 3.e5 Bf5 4.Nf3 Qb6
-+Stockfish:                 1.e4!! c6 2.d4 d5 3.e5 Bf5 4.Nf3 Qb6 5.Be2! e6 6.0-0!
-Jonesie9K:                  1.e4!! c6 2.d4 d5 3.e5 Bf5 4.Nf3 b5
-+Stockfish:                 1.e4!! c6 2.d4 d5 3.e5 Bf5 4.Nf3 b5 5.???
-Jonesie9K:                  1.e4!! c6 2.d4 d5 3.e5 c5
-+Stockfish:                 1.e4!! c6 2.d4 d5 3.e5 c5 4.dxc5!
+!Stockfish:                 1.e4!! c6 2.d4! d5! 3.e5! Bf5! 4.Nf3! e6!
+Jonesie9K:                  1.e4!! c6 2.d4! d5! 3.e5! Bf5! 4.Nf3! Qd7
+#Stockfish:                 1.e4!! c6 2.d4! d5! 3.e5! Bf5! 4.Nf3! Qd7 5.Nbd2! b5 6.a4! e6 7.Nh4! Bg4 8.Qxg4! Qc7 9.axb5! h5 10.Qg5! a5 11.bxa6ep! Qd8 12.Ndf3! Qxg5 13.Nxg5! Ra7 14.Bd3! Nh6 15.O-O! Be7 16.f4! Bb4 17.f5! exf5 18.Nxf5! Nxf5 19.Rxf5! Bd2 20.Bxd2! f6 21.exf6! gxf6 22.Rxf6! h4 23.Re1+! Kd8 24.Nf7+! Rxf7 25.Rxf7! Nd7 26.Bf5! Kc7 27.Rxd7+! Kb6 28.Rb7+! Kxa6 29.Rb4! c5 30.Ra1#
+Jonesie9K:                  1.e4!! c6 2.d4! d5! 3.e5! Bf5! 4.Nf3! h6
+#Stockfish:                 1.e4!! c6 2.d4! d5! 3.e5! Bf5! 4.Nf3! h6 5.Nh4! Bc8!? 6.c4! g5 7.Nf3! a5 8.Nc3! Bg4 9.h4! Bxf3 10.Qxf3! Qb6 11.cxd5! g4 12.Qxg4! Kd8 13.Be2! Qc5 14.dxc5! b6 15.cxb6! h5 16.b7! hxg4 17.bxa8=Q! Kc7 18.Ba6! Nxa6 19.dxc6! Nf6 20.Nd5+! Nxd5 21.Qb7+! Kd8 22.Qd7#
 A40 Queen's Pawn:           1.d4
-+Stockfish:                 1.d4 Nf6! 2.c4! e6! 3.Nf3 d5! 4.Bd2 Be7! 5.g4 c5! 6.Qc2 cxd4! 7.h4 Nc6! 8.cxd5 exd5! 9.g5 Ne4! 10.g6 fxg6! 11.Rg1 Bxh4! 12.Nxh4 Qxh4! 13.Rg2 Nxf2! 14.Rxf2 Rf8! 15.Be3 dxe3! 16.Qxg6+ hxg6! 17.Kd1 Rxf2! 18.Bh3 Bxh3! 19.Nd2 Bf5! 20.Ne4 Qxe4! 21.a3 Rf1#
-Jonesie9K:                  1.d4 Nf6! 2.Nf3
-Jonesie9K:                  1.d4 Nf6! 2.Nf3 d5!! 3.c4 e6! 4.Bd2 c5! 5.b4
+!Stockfish:                 1.d4 Nf6! 2.c4! e6! 3.Nf3! d5! 4.Bd2 Be7! 5.Nc3! O-O 6.e3! c5!
+Jonesie9K:                  1.d4 Nf6! 2.c4! e6! 3.Nf3! d5! 4.Bd2 Be7! 5.Qb3
+#Stockfish:                 1.d4 Nf6! 2.c4! e6! 3.Nf3! d5! 4.Bd2 Be7! 5.Qb3 dxc4 6.Nc3 cxb3 7.Bg5 bxa2 8.g3 Nc6 9.Bxf6 Bxf6 10.g4 Nxd4 11.Nxd4 Qxd4 12.Bg2 Qxc3+ 13.bxc3 Bxc3+ 14.Kf1 Bxa1 15.e3 Bc3 16.Ke2 a1=R 17.Bc6+ bxc6 18.Kd3 Rxh1 19.Kxc3 Rxh2 20.g5 Ba6 21.f3 c5 22.Kb3 Rd8 23.Ka4 Bc4 24.e4 Ra2#
+Jonesie9K:                  1.d4 Nf6! 2.c4! e6! 3.Nf3! d5! 4.Bd2 Be7! 5.g4
+#Stockfish:                 1.d4 Nf6! 2.c4! e6! 3.Nf3! d5! 4.Bd2 Be7! 5.g4 c5! 6.Qc2 cxd4! 7.h4 Nc6! 8.cxd5 exd5! 9.g5 Ne4! 10.g6 fxg6! 11.Rg1 Bxh4! 12.Nxh4 Qxh4! 13.Rg2 Nxf2! 14.Rxf2 Rf8! 15.Be3 dxe3! 16.Qxg6+ hxg6! 17.Kd1 Rxf2! 18.Bh3 Bxh3! 19.Nd2 Bf5! 20.Ne4 Qxe4! 21.a3 Rf1#
+John Doe:                   1.d4 Nf6! 2.c4! c5
+#Stockfish:                 1.d4 Nf6! 2.c4! c5 3.d5! g6! 4.Nc3! Bg7! 5.Bh6 Bxh6! 6.g3 d6! 7.e4 O-O! 8.Bg2 e6! 9.Qe2 exd5! 10.f4 dxe4! 11.Qc2 Nc6! 12.b3 Nb4! 13.Qd2 Bf5! 14.a3 e3! 15.Qe2 Nc2+! 16.Qxc2 Bxc2! 17.Rc1 Bxb3! 18.Nh3 Bxc4 19.Rg1 Qa5 20.Bf3 Qxa3 21.Rc2 Bd3 22.Kd1 Qb3 23.Rg2 d5 24.Ng1 Bxc2+ 25.Rxc2 d4 26.Be4 Nxe4 27.Nxe4 d3 28.Nf6+ Kh8 29.Nxh7 Qxc2+ 30.Ke1 Qb1#
+#Jasper:                    1.d4 Nf6! 2.c4! c5 3.d5! g6! 4.Nc3! Bg7! 5.Bh6 Bxh6! 6.g3 d6! 7.e4 O-O! 8.Bg2 e6! 9.Qe2 exd5! 10.f4 dxe4! 11.Qc2 Nc6! 12.b3 Nb4! 13.Qd2 Bf5! 14.a3 e3! 15.Qe2 Nc2+! 16.Qxc2 Bxc2! 17.Rc1 Bxb3! 18.Nh3 Bxc4 19.Rg1 Qa5 20.Bf3 Qxa3 21.Rc2 Bd3 22.Kd1 Qb3 23.Rg2 d5 24.Ng1 Bxc2+ 25.Rxc2 d4 26.Be4 Nxe4 27.Nxe4 d3 28.Nf6+ Kh8 29.Nxh7 Qxc2+ 30.Ke1 Qc1#
+Jonesie9K:                  1.d4 Nf6! 2.c4! c5 3.d5! g6! 4.Bf4
+#Stockfish:                 1.d4 Nf6! 2.c4! c5 3.d5! g6! 4.Bf4 a6 5.Qa4 b5 6.Qa3 Bg7 7.Qxc5 d6 8.h3 dxc5 9.Bd2 Ne4 10.f3 Ng3 11.d6 Nxh1 12.dxe7 Qd4 13.e3 Qxb2 14.Bd3 bxc4 15.a4 cxd3 16.Kd1 Qxa1 17.Ne2 Qxb1+ 18.Nc1 Bc3 19.Bxc3 Qc2+ 20.Ke1 Qxc1#
 A04 Reti OPN:               1.Nf3
+#Stockfish:                 1.Nf3 Nf6! 2.c4 c5! 3.g3! b6 4.Nc3 Bb7 5.e4 Nxe4 6.Rg1 g6 7.Nb5 Bg7 8.d3 a6 9.Bg2 axb5 10.Qb3 bxc4 11.Qxc4 Nd6 12.Nd2 Nxc4 13.Nxc4 d5 14.Ne3 e6 15.Bd2 Bxb2 16.Rb1 Bg7 17.a3 Rxa3 18.Nc2 Ra2 19.g4 Rxc2 20.Rd1 Qf6 21.Be3 Bh6 22.g5 Bxg5 23.f4 Bh4+ 24.Kf1 Qb2 25.Rd2 Rxd2 26.Bxd2 Qxd2 27.Bxd5 Qf2#
+Jonesie9K:                  1.Nf3 Nf6! 2.c4 c5! 3.Nc3
 #Stockfish:                 1.Nf3 Nf6! 2.c4 c5! 3.Nc3 e6! 4.Qc2 Nc6! 5.Rg1 d5! 6.Qxh7 Rxh7! 7.b4 d4! 8.Nb5 Nxb4! 9.Kd1 Ne4! 10.Bb2 Nxf2+! 11.Ke1 Ne4! 12.Rc1 a6! 13.Na3 Nxa2! 14.Ra1 Qb6! 15.Rxa2 Qb3! 16.Ne5 Qxa2! 17.Bc1 Bd6! 18.Nd3 Bxh2! 19.g4 Bxg1! 20.Bg2 Ng3! 21.Nxc5 Rh2! 22.Bf3 Rf2! 23.Bg2 Rxg2! 24.Kd1 Bf2! 25.Bd2 Qxb2! 26.Nd3 Rg1+! 27.Ne1 Rxe1#
+A10 English OPN:            1.c4
+!Stockfish:                 1.c4 c5! 2.Nf3 Nc6!! 3.Nc3 Nf6!! 4.d4!
+Jonesie9K:                  1.c4 c5! 2.Nf3 Nc6!! 3.Nc3 Nf6!! 4.a3
+#Stockfish:                 1.c4 c5! 2.Nf3 Nc6!! 3.Nc3 Nf6!! 4.a3 g6 5.e4! Bg7! 6.d3! d6!
+Jonesie9K:                  1.c4 c5! 2.Nf3 Nc6!! 3.Nc3 Nf6!! 4.a3 g6 5.Qa4
+#Stockfish:                 1.c4 c5! 2.Nf3 Nc6!! 3.Nc3 Nf6!! 4.a3 g6 5.Qa4 Bg7 6.h4 O-O 7.Qxc6 bxc6 8.Na4 Qa5 9.e3 Qxa4 10.b3 Qxb3 11.Be2 Ne4 12.Bd1 Qxc4 13.Be2 Qb3 14.Bc4 Qxc4 15.Rb1 Ba6 16.Nd4 Bxd4 17.Rb5 Qxb5 18.d3 Qxd3 19.exd4 Qe2#
+Jonesie9K:                  1.c4 c5! 2.Nf3 Nc6!! 3.Nc3 Nf6!! 4.a3 g6 5.d3
+#Stockfish:                 1.c4 c5! 2.Nf3 Nc6!! 3.Nc3 Nf6!! 4.a3 g6 5.d3 d5 6.h4 dxc4 7.dxc4 Bf5 8.Qxd8+ Rxd8 9.Nb5 Bg7 10.e4 Nxe4 11.g4 Bxg4 12.Bg2 Ne5 13.Nc7+ Kf8 14.a4 Nxf3+ 15.Bxf3 Bxf3 16.O-O Nd2 17.Re1 Rd4 18.Bxd2 Rxh4 19.Ne6+ fxe6 20.Rxe6 Rh1#
+Jonesie9K:                  1.c4 c5! 2.Nf3 Nc6!! 3.Nc3 Nf6!! 4.h3
+#Stockfish:                 1.c4 c5! 2.Nf3 Nc6!! 3.Nc3 Nf6!! 4.h3 e6 5.a3 d5 6.Qa4 d4 7.Nb1 Qa5 8.Qxa5 Nxa5 9.b4 Nb3 10.g3 Nxa1 11.bxc5 Bd7 12.e3 Nb3 13.c6 Bxc6 14.e4 Bxe4 15.Rg1 Nxc1 16.a4 Bxf3 17.c5 Bxc5 18.g4 Be4 19.Bb5+ Kf8 20.Kd1 Nd3 21.f3 Bxf3+ 22.Kc2 Ne5 23.d3 a6 24.Bxa6 Rxa6 25.Nd2 Bc6 26.Nb3 Bxa4 27.g5 Bxb3+ 28.Kxb3 Nd5 29.Kc2 Ne3+ 30.Kb1 Rb6+ 31.Ka1 Ke7 32.Rg2 Ra8+ 33.Ra2 Nc2#
 
 
