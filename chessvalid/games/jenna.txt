@@ -1,18 +1,103 @@
-;this is a comment
-;i love comments
+;Chessmaster 9000
+;Jenna (673)
 
 
-#Stockfish:                 1.e4 c5 2.Nf3 e6 3.d4 cxd4 4.Nxd4 Nc6 5.Nc3 Qf6 6.Ndb5! Kd8 7.Be3 Bb4 8.Qd2 Ne5 9.Bg5 Qxg5 10.Qxg5+ f6 11.Qxg7 b6 12.Qxh8 Bf8 13.Qxg8 Ke8 14.Nd6+ Ke7 15.0-0-0 Bh6+ 16.Kb1 Bb7 17.Qxh8+ Kd8 18.Qxh6 Bc6 19.Qf8+ Kc7 20.Ncb5+ Bxb5 21.Qxa8 Bxf1 22.Ne8#
-B30 Sicilian DEF:           1.e4 c5 2.Nf3 Nc6
-#Stockfish:                 1.e4 c5 2.Nf3 Nc6 3.d4! cxd4! 4.Nxd4! e6 5.Nc3 Qf6 6.Be3 Nxd4 7.Bxd4 Bb4 8.Bxf6 Nxf6 9.Qd4 b6 10.Qxb4 d6 11.Qxd6 Bd7 12.0-0-0 Rc8 13.Bb5 Bxb5 14.Nxb5 Nd5 15.Rxd5 exd5 16.exd5 f6 17.Qe6+ Kd8 18.Re1 Rc6 19.dxc6 a6 20.c7#
-B10 Caro-Kann Defense:      1.e4 c6
-#Stockfish:                 1.e4 c6 2.d4! d5! 3.e5! Bf5! 4.Nf3! Na6 5.Nh4! Qa5+ 6.Nd2 e6 7.c3 Bc2 8.Qxc2 Nh6 9.Ndf3 Qc7 10.Bxh6 gxh6 11.Bxa6 bxa6 12.g3 Qb6 13.0-0 a5 14.Ng2 0-0-0 15.b4 h5 16.bxa5 Qa6 17.Rfb1 f6 18.Rb3 h6 19.Rab1 fxe5 20.Rb8+ Kc7 21.Rxd8 Kxd8 22.Qg6 e4 23.Ne5 Qc8 24.Nf4 Rh7 25.Qxh7 Be7 26.Qg8+ Kc7 27.Nxe6+ Kd6 28.Qxc8 a6 29.Qxc6#
-C00 French defense:         1.e4 e6
-+Stockfish:                 1.e4 e6 2.d4
-+Stockfish:                 1.e4 e6 2.d4 d5
-+Stockfish:                 1.e4 e6 2.d4 d5 3.Nc3
-+C11 French defense:        1.e4 e6 2.d4 d5 3.Nc3 Nf6
-+Stockfish:                 1.e4 e6 2.d4 d5 3.Nc3 Nf6 4.e5
-Jenna9K:                    1.e4 e6 2.d4 d5 3.Nc3 Bb4
-+Stockfish:                 1.e4 e6 2.d4 d5 3.Nc3 Bb4 4.???
+;!!B00 King's Pawn:         1.e4!!
+;!!C20 Open Game:           1.e4!! e5!!
+;!!C40 King's Knight:       1.e4!! e5!! 2.Nf3!!
+;!!C44 King's pawn game:    1.e4!! e5!! 2.Nf3!! Nc6!!
+;!!C60 Ruy Lopez:           1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!!
+;!!Morphy DEF:              1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!!
+;!!C70 Columbus VAR:        1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!!
+;!!C77 Morphy DEF:          1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!!
+;!!C78 Ruy Lopez, 5.O-O:    1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!!
+;!C80 Tarrasch DEF:         1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Nxe4!!
+!!Stockfish:                1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Nxe4!! 6.d4! b5! 7.Bb3! d5! 8.dxe5! Be6! 9.c3!! Be7! 10.Re1! O-O! 11.h3! Re8! 12.Bc2! Bf5! 13.Nbd2! Bg6! 14.Kf1! Nc5! 15.Bxg6! hxg6! 16.Nb3! Ne6! 17.Qd3! Qd7! 18.Be3! Ncd8! 19.Red1! c6! 20.Kg1! Nf8! 21.Nc5! Qc8! 22.a4! Bxc5! 23.Bxc5! Nd7! 24.Bd4! Ne6! 25.b4! Qc7! 26.Ra2! c5! 27.Be3! cxb4! 28.cxb4! Nxe5! 29.Nxe5! d4! 30.Bxd4! Nxd4! 31.Qxd4! Rxe5! 32.Qd6! Qxd6! 33.Rxd6! a5! 34.axb5! Rxb5! 35.Rxa5! Rbxa5! 36.bxa5! Rxa5! 37.Rd8+! Kh7! 38.Rb8! Rc5! 39.Ra8! Rc1+! 40.Kh2! g5! 41.Ra5! f6! 42.g3! Rc2! 43.Kg2! Rc6! 44.g4! g6! 45.Ra7+! Kg8! 46.Rd7! Kf8! 47.Rd8+! Kf7! 48.Rd2!
+Jenna9K:                    1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! b5
+#Stockfish vs. Jenna9K:     1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! b5 6.Bb3!! Nd5 7.Bxd5!! Bb4 8.d4!! Qe7 9.Nxe5!! Ra7 10.Nxf7!! Qf6 11.Nxh8!! Bd6 12.Qh5+!! g6 13.Qxh7!! Bg3 14.fxg3!! Nxd4 15.Rxf6!! Ne2+ 16.Kf2!! Nxc1 17.Qf7+!! Kd8 18.Qf8#
+Jenna9K:                    1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Na5
+#Stockfish vs. Jenna9K:     1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Na5 6.c3 c6 7.Nxe5 Bc5 8.b4 Rg8 9.bxc5 Rf8 10.d4 b6 11.Nd2 b5 12.Bc2 Qe7 13.a4 Nd5 14.exd5 g6 15.d6 Qe6 16.axb5 h6 17.Rxa5 g5 18.Bb3 Ra7 19.Bxe6 fxe6 20.Qh5+ Kd8 21.Qxh6 Ke8 22.Qg7 Rf7 23.Qxf7+ Kd8 24.Qe7#
+#Jasper vs. Jenna9K:        1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Na5 6.c3 c6 7.Nxe5 Bc5 8.b4 Rg8 9.bxc5 Rf8 10.d4 b6 11.Nd2 b5 12.Bc2 Qe7 13.a4 Nd5 14.exd5 g6 15.d6 Qe6 16.axb5 h6 17.Rxa5 g5 18.Bb3 Ra7 19.Bxe6 fxe6 20.Qh5+ Kd8 21.Qxh6 Ke8 22.Qg7 Rf7 23.Qxf7+ Kd8 24.Qf8#
+Jenna9K:                    1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.h3
+#Jenna9K vs. Stockfish:     1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.h3 b5!! 6.Bb3 Nxe4!! 7.Rh2 d5!! 8.g3 Nc5!! 9.Ng1 a5!! 10.Nc3 Be6!! 11.Bxd5 Bxd5!! 12.d4 Nxd4!! 13.f4 b4!! 14.Re2 Nxe2!! 15.Nxd5 Nxg1!! 16.Kf1 c6!! 17.Be3 Nxh3!! 18.Rc1 Qxd5!! 19.Qxd5 cxd5!! 20.Bd2 Ne4!! 21.Ke1 Bd6!! 22.f5 Nxg3!! 23.b3 Nxf5!! 24.Rd1 Rc8!! 25.Be3 Nxe3!! 26.Rd2 Ng5!! 27.Ke2 d4!! 28.c3 bxc3!! 29.Rc2 Nxc2!! 30.b4 Ne3!! 31.bxa5 c2!! 32.Kf2 c1=Q!! 33.a3 Rc2+!! 34.Kg3 Qe1#
+Jenna9K:                    1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.Rf1
+#Jenna9K vs. Stockfish:     1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.Rf1 b5!! 6.Bb3 Nxe4!! 7.a4 Nc5!! 8.d4 Nxb3!! 9.Bd2 Nxa1!! 10.dxe5 Qe7!! 11.axb5 Nxe5!! 12.Be3 Nxf3+!! 13.gxf3 Qb4+!! 14.c3 Qxb2!! 15.b6 Nc2+!! 16.Ke2 a5!! 17.b7 Bxb7!! 18.Bc1 Ba6+!! 19.Kd2 Qxb1!! 20.Qxc2 Qxc2+!! 21.Kxc2 Bxf1!! 22.h4 Be2!! 23.Kd2 Bxf3!! 24.h5 Bxh5!! 25.Bb2 a4!! 26.f3 Rb8!! 27.Ba3 Bxa3!! 28.Ke1 Rb2!! 29.Kd1 Bxf3+!! 30.Ke1 Bd6!! 31.Kf1 Bg3!! 32.c4 Rb1#
+Jenna9K:                    1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! b5
+!!Stockfish:                1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! b5 5.Bb3!! Nf6!! 6.d4!! d6!!
+Jenna9K:                    1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! b5 5.Bb3!! g6
+!!Stockfish:                1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! b5 5.Bb3!! g6 6.d4!! d5 7.Bxd5!! Nxd4 8.Nxd4!! exd4!!
+Jenna9K:                    1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! b5 5.Bb3!! g6 6.d4!! d5 7.Bxd5!! Nxd4 8.Nxd4!! Qd7
+#Stockfish vs. Jenna9K:     1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! b5 5.Bb3!! g6 6.d4!! d5 7.Bxd5!! Nxd4 8.Nxd4!! Qd7 9.Nf3!! Qxd5 10.Qxd5!! Ne7 11.Qxa8!! Bh6 12.Bxh6!! a5 13.Bg7!! c5 14.Bxh8!! f6 15.Bxf6!! b4 16.Nxe5!! b3 17.Qa7!! Bb7 18.Qxb7!! Kf8 19.Qxe7+!! Kg8 20.Qf7#
+#Jasper vs. Jenna9K:        1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! b5 5.Bb3!! g6 6.d4!! d5 7.Bxd5!! Nxd4 8.Nxd4!! Qd7 9.Nf3!! Qxd5 10.Qxd5!! Ne7 11.Qxa8!! Bh6 12.Bxh6!! a5 13.Bg7!! c5 14.Bxh8!! f6 15.Bxf6!! b4 16.Nxe5!! b3 17.Qa7!! Bb7 18.Qxb7!! Kf8 19.Qxe7+!! Kg8 20.Qg7#
+Jenna9K:                    1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! b5 5.Bb3!! g6 6.d4!! d5 7.Bxd5!! Nxd4 8.Nxd4!! Qxd5
+#Stockfish vs. Jenna9K:     1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! b5 5.Bb3!! g6 6.d4!! d5 7.Bxd5!! Nxd4 8.Nxd4!! Qxd5 9.exd5!! Bd7 10.Nb3!! g5 11.Bxg5!! Ne7 12.Nc3!! h6 13.Bf6!! Rg8 14.Bxe5!! h5 15.Bxc7!! Rg4 16.d6!! Bg7 17.dxe7!! Rc4 18.Ba5!! b4 19.Qd5!! Ra7 20.Qxc4!! Ra8 21.Bxb4!! a5 22.Nxa5!! Rc8 23.Qd5!! Bd4 24.Rd1!! Rxc3 25.Rxd4!! Rc7 26.Rf4!! Rxc2 27.Qxf7#
+Jenna9K:                    1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! b5 5.Bb3!! Ke7
+#Stockfish vs. Jenna9K:     1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! b5 5.Bb3!! Ke7 6.d4!! Nxd4 7.Nxd4!! Ke8 8.Nf3!! d5 9.Nxe5!! Nh6 10.Bxh6!! Be6 11.exd5!! gxh6 12.Qf3!! Be7 13.dxe6!! Bb4+ 14.Ke2!! Qd6 15.Qxa8+!! Ke7 16.Nc6+!! Kf6 17.Qxh8+!! Kg6 18.Qg8+!! Kh5 19.Qxf7+!! Kh4 20.Qf6+!! Kh5 21.Qf5+!! Kh4 22.g3+!! Qxg3 23.fxg3#
+;!B20 Sicilian DEF:         1.e4!! c5!
+;!!B50 Sicilian:            1.e4!! c5! 2.Nf3!! d6!!
+;!!Open Sicilian:           1.e4!! c5! 2.Nf3!! d6!! 3.d4!!
+;!!B54 Sicilian:            1.e4!! c5! 2.Nf3!! d6!! 3.d4!! cxd4!! 4.Nxd4!!
+#Stockfish vs. Jenna9K:     1.e4!! c5! 2.Nf3!! d6!! 3.d4!! cxd4!! 4.Nxd4!! Qb6 5.Nc3!! Bd7 6.Be3 Qc5 7.Ndb5 Kd8 8.Bxc5 f5 9.Bxa7 d5 10.Bb6+ Kc8 11.Nc7 d4 12.Nxa8 e6 13.Bxd4 e5 14.Nb6+ Kd8 15.Bxe5 Bc5 16.Nxd7 Nxd7 17.Bb5 Nf6 18.Bxf6+ Kc8 19.Qxd7+ Kb8 20.Bc6 Bxf2+ 21.Kxf2 bxc6 22.Be5+ Ka8 23.Qxc6+ Ka7 24.Nb5#
+;!!B40 Sicilian DEF:        1.e4!! c5! 2.Nf3!! e6!
+;!!Open Sicilian:           1.e4!! c5! 2.Nf3!! e6! 3.d4!!
+;Taimanov VAR:              1.e4!! c5! 2.Nf3!! e6! 3.d4!! cxd4!! 4.Nxd4!! Nc6!
+;!B45 Taimanov VAR:         1.e4!! c5! 2.Nf3!! e6! 3.d4!! cxd4!! 4.Nxd4!! Nc6! 5.Nc3!!
+!!Stockfish:                1.e4!! c5! 2.Nf3!! e6! 3.d4!! cxd4!! 4.Nxd4!! Nc6! 5.Nc3!! Qf6? 6.Ndb5! Kd8 7.Be3 Bb4 8.Qd2!! Qe5!! 9.a3!! Bxc3!! 10.Nxc3!! Qa5!! 11.O-O-O!! Nge7!! 12.h4!! a6!! 13.Rh3!! Ke8!!
+Jenna9K:                    1.e4!! c5! 2.Nf3!! e6! 3.d4!! cxd4!! 4.Nxd4!! Nc6! 5.Nc3!! Qf6? 6.Ndb5! Kd8 7.Be3 Bb4 8.Qd2!! Ne5
+#Stockfish vs. Jenna9K:     1.e4!! c5! 2.Nf3!! e6! 3.d4!! cxd4!! 4.Nxd4!! Nc6! 5.Nc3!! Qf6? 6.Ndb5! Kd8 7.Be3 Bb4 8.Qd2!! Ne5 9.Bg5!! Qxg5!? 10.Qxg5+ f6 11.Qxg7 b6 12.Qxh8 Bf8 13.Qxg8 Ke8 14.Nd6+ Ke7 15.O-O-O Bh6+ 16.Kb1 Bb7 17.Qxh8+ Kd8 18.Qxh6 Bc6 19.Qf8+ Kc7 20.Ncb5+ Bxb5 21.Qxa8 Bxf1 22.Ne8#
+Jenna9K:                    1.e4!! c5! 2.Nf3!! e6! 3.d4!! cxd4!! 4.Nxd4!! Nc6! 5.Nc3!! Qf6? 6.Ndb5! Kd8 7.Be3 Bb4 8.Qd2!! Nge7
+#Stockfish vs. Jenna9K:     1.e4!! c5! 2.Nf3!! e6! 3.d4!! cxd4!! 4.Nxd4!! Nc6! 5.Nc3!! Qf6? 6.Ndb5! Kd8 7.Be3 Bb4 8.Qd2!! Nge7 9.O-O-O!! Bxc3!? 10.bxc3 Qe5 11.Nd6 Nb4 12.Nxf7+ Ke8 13.Nxe5 Nf5 14.exf5 b5 15.Qd6 Nxa2+ 16.Kb2 Nxc3 17.Bg5 Nd5 18.Rxd5 exd5 19.Qe7#
+;!B30 Sicilian DEF:         1.e4!! c5! 2.Nf3!! Nc6!
+;!!B32 Sicilian DEF:        1.e4!! c5! 2.Nf3!! Nc6! 3.d4!!
+!!Stockfish:                1.e4!! c5! 2.Nf3!! Nc6! 3.d4!! cxd4!! 4.Nxd4!! Qb6!! 5.Nb3!! Nf6!! 6.Nc3!! e6!! 7.Qe2!! Bb4!! 8.Bd2!! O-O!! 9.a3!! Be7!! 10.O-O-O!! d5!! 11.exd5!! Nxd5!! 12.g3!! Bf6!! 13.Ne4!! Be7!! 14.Bg2!! Rd8!! 15.Nc3!! Nxc3!! 16.Bxc3!! Bd7!! 17.Be4!! a5!! 18.Rhe1!! a4!!
+Jenna9K:                    1.e4!! c5! 2.Nf3!! Nc6! 3.d4!! cxd4!! 4.Nxd4!! Qb6!! 5.Nb3!! Nf6!! 6.Nc3!! Ne5
+!!Stockfish:                1.e4!! c5! 2.Nf3!! Nc6! 3.d4!! cxd4!! 4.Nxd4!! Qb6!! 5.Nb3!! Nf6!! 6.Nc3!! Ne5 7.f4!! Nfg4 8.Qe2!! e6!! 9.fxe5!! Nxe5!!
+Jenna9K:                    1.e4!! c5! 2.Nf3!! Nc6! 3.d4!! cxd4!! 4.Nxd4!! Qb6!! 5.Nb3!! Nf6!! 6.Nc3!! Ne5 7.f4!! Nfg4 8.Qe2!! e6!! 9.fxe5!! Be7
+#Stockfish vs. Jenna9K:     1.e4!! c5! 2.Nf3!! Nc6! 3.d4!! cxd4!! 4.Nxd4!! Qb6!! 5.Nb3!! Nf6!! 6.Nc3!! Ne5 7.f4!! Nfg4 8.Qe2!! e6!! 9.fxe5!! Be7 10.Qxg4!! a6 11.Qxg7 Rf8 12.Bh6 d5 13.exd5 exd5 14.Nxd5 Bh4+ 15.g3 Qxh6 16.Nf6+ Ke7 17.Nd5+ Ke8 18.Nc7+ Ke7 19.Qxh6 f6 20.Bc4 Bf5 21.Qg7+ Rf7 22.Qxf7+ Kd8 23.Rd1+ Kc8 24.Qf8+ Kxc7 25.Qd6+ Kc8 26.Qd8#
+Jenna9K:                    1.e4!! c5! 2.Nf3!! Nc6! 3.d4!! cxd4!! 4.Nxd4!! Qb6!! 5.Nb3!! Nf6!! 6.Nc3!! Ne5 7.f4!! Nfg4 8.Qe2!! e6!! 9.fxe5!! Rg8
+!!Stockfish:                1.e4!! c5! 2.Nf3!! Nc6! 3.d4!! cxd4!! 4.Nxd4!! Qb6!! 5.Nb3!! Nf6!! 6.Nc3!! Ne5 7.f4!! Nfg4 8.Qe2!! e6!! 9.fxe5!! Rg8 10.Qxg4!! a6!! 11.Qh3!! Rh8!! 12.Be3!! Qc7!! 13.Bd4!! d6!! 14.exd6!! Qxd6!! 15.e5!! Qc7!! 16.Bd3!! Bd7!! 17.O-O!! Bc6!! 18.Qe3!! Bb4!! 19.Ne4!! Bd5!!
+Jenna9K:                    1.e4!! c5! 2.Nf3!! Nc6! 3.d4!! cxd4!! 4.Nxd4!! Qb6!! 5.Nb3!! Nf6!! 6.Nc3!! Ne5 7.f4!! Nfg4 8.Qe2!! e6!! 9.fxe5!! Rg8 10.Qxg4!! Qb4
+#Stockfish vs. Jenna9K:     1.e4!! c5! 2.Nf3!! Nc6! 3.d4!! cxd4!! 4.Nxd4!! Qb6!! 5.Nb3!! Nf6!! 6.Nc3!! Ne5 7.f4!! Nfg4 8.Qe2!! e6!! 9.fxe5!! Rg8 10.Qxg4!! Qb4 11.Be3 h6 12.a3 Be7 13.axb4 h5 14.Qxh5 g6 15.Qh7 Rf8 16.Nb5 d5 17.Nc7+ Kd7 18.Nxa8 Kd8 19.exd5 Re8 20.d6 Bxd6 21.exd6 Bd7 22.Nb6 Rf8 23.Rxa7 Bc8 24.Ra8 e5 25.Rxc8#
+Jenna9K:                    1.e4!! c5! 2.Nf3!! Nc6! 3.d4!! cxd4!! 4.Nxd4!! Qb6!! 5.Nb3!! Nf6!! 6.Nc3!! Ne5 7.f4!! Nfg4 8.Qe2!! e6!! 9.fxe5!! Rg8 10.Qxg4!! Rb8
+#Stockfish vs. Jenna9K:     1.e4!! c5! 2.Nf3!! Nc6! 3.d4!! cxd4!! 4.Nxd4!! Qb6!! 5.Nb3!! Nf6!! 6.Nc3!! Ne5 7.f4!! Nfg4 8.Qe2!! e6!! 9.fxe5!! Rg8 10.Qxg4!! Rb8 11.Qh3!! Bb4 12.Be3!! g6 13.Bxb6!! axb6 14.O-O-O!! Rh8 15.Nb5!! h5 16.Qd3!! Kf8 17.Na7!! d5 18.exd6!! Kg7 19.d7!! e5 20.d8=Q!! Rxd8 21.Qxd8!! Bg4 22.Qxb8!! Kh7 23.Qxb7!! Be6 24.Nc6!! Kg7 25.Nd8!! Kf6 26.Nxe6!! Bf8 27.Qb8!! Bh6+ 28.Kb1!! g5 29.Qg8!! fxe6 30.Rd7!! b5 31.Rf7#
+Jenna9K:                    1.e4!! c5! 2.Nf3!! Nc6! 3.d4!! cxd4!! 4.Nxd4!! Qb6!! 5.Nb3!! Nf6!! 6.Nc3!! h5
+#Stockfish vs. Jenna9K:     1.e4!! c5! 2.Nf3!! Nc6! 3.d4!! cxd4!! 4.Nxd4!! Qb6!! 5.Nb3!! Nf6!! 6.Nc3!! h5 7.a3 g6!! 8.Be3 Bh6 9.Bxb6 axb6 10.Nd2 Ne5 11.Be2 Bg5 12.O-O!! Neg4 13.Nc4!! O-O!? 14.e5 Bf4 15.exf6 Bxh2+ 16.Kh1 e5 17.Bxg4 Bf4 18.Bxh5 d6 19.Nxb6 Bg4 20.Qxg4 Bg5 21.Qxg5 Ra4 22.Qh6 Rh4+ 23.Kg1 Rh1+ 24.Kxh1 gxh5 25.Qg7#
+Jenna9K:                    1.e4!! c5! 2.Nf3!! Nc6! 3.d4!! cxd4!! 4.Nxd4!! e6
+#Stockfish vs. Jenna9K:     1.e4!! c5! 2.Nf3!! Nc6! 3.d4!! cxd4!! 4.Nxd4!! e6 5.Nc3 Qf6 6.Be3 Nxd4 7.Bxd4 Bb4 8.Bxf6 Nxf6 9.Qd4 b6 10.Qxb4 d6 11.Qxd6 Bd7 12.O-O-O!! Rc8 13.Bb5 Bxb5 14.Nxb5 Nd5 15.Rxd5 exd5 16.exd5 f6 17.Qe6+ Kd8 18.Re1 Rc6 19.dxc6 a6 20.c7#
+#Jasper vs. Jenna9K:        1.e4!! c5! 2.Nf3!! Nc6! 3.d4!! cxd4!! 4.Nxd4!! e6 5.Nc3 Qf6 6.Be3 Nxd4 7.Bxd4 Bb4 8.Bxf6 Nxf6 9.Qd4 b6 10.Qxb4 d6 11.Qxd6 Bd7 12.O-O-O!! Rc8 13.Bb5 Bxb5 14.Nxb5 Nd5 15.Rxd5 exd5 16.exd5 f6 17.Qe6+ Kd8 18.Re1 Rc6 19.dxc6 a6 20.Qd7#
+;!C00 French DEF:           1.e4!! e6!
+;!!C00 French DEF:          1.e4!! e6! 2.d4!!
+#Stockfish vs. Jenna9K:     1.e4!! e6! 2.d4!! d5!! 3.Nc3!! Bb4 4.e5!! Bd7 5.a3!! Nf6 6.axb4!! b6 7.exf6!! Qxf6 8.Nf3!! Kd8 9.Bg5!! Ke8 10.Bxf6!! gxf6 11.Qd2!! Nc6 12.b5!! Nxd4 13.Qxd4!! c5 14.bxc6!! Bxc6 15.Qxf6!! Rg8 16.Ne5!! Rg7 17.Nxc6!! Kf8 18.Rxa7!! Rb8 19.Rxf7+!! Rxf7 20.Qh8#
+;!B10 Caro-Kann DEF:        1.e4!! c6!
+;!!B12 Caro-Kann DEF:       1.e4!! c6! 2.d4!!
+;!!B12 Caro-Kann DEF:       1.e4!! c6! 2.d4!! d5!!
+!!Stockfish:                1.e4!! c6! 2.d4!! d5!! 3.e5!! Bf5!! 4.Nf3!! e6!! 5.Be2! c5! 6.Be3!! cxd4!!
+Jenna9K:                    1.e4!! c6! 2.d4!! d5!! 3.e5!! Bf5!! 4.Nf3!! Na6
+#Stockfish vs. Jenna9K:     1.e4!! c6! 2.d4!! d5!! 3.e5!! Bf5!! 4.Nf3!! Na6 5.Nh4! Qa5+ 6.Nd2 e6 7.c3 Bc2 8.Qxc2 Nh6 9.Ndf3 Qc7 10.Bxh6 gxh6 11.Bxa6 bxa6!! 12.g3 Qb6 13.O-O!! a5 14.Ng2!! O-O-O 15.b4 h5 16.bxa5 Qa6 17.Rfb1 f6 18.Rb3 h6 19.Rab1 fxe5 20.Rb8+ Kc7 21.Rxd8 Kxd8 22.Qg6 e4 23.Ne5 Qc8 24.Nf4 Rh7 25.Qxh7 Be7 26.Qg8+ Kc7 27.Nxe6+ Kd6 28.Qxc8 a6 29.Qxc6#
+Jenna9K:                    1.e4!! c6! 2.d4!! d5!! 3.e5!! Bf5!! 4.Nf3!! Na6 5.Nh4! Qa5+ 6.Nd2 e6 7.c3 Bc2 8.Qxc2 Nh6 9.Ndf3 Qc7 10.Bxh6 gxh6 11.Bxa6 Qb6
+#Stockfish vs. Jenna9K:     1.e4!! c6! 2.d4!! d5!! 3.e5!! Bf5!! 4.Nf3!! Na6 5.Nh4! Qa5+ 6.Nd2 e6 7.c3 Bc2 8.Qxc2 Nh6 9.Ndf3 Qc7 10.Bxh6 gxh6 11.Bxa6 Qb6 12.g3 Qxa6 13.Ng2 Be7 14.Nf4 Qb6 15.O-O Rf8 16.Qxh7 a6 17.Kg2 O-O-O 18.Nxe6 Rfe8 19.Qxf7 Kb8 20.Ng7 Qa7 21.Nxe8 Rd7 22.e6 Rc7 23.Nxc7 Qa8 24.Qxe7 Ka7 25.Nxa8 a5 26.Qd8 c5 27.e7 cxd4 28.Qxa5+ Kb8 29.e8=Q#
+#Jasper vs. Jenna9K:        1.e4!! c6! 2.d4!! d5!! 3.e5!! Bf5!! 4.Nf3!! Na6 5.Nh4! Qa5+ 6.Nd2 e6 7.c3 Bc2 8.Qxc2 Nh6 9.Ndf3 Qc7 10.Bxh6 gxh6 11.Bxa6 Qb6 12.g3 Qxa6 13.Ng2 Be7 14.Nf4 Qb6 15.O-O Rf8 16.Qxh7 a6 17.Kg2 O-O-O 18.Nxe6 Rfe8 19.Qxf7 Kb8 20.Ng7 Qa7 21.Nxe8 Rd7 22.e6 Rc7 23.Nxc7 Qa8 24.Qxe7 Ka7 25.Nxa8 a5 26.Qd8 c5 27.e7 cxd4 28.Qxa5+ Kb8 29.e8=R#
+Jenna9K:                    1.e4!! c6! 2.d4!! d5!! 3.e5!! Bf5!! 4.Nf3!! a5
+#Stockfish vs. Jenna9K:     1.e4!! c6! 2.d4!! d5!! 3.e5!! Bf5!! 4.Nf3!! a5 5.Nh4!! Bc8 6.c4!! e6 7.Nf3!! Qc7 8.Nc3!! Bd7 9.cxd5!! Na6 10.d6!! Qd8 11.Bxa6!! Rxa6 12.Ne4!! b6 13.Bg5!! c5 14.Bxd8!! Kxd8 15.dxc5!! b5 16.Nd4!! Ra8 17.c6!! Ra7 18.cxd7!! Kxd7 19.Rc1!! h5 20.Qc2!! Ne7 21.dxe7!! f6 22.Qc6+!! Kxe7 23.Qxe6+!! Kd8 24.Rc8#
+;!A40 Queen's Pawn:         1.d4!
+;!!A45 Queen's pawn game:   1.d4! Nf6!!
+;!!E00 Queen's pawn game:   1.d4! Nf6!! 2.c4!! e6!!
+;!!E10 Queen's pawn game:   1.d4! Nf6!! 2.c4!! e6!! 3.Nf3!!
+#Jenna9K vs. Stockfish:     1.d4! Nf6!! 2.c4!! e6!! 3.Nf3!! b6!! 4.Nc3 Bb4!! 5.Bd2 O-O!! 6.Qc2 d5!! 7.cxd5 exd5!! 8.b3 Ba6!! 9.Ne5 c5!! 10.Nf3 Nc6!! 11.Qc1 cxd4!! 12.Rb1 dxc3!! 13.Bxc3 Ne4!! 14.h3 Bxc3+!! 15.Qxc3 Nxc3!! 16.b4 Nxb1!! 17.b5 Qe7!! 18.bxc6 Qa3!! 19.Kd1 Qb2!! 20.a3 Nc3+!! 21.Ke1 Qc1#
+Jenna9K:                    1.d4! Nf6!! 2.c4!! e6!! 3.Nc3
+#Jenna9K vs. Stockfish:     1.d4! Nf6!! 2.c4!! e6!! 3.Nc3 Bb4!! 4.Bd2 O-O!! 5.Qb3 c5!! 6.e3 Nc6!! 7.f3 cxd4!! 8.a3 dxc3!! 9.bxc3 Bc5!! 10.Qb2 Ne5!! 11.Kd1 b6!! 12.Be1 Ba6!! 13.Qb1 d5!! 14.Bd3 dxc4!! 15.Bd2!! Nxd3!! 16.Qc2 Nf2+!! 17.Ke1 Nxh1!! 18.Nh3 Qd6!! 19.Ng5 Qxh2!! 20.Nh3 Qxg2!! 21.Bc1 Qxc2!! 22.Kf1 Rfd8!! 23.Bd2 Rxd2!! 24.Ke1 Rg2!! 25.a4 Qe2#
+Jenna9K:                    1.d4! Nf6!! 2.c4!! e6!! 3.Nc3 Bb4!! 4.Bd2 O-O!! 5.Qb3 c5!! 6.e3 Nc6!! 7.f3 cxd4!! 8.a3 dxc3!! 9.bxc3 Bc5!! 10.Qb2 Ne5!! 11.Kd1 b6!! 12.Be1 Ba6!! 13.Qb1 d5!! 14.Bd3 dxc4!! 15.Qc2
+#Jenna9K vs. Stockfish:     1.d4! Nf6!! 2.c4!! e6!! 3.Nc3 Bb4!! 4.Bd2 O-O!! 5.Qb3 c5!! 6.e3 Nc6!! 7.f3 cxd4!! 8.a3 dxc3!! 9.bxc3 Bc5!! 10.Qb2 Ne5!! 11.Kd1 b6!! 12.Be1 Ba6!! 13.Qb1 d5!! 14.Bd3 dxc4!! 15.Qc2 cxd3!! 16.Qa4 d2!! 17.Bh4 Nc4!! 18.Kc2 Nxe3+!! 19.Kb2 d1=Q!! 20.Qxd1 Nxd1+!! 21.Rxd1 Qxd1!! 22.Ne2 Qxe2+!! 23.Ka1 Bc4!! 24.Kb1 Bxa3!! 25.Bxf6 Qa2#
+#Jenna9K vs. Jasper:        1.d4! Nf6!! 2.c4!! e6!! 3.Nc3 Bb4!! 4.Bd2 O-O!! 5.Qb3 c5!! 6.e3 Nc6!! 7.f3 cxd4!! 8.a3 dxc3!! 9.bxc3 Bc5!! 10.Qb2 Ne5!! 11.Kd1 b6!! 12.Be1 Ba6!! 13.Qb1 d5!! 14.Bd3 dxc4!! 15.Qc2 cxd3!! 16.Qa4 d2!! 17.Bh4 Nc4!! 18.Kc2 Nxe3+!! 19.Kb2 d1=Q!! 20.Qxd1 Nxd1+!! 21.Rxd1 Qxd1!! 22.Ne2 Qxe2+!! 23.Ka1 Bc4!! 24.Kb1 Bxa3!! 25.Bxf6 Qb2#
+;!A04 Zukertort OPN:        1.Nf3!
+;!A05 Reti OPN:             1.Nf3! Nf6!!
+!!Stockfish:                1.Nf3! Nf6!! 2.c4 e6!! 3.d4!! d5!! 4.Nc3!! c6!!
+Jenna9K:                    1.Nf3! Nf6!! 2.c4 e6!! 3.Nc3
+#Jenna9K vs. Stockfish:     1.Nf3! Nf6!! 2.c4 e6!! 3.Nc3 c5!! 4.a3 Be7!! 5.e3 d5!! 6.d4 dxc4!! 7.Bxc4 a6!! 8.Qc2 cxd4!! 9.Ng5 dxc3!! 10.bxc3 Bd7!! 11.Ra2 Qc7!! 12.f4 Qxc4!! 13.h4 O-O!! 14.Nxf7 Rxf7!! 15.Rb2 Ba4!! 16.Qd2 Nc6!! 17.Rxb7 Ne4!! 18.Rxe7 Rxe7!! 19.h5 Nxd2!! 20.Bxd2 Rd7!! 21.h6 Rxd2!! 22.Kxd2 Qa2+!! 23.Ke1 Rb8!! 24.hxg7 Rb1#
+Jenna9K:                    1.Nf3! Nf6!! 2.c4 e6!! 3.g3
+#Jenna9K vs. Stockfish:     1.Nf3! Nf6!! 2.c4 e6!! 3.g3 d5!! 4.Ne5 d4!! 5.Nf3 c5!! 6.Rg1 Qa5!! 7.b4 Qxb4!! 8.a3 Qxc4!! 9.g4 h6!! 10.Bb2 Nc6!! 11.g5 hxg5!! 12.Rxg5 Qa6!! 13.a4 Qb6!! 14.Bc1 Qc7!! 15.Qb3 e5!! 16.Bb2 e4!! 17.Ba3 exf3!! 18.e4 Nxe4!! 19.Bb2 Nxg5!! 20.Kd1 Be6!! 21.Qc2 Nb4!! 22.h4 Rxh4!! 23.Qc3 Rh1!! 24.Qxf3 Nxf3!! 25.Ra3 Qe5!! 26.Re3 d3!! 27.Bxe5 Rxf1+!! 28.Re1 Rxe1#
+;!A10 English OPN:          1.c4!
+;!!A30 Symmetrical VAR:     1.c4! c5!!
+#Jenna9K vs. Stockfish:     1.c4! c5!! 2.Nf3 Nc6!! 3.Nc3 Nf6!! 4.a3 g6!! 5.Nb5 Bg7!! 6.e4 Nxe4!! 7.Qe2 a6!! 8.Qe3 axb5!! 9.g4 bxc4!! 10.Qxe4 d5!! 11.Qb1 Bxg4!! 12.Be2 Qd7!! 13.h4 Qe6!! 14.Ne5 Qxe5!! 15.O-O Bxe2!! 16.b3 Qf4!! 17.Bb2 Qg4+!! 18.Kh2 Bf3!! 19.Qxg6 Qxh4+!! 20.Kg1 Qh1#
+
 

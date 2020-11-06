@@ -1,10 +1,11 @@
-;this is a comment
-;i love comments
+;Chessmaster 9000
+;Skippy (643)
 
-+B00 King's Pawn:           1.e4
-+C20 Open Game:             1.e4 e5
-B02 Alekhine's Defence:     1.e4 Nf6
-+Stockfish:                 1.e4 Nf6 2.e5
-Skippy9K:                   1.e4 Nf6 2.e5 Nc6 3.exf6 d6 4.d4 b6 5.Bb5 d5 6.Bxc6+ Bd7 7.Bxa8 g6 8.Bxd5 exf6 9.Qe2+ Be6 10.Bc6+ Ke7 11.d5 b5 12.Qxb5 Bg4 13.Qb4+ Qd6 14.Qxg4 Kd8 15.Bf4 f5 16.Qe2 Bg7 17.Bxd6 cxd6 18.Qa6 h5 19.Qb7 Re8+ 20.Ne2 Rxe2+ 21.Kxe2 Bxb2
-#MATE:                      1.e4 Nf6 2.e5 Nc6 3.exf6 d6 4.d4 b6 5.Bb5 d5 6.Bxc6+ Bd7 7.Bxa8 g6 8.Bxd5 exf6 9.Qe2+ Be6 10.Bc6+ Ke7 11.d5 b5 12.Qxb5 Bg4 13.Qb4+ Qd6 14.Qxg4 Kd8 15.Bf4 f5 16.Qe2 Bg7 17.Bxd6 cxd6 18.Qa6 h5 19.Qb7 Re8+ 20.Ne2 Rxe2+ 21.Kxe2 Bxb2 22.Qd7#
+1.e4!! Nf6! 2.e5!! Nc6? 3.exf6!! d6? 4.d4!! b6 5.Bb5 d5 6.Bxc6+ Bd7 7.Bxa8 g6 8.Bxd5 exf6 9.Qe2+ Be6 10.Bc6+ Ke7 11.d5 b5 12.Qxb5 Bg4 13.Qb4+ Qd6 14.Qxg4 Kd8 15.Bf4 h5!! 16.Qe2!! Qe7!! 17.Qxe7+!! Bxe7!! 18.Be3!! a6!! 19.Nd2!! Rh7!! 20.Bb7!! a5!! 21.Nc4!! f5!! 22.O-O-O!! Ke8!! 23.Nxa5!! Bd6!! 24.Bc6+!! Kf8!!
+1.e4!! Nf6! 2.e5!! Nc6? 3.exf6!! d6? 4.d4!! b6 5.Bb5 d5 6.Bxc6+ Bd7 7.Bxa8 g6 8.Bxd5 exf6 9.Qe2+ Be6 10.Bc6+ Ke7 11.d5 b5 12.Qxb5 Bg4 13.Qb4+ Qd6 14.Qxg4 Kd8 15.Bf4 f5
+1.e4!! Nf6! 2.e5!! Nc6? 3.exf6!! d6? 4.d4!! b6 5.Bb5 d5 6.Bxc6+ Bd7 7.Bxa8 g6 8.Bxd5 exf6 9.Qe2+ Be6 10.Bc6+ Ke7 11.d5 b5 12.Qxb5 Bg4 13.Qb4+ Qd6 14.Qxg4 Kd8 15.Bf4 f5 16.Qe2 Bg7 17.Bxd6 cxd6 18.Qa6 h5 19.Qb7 Re8+ 20.Ne2 Rxe2+ 21.Kxe2 Bxb2 22.Qd7#
+1.e4!! Nf6! 2.e5!! Nc6? 3.exf6!! d6? 4.d4!! b6 5.Bb5 d5 6.Bxc6+ Bd7 7.Bxa8 g6 8.Bxd5 exf6 9.Qe2+ Be6 10.Bc6+ Ke7 11.d5 b5 12.Qxb5 Bg4 13.Qb4+ Qd6 14.Qxg4 Kd8 15.Bf4 a5
+1.e4!! Nf6! 2.e5!! Nc6? 3.exf6!! d6? 4.d4!! b6 5.Bb5 d5 6.Bxc6+ Bd7 7.Bxa8 g6 8.Bxd5 exf6 9.Qe2+ Be6 10.Bc6+ Ke7 11.d5 b5 12.Qxb5 Bg4 13.Qb4+ Qd6 14.Qxg4 Kd8 15.Bf4 a5 16.Bxd6 f5 17.Qd4!! g5!? 18.Be7+ Kc8 19.Qa7 Bxe7 20.Qa8#
+1.f3?
+1.f3? e5!! 2.e4 Bc5!! 3.Nh3 d5!! 4.Nf2 Bxf2+!! 5.Kxf2 dxe4!! 6.Ke3 exf3!! 7.Qxf3 Qd4+!! 8.Ke2 Bg4!! 9.Qxg4 Qxg4+!! 10.Ke3 Nc6!! 11.Na3 Nf6!! 12.Bc4 Qxg2!! 13.Bxf7+ Kxf7!! 14.Re1 Nb4!! 15.Rf1 Nd5+!! 16.Kd3 Qxf1#
 

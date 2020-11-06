@@ -1,31 +1,74 @@
-;this is a comment
-;i love comments
+;Chessmaster 9000
+;Simon (664)
 
-+B00 King's Pawn:           1.e4
-+C20 Open Game:             1.e4 e5
-B20 Sicilian Defense:       1.e4 c5
-+B27 Sicilian Defense:      1.e4 c5 2.Nf3
-+B40 Sicilian DEF:          1.e4 c5 2.Nf3 e6
-B30 Sicilian Defense:       1.e4 c5 2.Nf3 Nc6
-+B32 Open Sicilian:         1.e4 c5 2.Nf3 Nc6 3.d4
-+Stockfish:                 1.e4 c5 2.Nf3 Nc6 3.d4 cxd4
-+Stockfish:                 1.e4 c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4
-Simon9K:                    1.e4 c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 Qb6
-+Stockfish:                 1.e4 c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 Qb6 5.Be3
-Simon9K:                    1.e4 c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 Qb6 5.Be3 Nxd4 6.Bxd4 Qc7 7.b3 Nh6 8.Bc4 Qf4 9.Nd2 Ng4 10.g3 a5 11.gxf4 Nxf2 12.Kxf2 e6 13.Bb5 Bd6 14.Nc4 Bf8 15.Nb6 Bc5 16.Bxc5 Kd8 17.Nxd7 b6 18.Ne5+ Kc7 19.Qd6+ Kb7
-#Stockfish:                 1.e4 c5 2.Nf3 Nc6 3.d4 cxd4 4.Nxd4 Qb6 5.Be3 Nxd4 6.Bxd4 Qc7 7.b3 Nh6 8.Bc4 Qf4 9.Nd2 Ng4 10.g3 a5 11.gxf4 Nxf2 12.Kxf2 e6 13.Bb5 Bd6 14.Nc4 Bf8 15.Nb6 Bc5 16.Bxc5 Kd8 17.Nxd7 b6 18.Ne5+ Kc7 19.Qd6+ Kb7 20.Qxb6#
-B10 Caro-Kann Defense:      1.e4 c6
-+B12 Caro-Kann Defense:     1.e4 c6 2.d4
-+B12 Caro-Kann Defense:     1.e4 c6 2.d4 d5
-+Stockfish:                 1.e4 c6 2.d4 d5 3.e5
-+Stockfish:                 1.e4 c6 2.d4 d5 3.e5 Bf5
-+Stockfish:                 1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3
-Simon9K:                    1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 Nd7
-+Stockfish:                 1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 Nd7 5.Nh4
-Simon9K:                    1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 Nd7 5.Nh4 Bd3
-+Stockfish:                 1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 Nd7 5.Nh4 Bd3 6.Bxd3
-Simon9K:                    1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 Nd7 5.Nh4 Bd3 6.Bxd3 e6 7.Nf3 Be7 8.0-0 g6 9.c4 Nb6 10.c5 g5 11.cxb6 Qd7 12.Nxg5 h6 13.Nxf7 Bb4 14.Nxh8 Qf7 15.Nxf7 Kd7 16.bxa7 Bd2 17.Qxd2 b6 18.Qb4 c5 19.Qxb6 c4 20.Qb7+ Ke8 21.Nd6+ Kd8 22.Qxa8+ Kc7 23.Qb8+ Kd7 24.Qb7+ Kd8
-#Stockfish:                 1.e4 c6 2.d4 d5 3.e5 Bf5 4.Nf3 Nd7 5.Nh4 Bd3 6.Bxd3 e6 7.Nf3 Be7 8.0-0 g6 9.c4 Nb6 10.c5 g5 11.cxb6 Qd7 12.Nxg5 h6 13.Nxf7 Bb4 14.Nxh8 Qf7 15.Nxf7 Kd7 16.bxa7 Bd2 17.Qxd2 b6 18.Qb4 c5 19.Qxb6 c4 20.Qb7+ Ke8 21.Nd6+ Kd8 22.Qxa8+ Kc7 23.Qb8+ Kd7 24.Qb7+ Kd8 25.a8=Q#
-Simon9K:                    1.d4 Nf6 2.c4 e6 3.Nf3 b6 4.c5 bxc5 5.Qc2 cxd4 6.Bd2 Nc6 7.a4 Nb4 8.Kd1 Nxc2 9.b3 Nxa1 10.e3 dxe3 11.Bxe3 Nxb3 12.Nc3 c6 13.Bg5 h6 14.Nd2 hxg5 15.f4 Nxd2 16.g4 Nxf1 17.Rxf1 Nxg4 18.Ne4 Nxh2 19.Rf2 Rb8 20.Rb2 Rxb2 21.f5 exf5 22.Kc1 Re2 23.Kd1 Rxe4 24.Kc1 g4 25.a5 Qg5+ 26.Kb1 Re1+ 27.Kc2 Nf3 28.Kb2 Rh2+ 29.Kc3 Qe3+ 30.Kc4
-#Jasper:                    1.d4 Nf6 2.c4 e6 3.Nf3 b6 4.c5 bxc5 5.Qc2 cxd4 6.Bd2 Nc6 7.a4 Nb4 8.Kd1 Nxc2 9.b3 Nxa1 10.e3 dxe3 11.Bxe3 Nxb3 12.Nc3 c6 13.Bg5 h6 14.Nd2 hxg5 15.f4 Nxd2 16.g4 Nxf1 17.Rxf1 Nxg4 18.Ne4 Nxh2 19.Rf2 Rb8 20.Rb2 Rxb2 21.f5 exf5 22.Kc1 Re2 23.Kd1 Rxe4 24.Kc1 g4 25.a5 Qg5+ 26.Kb1 Re1+ 27.Kc2 Nf3 28.Kb2 Rh2+ 29.Kc3 Qe3+ 30.Kc4 Ba6#
+
+;!!B00 King's Pawn:         1.e4!!
+;!!C20 Open Game:           1.e4!! e5!!
+;!!C40 King's Knight:       1.e4!! e5!! 2.Nf3!!
+;!!C44 King's pawn game:    1.e4!! e5!! 2.Nf3!! Nc6!!
+;!!C60 Ruy Lopez:           1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!!
+;!!Morphy DEF:              1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!!
+;!!C70 Columbus VAR:        1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!!
+!!Stockfish:                1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Rb8! 5.c3!! Nh6 6.d4!! Bd6 7.Bg5!! f5 8.Bxd8!! Nxd4 9.cxd4!! Kxd8 10.dxe5!! Ng4 11.exd6!! c6 12.Qd4!! Nf6!! 13.Ng5!! Nxe4!! 14.Nf7+!! Ke8!! 15.Bb3!! Nc5!! 16.Qxc5!! Kf8!! 17.Nxh8!! b6!! 18.Qe3!! f4!! 19.Qe7#
+{Simon9K}                   1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Rb8! 5.c3!! Nh6 6.d4!! Bd6 7.Bg5!! f5 8.Bxd8!! Nxd4 9.cxd4!! Kxd8 10.dxe5!! Ng4 11.exd6!! c6 12.Qd4!! Ne3
+{#Stockfish vs. Simon9K}    1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Rb8! 5.c3!! Nh6 6.d4!! Bd6 7.Bg5!! f5 8.Bxd8!! Nxd4 9.cxd4!! Kxd8 10.dxe5!! Ng4 11.exd6!! c6 12.Qd4!! Ne3 13.Qxg7!! Nxg2+ 14.Kd1!! Ne3+ 15.fxe3!! Re8 16.Qg5+!! Re7 17.Qxe7#
+{Simon9K}                   1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Rb8! 5.c3!! Nh6 6.d4!! Bd6 7.Bg5!! f5 8.Bxd8!! Nxd4 9.cxd4!! Kxd8 10.dxe5!! Ng4 11.exd6!! c6 12.Qd4!! Nxh2
+{#Stockfish vs. Simon9K}    1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Rb8! 5.c3!! Nh6 6.d4!! Bd6 7.Bg5!! f5 8.Bxd8!! Nxd4 9.cxd4!! Kxd8 10.dxe5!! Ng4 11.exd6!! c6 12.Qd4!! Nxh2 13.Qxg7 Nxf3+ 14.gxf3 Re8 15.Qg5+ Re7 16.Qxe7#
+{Simon9K}                   1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Bxc6
+#Simon9K vs. Stockfish:     1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Bxc6 dxc6 5.Nh4 Qxh4 6.Qf3 f5 7.Qe2 fxe4 8.b3 Bc5 9.g3 Qh3 10.Qe3 Bxe3 11.dxe3 Nf6 12.Rg1 Qxh2 13.Rf1 Bh3 14.Nd2 Ng4 15.Nxe4 Bxf1 16.Ba3 Bg2 17.O-O-O Bxe4 18.Rf1 Nxe3 19.Bc5 Nxf1 20.Kb2 b6 21.Bb4 Qxf2 22.Ka3 Qxc2 23.g4 b5 24.Bd2 c5 25.Bc3 Qxc3 26.g5 Qc1#
+Simon9K:                    1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Nd4
+#Simon9K vs. Stockfish:     1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Nd4 Nxd4!! 5.Na3 Nxb5!! 6.Nxb5 axb5!! 7.g3 Nf6!! 8.Rb1 d5!! 9.d3 dxe4!! 10.Bd2 Bg4!! 11.h3 Bxd1!! 12.Rxd1 exd3!! 13.c4 bxc4!! 14.Rb1 Ne4!! 15.Rf1 Qd4!! 16.Ra1 Nxd2!! 17.a4 Nf3+!! 18.Kd1 Qxb2!! 19.a5 Qxa1#
+;!B20 Sicilian DEF:         1.e4!! c5!
+;!!B27 Sicilian DEF:        1.e4!! c5! 2.Nf3!!
+;!!B50 Sicilian:            1.e4!! c5! 2.Nf3!! d6!!
+;!!B40 Sicilian DEF:        1.e4!! c5! 2.Nf3!! e6!
+{!!Stockfish}               1.e4!! c5! 2.Nf3!! e6! 3.d4!! cxd4!! 4.Nxd4!! Qe7 5.Be3!! a6!!
+{Simon9K}                   1.e4!! c5! 2.Nf3!! e6! 3.d4!! cxd4!! 4.Nxd4!! Qe7 5.Be3!! Qd6
+{#Stockfish vs. Simon9K}    1.e4!! c5! 2.Nf3!! e6! 3.d4!! cxd4!! 4.Nxd4!! Qe7 5.Be3!! Qd6 6.Nb5!! Qc6 7.Nxa7!! Qxe4 8.Nxc8!! Ra5 9.Nd2!! Bb4 10.Nd6+!! Bxd6 11.Nxe4!! Be5 12.c3!! Rd5 13.Qb3!! f5 14.Nd2!! Rxd2 15.Bxd2!! Nf6 16.Qxb7!! Bg3 17.Qc8+!! Kf7 18.Qxh8!! Bd6 19.Bg5!! Nd5 20.Be2!! Be5 21.Bh5+!! g6 22.Qxh7+!! Bg7 23.Qxg6+!! Kg8 24.Bh6!! Nxc3 25.Qxg7#
+{Simon9K}                   1.e4!! c5! 2.Nf3!! e6! 3.d4!! cxd4!! 4.Nxd4!! Qe7 5.Be3!! Qc5
+{#Stockfish vs. Simon9K}    1.e4!! c5! 2.Nf3!! e6! 3.d4!! cxd4!! 4.Nxd4!! Qe7 5.Be3!! Qc5 6.Nxe6!! dxe6 7.Bxc5!! Nd7 8.Bxf8!! g6 9.Bg7!! b5 10.Bxb5!! Nh6 11.Bxh8!! a5 12.Qd6!! Nf5 13.exf5!! Ra6 14.Bxd7+!! Bxd7 15.Qb8+!! Bc8 16.Qxc8+!! Ke7 17.Qc7+!! Ke8 18.f6!! a4 19.Qe7#
+;B30 Sicilian DEF:          1.e4!! c5! 2.Nf3!! Nc6!
+;!!B32 Open Sicilian:       1.e4!! c5! 2.Nf3!! Nc6! 3.d4!!
+#Stockfish vs. Simon9K:     1.e4!! c5! 2.Nf3!! Nc6! 3.d4!! cxd4!! 4.Nxd4!! Qb6!! 5.Nb3!! e6 6.Nc3!! Ne5 7.f4!! g6 8.fxe5!! Bb4 9.Qf3!! f5 10.exf6!! Kf7 11.Be2!! Bd6 12.Be3!! Qc7 13.Nb5!! Ba3 14.Nxc7!! Bxb2 15.Rd1!! h5 16.O-O!! d6 17.Nxa8!! Bc3 18.Rxd6!! Be5 19.Rd8!! Bc7 20.Nxc7!! Nh6 21.Rxh8!! Ng4 22.Bb5!! Bd7 23.Bxd7!! Nxe3 24.Bxe6#
+Simon9K:                    1.e4!! c5! 2.Nf3!! Nc6! 3.d4!! cxd4!! 4.Nxd4!! Qb6!! 5.Be3!
+#Stockfish vs. Simon9K:     1.e4!! c5! 2.Nf3!! Nc6! 3.d4!! cxd4!! 4.Nxd4!! Qb6!! 5.Be3! Nxd4 6.Bxd4 Qc7 7.b3 Nh6 8.Bc4 Qf4 9.Nd2 Ng4 10.g3 a5 11.gxf4 Nxf2 12.Kxf2!! e6 13.Bb5!! Bd6 14.Nc4!! Bf8 15.Nb6 Bc5 16.Bxc5 Kd8 17.Nxd7 b6 18.Ne5+ Kc7 19.Qd6+ Kb7 20.Qxb6#
+;!C00 French DEF:           1.e4!! e6!
+;!!C00 French DEF:          1.e4!! e6! 2.d4!!
+;!!C11 French DEF:          1.e4!! e6! 2.d4!! d5!! 3.Nc3!! Nf6!!
+{#Stockfish vs. Simon9K}    1.e4!! e6! 2.d4!! d5!! 3.Nc3!! Nf6!! 4.e5!! Nc6 5.exf6!! Bb4 6.fxg7!! Rg8 7.Qd3!! h5 8.Qh7!! Kd7 9.Nf3!! Qf6 10.Qxg8!! Rb8 11.Bb5!! a5 12.Ne5+!! Qxe5+ 13.dxe5!! Be7 14.Qxf7!! Ra8 15.g8=Q!! a4 16.Qxe6#
+{#Jasper vs. Simon9K}       1.e4!! e6! 2.d4!! d5!! 3.Nc3!! Nf6!! 4.e5!! Nc6 5.exf6!! Bb4 6.fxg7!! Rg8 7.Qd3!! h5 8.Qh7!! Kd7 9.Nf3!! Qf6 10.Qxg8!! Rb8 11.Bb5!! a5 12.Ne5+!! Qxe5+ 13.dxe5!! Be7 14.Qxf7!! Ra8 15.g8=Q!! a4 16.Qge8#
+;!B10 Caro-Kann DEF:        1.e4!! c6!
+;!!B12 Caro-Kann DEF:       1.e4!! c6! 2.d4!!
+;!!B12 Caro-Kann DEF:       1.e4!! c6! 2.d4!! d5!!
+#Stockfish vs. Simon9K:     1.e4!! c6! 2.d4!! d5!! 3.e5!! Bf5!! 4.Nf3!! Nd7 5.Nh4!! Bd3 6.Bxd3!! e6 7.Nf3 Be7 8.O-O!! g6 9.c4 Nb6 10.c5 g5 11.cxb6 Qd7 12.Nxg5 h6 13.Nxf7 Bb4 14.Nxh8 Qf7 15.Nxf7 Kd7 16.bxa7 Bd2 17.Qxd2 b6 18.Qb4 c5 19.Qxb6 c4 20.Qb7+ Ke8 21.Nd6+ Kd8 22.Qxa8+ Kc7 23.Qb8+ Kd7 24.Qb7+ Kd8 25.a8=Q#
+#Jasper vs. Simon9K:        1.e4!! c6! 2.d4!! d5!! 3.e5!! Bf5!! 4.Nf3!! Nd7 5.Nh4!! Bd3 6.Bxd3!! e6 7.Nf3 Be7 8.O-O!! g6 9.c4 Nb6 10.c5 g5 11.cxb6 Qd7 12.Nxg5 h6 13.Nxf7 Bb4 14.Nxh8 Qf7 15.Nxf7 Kd7 16.bxa7 Bd2 17.Qxd2 b6 18.Qb4 c5 19.Qxb6 c4 20.Qb7+ Ke8 21.Nd6+ Kd8 22.Qxa8+ Kc7 23.Qb8+ Kd7 24.Qb7+ Kd8 25.a8=R#
+;!A40 Queen's Pawn:         1.d4!
+;!!A45 Queen's pawn game:   1.d4! Nf6!!
+;!!E00 Queen's pawn game:   1.d4! Nf6!! 2.c4!! e6!!
+;!!E10 Queen's pawn game:   1.d4! Nf6!! 2.c4!! e6!! 3.Nf3!!
+;!E12 Queen's Indian DEF:   1.d4! Nf6!! 2.c4!! e6!! 3.Nf3!! b6!
+!!Stockfish:                1.d4! Nf6!! 2.c4!! e6!! 3.Nf3!! b6! 4.c5 bxc5!! 5.Nc3!! Bb7!! 6.e3!! cxd4!! 7.exd4!! c5!! 8.dxc5!! Bxc5!! 9.Be2!! Bxf3!!
+Simon9K:                    1.d4! Nf6!! 2.c4!! e6!! 3.Nf3!! b6! 4.c5 bxc5!! 5.Qc2
+#Simon9K vs. Jasper:        1.d4! Nf6!! 2.c4!! e6!! 3.Nf3!! b6! 4.c5 bxc5!! 5.Qc2 cxd4 6.Bd2 Nc6 7.a4 Nb4 8.Kd1 Nxc2 9.b3 Nxa1 10.e3 dxe3 11.Bxe3 Nxb3 12.Nc3 c6 13.Bg5 h6 14.Nd2 hxg5 15.f4 Nxd2 16.g4 Nxf1 17.Rxf1 Nxg4 18.Ne4 Nxh2 19.Rf2 Rb8 20.Rb2 Rxb2 21.f5 exf5 22.Kc1 Re2 23.Kd1 Rxe4 24.Kc1 g4 25.a5 Qg5+ 26.Kb1 Re1+ 27.Kc2 Nf3 28.Kb2 Rh2+ 29.Kc3 Qe3+ 30.Kc4 Ba6#
+Simon9K:                    1.d4! Nf6!! 2.c4!! e6!! 3.Nf3!! b6! 4.c5 bxc5!! 5.Bg5
+!!Stockfish:                1.d4! Nf6!! 2.c4!! e6!! 3.Nf3!! b6! 4.c5 bxc5!! 5.Bg5 cxd4!! 6.Nxd4!! h6!! 7.Bh4!! Be7!! 8.e3!! d5!! 9.Be2!! c5!! 10.Nf3!! Qb6!!
+Simon9K:                    1.d4! Nf6!! 2.c4!! e6!! 3.Nf3!! b6! 4.c5 bxc5!! 5.Bg5 cxd4!! 6.Nc3
+#Simon9K vs. Stockfish:     1.d4! Nf6!! 2.c4!! e6!! 3.Nf3!! b6! 4.c5 bxc5!! 5.Bg5 cxd4!! 6.Nc3 dxc3!! 7.Bxf6 Qxf6!! 8.b3 c2!! 9.Qxc2 Bb4+!! 10.Nd2 Qxa1+!! 11.Qd1 Qxa2!! 12.f4 Nc6!! 13.Rg1 Nd4!! 14.e4 Nxb3!! 15.Be2 Nxd2!! 16.Kf2 Bc5+!! 17.Ke1 Nxe4!! 18.Rh1 Rb8!! 19.g4 Rb1!! 20.Qxb1 Qxb1+!! 21.Bd1 Ba6!! 22.f5 Bf2#
+Simon9K:                    1.d4! Nf6!! 2.c4!! e6!! 3.Nf3!! b6! 4.c5 bxc5!! 5.Bg5 cxd4!! 6.Nfd2
+#Simon9K vs. Stockfish:     1.d4! Nf6!! 2.c4!! e6!! 3.Nf3!! b6! 4.c5 bxc5!! 5.Bg5 cxd4!! 6.Nfd2 Be7!! 7.b4 O-O!! 8.b5 h6!! 9.Bxf6 Bxf6!! 10.Ne4 Be7!! 11.Qd2 a6!! 12.Kd1 axb5!! 13.g3 d5!! 14.Bh3 dxe4!! 15.Bg4 d3!! 16.exd3 Bf6!! 17.Bxe6 Bxe6!! 18.Ke1 Bxa1!! 19.d4 Rxa2!! 20.Qb4 Bxd4!! 21.Nd2 Bxf2+!! 22.Kxf2 Rxd2+!! 23.Kg1 Re2!! 24.Qd6 Qxd6!! 25.g4 Qd1#
+Simon9K:                    1.d4! Nf6!! 2.Nf3
+#Simon9K vs. Stockfish:     1.d4! Nf6!! 2.Nf3 e6!! 3.g3 b5!! 4.c3 Bb7!! 5.Qc2 c5!! 6.Na3 a6!! 7.Bg2 Be4!! 8.Qd1 cxd4!! 9.Rf1 Bxa3!! 10.g4 Be7!! 11.Rg1 dxc3!! 12.Nh4 Bb4!! 13.bxc3 Bxc3+!! 14.Bd2 Bxa1!! 15.g5 Bd4!! 16.e3 Bxg2!! 17.gxf6 Bxf6!! 18.Rxg2 Bxh4!! 19.Qf3 Nc6!! 20.Rxg7 Qf6!! 21.Qh5 Qxf2+!! 22.Kd1 Qf1+!! 23.Kc2 Rc8!! 24.Qxh4 Nd4+!! 25.Kb2 Rc2+!! 26.Ka3 Qd3+!! 27.Bc3 Qxc3#
+;!A04 Zukertort OPN:        1.Nf3!
+;!A05 Reti OPN:             1.Nf3! Nf6!!
+#Simon9K vs. Stockfish:     1.Nf3! Nf6!! 2.g3 d5!! 3.Bg2 c5!! 4.h4 e6!! 5.a4 Nc6!! 6.Na3 h6!! 7.c3 e5!! 8.d3 a6!! 9.Kf1 Be6!! 10.Rh2 Bd6!! 11.Be3 Ng4!! 12.Kg1 e4!! 13.d4 Nxe3!! 14.Qb1 exf3!! 15.Nc4 Nxc4!! 16.exf3 cxd4!! 17.Qf1 Qb6!! 18.Qb1 dxc3!! 19.a5 Qxb2!! 20.Qe1 c2!! 21.f4 Bb4!! 22.Qf1 Bc3!! 23.f5 Qxa1!! 24.Qxa1 Bxa1!! 25.Rh1 c1=R+!! 26.Bf1 Bxf5!! 27.g4 Be4!! 28.f3 Bxf3!! 29.Kf2 Bxh1!! 30.Bxc4 dxc4!! 31.g5 O-O-O!! 32.h5 Rd3!! 33.gxh6 Bd4+!! 34.Ke2 Bf3#
+;!A10 English OPN:          1.c4!
+;!!A30 Symmetrical VAR:     1.c4! c5!!
+!!Stockfish:                1.c4! c5!! 2.Nf3!! Nc6! 3.Nc3! Nf6! 4.Nd5 e6!! 5.Qb3 exd5!! 6.Rg1 dxc4!! 7.Qxc4 d5!! 8.Qa4 Bd6!! 9.e3 O-O!! 10.Bc4 dxc4!! 11.Nh4 Bxh2!! 12.Rh1 Ng4!! 13.Qxc4 Nce5!! 14.Nf5 Nxc4!! 15.b3 Nce5!! 16.d4 Nd3+!! 17.Kd2 Bxf5!! 18.b4!! Ndxf2!! 19.Rxh2!! cxd4!! 20.Ke1!! dxe3!!
+Simon9K:                    1.c4! c5!! 2.Nf3!! Nc6! 3.Nc3! Nf6! 4.Nd5 e6!! 5.Qb3 exd5!! 6.Rg1 dxc4!! 7.Qxc4 d5!! 8.Qa4 Bd6!! 9.e3 O-O!! 10.Bc4 dxc4!! 11.Nh4 Bxh2!! 12.Rh1 Ng4!! 13.Qxc4 Nce5!! 14.Nf5 Nxc4!! 15.b3 Nce5!! 16.d4 Nd3+!! 17.Kd2 Bxf5!! 18.Bb2
+#Simon9K vs. Stockfish:     1.c4! c5!! 2.Nf3!! Nc6! 3.Nc3! Nf6! 4.Nd5 e6!! 5.Qb3 exd5!! 6.Rg1 dxc4!! 7.Qxc4 d5!! 8.Qa4 Bd6!! 9.e3 O-O!! 10.Bc4 dxc4!! 11.Nh4 Bxh2!! 12.Rh1 Ng4!! 13.Qxc4 Nce5!! 14.Nf5 Nxc4!! 15.b3 Nce5!! 16.d4 Nd3+!! 17.Kd2 Bxf5!! 18.Bb2 Ndxf2!! 19.Rxh2 Qe7!! 20.Re1 Qe4!! 21.Ke2 Qxe3+!! 22.Kf1 Bd3+!! 23.Re2 Qxe2+!! 24.Kg1 Qd1#
+Simon9K:                    1.c4! c5!! 2.Nf3!! Nc6! 3.Nc3! Nf6! 4.Nd5 e6!! 5.Qb3 exd5!! 6.Rg1 dxc4!! 7.Qxc4 d5!! 8.Qa4 Bd6!! 9.e3 O-O!! 10.Bc4 dxc4!! 11.Nh4 Bxh2!! 12.Rh1 Ng4!! 13.Qxc4 Nce5!! 14.Nf5 Nxc4!! 15.b3 Nce5!! 16.d4 Nd3+!! 17.Kd2 Bxf5!! 18.e4
+#Simon9K vs. Stockfish:     1.c4! c5!! 2.Nf3!! Nc6! 3.Nc3! Nf6! 4.Nd5 e6!! 5.Qb3 exd5!! 6.Rg1 dxc4!! 7.Qxc4 d5!! 8.Qa4 Bd6!! 9.e3 O-O!! 10.Bc4 dxc4!! 11.Nh4 Bxh2!! 12.Rh1 Ng4!! 13.Qxc4 Nce5!! 14.Nf5 Nxc4!! 15.b3 Nce5!! 16.d4 Nd3+!! 17.Kd2 Bxf5!! 18.e4 Qxd4!! 19.exf5 Ne1+!! 20.Kxe1 Qxf2+!! 21.Kd1 Rad8+!! 22.Bd2 Qxd2#
+Simon9K:                    1.c4! c5!! 2.g3
+#Simon9K vs. Stockfish:     1.c4! c5!! 2.g3 g6!! 3.Bg2 Nc6!! 4.Kf1 Bg7!! 5.Bxc6 bxc6!! 6.Na3 e5!! 7.f3 e4!! 8.Nc2 d5!! 9.g4 h5!! 10.h3 hxg4!! 11.cxd5 gxf3!! 12.d6 Ba6!! 13.Nb4 Qg5!! 14.Nxf3 exf3!! 15.d3 Qg2+!! 16.Ke1 Qxh1+!! 17.Kd2 Qxd1+!! 18.Kxd1 cxb4!! 19.exf3 Rxh3!! 20.Bg5 Rh1+!! 21.Ke2 Rxa1!! 22.a3 b3!! 23.Kd2 Bxb2!! 24.Ke2 Bxa3!! 25.Bh4 b2!! 26.Bf6 Nxf6!! 27.Kf2 b1=Q!! 28.d7+ Kxd7!! 29.f4 Qxd3!! 30.f5 Ne4+!! 31.Kg2 Qg3#
+
 

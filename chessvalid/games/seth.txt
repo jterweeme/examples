@@ -1,18 +1,52 @@
 ;Chessmaster 9000
-
 ;Seth (707)
 
 
-#Stockfish:                 1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5! a6! 4.Ba4! g6 5.d4! Rb8 6.dxe5! Nh6 7.Bg5! f6 8.Bxf6! b5 9.Bxd8! Kxd8 10.Bb3! Nd4 11.Nxd4! Ke8 12.a3! d5 13.Nc3! Bb4 14.axb4! Nf7 15.Nc6! Ng5 16.Nxb8! Bg4 17.Qxg4! h5 18.Qc8+ Kf7 19.Qxh8! c6 20.Nxc6! Ne6 21.Bxd5 a5 22.Bxe6+! Kxe6 23.Qe8#
-B20 Sicilian DEF:           1.e4!! c5
-+B40 Sicilian DEF:          1.e4!! c5 2.Nf3! e6!
-B30 Sicilian DEF:           1.e4!! c5 2.Nf3! Nc6
-#Stockfish:                 1.e4!! c5 2.Nf3! Nc6 3.d4! cxd4! 4.Nxd4! e6 5.Nc3! Qb6 6.Ndb5 Bb4 7.Bf4 Ne5 8.Bxe5 Bxc3+ 9.bxc3 Qa5 10.Bxg7 Kd8 11.Qd6 Ne7 12.Bxh8 Qa6 13.Qc7+ Ke8 14.Nd6+ Qxd6 15.Qxd6 Nf5 16.exf5 f6 17.Bxf6 Kf7 18.Qe7+ Kg8 19.Qg7#
-B50 Sicilian:               1.e4!! c5 2.Nf3! d6
-#Mentor9K:                  1.e4!! c5 2.Nf3! d6 3.d4! cxd4! 4.Nxd4! Nc6 5.Nxc6 Qd7 6.Nb4 d5 7.Nxd5 Kd8 8.Bf4 Nh6 9.Bb5 Qxb5 10.Bc7+ Kd7 11.Ndc3+ Qd5 12.Qxd5+ Kxc7 13.Nb5+ Kb6 14.N1a3 a5 15.Nc4+ Ka6 16.Qc5 a4 17.Qb6#
-C00 French DEF:             1.e4!! e6
-#Stockfish:                 1.e4!! e6 2.d4! d5! 3.Nc3! Nf6! 4.e5! Nfd7! 5.Nce2! Qh4 6.Nf3 Qd8 7.c3 Nc6 8.Nf4 Nf6 9.exf6 Qxf6 10.Bb5 Kd8 11.Bxc6 Bb4 12.Nxd5 exd5 13.Bg5 Re8+ 14.Bxe8 Kxe8 15.Bxf6 Bg4 16.Bxg7 Be6 17.Qa4+ c6 18.Qxb4 c5 19.Qb5+ Bd7 20.Qxc5 Bg4 21.Ne5 Kd8 22.Bf6+ Ke8 23.Qe7#
-B10 Caro-Kann DEF:          1.e4!! c6
-#Stockfish:                 1.e4!! c6 2.d4! d5! 3.e5! Bf5! 4.Nf3! h6 5.Nh4! Be4 6.e6! fxe6 7.Nd2 Kd7 8.Nxe4 dxe4 9.Ng6 Na6 10.Nxh8 Nb4 11.a3 Qe8 12.axb4 a5 13.Qg4 axb4 14.Rxa8 Qxa8 15.Bc4 e3 16.Qxe6+ Kd8 17.Qxg8 Kc7 18.Ng6 Qa1 19.0-0 Qxc1 20.Rxc1 e2 21.Nxf8 b6 22.Ne6+ Kb7 23.Qd8 e1=Q+ 24.Rxe1 b3 25.Nc5+ bxc5 26.Rxe7#
+;!!B00 King's Pawn:         1.e4!!
+;!!C20 Open Game:           1.e4!! e5!!
+;!!C40 King's Knight:       1.e4!! e5!! 2.Nf3!!
+;!!C44 King's pawn game:    1.e4!! e5!! 2.Nf3!! Nc6!!
+;!!C60 Ruy Lopez:           1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!!
+;!!Morphy DEF:              1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!!
+;!!C70 Columbus VAR:        1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!!
+#Stockfish vs. Seth9K:      1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! g6 5.d4! Rb8 6.dxe5! Nh6 7.Bg5! f6 8.Bxf6! b5 9.Bxd8! Kxd8 10.Bb3! Nd4 11.Nxd4! Ke8 12.a3! d5 13.Nc3! Bb4 14.axb4! Nf7 15.Nc6! Ng5 16.Nxb8! Bg4 17.Qxg4! h5 18.Qc8+ Kf7 19.Qxh8! c6 20.Nxc6! Ne6 21.Bxd5 a5 22.Bxe6+! Kxe6 23.Qe8#
+Seth9K:                     1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.g3
+#Seth9K vs. Stockfish:      1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.g3 axb5!! 5.c3 d5!! 6.b3 dxe4!! 7.b4 Bg4!! 8.d3 Bxf3!! 9.Bg5 Qxg5!! 10.a4 Bxd1!! 11.d4 Qc1!! 12.O-O exd4!! 13.axb5 Rxa1!! 14.g4 Rxb1!! 15.Re1 Bf3!! 16.h4 Bd6!! 17.Rxc1 Rxc1#
+;!B20 Sicilian DEF:         1.e4!! c5!
+;!!B50 Sicilian:            1.e4!! c5! 2.Nf3!! d6!!
+;!!Open Sicilian:           1.e4!! c5! 2.Nf3!! d6!! 3.d4!!
+;!!B54 Sicilian:            1.e4!! c5! 2.Nf3!! d6!! 3.d4!! cxd4!! 4.Nxd4!!
+#QuickHint9K vs. Seth9K:    1.e4!! c5! 2.Nf3!! d6!! 3.d4!! cxd4!! 4.Nxd4!! Nc6 5.Nxc6 Qd7 6.Nb4 d5 7.Nxd5 Kd8 8.Bf4 Nh6 9.Bb5 Qxb5 10.Bc7+ Kd7 11.Ndc3+ Qd5 12.Qxd5+ Kxc7 13.Nb5+ Kb6 14.N1a3 a5 15.Nc4+ Ka6 16.Qc5 a4 17.Qb6#
+;!!B40 Sicilian DEF:        1.e4!! c5! 2.Nf3!! e6!
+;!!Open Sicilian:           1.e4!! c5! 2.Nf3!! e6! 3.d4!!
+;!Taimanov VAR:             1.e4!! c5! 2.Nf3!! e6! 3.d4!! cxd4!! 4.Nxd4!! Nc6!
+;!B45 Taimanov VAR:         1.e4!! c5! 2.Nf3!! e6! 3.d4!! cxd4!! 4.Nxd4!! Nc6! 5.Nc3!!
+#Stockfish vs. Seth9K:      1.e4!! c5! 2.Nf3!! e6! 3.d4!! cxd4!! 4.Nxd4!! Nc6! 5.Nc3!! Qb6 6.Ndb5! Bb4 7.Bf4! Ne5 8.Bxe5! Bxc3+ 9.bxc3! Qa5 10.Bxg7! Kd8 11.Qd6! Ne7 12.Bxh8! Qa6 13.Qc7+! Ke8 14.Nd6+! Qxd6 15.Qxd6! Nf5 16.exf5! f6 17.Bxf6! Kf7 18.Qe7+! Kg8 19.Qg7#
+;!B30 Sicilian DEF:         1.e4!! c5! 2.Nf3!! Nc6!
+;!!B32 Sicilian DEF:        1.e4!! c5! 2.Nf3!! Nc6! 3.d4!!
+#Stockfish vs. Seth9K:      1.e4!! c5! 2.Nf3!! Nc6! 3.d4!! cxd4! 4.Nxd4! e6 5.Nc3! Qb6 6.Ndb5 Bb4 7.Bf4 Ne5 8.Bxe5 Bxc3+ 9.bxc3 Qa5 10.Bxg7 Kd8 11.Qd6 Ne7 12.Bxh8 Qa6 13.Qc7+ Ke8 14.Nd6+ Qxd6 15.Qxd6 Nf5 16.exf5 f6 17.Bxf6 Kf7 18.Qe7+ Kg8 19.Qg7#
+;!C00 French DEF:           1.e4!! e6!
+;!!C00 French DEF:          1.e4!! e6! 2.d4!!
+;!!C11 French DEF:          1.e4!! e6! 2.d4!! d5!! 3.Nc3!! Nf6!!
+#Seth9K vs. Stockfish:      1.e4!! e6! 2.d4!! d5!! 3.Nc3!! Nf6!! 4.e5! Nfd7! 5.Nce2! Qh4 6.Nf3 Qd8 7.c3 Nc6 8.Nf4 Nf6 9.exf6 Qxf6 10.Bb5 Kd8 11.Bxc6 Bb4 12.Nxd5 exd5 13.Bg5 Re8+ 14.Bxe8 Kxe8 15.Bxf6 Bg4 16.Bxg7 Be6 17.Qa4+ c6 18.Qxb4 c5 19.Qb5+ Bd7 20.Qxc5 Bg4 21.Ne5 Kd8 22.Bf6+ Ke8 23.Qe7#
+;!B10 Caro-Kann DEF:        1.e4!! c6!
+;!!B12 Caro-Kann DEF:       1.e4!! c6! 2.d4!!
+;!!B12 Caro-Kann DEF:       1.e4!! c6! 2.d4!! d5!!
+#Stockfish vs. Seth9K:      1.e4!! c6! 2.d4!! d5!! 3.e5!! Bf5!! 4.Nf3!! h6 5.Nh4! Be4 6.e6! fxe6 7.Nd2 Kd7 8.Nxe4 dxe4 9.Ng6 Na6 10.Nxh8 Nb4 11.a3 Qe8 12.axb4 a5 13.Qg4 axb4 14.Rxa8 Qxa8 15.Bc4 e3 16.Qxe6+ Kd8 17.Qxg8 Kc7 18.Ng6 Qa1 19.0-0 Qxc1 20.Rxc1 e2 21.Nxf8 b6 22.Ne6+ Kb7 23.Qd8 e1=Q+ 24.Rxe1 b3 25.Nc5+ bxc5 26.Rxe7#
+Seth9K:                     1.e4!! c6! 2.d4!! d5!! 3.Nc3
+#Stockfish vs. Seth9K:      1.e4!! c6! 2.d4!! d5!! 3.Nc3 dxe4 4.Nxe4!! Bg4 5.Qxg4!! e6 6.Nf3!! Nh6 7.Bxh6!! Ba3 8.Qxg7!! Bf8 9.Qxh8!! Qa5+ 10.Bd2!! Qd8 11.Bg5!! Qa5+ 12.c3!! Qxg5 13.Nfxg5!! Nd7 14.Qg8!! O-O-O 15.Nxf7!! Ne5 16.dxe5!! Kb8 17.Nxd8!! a5 18.Qxh7!! Bg7 19.Qxg7!! Kc8 20.O-O-O!! a4 21.Qxb7#
+;!A10 English OPN:          1.c4!
+;!!A30 Symmetrical VAR:     1.c4! c5!!
+#Seth9K vs. Stockfish:      1.c4! c5!! 2.Nf3!! Nc6!! 3.Nc3!! Nf6!! 4.Rb1 d5!! 5.Ra1 d4!! 6.Nb5 a6!! 7.e3 axb5!! 8.Bd3 Nb4!! 9.O-O Nxd3!! 10.h4 bxc4!! 11.Nxd4 cxd4!! 12.b4 Nxb4!! 13.Rb1 Nd3!! 14.e4 Nxe4!! 15.Qh5 Nxc1!! 16.Rbxc1 Nxd2!! 17.f3 Nxf1!! 18.Qc5 Ne3!! 19.a3 Be6!! 20.Qe5 Qb6!! 21.Rf1 Nxf1!! 22.f4 Qb1!! 23.Kf2 Ne3!! 24.Qxd4 Qf1+!! 25.Kxe3 Qe1+!! 26.Kf3 Rxa3+!! 27.Qc3 Rxc3#
+Seth9K:                     1.c4! c5!! 2.Nc3
+#Seth9K vs. Stockfish:      1.c4! c5!! 2.Nc3 g6!! 3.Nf3 Bg7!! 4.Nd5 e6!! 5.e3 exd5!! 6.Be2 dxc4!! 7.Bxc4 d5!! 8.a4 dxc4!! 9.a5 Bd7!! 10.Qc2 Bb5!! 11.a6 Nxa6!! 12.g4 Qd5!! 13.h4 Qxf3!! 14.Rf1 Nb4!! 15.Qb1 Nd3+!! 16.Qxd3 cxd3!! 17.Rxa7 Qe2#
+;!A40 Queen's Pawn:         1.d4!
+;!!A45 Queen's pawn game:   1.d4! Nf6!!
+;!!E00 Queen's pawn game:   1.d4! Nf6!! 2.c4!! e6!!
+;!!E10 Queen's pawn game:   1.d4! Nf6!! 2.c4!! e6!! 3.Nf3!!
+#Seth9K vs. Stockfish:      1.d4! Nf6!! 2.c4!! e6!! 3.Nf3!! b6!! 4.Nc3 Bb4!! 5.Qd2 Bb7!! 6.b3 Ne4!! 7.g3 Bxc3!! 8.Bg2 Nxd2!! 9.Bxd2 Bxa1!! 10.Nh4 Bxg2!! 11.Rf1 Bh3!! 12.f4 Bxd4!! 13.e3 Bf6!! 14.Kf2 Bxh4!! 15.Kg1 Qf6!! 16.c5 Qb2!! 17.Rd1 Qc2!! 18.Kf2 Qxd1!! 19.e4 Qxd2+!! 20.Kf3 Nc6!! 21.gxh4 Nd4+!! 22.Kg3 Qg2#
+;A46 Queen's pawn game:     1.d4! Nf6!! 2.Nf3!
+#Seth9K vs. Stockfish:      1.d4! Nf6!! 2.Nf3! d5!! 3.c4 e6!! 4.Bd2 c5!! 5.Nc3 cxd4!! 6.cxd5 dxc3!! 7.bxc3 exd5!! 8.e3 Nc6!! 9.a3 Bc5!! 10.Qa4 O-O!! 11.Rc1 Ne4!! 12.Bd3 Bg4!! 13.O-O Bxf3!! 14.gxf3 Nxd2!! 15.Kh1 Qf6!! 16.f4 Nxf1!! 17.Bxf1 Rfd8!! 18.Bg2 Rab8!! 19.Qd1 Bxa3!! 20.Qh5 Bxc1!! 21.Qd1 Qxc3!! 22.Qe2 d4!! 23.Qd1 dxe3!! 24.Bd5 exf2!! 25.Bxf7+ Kh8!! 26.Qe2 Rd2!! 27.Bb3 Rxe2!! 28.Kg2 f1=Q+!! 29.Kxf1 Qe1#
+
 
 

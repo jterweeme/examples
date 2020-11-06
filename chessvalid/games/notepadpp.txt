@@ -1,1083 +1,846 @@
-;stockfish
-a3!
-a4!
-a5!
-a6!
-axb3!
-axb4!
-axb5!
-axb6!
-b3!
-b4!
-b5!
-b6!
-Ba4!
-Ba5!
-Ba6!
-Ba7!
-Bb2!
-Bb3!
-Bb4!
-Bb5!
-Bb7!
-Bc2!
-Bc3!
-Bc4!
-Bc5!
-Bc6!
-Bc7!
-Bc8!
-Bd2!
-Bd3!
-Bd4!
-Bd6!
-Bd7!
-Be2!
-Be3!
-Be4!
-Be5!
-Be6!
-Be7!
-Be8!
-Bf3!
-Bf4!
-Bf5!
-Bf6!
-Bf7!
-Bf8!
-Bg2!
-Bg4!
-Bg5!
-Bg6!
-Bg7!
-Bh3!
-Bh5!
-Bh6!
-Bh7!
-bxa2!
-Bxa3!
-bxa3!
-Bxa4!
-bxa4!
-bxa5!
-Bxa6!
-Bxa7!
-Bxa8!
-Bxb3!
-Bxb4!
-Bxb5!
-Bxb6!
-Bxb7!
-Bxb8!
-Bxc2!
-Bxc3!
-bxc3!
-Bxc4!
-bxc4!
-Bxc5!
-bxc6!
-Bxc7!
-Bxc8!
-Bxd1!
-Bxd2!
-Bxd3!
-Bxd4!
-Bxd5!
-Bxd6!
-Bxd7!
-Bxd8!
-Bxe3!
-Bxe4!
-Bxe5!
-Bxe6!
-Bxf1!
-Bxf2!
-Bxf3!
-Bxf4!
-Bxf5!
-Bxf6!
-Bxf7!
-Bxg2!
-Bxg3!
-Bxg4!
-Bxg5!
-Bxg6!
-Bxg7!
-Bxg8!
-Bxh1!
-Bxh2!
-Bxh3!
-Bxh4!
-Bxh5!
-Bxh6!
-Bxh7!
-Bxh8!
-c3!
-c4!
-c5!
-c6!
-c7!
-c8=Q!
-cxb4!
-cxb5!
-cxd4!
-cxd5!
-d2!
-d3!
-d4!
-d5!
-d6!
-dxc3!
-dxc4!
-dxc5!
-dxc6!
-dxe4!
-dxe5!
-dxe6!
-e3!
-e4!
-e5!
-e6!
-exd4!
-exd5!
-exd6!
-exf3!
-exf4!
-exf5!
-exf6!
-f3!
-f4!
-f5!
-f6!
-f7!
-f8!
-f8=Q!
-fxe3!
-fxe4!
-fxe5!
-fxe6!
-fxg5!
-fxg6!
-fxg7!
-g3!
-g4!
-g5!
-g6!
-g7!
-gxf5!
-gxf6!
-gxh3!
-gxh6!
-h3!
-h4!
-h5!
-h6!
-hxg5!
-hxg6!
-Ka7!
-Kb1!
-Kb2!
-Kb3!
-Kb4!
-Kb5!
-Kb6!
-Kb7!
-Kb8!
-Kc7!
-Kc8!
-Kd1!
-Kd2!
-Kd3!
-Kd4!
-Kd5!
-Kd6!
-Kd7!
-Kd8!
-Ke1!
-Ke2!
-Ke3!
-Ke4!
-Ke5!
-Ke6!
-Ke7!
-Ke8!
-Kf1!
-Kf2!
-Kf3!
-Kf4!
-Kf5!
-Kf6!
-Kf7!
-Kf8!
-Kg1!
-Kg2!
-Kg3!
-Kg4!
-Kg5!
-Kg6!
-Kg7!
-Kg8!
-Kh2!
-Kh3!
-Kh4!
-Kh5!
-Kh6!
-Kh7!
-Kxc2!
-Kxd1!
-Kxf1!
-Kxf2!
-Kxf3!
-Kxf4!
-Kxf5!
-Kxf6!
-Kxf7!
-Kxg5!
-Kxh2!
+;tokens voor syntax highlighting Notepad++
+
+;+
+a4+
+b5+
+c1=Q+ c2+ c3+
+d3+ d4+ d5+ d6+ d7+
+e1=Q+ e5+ e6+ e7+ e8=Q+
+f3+ f4+ f5+ f6+ f7+ f8=R+
+g4+ g5+ g6+ g7+ g8=Q+
+Ba4+ Ba5+ Ba6+
+Bb2+ Bb3+ Bb4+ Bb5+ Bb6+
+Bc2+ Bc3+ Bc4+ Bc5+ Bc6+ Bc7+
+Bd2+ Bd3+ Bd4+ Bd5+ Bd6+ Bd7+
+Be2+ Be3+ Be4+ Be5+ Be6+ Be7+ Be8+
+Bf2+ Bf3+ Bf4+ Bf5+ Bf6+ Bf7+ Bf8+
+Bg2+ Bg3+ Bg4+ Bg5+ Bg6+
+Bh3+ Bh4+ Bh5+ Bh6+
+Na3+ Na4+ Na5+ Na6+ Na7+
+Nb4+ Nb5+ Nb6+
+Nc2+ Nc3+ Nc4+ Nc5+ Nc6+ Nc7+ Nc8+
+Nd1+ Nd2+ Nd3+ Nd4+ Nd5+ Nd6+ Nd7+
+Ne1+ Ne2+ Ne3+ Ne4+ Ne5+ Ne6+
+Nf3+ Nf4+ Nf5+ Nf6+ Nf7+
+Ng2+ Ng3+ Ng4+ Ng5+ Ng6+
+Nh2+ Nh3+
+Nac7+
+Nbc7+
+Ncb5+
+Ndb5+
+Ndc3+ Ndc4+ Ndc5+ Ndc6+ Ndc7+
+Nde6+
+Ned6+
+Nfg6+
+O-O-O+
+Qa1+ Qa2+ Qa3+ Qa4+ Qa5+ Qa6+ Qa7+ Qa8+
+Qb1+ Qb2+ Qb3+ Qb4+ Qb5+ Qb6+ Qb7+ Qb8+
+Qc2+ Qc3+ Qc4+ Qc5+ Qc6+ Qc7+ Qc8+
+Qd1+ Qd2+ Qd3+ Qd4+ Qd5+ Qd6+ Qd7+ Qd8+
+Qe1+ Qe2+ Qe3+ Qe4+ Qe5+ Qe6+ Qe7+ Qe8+
+Qf1+ Qf2+ Qf3+ Qf4+ Qf5+ Qf6+ Qf7+ Qf8+
+Qg1+ Qg2+ Qg3+ Qg4+ Qg5+ Qg6+ Qg7+ Qg8+
+Qh1+ Qh2+ Qh3+ Qh4+ Qh5+ Qh6+ Qh7+ Qh8+
+Qhc8+
+R1c6+
+Rae1+
+Rfe1+
+Rhg1+
+Ra7+ Ra8+
+Rb1+ Rb2+ Rb3+ Rb4+ Rb5+ Rb6+ Rb7+ Rb8+
+Rc1+ Rc2+ Rc3+ Rc4+ Rc5+ Rc6+ Rc7+ Rc8+
+Rd1+ Rd2+ Rd3+ Rd4+ Rd5+ Rd6+ Rd7+ Rd8+
+Re1+ Re2+ Re3+ Re4+ Re5+ Re6+ Re7+ Re8+
+Rf1+ Rf2+ Rf3+ Rf4+ Rf5+ Rf6+ Rf7+ Rf8+
+Rg1+ Rg2+ Rg3+ Rg4+ Rg5+ Rg6+ Rg7+
+Rh1+ Rh2+ Rh3+ Rh4+ Rh5+ Rh6+
+
+;x
+axb2 axb3 axb4 axb5 axb6
+bxa2 bxa3 bxa4 bxa5 bxa6 bxa7 bxa8=Q
+bxc2 bxc3 bxc4 bxc5 bxc6 bxc7 bxc8=Q
+cxb2 cxb3 cxb4 cxb5 cxb6 cxb7
+cxd3 cxd4 cxd5 cxd6 cxd7
+dxc1=Q dxc2 dxc3 dxc4 dxc5 dxc6 dxc7 dxc8=R
+dxe2 dxe3 dxe4 dxe5 dxe6 dxe7
+exd2 exd3 exd4 exd5 exd6 exd7 exd8=Q
+exf2 exf3 exf4 exf5 exf6 exf7 exf8=Q
+fxe2 fxe3 fxe4 fxe5 fxe6 fxe7 fxe8=Q
+fxg1=Q fxg2 fxg3 fxg4 fxg5 fxg6 fxg7
+gxf2 gxf3 gxf4 gxf5 gxf6 gxf7
+gxh2 gxh3 gxh4 gxh5 gxh6 gxh7 gxh8=Q
+hxg1=Q hxg2 hxg3 hxg4 hxg5 hxg6 hxg7
+Bxa1 Bxa2 Bxa3 Bxa4 Bxa5 Bxa6 Bxa7 Bxa8
+Bxb1 Bxb2 Bxb3 Bxb4 Bxb5 Bxb6 Bxb7 Bxb8
+Bxc1 Bxc2 Bxc3 Bxc4 Bxc5 Bxc6 Bxc7 Bxc8
+Bxd1 Bxd2 Bxd3 Bxd4 Bxd5 Bxd6 Bxd7 Bxd8
+Bxe1 Bxe2 Bxe3 Bxe4 Bxe5 Bxe6 Bxe7 Bxe8
+Bxf1 Bxf2 Bxf3 Bxf4 Bxf5 Bxf6 Bxf7 Bxf8
+Bxg1 Bxg2 Bxg3 Bxg4 Bxg5 Bxg6 Bxg7 Bxg8
+Bxh1 Bxh2 Bxh3 Bxh4 Bxh5 Bxh6 Bxh7 Bxh8
+Kxa1 Kxa2 Kxa3 Kxa4 Kxa5 Kxa6 Kxa7 Kxa8
+Kxb1 Kxb2 Kxb3 Kxb4 Kxb5 Kxb6 Kxb7 Kxb8
+Kxc1 Kxc2 Kxc3 Kxc4 Kxc5 Kxc6 Kxc7 Kxc8
+Kxd1 Kxd2 Kxd3 Kxd4 Kxd5 Kxd6 Kxd7 Kxd8
+Kxe1 Kxe2 Kxe3 Kxe4 Kxe5 Kxe6 Kxe7 Kxe8
+Kxf1 Kxf2 Kxf3 Kxf4 Kxf5 Kxf6 Kxf7 Kxf8
+Kxg1 Kxg2 Kxg3 Kxg4 Kxg5 Kxg6 Kxg7 Kxg8
+Kxh1 Kxh2 Kxh3 Kxh4 Kxh5 Kxh6 Kxh7 Kxh8
+Ncxd2
+Nfxd2 Nfxd3 Nfxd4 Nfxd5
+Nxa1 Nxa2 Nxa3 Nxa4 Nxa5 Nxa6 Nxa7 Nxa8
+Nxb1 Nxb2 Nxb3 Nxb4 Nxb5 Nxb6 Nxb7 Nxb8
+Nxc1 Nxc2 Nxc3 Nxc4 Nxc5 Nxc6 Nxc7 Nxc8
+Nxd1 Nxd2 Nxd3 Nxd4 Nxd5 Nxd6 Nxd7 Nxd8
+Nxe1 Nxe2 Nxe3 Nxe4 Nxe5 Nxe6 Nxe7 Nxe8
+Nxf1 Nxf2 Nxf3 Nxf4 Nxf5 Nxf6 Nxf7 Nxf8
+Nxg1 Nxg2 Nxg3 Nxg4 Nxg5 Nxg6 Nxg7 Nxg8
+Nxh1 Nxh2 Nxh3 Nxh4 Nxh5 Nxh6 Nxh7 Nxh8
+Qxa1 Qxa2 Qxa3 Qxa4 Qxa5 Qxa6 Qxa7 Qxa8
+Qxb1 Qxb2 Qxb3 Qxb4 Qxb5 Qxb6 Qxb7 Qxb8
+Qxc1 Qxc2 Qxc3 Qxc4 Qxc5 Qxc6 Qxc7 Qxc8
+Qxd1 Qxd2 Qxd3 Qxd4 Qxd5 Qxd6 Qxd7 Qxd8
+Qxe1 Qxe2 Qxe3 Qxe4 Qxe5 Qxe6 Qxe7 Qxe8
+Qxf1 Qxf2 Qxf3 Qxf4 Qxf5 Qxf6 Qxf7 Qxf8
+Qxg1 Qxg2 Qxg3 Qxg4 Qxg5 Qxg6 Qxg7 Qxg8
+Qxh1 Qxh2 Qxh3 Qxh4 Qxh5 Qxh6 Qxh7 Qxh8
+Rxa1 Rxa2 Rxa3 Rxa4 Rxa5 Rxa6 Rxa7 Rxa8
+Rxb1 Rxb2 Rxb3 Rxb4 Rxb5 Rxb6 Rxb7 Rxb8
+Rxc1 Rxc2 Rxc3 Rxc4 Rxc5 Rxc6 Rxc7 Rxc8
+Rxd1 Rxd2 Rxd3 Rxd4 Rxd5 Rxd6 Rxd7 Rxd8
+Rxe1 Rxe2 Rxe3 Rxe4 Rxe5 Rxe6 Rxe7 Rxe8
+Rxf1 Rxf2 Rxf3 Rxf4 Rxf5 Rxf6 Rxf7 Rxf8
+Rxg1 Rxg2 Rxg3 Rxg4 Rxg5 Rxg6 Rxg7 Rxg8
+Rxh1 Rxh2 Rxh3 Rxh4 Rxh5 Rxh6 Rxh7 Rxh8
+Raxa6
+Rexe4
+Rfxd8
+Rhxd8
+
+;x+
+axb5+
+bxc3+ bxa8=Q+
+cxb7+
+cxd5+
+dxc1=R+ dxc5+
+dxe4+ dxe5+ dxe6+ dxe7+
+exd5+ exd6+
+exf2+ exf3+ exf4+ exf5+ exf6+ exf7+
+fxe7+
+fxg4+
+gxf6+
+Bxb3+ Bxb4+ Bxb5+ Bxb6+ Bxb7+ Bxb8+
+Bxc2+ Bxc3+ Bxc4+ Bxc5+ Bxc6+
+Bxd2+ Bxd3+ Bxd4+ Bxd5+ Bxd6+ Bxd7+
+Bxe4+ Bxe5+ Bxe6+ Bxe7+
+Bxf1+ Bxf2+ Bxf3+ Bxf4+ Bxf5+ Bxf6+ Bxf7+
+Bxg2+ Bxg3+ Bxg4+ Bxg5+
+Bxh2+ Bxh3+ Bxh4+ Bxh5+ Bxh6+ Bxh7+
+Nfxe6+
+Nxa2+ Nxa3+ Nxa4+ Nxa5+ Nxa6+
+Nxb7+
+Nxc2+ Nxc3+ Nxc4+ Nxc5+ Nxc6+ Nxc7+ Nxc8+
+Nxd5+ Nxd6+ Nxd7+
+Nxe5+ Nxe6+ Nxe7+
+Nxf2+ Nxf3+ Nxf4+ Nxf5+ Nxf6+ Nxf7+
+Nxg2+ Nxg3+ Nxg4+ Nxg5+ Nxg6+ Nxg7+
+Nxh6+ Nxh7+
+Qxa1+ Qxa2+ Qxa3+ Qxa4+ Qxa5+ Qxa6+ Qxa7+ Qxa8+
+Qxb1+ Qxb2+ Qxb3+ Qxb4+ Qxb5+ Qxb6+ Qxb7+ Qxb8+
+Qxc1+ Qxc2+ Qxc3+ Qxc4+ Qxc5+ Qxc6+ Qxc7+ Qxc8+
+Qxd1+ Qxd2+ Qxd3+ Qxd4+ Qxd5+ Qxd6+ Qxd7+ Qxd8+
+Qxe1+ Qxe2+ Qxe3+ Qxe4+ Qxe5+ Qxe6+ Qxe7+ Qxe8+
+Qxf1+ Qxf2+ Qxf3+ Qxf4+ Qxf5+ Qxf6+ Qxf7+ Qxf8+
+Qxg2+ Qxg3+ Qxg4+ Qxg5+ Qxg6+ Qxg7+ Qxg8+
+Qxh1+ Qxh2+ Qxh3+ Qxh4+ Qxh5+ Qxh6+ Qxh7+ Qxh8+
+Qcxc6+ Qcxc7+
+Rxa3+ Rxa4+ Rxa5+ Rxa6+ Rxa7+
+Rxb1+ Rxb2+ Rxb3+ Rxb4+ Rxb5+ Rxb6+ Rxb7+
+Rxc5+
+Rxd5+ Rxd6+ Rxd7+ Rxd8+
+Rxe1+ Rxe2+ Rxe3+ Rxe4+ Rxe5+ Rxe6+ Rxe7+
+Rxf1+ Rxf2+ Rxf3+ Rxf4+ Rxf5+ Rxf6+ Rxf7+ Rxf8+
+Rxg1+ Rxg2+ Rxg3+ Rxg4+ Rxg5+ Rxg6+ Rxg7+ Rxg8+
+Rxh5+ Rxh6+
+
+;!
+a2! a3! a4! a5! a6!
+b3! b4! b5! b6! b7! b8=Q!
+c1=Q! c2! c3! c4! c5! c6! c7! c8=Q! c8=R!
+d2! d3! d4! d5! d6! d7! d8=Q!
+e1=Q! e2! e3! e4! e5! e6!
+f2! f3! f4! f5! f6! f7! f8=Q!
+g1=Q! g2! g3! g4! g5! g6! g7!
+h3! h4! h5! h6!
+Ba3! Ba4! Ba5! Ba6! Ba7!
+Bd1! Bb2! Bb3! Bb4! Bb5! Bb6! Bb7!
+Bc2! Bc3! Bc4! Bc5! Bc6! Bc7! Bc8!
+Bd2! Bd3! Bd4! Bd5! Bd6! Bd7!
+Be2! Be3! Be4! Be5! Be6! Be7! Be8!
+Bf2! Bf3! Bf4! Bf5! Bf6! Bf7! Bf8!
+Bg2! Bg3! Bg4! Bg5! Bg6! Bg7!
+Bh3! Bh4! Bh5! Bh6! Bh7!
+Ka4! Ka5! Ka6! Ka7!
+Kb1! Kb2! Kb3! Kb4! Kb5! Kb6! Kb7! Kb8!
+Kc1! Kc2! Kc3! Kc4! Kc5! Kc6! Kc7! Kc8!
+Kd1! Kd2! Kd3! Kd4! Kd5! Kd6! Kd7! Kd8!
+Ke1! Ke2! Ke3! Ke4! Ke5! Ke6! Ke7! Ke8!
+Kf1! Kf2! Kf3! Kf4! Kf5! Kf6! Kf7! Kf8!
+Kg1! Kg2! Kg3! Kg4! Kg5! Kg6! Kg7! Kg8!
+Kh1! Kh2! Kh3! Kh4! Kh5! Kh6! Kh7! Kh8!
 N1c3!
-Na3!
-Na4!
-Na5!
-Na6!
-Nb1!
-Nb2!
-Nb3!
-Nb4!
-Nb5!
-Nb6!
-Nbd2!
-Nbd7!
-Nc3!
-Nc4!
-Nc5!
-Nc6!
-Nc7!
+Na2! Na3! Na4! Na5! Na6!
+Nb1! Nb2! Nb3! Nb4! Nb5! Nb6!
+Nc3! Nc4! Nc5! Nc6! Nc7!
+Nd2! Nd3! Nd4! Nd5! Nd6! Nd7!
+Ne2! Ne3! Ne4! Ne5! Ne6! Ne7!
+Nf1! Nf2! Nf3! Nf4! Nf5! Nf6! Nf7! Nf8!
+Ng3! Ng4! Ng5! Ng6! Ng7! Ng8!
+Nh4! Nh5! Nh6!
+Nbd2! Nbd3! Nbd4! Nbd5! Nbd6! Nbd7!
+Nbc3!
 Ncd8!
 Nce2!
-Nd2!
-Nd3!
-Nd4!
-Nd5!
-Nd6!
-Nd7!
-Ndb4!
-Ndb5!
-Ndxb5!
-Ne2!
-Ne4!
-Ne5!
-Ne6!
-Ne7!
-Nf2!
-Nf3!
-Nf4!
-Nf5!
-Nf6!
-Nf7!
-Nf8!
+Ndb4! Ndb5!
+Nde7!
 Nfd7!
-Ng4!
-Ng5!
-Ng6!
-Ng7!
-Ng8!
-Nge2!
-Nge3!
-Nge4!
-Nge5!
-Nge6!
-Nge7!
+Nge2! Nge3! Nge4! Nge5! Nge6! Nge7!
 Ngf3!
-Nh4!
-Nh5!
-Nh6!
-Nxa1!
-Nxa2!
-Nxa3!
-Nxa4!
-Nxa5!
-Nxa6!
-Nxa7!
-Nxa8!
-Nxb3!
-Nxb4!
-Nxb5!
-Nxb6!
-Nxb7!
-Nxb8!
-Nxc6!
-Nxc7!
-Nxc8!
-Nxd2!
-Nxd4!
-Nxd5!
-Nxe1!
-Nxe2!
-Nxe3!
-Nxe4!
-Nxe5!
-Nxe6!
-Nxe7!
-Nxf2!
-Nxf3!
-Nxf4!
-Nxf5!
-Nxf6!
-Nxf7!
-Nxg4!
-Nxg5!
-Nxg6!
-Nxg7!
-Nxg8!
-Nxh2!
-Nxh3!
-Nxh4!
-Nxh5!
-Nxh8!
-O-O!
-O-O-O!
-Qa4!
-Qa5!
-Qa6!
-Qa7!
-Qb1!
-Qb2!
-Qb3!
-Qb4!
-Qb5!
-Qb6!
-Qb7!
-Qb8!
-Qc3!
-Qc4!
-Qc5!
-Qc6!
-Qc7!
-Qc8!
-Qd1!
-Qd2!
-Qd3!
-Qd4!
-Qd5!
-Qd6!
-Qd7!
-Qe2!
-Qe3!
-Qe4!
-Qe5!
-Qe6!
-Qe7!
-Qe8!
-Qf2!
-Qf3!
-Qf4!
-Qf5!
-Qf6!
-Qf7!
-Qf8!
-Qg1!
-Qg2!
-Qg3!
-Qg4!
-Qg5!
-Qg6!
-Qg7!
-Qh3!
-Qh4!
-Qh5!
-Qh6!
-Qh7!
-Qxa1!
-Qxa2!
-Qxa3!
-Qxa4!
-Qxa5!
-Qxa6!
-Qxa7!
-Qxa8!
-Qxb2!
-Qxb3!
-Qxb4!
-Qxb5!
-Qxb6!
-Qxb7!
-Qxb8!
-Qxc3!
-Qxc4!
-Qxc5!
-Qxc6!
-Qxc7!
-Qxc8!
-Qxd2!
-Qxd3!
-Qxd4!
-Qxd5!
-Qxd6!
-Qxd7!
-Qxe1!
-Qxe2!
-Qxe3!
-Qxe4!
-Qxe5!
-Qxe6!
-Qxe7!
-Qxf2!
-Qxf3!
-Qxf4!
-Qxf5!
-Qxf6!
-Qxf7!
-Qxg1!
-Qxg2!
-Qxg3!
-Qxg4!
-Qxg5!
-Qxg6!
-Qxg7!
-Qxg8!
-Qxh1!
-Qxh2!
-Qxh3!
-Qxh4!
-Qxh5!
-Qxh6!
-Qxh7!
-Ra1!
-Ra2!
-Ra3!
-Ra4!
-Ra5!
-Ra6!
-Ra7!
-Ra8!
-Rae1!
-Rae2!
-Rae3!
-Rae4!
-Rae5!
-Rae6!
-Rae7!
-Rae8!
-Rb1!
-Rb2!
-Rb3!
-Rb4!
-Rb5!
-Rb6!
-Rb7!
-Rb8!
+Nhg6!
+O-O! O-O-O!
+Qa1! Qa2! Qa3! Qa4! Qa5! Qa6! Qa7! Qa8!
+Qb1! Qb2! Qb3! Qb4! Qb5! Qb6! Qb7! Qb8!
+Qc1! Qc2! Qc3! Qc4! Qc5! Qc6! Qc7! Qc8!
+Qd1! Qd2! Qd3! Qd4! Qd5! Qd6! Qd7! Qd8!
+Qe1! Qe2! Qe3! Qe4! Qe5! Qe6! Qe7! Qe8!
+Qf1! Qf2! Qf3! Qf4! Qf5! Qf6! Qf7! Qf8!
+Qg1! Qg2! Qg3! Qg4! Qg5! Qg6! Qg7! Qg8!
+Qh1! Qh2! Qh3! Qh4! Qh5! Qh6! Qh7! Qh8!
+Ra1! Ra2! Ra3! Ra4! Ra5! Ra6! Ra7! Ra8!
+Rb1! Rb2! Rb3! Rb4! Rb5! Rb6! Rb7! Rb8!
+Rc1! Rc2! Rc3! Rc4! Rc5! Rc6! Rc7! Rc8!
+Rd1! Rd2! Rd3! Rd4! Rd5! Rd6! Rd7! Rd8!
+Re1! Re2! Re3! Re4! Re5! Re6! Re7! Re8!
+Rf1! Rf2! Rf3! Rf4! Rf5! Rf6! Rf7! Rf8!
+Rg1! Rg2! Rg3! Rg4! Rg5! Rg6! Rg7! Rg8!
+Rh1! Rh2! Rh3! Rh4! Rh5! Rh6! Rh7! Rh8!
+Rad8!
+Rae1! Rae2! Rae3! Rae4! Rae5! Rae6! Rae7! Rae8!
+Rac1!
 Rbxa5!
-Rc5!
-Rc6!
-Rc7!
-Rc8!
-Rd1!
-Rd2!
-Rd3!
-Rd4!
-Rd5!
-Rd6!
-Rd7!
-Rd8!
-Re1!
-Re2!
-Re3!
-Re4!
-Re5!
-Re6!
-Re7!
-Re8!
 Red1!
-Rf1!
-Rf2!
-Rf3!
-Rf4!
-Rf5!
-Rf6!
-Rf7!
-Rf8!
-Rfe1!
-Rfe2!
-Rfe3!
-Rfe4!
-Rfe5!
-Rfe6!
-Rfe7!
-Rfe8!
+Rfe1! Rfe2! Rfe3! Rfe4! Rfe5! Rfe6! Rfe7! Rfe8!
 Rff1!
-Rh7!
-Rh8!
-Rhe1!
-Rg1!
-Rg2!
-Rg3!
-Rg4!
-Rg5!
-Rg6!
-Rg7!
-Rg8!
-Rh3!
 Rhc7!
-Rxa2!
-Rxa3!
-Rxa4!
-Rxa5!
-Rxa6!
-Rxa7!
-Rxa8!
-Rxb1!
-Rxb2!
-Rxb3!
-Rxb4!
-Rxb5!
-Rxb6!
-Rxb7!
-Rxb8!
-Rxc2!
-Rxc3!
-Rxc4!
-Rxc5!
-Rxc6!
-Rxc7!
-Rxc8!
-Rxd4!
-Rxd5!
-Rxd6!
-Rxd7!
-Rxd8!
-Rxe1!
-Rxe4!
-Rxe5!
-Rxe6!
-Rxe7!
-Rxf1!
-Rxf2!
-Rxf3!
-Rxf4!
-Rxf5!
-Rxf6!
-Rxf7!
-Rxf8!
-Rxg1!
-Rxg2!
-Rxg3!
-Rxg4!
-Rxg5!
-Rxg6!
-Rxh7!
+Rhe1!
 
-;stockfish + hint
-a3!!
-a4!!
-a6!!
-axb3!!
-axb4!!
-axb5!!
-b3!!
-b5!!
-Bb3!!
-Bc2!!
-Bc5!!
-Bd2!!
-Bd3!!
-Bd4!!
-Bd5!!
-Bd6!!
-Bd7!!
-Be2!!
-Be3!!
-Bf4!!
-Bg2!!
-Bg3!!
-Bg4!!
-Bg5!!
-Bh5!!
-Bxa5!!
-Bxb2!!
-Bxb4!!
-Bxb5!!
-Bxb6!!
-Bxc3!!
-bxc3!!
-Bxc5!!
-Bxd5!!
-Bxe5!!
-Bxe6!!
-Bxf6!!
-Bxg4!!
-Bxg7!!
-Bxh6!!
-Bxh7!!
-Bxh8!!
-c3!!
-c4!!
-c5!!
-c6!!
-cxd4!!
-cxd5!!
-cxd6!!
-d2!!
-d3!!
-d4!!
-d5!!
-dxc5!!
-dxc6!!
-dxe4!!
-dxe5!!
-dxe6!!
-e4!!
-e5!!
-e6!!
-exd5!!
-exf3!!
-exf4!!
-exf5!!
-exf6!!
-f4!!
-f5!!
-f6!!
-fxe3!!
-fxe4!!
-fxe5!!
-g3!!
-g4!!
-g5!!
-g6!!
-h3!!
-h6!!
-Kd1!!
-Ke8!!
-Kg8!!
-Kxe2!
-Kxc2!!
-Kxd2!!
-Kxf2!!
-Kxf3!!
-Kxf4!!
-Kxf5!!
-Kxf6!!
-Kxf7!!
-Nb3!!
-Nb5!!
-Nc3!!
-Nc4!!
-Nc5!!
-Nc6!!
-Nd4!!
-Nd5!!
-Ndc7!!
-Nf3!!
-Nf4!!
-Nf5!!
-Nf6!!
-Nfd7!!
-Ng4!!
-Ng5!!
-Ngf3!!
-Nh4!!
-Nxa6!!
-Nxa7!!
-Nxa8!!
-Nxc3!!
-Nxd4!!
-Nxd5!!
-Nxe5!!
-Nxf3!!
-Nxf4!!
-Nxf5!!
-Nxf6!!
-Nxf7!!
-Nxg4!!
-O-O!!
-O-O-O!!
-Qb6!!
-Qd2!!
-Qd3!!
-Qd4!!
-Qd5!!
-Qe5!!
-Qf3!!
-Qf4!!
-Qf5!!
-Qf6!!
-Qg5!!
-Qxd4!!
-Qxd5!!
-Qxg4!!
-Qxg7!!
-Ra5!!
-Rb1!!
-Rb8!!
-Rc1!!
-Re1!!
-Re8!!
-Rxg1!!
-
-;stockfish + check
+;+!
 b5+!
-Ba5+!
-Bb3+!
-Bb4+!
-Bb5+!
-Bc2+!
-Bc3+!
-Bc4+!
-Bc5+!
-Bd3+!
-Bd4+!
-Bd5+!
-Bd6+!
-Bd7+!
-Be2+!
-Be4+!
-Be5+!
-Be6+!
-Bf4+!
-Bf5+!
-Bf6+!
-Bg4+!
-Bg5+!
+c1=Q+! c2+! c3+!
+d2+! d3+! d4+! d5+! d6+!
+e2+! e3+! e4+! e5+!
+f3+! f4+! f5+! f6+! f7+! f8=R+!
+g6+! g8=Q+!
+Ba4+! Ba5+! Ba6+!
+Bb3+! Bb4+! Bb5+!
+Bc2+! Bc3+! Bc4+! Bc5+! Bc6+! Bc7+!
+Bd3+! Bd4+! Bd5+! Bd6+! Bd7+!
+Be2+! Be3+! Be4+! Be5+! Be6+! Be7+! Be8+!
+Bf4+! Bf5+! Bf6+!
+Bg4+! Bg5+!
 Bh3+!
-Bxb4+!
-Bxb5+!
-Bxc2+!
-Bxc3+!
-Bxc4+!
-Bxc5+!
-Bxc6+!
-Bxd2+!
-Bxd6+!
-Bxd7+!
-Bxf7+!
-c1=Q+!
-c2+!
-cxb7+!
-d3+!
-d4+!
-d5+!
-d6+!
-dxe4+!
-exd5+!
-exf7+!
-f3+!
-f8=R+!
-fxe7+!
-g8=Q+!
-gxf6+!
+Nb4+! Nb5+! Nb6+!
+Nc2+! Nc3+! Nc4+! Nc5+! Nc6+! Nc7+! Nc8+!
+Nd3+! Nd4+! Nd5+! Nd6+! Nd7+!
+Ne4+! Ne5+! Ne6+!
+Nf2+! Nf3+! Nf4+! Nf5+! Nf6+! Nf7+!
+Ng2+! Ng3+! Ng4+! Ng5+!
 Nac7+!
-Nb5+!
 Nbc7+!
-Nc4+!
-Nc5+!
-Nc6+!
-Nc7+!
-Nc8+!
-Nd4+!
-Nd5+!
-Nd6+!
-Ne5+!
-Nf3+!
-Nf7+!
+Ndb5+!
 Nfg6+!
-Ng2+!
-Nxa6+!
-Nxc6+!
-Nxc8+!
-Nxd5+!
-Nxf5+!
-Nxf6+!
-Nxf7+!
-Nxf4+!
-Nxg5+!
-Nxg6+!
 O-O-O+!
-Qa4+!
-Qa5+!
-Qa5+!!
-Qa8+!
-Qb3+!
-Qb4+!
-Qb5+!
-Qb6+!
-Qb7+!
-Qb8+!
-Qc5+!
-Qc7+!
-Qd1+!
-Qd2+!
-Qd3+!
-Qd6+!
-Qe2+!
-Qe4+!
-Qe5+!
-Qe6+!
-Qe7+!
-Qe8+!
-Qf2+!
-Qf7+!
-Qf8+!
-Qg2+!
-Qh1+!
-Qh3+!
-Qh4+!
-Qh5+!
-Qh6+!
-Qxb4+!
-Qxb5+!
-Qxb6+!
-Qxb7+!
-Qxb8+!
-Qxc1+!
-Qxc2+!
-Qxc3+!
-Qxc4+!
-Qxc5+!
-Qxc6+!
-Qxc7+!
-Qxc8+!
-Qxd1+!
-Qxd2+!
-Qxd6+!
-Qxd7+!
-Qxe1+!
-Qxe2+!
-Qxe3+!
-Qxe4+!
-Qxe5+!
-Qxe6+!
-Qxe7+!
-Qxf7+!
-Qxh1+!
-Qxh2+!
+Qa4+! Qa5+! Qa6+! Qa7+! Qa8+!
+Qb3+! Qb4+! Qb5+! Qb6+! Qb7+! Qb8+!
+Qc2+! Qc3+! Qc4+! Qc5+! Qc6+! Qc7+!
+Qd1+! Qd2+! Qd3+! Qd4+! Qd5+! Qd6+! Qd7+! Qd8+!
+Qe2+! Qe3+! Qe4+! Qe5+! Qe6+! Qe7+! Qe8+!
+Qf1+! Qf2+! Qf3+! Qf4+! Qf5+! Qf6+! Qf7+! Qf8+!
+Qg1+! Qg2+! Qg3+! Qg4+! Qg5+!
+Qh1+! Qh2+! Qh3+! Qh4+! Qh5+! Qh6+! Qh7+! Qh8+!
 R1c6+!
-Rb8+!
-Rc1+!
-Rc2+!
-Rc3+!
-Rc4+!
-Rc5+!
-Rc6+!
-Rc7+!
-Rd1+!
-Rd2+!
-Rd3+!
-Rd4+!
-Rd5+!
-Rd6+!
-Rd7+!
-Rd8+!
-Re1+!
-Re2+!
-Re7+!
+Ra1+! Ra2+! Ra3+! Ra4+! Ra5+! Ra6+! Ra7+! Ra8+!
+Rb7+! Rb8+!
+Rc1+! Rc2+! Rc3+! Rc4+! Rc5+! Rc6+! Rc7+!
+Rd1+! Rd2+! Rd3+! Rd4+! Rd5+! Rd6+! Rd7+! Rd8+!
+Re1+! Re2+! Re3+! Re4+! Re5+! Re6+! Re7+!
 Rf8+!
-Rg1+!
-Rg2+!
-Rg3+!
-Rg4+!
-Rg5+!
-Rg6+!
-Rg7+!
-Rxc6+!
-Rxe5+!
-Rxe6+!
-Rxe7+!
-Rxf1+!
-Rxf2+!
-Rxf3+!
-Rxf4+!
-Rxf5+!
-Rxf6+!
-Rxf7+!
-Rxf8+!
-Rxg6+!
-Rxg7+!
-Rxh7+!
+Rg1+! Rg2+! Rg3+! Rg4+! Rg5+! Rg6+! Rg7+!
 
-;stockfish + hint + check
-Bc2+!!
-Bxa6+!!
-Bxf7+!!
-d6+!!
-f3+!!
-Nc7+!!
-Qb8+!!
-Qf8+!!
-Qxd4+!!
-Qxf7+!!
-Qxh1+!!
+;x!
+axb3! axb4! axb5! axb6!
+bxa2! bxa3! bxa4! bxa5! bxa6! bxa7! bxa8=Q!
+bxc3! bxc4! bxc5! bxc6! bxc7! bxc8=Q!
+cxb3! cxb4! cxb5! cxb6!
+cxd4! cxd5! cxd6!
+dxc3! dxc4! dxc5! dxc6! dxc7!
+dxe3! dxe4! dxe5! dxe6!
+exd3! exd4! exd5! exd6!
+exf3! exf4! exf5! exf6! exf7!
+fxe3! fxe4! fxe5! fxe6!
+fxg3! fxg4! fxg5! fxg6! fxg7!
+gxf3! gxf4! gxf5! gxf6!
+gxh3! gxh4! gxh5! gxh6! gxh7! gxh8=Q!
+hxg2! hxg3! hxg4! hxg5! hxg6!
+Bxa1! Bxa2! Bxa3! Bxa4! Bxa5! Bxa6! Bxa7! Bxa8!
+Bxb1! Bxb2! Bxb3! Bxb4! Bxb5! Bxb6! Bxb7! Bxb8!
+Bxc1! Bxc2! Bxc3! Bxc4! Bxc5! Bxc6! Bxc7! Bxc8!
+Bxd1! Bxd2! Bxd3! Bxd4! Bxd5! Bxd6! Bxd7! Bxd8!
+Bxe1! Bxe2! Bxe3! Bxe4! Bxe5! Bxe6! Bxe7! Bxe8!
+Bxf1! Bxf2! Bxf3! Bxf4! Bxf5! Bxf6! Bxf7! Bxf8!
+Bxg1! Bxg2! Bxg3! Bxg4! Bxg5! Bxg6! Bxg7! Bxg8!
+Bxh1! Bxh2! Bxh3! Bxh4! Bxh5! Bxh6! Bxh7! Bxh8!
+Kxc2! Kxc3!
+Kxd1! Kxd2! Kxd3! Kxd4! Kxd5! Kxd6! Kxd7! Kxd8!
+Kxe2! Kxe3! Kxe4!
+Kxf1! Kxf2! Kxf3! Kxf4! Kxf5! Kxf6! Kxf7!
+Kxg2! Kxg3! Kxg4! Kxg5! Kxg6! Kxg7!
+Kxh2! Kxh3! Kxh4! Kxh5! Kxh6! Kxh7!
+Nxa1! Nxa2! Nxa3! Nxa4! Nxa5! Nxa6! Nxa7! Nxa8!
+Nxb3! Nxb4! Nxb5! Nxb6! Nxb7! Nxb8!
+Nxc3! Nxc4! Nxc5! Nxc6! Nxc7! Nxc8!
+Nxd2! Nxd3! Nxd4! Nxd5! Nxd6! Nxd7! Nxd8!
+Nxe1! Nxe2! Nxe3! Nxe4! Nxe5! Nxe6! Nxe7! Nxe8!
+Nxf1! Nxf2! Nxf3! Nxf4! Nxf5! Nxf6! Nxf7! Nxf8!
+Nxg1! Nxg2! Nxg3! Nxg4! Nxg5! Nxg6! Nxg7! Nxg8!
+Nxh1! Nxh2! Nxh3! Nxh4! Nxh5! Nxh6! Nxh7! Nxh8!
+Ndxb5!
+Qxa1! Qxa2! Qxa3! Qxa4! Qxa5! Qxa6! Qxa7! Qxa8!
+Qxb1! Qxb2! Qxb3! Qxb4! Qxb5! Qxb6! Qxb7! Qxb8!
+Qxc1! Qxc2! Qxc3! Qxc4! Qxc5! Qxc6! Qxc7! Qxc8!
+Qxd1! Qxd2! Qxd3! Qxd4! Qxd5! Qxd6! Qxd7! Qxd8!
+Qxe1! Qxe2! Qxe3! Qxe4! Qxe5! Qxe6! Qxe7! Qxe8!
+Qxf1! Qxf2! Qxf3! Qxf4! Qxf5! Qxf6! Qxf7! Qxf8!
+Qxg1! Qxg2! Qxg3! Qxg4! Qxg5! Qxg6! Qxg7! Qxg8!
+Qxh1! Qxh2! Qxh3! Qxh4! Qxh5! Qxh6! Qxh7! Qxh8!
+Rxa1! Rxa2! Rxa3! Rxa4! Rxa5! Rxa6! Rxa7! Rxa8!
+Rxb1! Rxb2! Rxb3! Rxb4! Rxb5! Rxb6! Rxb7! Rxb8!
+Rxc1! Rxc2! Rxc3! Rxc4! Rxc5! Rxc6! Rxc7! Rxc8!
+Rxd1! Rxd2! Rxd3! Rxd4! Rxd5! Rxd6! Rxd7! Rxd8!
+Rxe1! Rxe2! Rxe3! Rxe4! Rxe5! Rxe6! Rxe7! Rxe8!
+Rxf1! Rxf2! Rxf3! Rxf4! Rxf5! Rxf6! Rxf7! Rxf8!
+Rxg1! Rxg2! Rxg3! Rxg4! Rxg5! Rxg6! Rxg7! Rxg8!
+Rxh1! Rxh2! Rxh3! Rxh4! Rxh5! Rxh6! Rxh7! Rxh8!
 
-;checkmate
-b5#
-Bd7#
-Be5#
-Bh5#
-Bxe7#
-Bxf4#
-c3#
-cxb5#
-f3#
-f8=Q#
+;x+!
+axb5+!
+cxb7+!
+cxd7+!
+dxe4+!
+exd5+! exd6+!
+exf6+! exf7+!
+fxe7+!
+fxg1=Q!
+gxf6+!
+Bxa3+!
+Bxb3+! Bxb4+! Bxb5+!
+Bxc2+! Bxc3+! Bxc4+! Bxc5+! Bxc6+!
+Bxd2+! Bxd3+! Bxd4+! Bxd5+! Bxd6+! Bxd7+!
+Bxe4+! Bxe5+! Bxe6+!
+Bxf7+!
+Bxh5+!
+Nxa6+!
+Nxb6+!
+Nxc1+! Nxc2+! Nxc3+! Nxc4+! Nxc5+! Nxc6+! Nxc7+! Nxc8+!
+Nxd2+! Nxd3+! Nxd4+! Nxd5+! Nxd6+!
+Nxe5+! Nxe6+! Nxe7+!
+Nxf2+! Nxf3+! Nxf4+! Nxf5+! Nxf6+! Nxf7+!
+Nxg5+! Nxg6+!
+Qxb1+! Qxb2+! Qxb3+! Qxb4+! Qxb5+! Qxb6+! Qxb7+! Qxb8+!
+Qxc1+! Qxc2+! Qxc3+! Qxc4+! Qxc5+! Qxc6+! Qxc7+! Qxc8+!
+Qxd1+! Qxd2+! Qxd3+! Qxd4+! Qxd5+! Qxd6+! Qxd7+!
+Qxe1+! Qxe2+! Qxe3+! Qxe4+! Qxe5+! Qxe6+! Qxe7+!
+Qxf1+! Qxf2+! Qxf3+! Qxf4+! Qxf5+! Qxf6+! Qxf7+! Qxf8+!
+Qxg2+! Qxg3+! Qxg4+! Qxg5+! Qxg6+! Qxg7+!
+Qxh1+! Qxh2+! Qxh3+!
+Rxa5+! Rxa6+! Rxa7+! Rxa8+!
+Rxb1+! Rxb2+!
+Rxc6+! Rxc7+! Rxc8+!
+Rxd2+! Rxd3+! Rxd4+! Rxd5+! Rxd6+! Rxd7+! Rxd8+!
+Rxe5+! Rxe6+! Rxe7+!
+Rxf1+! Rxf2+! Rxf3+! Rxf4+! Rxf5+! Rxf6+! Rxf7+! Rxf8+!
+Rxg6+! Rxg7+! Rxg8+!
+Rxh3+! Rxh4+! Rxh5+! Rxh6+! Rxh7+!
+
+;!!
+a1=R!! a2!! a3!! a4!! a5!! a6!! a7!!
+b1=Q!! b2!! b3!! b4!! b5!! b6!!
+c1=Q!! c2!! c3!! c4!! c5!! c6!! c7!! c8=Q!!
+d1=Q!! d2!! d3!! d4!! d5!! d6!! d7!! d8=Q!!
+e1=Q!! e2!! e3!! e4!! e5!! e6!! e7!! e8=Q!!
+f2!! f3!! f4!! f5!! f6!! f7!! f8=Q!!
+g1=Q!! g2!! g3!! g4!! g5!! g6!! g7!! g8=Q!!
+h3!! h4!! h5!! h6!! h7!! h8=Q!!
+Ba3!! Ba4!! Ba5!! Ba6!! Ba7!!
+Bb1!! Bb2!! Bb3!! Bb4!! Bb5!! Bb6!! Bb7!! Bd8!!
+Bc1!! Bc2!! Bc3!! Bc4!! Bc5!! Bc6!! Bc7!! Bc8!!
+Bd1!! Bd2!! Bd3!! Bd4!! Bd5!! Bd6!! Bd7!!
+Be1!! Be2!! Be3!! Be4!! Be5!! Be6!! Be7!! Be8!!
+Bf1!! Bf2!! Bf3!! Bf4!! Bf5!! Bf6!! Bf7!! Bf8!!
+Bg1!! Bg2!! Bg3!! Bg4!! Bg5!! Bg6!! Bg7!! Bg8!!
+Bh2!! Bh3!! Bh4!! Bh5!! Bh6!!
+Ka2!! Ka3!! Ka4!! Ka5!! Ka6!! Ka7!! Ka8!!
+Kb1!! Kb2!! Kb3!! Kb4!! Kb5!! Kb6!! Kb7!! Kb8!!
+Kc1!! Kc2!! Kc3!! Kc4!! Kc5!! Kc6!! Kc7!! Kc8!!
+Kd1!! Kd2!! Kd3!! Kd4!! Kd5!! Kd6!! Kd7!! Kd8!!
+Ke1!! Ke2!! Ke3!! Ke4!! Ke5!! Ke6!! Ke7!! Ke8!!
+Kf1!! Kf2!! Kf3!! Kf4!! Kf5!! Kf6!! Kf7!! Kf8!!
+Kg1!! Kg2!! Kg3!! Kg4!! Kg5!! Kg6!! Kg7!! Kg8!!
+Kh1!! Kh2!! Kh3!! Kh4!! Kh5!! Kh6!! Kh7!! Kh8!!
+Na2!! Na3!! Na4!! Na5!! Na6!! Na7!!
+Nb1!! Nb2!! Nb3!! Nb4!! Nb5!! Nb6!! Nb7!! Nb8!!
+Nc1!! Nc2!! Nc3!! Nc4!! Nc5!! Nc6!! Nc7!! Nc8!!
+Nd2!! Nd3!! Nd4!! Nd5!! Nd6!! Nd7!! Nd8!!
+Ne1!! Ne2!! Ne3!! Ne4!! Ne5!! Ne6!! Ne7!! Ne8!!
+Nf1!! Nf2!! Nf3!! Nf4!! Nf5!! Nf6!! Nf7!! Nf8!!
+Ng2!! Ng3!! Ng4!! Ng5!! Ng6!! Ng7!! Ng8!!
+Nh2!! Nh3!! Nh4!! Nh5!! Nh6!! Nh7!! Nh8!!
+N1c3!!
+N2f3!!
+N5e6!!
+Nac4!!
+Nbd2!! Nbd3!! Nbd4!! Nbd5!! Nbd6!! Nbd7!!
+Nbc3!! Nbc4!! Nbc5!! Nbc6!!
+Ncd5!!
+Nce2!! Nce3!! Nce4!! Nce5!!
+Ndb4!! Ndb5!!
+Ndc7!!
+Nef6!!
+Neg4!!
+Nfd7!!
+Nfg5!! Nfg6!!
+Nge2!! Nge3!! Nge4!! Nge5!! Nge6!! Nge7!!
+Ngf3!! Ngf4!! Ngf5!! Ngf6!! Ngf7!! Ngf8!!
+O-O!! O-O-O!!
+Qa1!! Qa2!! Qa3!! Qa4!! Qa5!! Qa6!! Qa7!!
+Qb1!! Qb2!! Qb3!! Qb4!! Qb5!! Qb6!! Qb7!! Qb8!!
+Qc1!! Qc2!! Qc3!! Qc4!! Qc5!! Qc6!! Qc7!! Qc8!!
+Qd1!! Qd2!! Qd3!! Qd4!! Qd5!! Qd6!! Qd7!! Qd8!!
+Qe1!! Qe2!! Qe3!! Qe4!! Qe5!! Qe6!! Qe7!! Qe8!!
+Qf1!! Qf2!! Qf3!! Qf4!! Qf5!! Qf6!! Qf7!! Qf8!!
+Qg2!! Qg3!! Qg4!! Qg5!! Qg6!! Qg7!! Qg8!!
+Qh3!! Qh4!! Qh5!! Qh6!! Qh7!!
+Rab8!!
+Rac1!! Rac2!! Rac3!! Rac4!! Rac5!! Rac6!! Rac7!! Rac8!!
+Rad1!! Rad2!! Rad3!! Rad4!! Rad5!! Rad6!! Rad7!! Rad8!!
+Rae1!! Rae2!! Rae3!! Rae4!! Rae5!! Rae6!! Rae7!! Rae8!!
+Rag1!! Rag2!! Rag3!! Rag4!! Rag5!! Rag6!! Rag7!! Rag8!!
+Rfb1!!
+Rfc1!! Rfc2!! Rfc3!! Rfc4!! Rfc5!! Rfc6!! Rfc7!! Rfc8!!
+Rfd1!! Rfd2!! Rfd3!! Rfd4!! Rfd5!! Rfd6!! Rfd7!! Rfd8!!
+Rfe1!! Rfe2!! Rfe3!! Rfe4!! Rfe5!! Rfe6!! Rfe7!! Rfe8!!
+Rhd1!! Rhd2!! Rhd3!! Rhd4!! Rhd5!! Rhd6!! Rhd7!! Rhd8!!
+Rhe1!!
+Rhf1!!
+Rhg1!!
+Ra1!! Ra2!! Ra3!! Ra4!! Ra5!! Ra6!! Ra7!! Ra8!!
+Rb1!! Rb2!! Rb3!! Rb4!! Rb5!! Rb6!! Rb7!! Rb8!!
+Rc1!! Rc2!! Rc3!! Rc4!! Rc5!! Rc6!! Rc7!! Rc8!!
+Rd1!! Rd2!! Rd3!! Rd4!! Rd5!! Rd6!! Rd7!! Rd8!!
+Re1!! Re2!! Re3!! Re4!! Re5!! Re6!! Re7!! Re8!!
+Rf1!! Rf2!! Rf3!! Rf4!! Rf5!! Rf6!! Rf7!! Rf8!!
+Rg1!! Rg2!! Rg3!! Rg4!! Rg5!! Rg6!! Rg7!! Rg8!!
+Rh1!! Rh2!! Rh3!! Rh4!! Rh5!! Rh6!! Rh7!! Rh8!!
+
+;+!!
+a4+!! a5+!! a6+!!
+b5+!! b6+!!
+c1=R+!! c2+!! c3+!! c4+!! c5+!!
+d6+!! d7+!! d8=N+!!
+e6+!! e7+!! e8=Q+!! e8=N+!!
+f3+!! f4+!! f5+!!
+g3+!! g4+!!
+h3+!! h4+!!
+Ba4+!! Ba5+!! Ba6+!!
+Bb1+!! Bb2+!! Bb3+!! Bb4+!! Bb5+!! Bb6+!!
+Bc1+!! Bc2+!! Bc3+!! Bc4+!! Bc5+!! Bc6+!!
+Bd3+!! Bd4+!! Bd5+!! Bd6+!!
+Be4+!! Be5+!! Be6+!! Be7+!! Be8+!!
+Bf3+!! Bf4+!! Bf5+!! Bf6+!! Bf7+!!
+Bg2+!! Bg3+!! Bg4+!! Bg5+!!
+Bh2+!! Bh3+!! Bh4+!! Bh5+!! Bh6+!! Bh7+!!
+Na3+!! Na4+!! Na5+!! Na6+!! Na7+!!
+Nb3+!! Nb4+!! Nb5+!! Nb6+!!
+Nc2+!! Nc3+!! Nc4+!! Nc5+!! Nc6+!! Nc7+!! Nc8+!!
+Nd1+!! Nd2+!! Nd3+!! Nd4+!! Nd5+!! Nd6+!! Nd7+!! Nd8+!!
+Ne1+!! Ne2+!! Ne3+!! Ne4+!! Ne5+!! Ne6+!! Ne7+!!
+Nf2+!! Nf3+!! Nf4+!! Nf5+!! Nf6+!! Nf7+!!
+Ng3+!! Ng4+!! Ng5+!! Ng6+!!
+Nh3+!! Nh4+!! Nh5+!!
+N4c5+!!
+Nbc7+!!
+Ndc7+!!
+Nec4+!!
+Ned6+!!
+Nfd6+!!
+Qa1+!! Qa2+!! Qa3+!! Qa4+!! Qa5+!! Qa6+!! Qa7+!! Qa8+!!
+Qb1+!! Qb2+!! Qb3+!! Qb4+!! Qb5+!! Qb6+!! Qb7+!! Qb8+!!
+Qc1+!! Qc2+!! Qc3+!! Qc4+!! Qc5+!! Qc6+!! Qc7+!! Qc8+!!
+Qd1+!! Qd2+!! Qd3+!! Qd4+!! Qd5+!! Qd6+!! Qd7+!! Qd8+!!
+Qe1+!! Qe2+!! Qe3+!! Qe4+!! Qe5+!! Qe6+!! Qe7+!! Qe8+!!
+Qf1+!! Qf2+!! Qf3+!! Qf4+!! Qf5+!! Qf6+!! Qf7+!! Qf8+!!
+Qg1+!! Qg2+!! Qg3+!! Qg4+!! Qg5+!! Qg6+!! Qg7+!! Qg8+!!
+Qh1+!! Qh2+!! Qh3+!! Qh4+!! Qh5+!! Qh6+!! Qh7+!! Qh8+!!
+R1c6+!!
+Rad8+!!
+Rae8+!!
+Ra1+!!
+Rb1+!! Rb2+!! Rb3+!! Rb4+!! Rb5+!! Rb6+!! Rb7+!! Rb8+!!
+Rc1+!! Rc2+!! Rc3+!! Rc4+!! Rc5+!! Rc6+!! Rc7+!! Rc8+!!
+Rd1+!! Rd2+!! Rd3+!! Rd4+!! Rd5+!! Rd6+!! Rd7+!! Rd8+!!
+Re1+!! Re2+!! Re3+!! Re4+!! Re5+!! Re6+!! Re7+!! Re8+!!
+Rf1+!! Rf2+!! Rf3+!! Rf4+!! Rf5+!! Rf6+!! Rf7+!! Rf8+!!
+Rg1+!! Rg2+!! Rg3+!! Rg4+!! Rg5+!! Rg6+!! Rg7+!! Rg8+!!
+Rh1+!! Rh2+!! Rh3+!! Rh4+!! Rh5+!! Rh6+!! Rh7+!!
+
+;x!!
+axb2!! axb3!! axb4!! axb5!! axb6!!
+bxa2!! bxa3!! bxa4!! bxa5!! bxa6!! bxa7!! bxa8=Q!!
+bxc2!! bxc3!! bxc4!! bxc5!! bxc6!! bxc7!! bxc8=Q!!
+cxb2!! cxb3!! cxb4!! cxb5!! cxb6!! cxb7!! cxb8=Q!!
+cxd2!! cxd3!! cxd4!! cxd5!! cxd6!! cxd7!!
+dxc2!! dxc3!! dxc4!! dxc5!! dxc6!! dxc7!!
+dxe2!! dxe3!! dxe4!! dxe5!! dxe6!! dxe7!!
+exd3!! exd4!! exd5!! exd6!! exd7!! exd8=Q!!
+exf3!! exf4!! exf5!! exf6!! exf7!!
+fxe3!! fxe4!! fxe5!! fxe6!! fxe7!!
+fxg1=Q!! fxg2!! fxg3!! fxg4!! fxg5!! fxg6!! fxg7!!
+gxf3!! gxf4!! gxf5!! gxf6!!
+gxh3!! gxh4!! gxh5!! gxh6!! gxh7!! gxh8=Q!!
+hxg1=Q!! hxg2!! hxg3!! hxg4!! hxg5!! hxg6!!
+Bxa1!! Bxa2!! Bxa3!! Bxa4!! Bxa5!! Bxa6!! Bxa7!! Bxa8!!
+Bxb1!! Bxb2!! Bxb3!! Bxb4!! Bxb5!! Bxb6!! Bxb7!! Bxb8!!
+Bxc1!! Bxc2!! Bxc3!! Bxc4!! Bxc5!! Bxc6!! Bxc7!! Bxc8!!
+Bxd1!! Bxd2!! Bxd3!! Bxd4!! Bxd5!! Bxd6!! Bxd7!! Bxd8!!
+Bxe1!! Bxe2!! Bxe3!! Bxe4!! Bxe5!! Bxe6!! Bxe7!! Bxe8!!
+Bxf1!! Bxf2!! Bxf3!! Bxf4!! Bxf5!! Bxf6!! Bxf7!! Bxf8!!
+Bxg1!! Bxg2!! Bxg3!! Bxg4!! Bxg5!! Bxg6!! Bxg7!! Bxg8!!
+Bxh1!! Bxh2!! Bxh3!! Bxh4!! Bxh5!! Bxh6!! Bxh7!! Bxh8!!
+Kxb6!! Kxb7!!
+Kxc2!! Kxc3!! Kxc4!! Kxc5!! Kxc6!! Kxc7!!
+Kxd2!! Kxd3!! Kxd4!! Kxd5!! Kxd6!! Kxd7!! Kxd8!!
+Kxe2!! Kxe2!! Kxe4!! Kxe5!! Kxe6!! Kxe7!!
+Kxf1!! Kxf2!! Kxf3!! Kxf4!! Kxf5!! Kxf6!! Kxf7!! Kxf8!!
+Kxg2!! Kxg3!! Kxg4!! Kxg5!! Kxg6!! Kxg7!!
+Kxh7!!
+Nxa1!! Nxa2!! Nxa3!! Nxa4!! Nxa5!! Nxa6!! Nxa7!! Nxa8!!
+Nxb1!! Nxb2!! Nxb3!! Nxb4!! Nxb5!! Nxb6!! Nxb7!! Nxb8!!
+Nxc1!! Nxc2!! Nxc3!! Nxc4!! Nxc5!! Nxc6!! Nxc7!! Nxc8!!
+Nxd1!! Nxd2!! Nxd3!! Nxd4!! Nxd5!! Nxd6!! Nxd7!! Nxd8!!
+Nxe2!! Nxe3!! Nxe4!! Nxe5!! Nxe6!! Nxe7!! Nxe8!!
+Nxf1!! Nxf2!! Nxf3!! Nxf4!! Nxf5!! Nxf6!! Nxf7!! Nxf8!!
+Nxg1!! Nxg2!! Nxg3!! Nxg4!! Nxg5!! Nxg6!! Nxg7!! Nxg8!!
+Nxh1!! Nxh2!! Nxh3!! Nxh4!! Nxh5!! Nxh6!! Nxh7!! Nxh8!!
+Nbxc5!!
+Ncxe7!!
+Ndxb5!!
+Ndxf2!!
+Nexd5!!
+Nfxg5!!
+Qxa1!! Qxa2!! Qxa3!! Qxa4!! Qxa5!! Qxa6!! Qxa7!! Qxa8!!
+Qxb1!! Qxb2!! Qxb3!! Qxb4!! Qxb5!! Qxb6!! Qxb7!! Qxb8!!
+Qxc2!! Qxc3!! Qxc4!! Qxc5!! Qxc6!! Qxc7!! Qxc8!!
+Qxd1!! Qxd2!! Qxd3!! Qxd4!! Qxd5!! Qxd6!! Qxd7!! Qxd8!!
+Qxe2!! Qxe3!! Qxe4!! Qxe5!! Qxe6!! Qxe7!! Qxe8!!
+Qxf2!! Qxf3!! Qxf4!! Qxf5!! Qxf6!! Qxf7!! Qxf8!!
+Qxg1!! Qxg2!! Qxg3!! Qxg4!! Qxg5!! Qxg6!! Qxg7!! Qxg8!!
+Qxh1!! Qxh2!! Qxh3!! Qxh4!! Qxh5!! Qxh6!! Qxh7!! Qxh8!!
+Rxa1!! Rxa2!! Rxa3!! Rxa4!! Rxa5!! Rxa6!! Rxa7!! Rxa8!!
+Rxb1!! Rxb2!! Rxb3!! Rxb4!! Rxb5!! Rxb6!! Rxb7!! Rxb8!!
+Rxc1!! Rxc2!! Rxc3!! Rxc4!! Rxc5!! Rxc6!! Rxc7!! Rxc8!!
+Rxd2!! Rxd3!! Rxd4!! Rxd5!! Rxd6!! Rxd7!!
+Rxe1!! Rxe2!! Rxe3!! Rxe4!! Rxe5!! Rxe6!! Rxe7!!
+Rxf5!! Rxf6!! Rxf7!!
+Rxg1!! Rxg2!! Rxg3!! Rxg4!! Rxg5!! Rxg6!! Rxg7!!
+Rxh1!! Rxh2!! Rxh3!! Rxh4!! Rxh5!! Rxh6!! Rxh7!! Rxh8!!
+Rfxb1!!
+Rhxf1!!
+
+;x+!!
+Bxa3+!! Bxa4+!! Bxa5+!! Bxa6+!!
+Bxb4+!! Bxb5+!!
+Bxc3+!! Bxc4+!! Bxc5+!! Bxc6+!! Bxc7+!! Bxc8+!!
+Bxd2+!! Bxd3+!! Bxd4+!! Bxd5+!! Bxd6+!! Bxd7+!! Bxd8+!!
+Bxe3+!! Bxe4+!! Bxe5+!! Bxe6+!! Bxe7+!!
+Bxf2+!! Bxf3+!! Bxf4+!! Bxf5+!! Bxf6+!! Bxf7+!!
+Bxg5+!!
+Bxh3+!! Bxh4+!! Bxh5+!! Bxh6+!! Bxh7+!!
+axb5+!!
+bxa8=Q+!!
+cxb7+!!
+cxd2+!! cxd3+!! cxd4+!! cxd5+!! cxd6+!! cxd7+!!
+dxc1=R+!! dxc6+!! dxc8=Q+!!
+dxe7+!!
+exd2+!! exd3+!! exd4+!! exd5+!! exd6+!! exd7+!!
+exf4+!! exf5+!! exf6+!! exf7+!!
+fxe6+!!
+gxf2+!! gxf3+!! gxf4+!! gxf5+!! gxf6+!! gxf7+!!
+gxh8=Q+!!
+hxg7+!!
+Nxa6+!! Nxa7+!!
+Nxb5+!! Nxb6+!! Nxb7+!!
+Nxc2+!! Nxc3+!! Nxc4+!! Nxc5+!! Nxc6+!! Nxc7+!! Nxc8+!!
+Nxd2+!! Nxd3+!! Nxd4+!! Nxd5+!! Nxd6+!! Nxd7+!!
+Nxe2+!! Nxe3+!! Nxe4+!! Nxe5+!! Nxe6+!! Nxe7+!! Nxe8+!!
+Nxf1+!! Nxf2+!! Nxf3+!! Nxf4+!! Nxf5+!! Nxf6+!! Nxf7+!! Nxf8+!!
+Nxg6+!! Nxg7+!!
+Ndxf2+!!
+Nfxe6+!!
+Qxa1+!! Qxa2+!! Qxa3+!! Qxa4+!! Qxa5+!! Qxa6+!! Qxa7+!! Qxa8+!!
+Qxb1+!! Qxb2+!! Qxb3+!! Qxb4+!! Qxb5+!! Qxb6+!! Qxb7+!!
+Qxc1+!! Qxc2+!! Qxc3+!! Qxc4+!! Qxc5+!! Qxc6+!! Qxc7+!! Qxc8+!!
+Qxd1+!! Qxd2+!! Qxd3+!! Qxd4+!! Qxd5+!! Qxd6+!! Qxd7+!! Qxd8+!!
+Qxe2+!! Qxe3+!! Qxe4+!! Qxe5+!! Qxe6+!! Qxe7+!! Qxe8+!!
+Qxf1+!! Qxf2+!! Qxf3+!! Qxf4+!! Qxf5+!! Qxf6+!! Qxf7+!! Qxf8+!!
+Qxg1+!! Qxg2+!! Qxg3+!! Qxg4+!! Qxg5+!! Qxg6+!! Qxg7+!! Qxg8+!!
+Qxh1+!! Qxh2+!! Qxh3+!! Qxh4+!! Qxh5+!! Qxh6+!! Qxh7+!! Qxh8+!!
+Rxa3+!!
+Rxb4+!! Rxb5+!!
+Rxc1+!! Rxc2+!! Rxc3+!! Rxc4+!! Rxc5+!! Rxc6+!! Rxc7+!! Rxc8+!!
+Rxd1+!! Rxd2+!! Rxd3+!! Rxd4+!! Rxd5+!! Rxd6+!! Rxd7+!!
+Rxe5+!! Rxe6+!! Rxe7+!! Rxe8+!!
+Rxf1+!! Rxf2+!! Rxf3+!! Rxf4+!! Rxf5+!! Rxf6+!! Rxf7+!! Rxf8+!!
+Rxg2+!! Rxg3+!! Rxg4+!! Rxg5+!! Rxg6+!! Rxg7+!!
+Rxh7+!!
+
+;#
+a1=Q# a1=R# a4# a8=Q# a8=R#
+b1=Q# b2# b3# b4# b5# b6# b7# b8=Q#
+c1=Q# c1=N# c2# c3# c4# c5# c6# c7# c8=Q#
+d3# d4#
+e5# e6# e7# e8=Q# e8=R#
+f3# f4# f5# f6# f7#
+f1=Q# f8=Q# f8=N#
+g3# g4# g5# g6#
 h4#
-hxg5#
-Nb6#
-Nc6#
-Nc7#
-Nf6#
-Nxf3#
+Ba3# Ba4# Ba5# Ba6#
+Bb3# Bb4# Bb5#
+Bc1# Bc2# Bc3# Bc4# Bc5# Bc6# Bc7#
+Bd2# Bd3# Bd4# Bd5# Bd6# Bd7#
+Be2# Be3# Be4# Be5#
+Bf2# Bf3# Bf4# Bf5# Bf6# Bf7#
+Bg2# Bg3# Bg4# Bg5# Bg6#
+Bh5# Bh6#
+Na6#
+Nb5# Nb6#
+Nc2# Nc3# Nc4# Nc5# Nc6# Nc7#
+Nd3# Nd4# Nd5# Nd6#
+Ne6# Ne7# Ne8#
+Nf3# Nf4# Nf5# Nf6# Nf7#
+Ng3# Ng4# Ng5# Ng6# Ng7#
+Qa1# Qa2# Qa3# Qa4# Qa5# Qa6# Qa7# Qa8#
+Qb1# Qb2# Qb3# Qb4# Qb5# Qb6# Qb7#
+Qc1# Qc2# Qc3# Qc4# Qc5# Qc6# Qc7# Qc8#
+Qd1# Qd2# Qd3# Qd4# Qd5# Qd6# Qd7# Qd8#
+Qe1# Qe2# Qe3# Qe4# Qe5# Qe6# Qe7# Qe8#
+Qf2# Qf3# Qf4# Qf5# Qf6# Qf7# Qf8#
+Qg1# Qg2# Qg3# Qg4# Qg5# Qg6# Qg7# Qg8#
+Qh1# Qh2# Qh3# Qh4# Qh5# Qh6# Qh7# Qh8#
+Q3h5#
+Qbc8#
+Qcb6#
+Qcc8#
+Qeh8#
+Qfh8#
+Qge8#
+R1d7#
+R1e7#
+Ra1# Ra2# Ra3# Ra4# Ra5# Ra6# Ra7# Ra8#
+Rb1# Rb2# Rb3# Rb4# Rb5# Rb6# Rb7# Rb8#
+Rc1# Rc2# Rc3# Rc4# Rc5# Rc6# Rc7# Rc8#
+Rd1# Rd2# Rd3# Rd4# Rd5# Rd6# Rd7# Rd8#
+Re1# Re2# Re3# Re4# Re5# Re6# Re7# Re8#
+Rf1# Rf2# Rf3# Rf4# Rf5# Rf6# Rf7# Rf8#
+Rg1# Rg2# Rg3# Rg4# Rg5# Rg6# Rg7# Rg8#
+Rh1# Rh2# Rh3# Rh4# Rh5# Rh6# Rh7# Rh8#
+
+;x#
+Bxb2# Bxb3# Bxb4# Bxb5#
+Bxc5# Bxc6# Bxc7#
+Bxe6# Bxe7#
+Bxf4# Bxf5# Bxf6#
+Bxg4# Bxg5#
+Bxh3#
+bxc4#
+cxb5#
+fxg3#
+gxf8=Q# gxf8=R#
+hxg3# hxg4# hxg5# hxg6#
+Nxa5#
+Nxd7#
+Nxe6#
+Nxf2# Nxf3# Nxf4#
+Nxg5# Nxg6#
+Nxh7#
 Qaxd5#
-Qb5#
-Qb6#
-Qb7#
-Qc2#
-Qc3#
-Qc7#
-Qd2#
-Qd3#
-Qd4#
-Qd5#
-Qd6#
-Qd7#
-Qe2#
-Qe3#
-Qe4#
-Qe5#
-Qe6#
-Qe7#
-Qe8#
-Qf8#
-Qg6#
-Qg7#
-Qg8#
-Qh4#
-Qxb6#
-Qxb7#
-Qxc8#
-Qxd1#
-Qxd2#
-Qxd3#
-Qxd4#
-Qxd5#
-Qxd6#
-Qxd7#
-Qxd8#
-Qxe6#
-Qxf6#
-Qxf7#
-Qxf8#
-Qxg1#
-Qxg2#
-Qxg3#
-Qxg4#
-Qxg6#
-Ra1#
-Ra2#
-Ra3#
-Ra4#
-Ra5#
-Ra6#
-Ra7#
-Ra8#
-Rc8#
-Rd1#
-Rd2#
-Rd3#
-Rd4#
-Rd5#
-Rd6#
-Rd7#
-Rd8#
-Re5#
-Re6#
-Re7#
-Re8#
-Rf7#
-Rg5#
-Rg8#
-Rh3#
-Rh4#
-Rh5#
-Rh6#
-Rxb6#
-Rxb7#
-Rxb8#
-Rxd7#
-Rxe7#
-Rxf8#
+Qxa1# Qxa2# Qxa3# Qxa4# Qxa5# Qxa6# Qxa7# Qxa8#
+Qxb1# Qxb2# Qxb3# Qxb4# Qxb5# Qxb6# Qxb7# Qxb8#
+Qxc1# Qxc2# Qxc3# Qxc4# Qxc5# Qxc6# Qxc7# Qxc8#
+Qxd1# Qxd2# Qxd3# Qxd4# Qxd5# Qxd6# Qxd7# Qxd8#
+Qxe1# Qxe2# Qxe3# Qxe4# Qxe5# Qxe6# Qxe7# Qxe8#
+Qxf1# Qxf2# Qxf3# Qxf4# Qxf5# Qxf6# Qxf7# Qxf8#
+Qxg1# Qxg2# Qxg3# Qxg4# Qxg5# Qxg6# Qxg7# Qxg8#
+Qxh1# Qxh2# Qxh3# Qxh4# Qxh5# Qxh6# Qxh7# Qxh8#
+Rxa5#
+Rxb1# Rxb2# Rxb3# Rxb4# Rxb5# Rxb6# Rxb7# Rxb8#
+Rxc1# Rxc2# Rxc3# Rxc4# Rxc5# Rxc6# Rxc7# Rxc8#
+Rxd3# Rxd4# Rxd5# Rxd6# Rxd7# Rxd8#
+Rxe1# Rxe2# Rxe3# Rxe4# Rxe5# Rxe6# Rxe7# Rxe8#
+Rxf1# Rxf2# Rxf3# Rxf4# Rxf5# Rxf6# Rxf7# Rxf8#
+Rxg2# Rxg3# Rxg4#
+Rxh3# Rxh4# Rxh5# Rxh6# Rxh7# Rxh8#
+Rxge1#
 
-;not stockfish
-a3!?
-a5!?
-a6!?
-b3!?
-b4!?
-b5!?
-Be7!?
-c5!?
-g3!?
-Ba6!?
-Bb4!?
-Bb4+!?
-Bb7!?
-Bc4!?
-Bc5!?
-Bc6!?
-Bc7!?
-Bc8!?
-Bd2!?
-Bd3!?
-Bd4!?
-Bd5!?
-Bd6!?
-bxa3!?
-Bxb2!?
-Bxb5!?
-c6!?
-d5!?
+;!?
+a3!? a4!? a5!? a6!?
+b3!? b4!? b5!? b6!?
+c3!? c4!? c5!? c6!?
+d4!? d5!? d6!?
 e6!?
-f5!?
-f6!?
-fxe4!?
+g3!? g4!? g5!?
+f5!? f6!?
 g6!?
-h5!?
-h6!?
-Kd8!?
-Kf8!?
+h4!? h5!? h6!?
+Be6!? Be7!?
+Ba3!? Ba4!? Ba5!? Ba6!?
+Bb3!? Bb4!? Bb7!?
+Bc4!? Bc5!? Bc6!? Bc7!?
+Bc8!?
+Bd2!? Bd3!? Bd4!? Bd5!? Bd6!?
+Be3!?
+Bf5!?
+Bg2!? Bg3!? Bg4!? Bg5!? Bg6!? Bg7!?
+Kb4!? Kb5!? Kb6!? Kb7!?
+Kc3!? Kc3!? Kc5!? Kc6!? Kc7!?
+Kd1!? Kd2!? Kd3!? Kd4!? Kd5!? Kd6!? Kd7!? Kd8!?
+Ke6!? Ke7!? Ke8!?
+Kf1!? Kf2!? Kf3!? Kf4!? Kf5!? Kf6!? Kf7!? Kf8!?
+Kg2!? Kg3!? Kg4!? Kg5!? Kg6!? Kg7!? Kg8!?
+Kh1!? Kh2!? Kh3!? Kh4!? Kh5!? Kh6!? Kh7!? Kh8!?
 Na5!?
-Nb4!?
-Nb5!?
-Nb6!?
-Nc4!?
-Nc6!?
-Nd5!?
-Nd6!?
-Nd7!?
-Nf3!?
-Nxb3!?
-Qb3+!?
-Qb4!?
+Nb4!? Nb5!? Nb6!?
+Nc4!? Nc5!? Nc6!?
+Nd4!? Nd5!? Nd6!? Nd7!?
+Ne5!?
+Nf3!? Nf4!? Nf5!? Nf6!?
+Nh6!?
+O-O!? O-O-O!?
 Qa5!?
-Qa5+!?
-Qb6!?
-Qb8!?
-Qc5!?
-Qc7!?
-Qe5!?
-Qf6!?
-Qg4!?
-Qg5!?
-Qh4!?
-Qh6!?
-Qxc3+!?
-Rb1!?
+Qb4!? Qb6!? Qb7!? Qb8!?
+Qc2!? Qc3!? Qc4!? Qc5!? Qc6!? Qc7!?
+Qe2!? Qe3!? Qe4!? Qe5!? Qe6!? Qe7!?
+Qf5!? Qf6!?
+Qg4!? Qg5!?
+Qh4!? Qh5!? Qh6!?
+Rb1!? Rb2!? Rb3!? Rb4!? Rb5!? Rb6!? Rb7!? Rb8!?
+Rd3!?
+Re8!?
+Rf1!?
+Rh1!? Rh2!?
 
-;not stockfish + check
+;x!?
+Bxb1!?
+Bxb2!? Bxb3!? Bxb4!? Bxb5!?
+Bxc3!?
+Bxg2!?
+axb6!?
+bxa3!?
+bxc6!?
+dxc4!? dxc5!?
+exd4!? exd5!? exd6!?
+fxe4!?
+Kxd2!? Kxd3!? Kxd4!? Kxd5!? Kxd6!? Kxd7!?
+Kxe5!?
+Nxf5!? Kxf6!?
+Nxb3!?
+Nxd4!?
+Nxe4!?
+Nxf2!?
+Nxh7!?
+Qxc3+!?
+Qxf3!? Qxf4!? Qxf5!? Qxf6!? Qxf7!?
+Qxg5!?
+
+;+!?
+Bb4+!?
 Bxc3+!?
 Bxf2+!?
 Bxf7+!?
+Qa5+!?
+Qb3+!?
 
-;bad moves
-b4?
-g4?
+;?
+a3?
+b3? b4? b5?
+c5?
+Bb4?
+Bc5?
+Bd3? Bd4? Bd5? Bd6?
+d6?
+f3? f4? f5? f6?
+g3? g4? g5? g6?
+h4? h5? h6?
+Na3? Na4? Na5? Na6?
+Nb4?
+Nc6?
 Nd4?
+Ne4? Ne5?
+Nh3? Nh4? Nh5? Nh6?
+Qd8?
+Qe5?
+Qf6?
+Rb8?
+
+;x?
+Bxb1?
+Nxd5?
+
+;+?
+Qa5+?
+
+;??
+b3?? b4?? b5?? b6??
+c3?? c4?? c5?? c6??
+d4?? d5?? d6??
+e5?? e6??
+f5??
+g4?? g5??
+Ba3?? Ba4?? Ba5??
+Bd6??
+Bg4??
+Na6??
+Nc3??
+Ne8??
+Qa5??
+Qb8??
+Qc7??
+Qd7??
+Qg5??
+Rb8??
 Rc2??
+
+;+??
+Nf3+??
+
+;x??
+Qxa6?? Qxa7?? Qxa8??
+Qxb7??
+Qxc6?? Qxc7?? Qxc8??
+
+;x+??
+Bxc3+??
+Bxf7+??
+Nxc2+??
+Qxc3+??
+Qxd2+??
 
