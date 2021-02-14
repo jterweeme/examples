@@ -28,6 +28,7 @@
 #define BLACK 1
 #define WHITE 2
 #define MAXDEPTH 30
+#define STDDEPTH 1
 #define TTBLSZ (1 << 16)
 #define white 0
 #define black 1

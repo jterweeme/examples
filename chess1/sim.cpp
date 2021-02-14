@@ -2,7 +2,6 @@
 #include "globals.h"
 #include "resource.h"
 #include "toolbox.h"
-#include "mainwin.h"
 #include "book.h"
 #include "zeit.h"
 #include <ctime>
@@ -443,7 +442,7 @@ void Sim::NewGame(HWND hWnd, HWND compClr)
     _awindow = 90;
     Bwindow = 90;
     xwndw = 90;
-    _maxSearchDepth = 29;
+    _maxSearchDepth = STDDEPTH;
     contempt = 0;
     GameCnt = 0;
     Game50 = 1;
@@ -1769,21 +1768,16 @@ int Sim::_search(HWND hWnd, short side, short ply, short depth,
     for (pnt = pbst = TrPnt[ply]; pnt < TrPnt[ply + 1] && best <= beta; pnt++)
     {
         /* Little code segment to allow cooperative multitasking */
-        {
-#if 0
-            MSG msg;
+        MSG msg;
 
-            if (!flag.timeout && ::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        if (!flag.timeout && ::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        {
+            //if (!TranslateAccelerator(hWnd, haccel, &msg))
             {
-                if (!TranslateAccelerator(hWnd, haccel, &msg))
-                {
-                    TranslateMessage(&msg);
-                    DispatchMessage(&msg);
-                }
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
             }
-#endif
         }
-        /* End of segment */
 
         if (ply > 1)
             pick(pnt, TrPnt[ply + 1] - 1);

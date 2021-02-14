@@ -1,0 +1,21 @@
+;Chessmaster 9000
+;Annie (1524)
+
+
+;B00 King's Pawn}           1.e4!!
+;C20 Open GAME}             1.e4!! e5!!
+;C40 King's Knight}         1.e4!! e5!! 2.Nf3!!
+;C44 King's pawn GAME}      1.e4!! e5!! 2.Nf3!! Nc6!!
+;C60 Ruy Lopez}             1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!!
+;C60 Morphy DEF}            1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!!
+;C70 Columbus VAR}          1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!!
+;C77 Morphy DEF}            1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!!
+;C78 Columbus VAR}          1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!!
+;C78 Neo-Archangelsk DEF}   1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Bc5?
+{#Stockfish VS Annie9K}     1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Bc5? 6.c3!! b5 7.Bc2!! d5 8.a4!! dxe4 9.axb5!! exf3 10.Qxf3!! Qd5 11.Qxd5!! Nxd5 12.bxc6!! Nf4 13.Re1!! Bd6 14.d4!! Nxg2 15.Kxg2!! Be6 16.f4!! Rb8 17.fxe5!! Be7 18.Ra5!! Bh4 19.Rf1!! Bc4 20.Rg1!! Rb5 21.Ra4!! Bd5+ 22.Kh3!! g5 23.c4!! Be6+ 24.Kg2!! Rb8 25.d5!! Bg4 26.c5!! h5 27.Nc3!! O-O 28.h3!! f5 29.hxg4!! fxg4 30.Ne4!! Rb5 31.Bd3!! Rb3 32.Bc4!! Rbf3 33.d6+!! Kg7 34.e6!! g3 35.Rh1!! Rf2+ 36.Nxf2!! Rxf2+ 37.Kg1!! g2 38.Rxh4!! Rc2 39.Bxg5!! Rxb2 40.Bd3!! Rb3 41.Be4!! Rf3 42.Bxf3!! cxd6 43.Rxh5!! d5 44.Rah4!! a5 45.Be7!! a4 46.Rg5#
+;B20 Sicilian DEF}          1.e4!! c5!
+;B27 Sicilian DEF}          1.e4!! c5! 2.Nf3!!
+;B30 Old Sicilian DEF}      1.e4!! c5! 2.Nf3!! Nc6!
+;B32 Open Sicilian}         1.e4!! c5! 2.Nf3!! Nc6! 3.d4!!
+{#Stockfish VS Annie9K}     1.e4!! c5! 2.Nf3!! Nc6! 3.d4!! cxd4!! 4.Nxd4!! Nxd4 5.Qxd4!! e6 6.Nc3!! Nf6 7.e5!! Be7 8.exf6!! Bxf6 9.Qd6!! Be7 10.Qg3!! Kf8 11.Bf4!! Bh4 12.Bd6+!! Kg8 13.Qd3!! Bf6 14.O-O-O!! Qb6 15.f4!! a5 16.Be2!! Ra6 17.Be5!! Bh4 18.Ne4!! Qc6 19.Qf3!! h5 20.Rd6!! Qa4 21.Bxa6!! Qxa2 22.b3!! bxa6 23.Bb2!! Be7 24.Qc3!! Bf8 25.Qxc8!! a4 26.Qe8!! a3 27.Bd4!! Qb2+ 28.Bxb2!! axb2+ 29.Kxb2!! Kh7 30.Qxf7!! Be7 31.Rxd7!! Rc8!? 32.Rxe7!! Rxc2+ 33.Kxc2!! a5 34.Qxg7#
+

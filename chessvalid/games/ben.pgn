@@ -1,0 +1,27 @@
+;Chessmaster 9000
+;Ben (84)
+
+
+;B00 King's Pawn}           1.e4!!
+;C20 Open GAME}             1.e4!! e5!!
+;C40 King's Knight}         1.e4!! e5!! 2.Nf3!!
+;C40 Jalalabad DEF}         1.e4!! e5!! 2.Nf3!! c5?
+{#Stockfish VS Stockfish}   1.e4!! e5!! 2.Nf3!! c5? 3.Nxe5!! Nh6!? 4.Nc3!! Qa5?? 5.Nc4!! Na6?? 6.Nxa5!! b5 7.Nxb5!! Nb4 8.Nc7+!! Kd8 9.Nxa8!! Bd6!! 10.c3!! Nc6!! 11.Qa4!! Ng4!! 12.Bb5!! Nce5!! 13.d4!! cxd4!! 14.Qxd4!! Ke7!! 15.f4!! f6!! 16.Qxa7!! Kf7!! 17.h3!! g5!! 18.hxg4!! Ng6!! 19.fxg5!! Rf8!! 20.Nb6!! Bg3+!! 21.Ke2!! Ne5!! 22.Rh3!! fxg5!! 23.Rxg3!! Kg7!! 24.Qc7!! Nf7!! 25.Qxc8!! h6!! 26.Qxf8+!! Kxf8!! 27.Nxd7+!! Ke7!! 28.Nc4!! Nd8!! 29.Rh3!! Nf7!! 30.Rxh6!! Nxh6!! 31.Bxg5+!! Kf7!! 32.Nce5+!! Kg8!! 33.Bc4+!! Kh7!! 34.Bf6!! Ng8!! 35.Nf8+!! Kh6!! 36.Nf7#
+;                           1.e4!! e5!! 2.Nf3!! c5? 3.Nxe5!! Nh6!? 4.Nc3!! Qa5?? 5.Nc4!! Na6?? 6.Nxa5!! b5 7.Nxb5!! Nb4 8.Nc7+!! Kd8 9.Nxa8!! Nxc2+
+{#Stockfish VS Stockfish}   1.e4!! e5!! 2.Nf3!! c5? 3.Nxe5!! Nh6!? 4.Nc3!! Qa5?? 5.Nc4!! Na6?? 6.Nxa5!! b5 7.Nxb5!! Nb4 8.Nc7+!! Kd8 9.Nxa8!! Nxc2+ 10.Qxc2!! Ng4 11.d4! Nxh2 12.Rxh2!! Bd6!! 13.e5!! Re8!! 14.Qxh7!! Bxe5!! 15.dxe5!! Rxe5+!! 16.Be3!! c4!! 17.Qxg7!! d6!! 18.Qxf7!! Re7!! 19.Nc6+!! Kd7!! 20.Ne5+!! dxe5!! 21.Qd5+!! Ke8!! 22.Rh8#
+;                           1.e4!! e5!! 2.Nf3!! c5? 3.Nxe5!! Nh6!? 4.Nc3!! Qa5?? 5.Nc4!! Na6?? 6.Nxa5!! b5 7.Nxb5!! Nb4 8.Nc7+!! Kd8 9.Nxa8!! Nxc2+ 10.Qxc2!! Ng4 11.d4! Nxh2 12.Rxh2!! c4
+{#Stockfish vs Ben9K}       1.e4!! e5!! 2.Nf3!! c5? 3.Nxe5!! Nh6!? 4.Nc3!! Qa5?? 5.Nc4!! Na6?? 6.Nxa5!! b5 7.Nxb5!! Nb4 8.Nc7+!! Kd8 9.Nxa8!! Nxc2+ 10.Qxc2!! Ng4 11.d4! Nxh2 12.Rxh2!! c4 13.Qxc4!! Bb4+ 14.Qxb4!! a6 15.Qd6 f6 16.Nc6+!! Ke8 17.Qe7#
+;                           1.e4!! e5!! 2.Nf3!! c5? 3.Nxe5!! Nh6!? 4.Nc3!! Qa5?? 5.Nc4!! Na6?? 6.Nxa5!! b5 7.Nxb5!! Nb4 8.Nc7+!! Kd8 9.Nxa8!! Nxc2+ 10.Qxc2!! Ng4 11.d4! Nxh2 12.Rxh2!! Ke8!
+{#Stockfish vs Ben9K}       1.e4!! e5!! 2.Nf3!! c5? 3.Nxe5!! Nh6!? 4.Nc3!! Qa5?? 5.Nc4!! Na6?? 6.Nxa5!! b5 7.Nxb5!! Nb4 8.Nc7+!! Kd8 9.Nxa8!! Nxc2+ 10.Qxc2!! Ng4 11.d4! Nxh2 12.Rxh2!! Ke8! 13.Nc7+!! Kd8 14.Bf4!! g5 15.Be5!! Be7 16.Bxh8!! f5 17.Rxh7!! d5 18.Qxc5!! Bd7 19.Ne6+!! Bxe6 20.Qxe7+!! Kc8 21.Qc7#
+;                           1.e4!! e5!! 2.Nf3!! c5? 3.Nxe5!! Nh6!? 4.Nc3!! Qa5?? 5.Nc4!! Na6?? 6.Nxa5!! b5 7.Nxb5!! Nb4 8.Nc7+!! Kd8 9.Nxa8!! Nd3+
+{#Stockfish vs Ben9K}       1.e4!! e5!! 2.Nf3!! c5? 3.Nxe5!! Nh6!? 4.Nc3!! Qa5?? 5.Nc4!! Na6?? 6.Nxa5!! b5 7.Nxb5!! Nb4 8.Nc7+!! Kd8 9.Nxa8!! Nd3+ 10.Bxd3!! a6 11.Nb6!! Ng8 12.Qh5!! Ne7 13.Qxc5!! Nc6 14.Nxc6+!! dxc6 15.Qxc6!! Bg4 16.Nd5!! f5 17.Bxa6!! fxe4 18.Qc7+!! Ke8 19.Bb5+!! Bd7 20.Qxd7#
+;A00 Van't Kruijs OPN}      1.e3!
+{Stockfish VS #Stockfish}   1.e3! e6!! 2.b4 Bxb4!! 3.Nc3 Bxc3!! 4.dxc3 b6!! 5.Qf3 Nc6!! 6.Nh3 Qf6!! 7.Qxf6 Nxf6!! 8.Bc4 Na5!! 9.Bb3 Ba6!! 10.Ba4 O-O!! 11.f3!! c5!! 12.e4!! Rfc8!! 13.Rb1!! d5!! 14.e5!! Ne8!! 15.Nf4!! Nc7!! 16.Kf2!! b5!! 17.Bb3!! c4!! 18.Re1!! Nc6!! 19.a3!! cxb3!! 20.cxb3!! Bb7!! 21.Bd2!! a5!! 22.Nd3!! d4!! 23.Rec1!! dxc3!! 24.Bxc3!! Nd5!! 25.Bd2!! b4!! 26.axb4!! Ba6!! 27.b5!! Bxb5!! 28.Ne1!! Rcb8!! 29.Rc5!! Nxe5!! 30.Ra1!! Nc6!! 31.Nc2!! h6!! 32.Ra3!! Ra6!! 33.g4!! Bd3!! 34.Ne1!! Bg6!! 35.h4!! Rab6!! 36.h5!! Bxh5!! 37.g5!! hxg5!! 38.Bxg5!! f6!! 39.Bd2!! Kf7!! 40.Bxa5!! Nxa5!! 41.Rcxa5!! g5!! 42.Nd3!! Rxb3!! 43.Ra6!! Nf4!! 44.Rxb3!! Rxb3!! 45.Ne1!! Kg6!! 46.Nc2!! Rxf3+!! 47.Ke1!! g4!! 48.Nd4!! Rd3!! 49.Ne2!! Re3!! 50.Kd2!! Rxe2+!! 51.Kc3!! g3!! 52.Ra1!! Rf2!! 53.Kb4!! g2!! 54.Rg1!! Rf1!! 55.Rxg2+!! Nxg2!! 56.Kc3!! Rc1+!! 57.Kd2!! Rc7!! 58.Kd3!! Kf5!! 59.Kd2!! Nf4!! 60.Ke1!! Rc2!! 61.Kf1!! Rg2!! 62.Ke1!! Nh3!! 63.Kf1!! Rg1#
+;                           1.e3! e6!! 2.b4 Bxb4!! 3.Nc3 Bxc3!! 4.dxc3 b6!! 5.Qf3 Nc6!! 6.Nh3 Qf6!! 7.Qxf6 Nxf6!! 8.Bc4 Na5!! 9.Bb3 Ba6!! 10.Ba4 O-O!! 11.Rg1
+{Ben9K vs #Stockfish}       1.e3! e6!! 2.b4 Bxb4!! 3.Nc3 Bxc3!! 4.dxc3 b6!! 5.Qf3 Nc6!! 6.Nh3 Qf6!! 7.Qxf6 Nxf6!! 8.Bc4 Na5!! 9.Bb3 Ba6!! 10.Ba4 O-O!! 11.Rg1 c5!! 12.e4 Nxe4!! 13.Bb2 Nc4!! 14.g3 Nxb2!! 15.f3 Nxc3!! 16.Bxd7 Rad8!! 17.Nf4 Rxd7!! 18.g4 e5!! 19.Nh5 Nc4!! 20.Rb1 Rd2!! 21.Ng3 Nxb1!! 22.h3 Ne3!! 23.c4 Bxc4!! 24.a3 Nc2#
+;                           1.e3! e6!! 2.b4 Bxb4!! 3.Nc3 Bxc3!! 4.dxc3 b6!! 5.Qf3 Nc6!! 6.Nh3 Qf6!! 7.Qxf6 Nxf6!! 8.Bc4 Na5!! 9.Bb3 Ba6!! 10.Ba4 O-O!! 11.f4
+{Ben9K vs #Stockfish}       1.e3! e6!! 2.b4 Bxb4!! 3.Nc3 Bxc3!! 4.dxc3 b6!! 5.Qf3 Nc6!! 6.Nh3 Qf6!! 7.Qxf6 Nxf6!! 8.Bc4 Na5!! 9.Bb3 Ba6!! 10.Ba4 O-O!! 11.f4 c5!! 12.a3 Bc4!! 13.Bxd7 Nxd7!! 14.g4 Bd5!! 15.O-O Nf6!! 16.Kf2 Nxg4+!! 17.Ke1 Nxh2!! 18.Rf2 Ng4!! 19.e4 Bxe4!! 20.Ng1 Nxf2!! 21.Kxf2 Bxc2!! 22.Kg3 Nb3!! 23.c4 Nxa1!! 24.Ne2 Nb3!! 25.Bb2 Nd2!! 26.Bc3 Ne4+!! 27.Kg4!? Bd1!! 28.Kh3! Bxe2!! 29.Kh2!? Nxc3!! 30.Kg1 Ne4!! 31.Kg2 Rad8!! 32.f5 Bg4!! 33.Kf1 Bf3!! 34.Kg1 Rd1+!! 35.Kh2 Rh1#
+
+
+
+

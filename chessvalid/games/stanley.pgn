@@ -1,0 +1,69 @@
+;Chessmaster 9000
+
+;Stanley (1)
+
+;B00 King's Pawn}           1.e4!!
+;C20 Open GAME}             1.e4!! e5!!
+;C40 King's Knight}         1.e4!! e5!! 2.Nf3!!
+;C44 King's pawn GAME}      1.e4!! e5!! 2.Nf3!! Nc6!!
+;C60 Ruy Lopez}             1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!!
+;C60 Morphy DEF}            1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!!
+;C70 Columbus VAR}          1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!!
+;C77 Morphy DEF}            1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!!
+;C78 Columbus VAR}          1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!!
+;C80 Tarrasch DEF}          1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Nxe4!!
+;C80 Open DEF Main LINE}    1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Nxe4!! 6.d4!! b5!! 7.Bb3!! d5!! 8.dxe5!! Be6!!
+;C82 Open DEF Main LINE}    1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Nxe4!! 6.d4!! b5!! 7.Bb3!! d5!! 8.dxe5!! Be6!! 9.c3!!
+;C83 Classical DEF}         1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Nxe4!! 6.d4!! b5!! 7.Bb3!! d5!! 8.dxe5!! Be6!! 9.c3!! Be7!!
+;C83 St.Petersburg VAR}     1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Nxe4!! 6.d4!! b5!! 7.Bb3!! d5!! 8.dxe5!! Be6!! 9.c3!! Be7!! 10.Nbd2!!
+{Stockfish VS Stockfish}    1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Nxe4!! 6.d4!! b5!! 7.Bb3!! d5!! 8.dxe5!! Be6!! 9.c3!! Be7!! 10.Nbd2!! Nc5!! 11.Bc2!! d4!! 12.Nb3!! d3!! 13.Bb1!! Nxb3!! 14.axb3!! Bf5!! 15.Bf4!! O-O!! 16.b4!! Qd7!! 17.h3!! Rfd8!! 18.Re1!! a5!! 19.g4!! Bg6!! 20.bxa5!! Rxa5!! 21.Ba2!! Rf8!! 22.b4!! Ra4!! 23.e6!! Qd8!! 24.exf7+!! Bxf7!! 25.Bxf7+!! Rxf7!! 26.Rxa4!! bxa4!! 27.Bc1!! h5!! 28.gxh5!! Rf5!! 29.b5!! Qd5!! 30.bxc6!! Rxf3!! 31.Rxe7!! Qxh5!! 32.Qe1!! Qg6+!! 33.Kh2!! Qf5!! 34.Re8+!! Kh7!! 35.Kg1!! Qg6+!! 36.Kh2!! Qf5!! 37.Kg1!! Qg6+!! 38.Kh2!! Qf5!! {REP} 1/2 1/2
+;C00 French DEF}            1.e4!! e6!
+;C00 French DEF}            1.e4!! e6! 2.d4!!
+;C01 Classical VAR}         1.e4!! e6! 2.d4!! d5!!
+;C10 Paulsen ATK}           1.e4!! e6! 2.d4!! d5!! 3.Nc3!!
+;C11 Paulsen ATK}           1.e4!! e6! 2.d4!! d5!! 3.Nc3!! Nf6!!
+;C11 Steinitz VAR}          1.e4!! e6! 2.d4!! d5!! 3.Nc3!! Nf6!! 4.e5!!
+{Stockfish VS Stockfish}    1.e4!! e6! 2.d4!! d5!! 3.Nc3!! Nf6!! 4.e5!! Nfd7!! 5.f4!! c5!! 6.Nf3!! Nc6!! 7.Be3!! cxd4!! 8.Nxd4!! Qb6!! 9.Qd2!! Qxb2!! 10.Rb1!! Qa3!! 11.Bb5!! Nxd4!! 12.Bxd4!! a6!! 13.Bxd7+!! Bxd7!! 14.Rb3!! Qe7!! 15.Rxb7!! Rc8!! 16.O-O!! Qd8!! 17.Qf2!! Rxc3!! 18.Bxc3!! Qc8!! 19.Rb3!! Ba4!! 20.Bd4!! Bxb3!! 21.axb3!! Be7!! 22.c3!! O-O!! 23.b4!! f6!! 24.Qe3!! fxe5!! 25.Bxe5!! Bf6!! 26.Bxf6!! Rxf6!! 27.g3!! h5!! 28.Ra1!! Rf7!! 29.Re1!! h4!! 30.Qxe6!! Qxc3!! 31.Kf2!! Qxb4!! 32.Qxd5!! g6!! 33.Re8+!! Kg7!! 34.Qe5+!! Kh6!! 35.Qg5+!! Kg7!! 36.Qe5+!! Kh6!! 37.Rh8+!! Rh7!! 38.Qg5+!! Kg7!! 39.Qe5+!! Kh6!! 40.Rg8!! hxg3+!! 41.hxg3!! Qb6+!! 42.Ke2!! Qb5+!! 43.Qxb5!! axb5!! 44.Rb8!! Ra7!! 45.Rxb5!! Kg7!! 46.Kf3!! Ra1!! 47.Kg4!! Kf6!! 48.Rb6+!! Kg7!! 49.Rb7+!! Kf6!! 50.Rb6+!! Kg7!! 51.Rb7+!! Kf6!! 52.Rb8!! Kg7!! 53.Kh3!! Kf7!! 54.Rb7+!! Kf6!! 55.Rb6+!! Kf5!! 56.Rb7!! Kf6!! 57.Rb6+!! Kf5!! 58.Rb5+!! Kf6!! 59.Kg4!! Ra8!! 60.Rb6+!! Kf7!! 61.Rb7+!! Kf6!! 62.Rh7!! Ra3!! 63.Rh6!! Kf7!! 64.Rh7+!! Kf6!! 65.Kh3!! Ra1!! 66.Rc7!! Rh1+!! 67.Kg4!! Ra1!! 68.Kh3!! Rh1+!! 69.Kg4!! Ra1!! 70.Rc8!! Kg7!! 71.Rb8!! Kf6!! 72.Rd8!! Ra5!! 73.Rh8!! Ra1!! 74.Rh4!! Ra3!! 75.Rh7!! Ra1!! 76.Rh8!! Kg7!! 77.Rb8!! Ra5!! 78.Re8!! Kf6!! 79.Rh8!! Ra2!! 80.Kh3!! Kg7!! 81.Rb8!! Kh6!! 82.Re8!! Kg7!! 83.Re7+!! Kf6!! 84.Re1!! Ra7!! 85.Rb1!! Ra4!! 86.Rb6+!! Kg7!! 87.g4!! Rxf4!! {6} 88.g5!! Rf5!! 89.Kg4!! Ra5!! 90.Rb7+!! Kg8!! 91.Rb8+!! Kh7!! 92.Rb4!! Rf5!! 93.Rb7+!! Kh8!! 94.Rb1!! Kg7!! 95.Rb4!! Rf1!! 96.Rb7+!! Rf7!! 97.Rb5!! Ra7!! 98.Kf4!! Rf7+!! 99.Ke4!! Rf8!! 100.Rc5!! Kh8!! 101.Re5!! Ra8!! 102.Kf4!! Rf8+!! 103.Kg4!! Ra8!! 104.Re4!! Rf8!! 105.Re7!! Rg8!! 106.Re5!! Ra8!! 107.Re4!! Ra1!! 108.Re8+!! Kg7!! 109.Re7+!! Kg8!! 110.Rd7!! Rg1+!! 111.Kh4!! Rh1+!! 112.Kg3!! Rg1+!! 113.Kf4!! Rf1+!! 114.Ke4!! Rf5!! 115.Rd5!! Rf7!! 116.Re5!! Kg7!! 117.Rd5!! Rc7!! 118.Ke5!! Rf7!! 119.Ke6!! Rf2!! 120.Rd7+!! Kg8!! 121.Rd8+!! Kh7!! 122.Rd5!! Re2+!! 123.Kf6!! Rf2+!! 124.Ke6!! Re2+!! 125.Kf6!! Rf2+!! 126.Ke5!! Rf5+!! 127.Ke6!! Rf3!! 128.Rd7+!! Kg8!! 129.Rd6!! Kh7!! 130.Rd7+!! Kg8!! 131.Rd8+!! Kh7!! 132.Rd5!! Rf1!! 133.Rd7+!! Kh8!! 134.Rd5!! Re1+!! 135.Kf6!! Rf1+!! 136.Kxg6!! Rf8!! 137.Rd1!! Rb8!! 138.Kh6!! Kg8!! 139.Kg6!! Rb6+!! 140.Kh5!! Kh7!! 141.Rd5!! Rb7!! 142.g6+!! Kg8!! 143.Kh6!! Rb8!! 144.Re5!! Rc8!! 145.Rh5!! Ra8!! 146.Re5!! Rc8!! 147.Ra5!! Rd8!! 148.Ra7!! Rb8!! 149.Ra4!! Kh8!! 150.Rc4!! Kg8!! 151.Rc6!! Re8!! 152.Rc4!! Rd8!! 153.Rc5!! Rf8!! 154.Ra5!! Rc8!! 155.Ra3!! Rf8!! 156.Ra7!! Rb8!! 157.Rc7!! Kh8!! 158.Rh7+!! Kg8!! 159.Rg7+!! Kh8!! 160.Rh7+!! Kg8!! 161.Ra7!! Re8!! 162.Rg7+!! Kh8!! 163.Rc7!! Rb8!! 164.Rg7!! Rb1!! 165.Rh7+!! Kg8!! 166.Rg7+!! Kh8!! 167.Rh7+!! Kg8!! 168.Rc7!! Rh1+!! 169.Kg5!! Ra1!! 170.Rc4!! Rg1+!! 171.Kf5!! Rf1+!! 172.Rf4!! Rg1!! 173.Rc4!! Rf1+!! 174.Kg5!! Ra1!! 175.Rc8+!! Kg7!! 176.Rc7+!! Kg8!! 177.Rc4!! Kg7!! 178.Rc8!! Ra5+!! 179.Kf4!! Kxg6!! {4} 180.Rg8+!! Kf7!! 181.Rg1!! Ra6!! 182.Rg5!! Ra4+!! 183.Kg3!! Ra1!! 184.Rf5+!! Ke6!! 185.Rh5!! Rg1+!! 186.Kf3!! Rf1+!! 187.Ke2!! Ra1!! 188.Rh6+!! Kf5!! 189.Rh4!! Ra7!! 190.Kd2!! Ra1!! 191.Rb4!! Ra5!! 192.Rc4!! Ra2+!! 193.Kc1!! Ra1+!! 194.Kb2!! Ra5!! 195.Rb4!! Kg6!! 196.Rg4+!! Kf5!! 197.Rb4!! Ra6!! 198.Kc2!! Ra2+!! 199.Kb1!! Ra6!! 200.Rh4!! Rb6+!! 201.Ka2!! Ra6+!! 202.Kb3!! Ra1!! 203.Kb2!! Rf1!! 204.Kc2!! Rg1!! 205.Rc4!! Rg2+!! 206.Kb3!! Ke5!! 207.Rc2!! Rg7!! 208.Rc4!! Kd5!! 209.Ra4!! Rg8!! 210.Kc3!! Rc8+!! 211.Kd3!! Rc1!! 212.Rb4!! Ra1!! 213.Rb5+!! Ke6!! 214.Rb3!! Ra2!! 215.Ke3!! Ra5!! 216.Rd3!! Kf6!! 217.Rd7!! Ra3+!! 218.Ke2!! Ra1!! 219.Kd2!! Ra2+!! 220.Ke3!! Ra3+!! 221.Kf2!! Ra2+!! 222.Kf3!! Ra1!! 223.Ke3!! Ra5!! 224.Rc7!! Ra1!! 225.Kd2!! Ra2+!! 226.Kd3!! Ra3+!! 227.Kc2!! Ra6!! 228.Rc4!! Ra2+!! 229.Kb1!! Ra1+!! {50M} 1/2 1/2
+;                           1.e4!! e6! 2.d4!! Qe7
+{#Stockfish VS Stanley9K}   1.e4!! e6! 2.d4!! Qe7 3.Nc3!! Nf6 4.e5!! d6 5.exf6!! Qxf6 6.Nf3!! Qh6 7.Bxh6!! Bd7 8.Be3!! Kd8 9.Ng5!! h5 10.Nxf7+!! Ke7 11.Nxh8!! Kd8 12.Nf7+!! Ke8 13.Qxh5!! b6 14.Nxd6+!! Ke7!! 15.Bf4!! e5! 16.Qf7+!! Kxd6!! 17.Bxe5+! Kc6!! 18.Qf3#
+;                           1.e4!! e6! 2.d4!! a6
+{#Stockfish VS Stanley9K}   1.e4!! e6! 2.d4!! a6 3.Nf3! Nf6 4.e5! Qe7 5.exf6! c5 6.fxe7! Bxe7 7.d5! b5 8.d6! e5 9.Nxe5! Bh4 10.Qf3! Bf6 11.Qxa8! Bd8 12.Qxb8! O-O 13.Nd3! Be7 14.dxe7! Re8 15.Nxc5! a5 16.Qd6! Ba6 17.Qxd7! h5 18.Qxe8+! Kh7!! 19.Bd3+!! g6! 20.Qxf7+!! Kh8!! 21.e8=Q#
+;B00 Lemming DEF}           1.e4!! Na6?
+{#Stockfish VS Stanley9K}   1.e4!! Na6? 2.Nf3!! e5 3.Nxe5!! Be7 4.Bc4!! Rb8 5.Nxf7!! Bf8 6.Nxd8!! Nc5 7.Nf7!! a6 8.Nxh8!! Bd6 9.Qh5+!! g6 10.Qxh7!! Kd8!? 11.Qxg8+!! Ke7!! 12.Nxg6+!! Kf6!! 13.Qf7+!! Kg5!! 14.d4+! Bf4!! 15.Qxf4+! Kxg6!! 16.Qh6#
+;                           1.e4!! Na6? 2.Nc3!
+{#Stockfish VS Stockfish}   1.e4!! Na6? 2.Nc3! c6!? 3.Bxa6!! b5?? 4.Bxc8!! Rxc8!! 5.Nf3!! e6!! 6.O-O!! Ne7!! 7.d4!! Ng6!! 8.Bg5!! f6!! 9.Bd2!! Be7!! 10.h4!! O-O!! 11.h5!! Nh8!! 12.e5!! Nf7!! 13.exf6!! gxf6!! 14.Ne4!! Kh8!! 15.Re1!! Rg8!! 16.Nc5!! a5!! 17.Qe2!! Bxc5!! 18.dxc5!! Qe7!! 19.Rad1!! e5!! 20.Qd3!! Ra8!! 21.Nh4!! Qe6!! 22.Nf5!! a4!! 23.Bc3!! d5!! 24.cxd6!! c5!! 25.Ne7!! Rgd8!! 26.Qg3!! Rg8!! 27.Nxg8!! Rxg8!! 28.Qf3!! b4!! 29.Bd2!! Qxd6!! 30.Be3!! Qe6!! 31.Qb7!! Nd8!! 32.Qc7!! Qc6!! 33.Qxc6!! Nxc6!! 34.Bxc5!! b3!! 35.axb3!! axb3!! 36.cxb3!! Rd8!! 37.Rxd8+!! Nxd8!! 38.Be7!! Nc6!! 39.Bxf6+!! Kg8!! 40.Bxe5!! Kf7!! 41.Bd6!! Kf6!! 42.g4!! Kg5!! 43.Re4!! Kf6!! 44.b4!! Na7!! 45.Be7+!! Kf7!! 46.Bc5!! Nc6!! 47.b5!! Nd8!! 48.Re7+!! Kf6!! 49.Rxh7!! Ne6!! 50.Rh6+!! Ke5!! 51.Rxe6+!! Kxe6!! 52.b6!! Kd5!! 53.b7!! Kxc5!! 54.h6!! Kb4!! 55.b8=Q+!! Kc5!! 56.h7!! Kc4!! 57.h8=Q!! Kd3!! 58.Qc3+!! Ke2!! 59.Qbe5+!! Kd1!! 60.Qee1#
+;                           1.e4!! Na6? 2.Nc3! c6!? 3.Bxa6!! b5?? 4.Bxc8!! e6
+{#Stockfish VS Stanley9K}   1.e4!! Na6? 2.Nc3! c6!? 3.Bxa6!! b5?? 4.Bxc8!! e6 5.Bb7!! a5 6.Bxa8!! b4 7.Bxc6!! Qc8 8.Ba4!! Qxc3 9.dxc3!! Bd6 10.Qxd6!! Nf6 11.Bg5!! Rg8 12.Bxd7+!! Kd8!! 13.Bb5+!! Kc8!! 14.Ba6#
+;                           1.e4!! Na6? 2.Nc3! c6!? 3.Bxa6!! b5?? 4.Bxc8!! Rb8??
+{#Stockfish VS Stockfish}   1.e4!! Na6? 2.Nc3! c6!? 3.Bxa6!! b5?? 4.Bxc8!! Rb8?? 5.Bxd7+!! Kxd7!? 6.Nf3!! Qc7 7.d4!! h5 8.Ne5+!! Ke8 9.Bf4!! Qc8 10.Qf3! h4 11.Nxf7!! a5 12.Nxh8 Qc7 13.Bxc7 Nh6 14.e5 Kd7 15.Bxb8!! Nf7!! 16.Qxf7!! b4!! 17.e6+!! Kc8!! 18.Qf4!! Kb7!! 19.Qc7+!! Ka6!! 20.Qxc6#
+;                           1.e4!! Na6? 2.Nc3! c6!? 3.Bxa6!! b5?? 4.Bxc8!! Rb8?? 5.Bxd7+!! Kxd7!? 6.Nf3!! Qc7 7.d4!! h5 8.Ne5+!! Ke8 9.Bf4!! Qc8 10.Qf3! h4 11.Nxf7!! a5 12.Nxh8 Qc7 13.Bxc7 Nh6 14.e5 Kd7 15.Bxb8!! b4?
+{#Stockfish VS Stanley9K}   1.e4!! Na6? 2.Nc3! c6!? 3.Bxa6!! b5?? 4.Bxc8!! Rb8?? 5.Bxd7+!! Kxd7!? 6.Nf3!! Qc7 7.d4!! h5 8.Ne5+!! Ke8 9.Bf4!! Qc8 10.Qf3! h4 11.Nxf7!! a5 12.Nxh8 Qc7 13.Bxc7 Nh6 14.e5 Kd7 15.Bxb8!! b4? 16.e6+! Kc8!! 17.Qf4!! Kb7!! 18.Qc7+!! Ka6!! 19.Qxc6#
+{#Jasper    VS Stanley9K}   1.e4!! Na6? 2.Nc3! c6!? 3.Bxa6!! b5?? 4.Bxc8!! Rb8?? 5.Bxd7+!! Kxd7!? 6.Nf3!! Qc7 7.d4!! h5 8.Ne5+!! Ke8 9.Bf4!! Qc8 10.Qf3! h4 11.Nxf7!! a5 12.Nxh8 Qc7 13.Bxc7 Nh6 14.e5 Kd7 15.Bxb8!! b4? 16.e6+! Kc8!! 17.Qf4!! Kb7!! 18.Qc7+!! Ka6!! 19.Qa7#
+;                           1.e4!! Na6? 2.Nc3! c6!? 3.Bxa6!! b5?? 4.Bxc8!! Rb8?? 5.Bxd7+!! Kxd7!? 6.Nf3!! Qc7 7.d4!! h5 8.Ne5+!! Ke8 9.Bf4!! Qc8 10.Qf3! h4 11.Nxf7!! a5 12.Nxh8 Qc7 13.Bxc7 Nh6 14.e5 Kd7 15.Bxb8!! g5?
+{#Stockfish VS Stanley9K}   1.e4!! Na6? 2.Nc3! c6!? 3.Bxa6!! b5?? 4.Bxc8!! Rb8?? 5.Bxd7+!! Kxd7!? 6.Nf3!! Qc7 7.d4!! h5 8.Ne5+!! Ke8 9.Bf4!! Qc8 10.Qf3! h4 11.Nxf7!! a5 12.Nxh8 Qc7 13.Bxc7 Nh6 14.e5 Kd7 15.Bxb8!! g5? 16.Ne4!! Bg7! 17.Nc5+!! Kd8!! 18.Qxc6!! Bxe5! 19.Ne6#
+{#Jasper    VS Stanley9K}   1.e4!! Na6? 2.Nc3! c6!? 3.Bxa6!! b5?? 4.Bxc8!! Rb8?? 5.Bxd7+!! Kxd7!? 6.Nf3!! Qc7 7.d4!! h5 8.Ne5+!! Ke8 9.Bf4!! Qc8 10.Qf3! h4 11.Nxf7!! a5 12.Nxh8 Qc7 13.Bxc7 Nh6 14.e5 Kd7 15.Bxb8!! g5? 16.Ne4!! Bg7! 17.Nc5+!! Kd8!! 18.Qxc6!! Bxe5! 19.Qd7#
+;A00 Dunst OPN}             1.Nc3
+{Stockfish VS Stockfish}    1.Nc3 d5!! 2.d4!! Nf6!! 3.Bf4!! c5!! 4.e3!! cxd4!! 5.exd4!! a6!! 6.Nf3!! Nc6!! 7.Ne5!! Bd7!! 8.Ne2!! Qb6!! 9.Nxd7!! Nxd7!! 10.Bc1!! e6!! 11.g3!! Bd6!! 12.Bg2!! Qc7!! 13.O-O!! b5!! 14.a3!! O-O!! 15.c3!! Na5!! 16.Nf4!! Nc4!! 17.Nh5!! Rfe8!! 18.Qg4!! g6!! 19.Nf4!! Nf6!! 20.Qf3!! Kg7!! 21.h4!! h5!! 22.Re1!! a5!! 23.Qd1!! Rac8!! 24.Nd3!! Ne4!! 25.Re2!! Qc6!! 26.Qc2!! Qb7!! 27.Bf4!! Bxf4!! 28.Nxf4!! Ncd6!! 29.Nd3!! Nf5!! 30.Qd1!! Nfd6!! 31.Qe1!! Nf6!! 32.Nc5!! Qc6!! 33.Qc1!! Qb6!! 34.Nd3!! Nf5!! 35.Qd2!! Rc4!! 36.Bh3!! b4!! 37.axb4!! axb4!! 38.Bxf5!! bxc3!! 39.bxc3!! exf5!! 40.Rxe8!! Nxe8!! 41.Qe1!! Nf6!! 42.f3!! Rc7!! 43.Rb1!! Qa5!! 44.Rc1!! Qa2!! 45.Qd1!! Ra7!! 46.Nf4!! Ra3!! 47.Qe2!! Qb3!! 48.Qe7!! Ra6!! 49.Qb4!! Qa2!! 50.Qb1!! Qa3!! 51.Kf2!! Rc6!! 52.Qc2!! Rb6!! 53.Qd2!! Qa6!! 54.Kg2!! Rb7!! 55.Re1!! Qa3!! 56.Rc1!! Rb3!! 57.Rc2!! Qa5!! 58.Qe1!! Qa6!! 59.Qe7!! Rb6!! 60.Rf2!! Qa1!! 61.Rc2!! Ng8!! 62.Qe3!! Nf6!! 63.Nd3!! Rb3!! 64.Qg1!! Qa5!! 65.Qe1!! Qb5!! 66.Qe3!! Qc4!! 67.Nf4!! Qa6!! 68.Qe1!! Qc4!! 69.Qe5!! Rb6!! 70.Re2!! Ra6!! 71.Kf2!! Rc6!! 72.Kg2!! Rc8!! 73.Kf2!! Rc6!! 74.Kg2!! Rc8!! 75.Kf2!! Rc6!! {REP} 1/2 1/2
+;                           1.Nc3 c6
+{#Stockfish VS Stanley9K}   1.Nc3 c6 2.e4!! c5 3.Nge2!! a5 4.d4!! d6 5.dxc5!! Nf6 6.cxd6!! e5 7.Nb5!! Bxd6 8.Nxd6+!! Qxd6 9.Qxd6!! Ra6 10.Qxe5+!! Re6 11.Qxb8!! O-O 12.f3!! g6 13.Nd4!! Nh5 14.Bh6!! Rb6 15.Bxf8!! Rxb2 16.Bh6!! Rxc2!! 17.Nxc2!! f6!! 18.Bc4+!! Kh8!! 19.Qxc8#
+;                           1.Nc3 d6
+{#Stockfish VS Stanley9K}   1.Nc3 d6 2.d4!! Na6 3.e4!! c6 4.Bxa6!! Qc7 5.Be2!! Bh3 6.Nxh3!! b6 7.d5!! f6 8.dxc6!! d5 9.Qxd5!! Qxc6 10.Qxc6+!! Kd8? 11.Bb5!! a6! 12.Qd7#
+;A40 Queen's Pawn}          1.d4!
+;B12 Caro-Kann DEF*}        1.d4! c6 2.e4!!
+{#Stockfish VS Stanley9K}   1.d4! c6 2.e4!! h6 3.Bd3!! e5 4.dxe5!! Bc5 5.Qg4!! h5 6.Qxg7!! Bb4+ 7.Nc3!! Rh6 8.Qxg8+!! Ke7 9.Bg5+!! f6 10.exf6+!! Rxf6 11.Bxf6+!! Kxf6 12.Qxd8+!! Kf7 13.e5!! Bxc3+ 14.bxc3!! d6 15.Nf3!! dxe5! 16.Ng5+!! Kg7!! 17.Qe7+!! Kg8!! 18.Qh7+!! Kf8!! 19.Qf7#
+;A04 Zukertort OPN}         1.Nf3!
+{#Stockfish VS Stanley9K}   1.Nf3! e5? 2.Nxe5!! d6 3.Nf3!! Qd7 4.e4!! a6 5.d4!! Qf5 6.exf5!! Bxf5 7.Ng5!! Be6 8.Qe2!! Ke7 9.d5!! Nh6 10.Nxe6!! Kd7 11.Bxh6!! g6 12.Nxf8+!! Kd8 13.Bg5+!! f6!! 14.Bxf6+!! Kc8!! 15.Qe8#
+;A10 English OPN}           1.c4!
+;A13 English OPN}           1.c4! e6!
+{#Stockfish VS Stanley9K}   1.c4! e6! 2.d4!! Bb4+ 3.Nd2!! h6 4.a3!! Qe7?? 5.axb4!! a6 6.b5!! e5? 7.dxe5!! Qh4? 8.b4!! Qxh2?? 9.Rxh2!! f6 10.e3!! Rh7 11.Qh5+!! Kd8!? 12.Qf7!! c5 13.Qf8+!! Kc7!! 14.b6+!! Kxb6!! 15.Qxc5#
+;A00 Hungarian OPN}         1.g3!
+{#Stockfish VS Stanley9K}   1.g3! Nc6 2.d4!! e6 3.e4!! Ba3 4.Nxa3!! f6 5.d5!! b6 6.dxc6!! Kf7 7.cxd7!! Rb8 8.dxc8=Q!! Qxd1+ 9.Kxd1!! g5 10.Qxb8!! h5 11.Qxc7+!! Ne7 12.Nb5!! Re8 13.Nd6+!! Kg7!? 14.Nxe8+!! Kg8? 15.Qxe7!! a6! 16.Qg7#
+;A00 Grob ATK}              1.h4?
+{Stanley VS #Stockfish}     1.h4? d5 2.Na3 e5 3.b3 Nf6 4.f3 Nh5 5.Rh2 e4 6.d3 Bb4+ 7.Kf2 Bd6 8.g4 Bxh2 9.c3 Qxh4+ 10.Ke3!! Bf4+!! 11.Kd4!! Qf6+!! 12.Kc5!? Na6+! 13.Kxd5!! Be6+! 14.Kxe4!! Ng3#
+;A00 Gedult OPN}            1.f3?
+{#Stockfish VS Stanley9K}   1.f3? a6 2.d4!! h6 3.e4!! d5 4.Be3!! g5 5.Nc3!! h5 6.Nxd5!! f5 7.Bxg5!! Bg7 8.Bf4!! b6 9.Nxc7+!! Kd7 10.Nxa8!! h4 11.Bc7!! Qe8 12.Bxb8!! Kc6!! 13.Nc7!! Qg6 14.Nxa6!! Kb7 15.Qd2!! Qc6 16.d5!! Qd6 17.Bxd6!! fxe4 18.Qb4!! Bc3+ 19.Qxc3!! exd6 20.Qc7+!! Ka8 21.Qb8#
+;                           1.f3? a6 2.d4!! h6 3.e4!! d5 4.Be3!! g5 5.Nc3!! h5 6.Nxd5!! f5 7.Bxg5!! Bg7 8.Bf4!! b6 9.Nxc7+!! Kd7 10.Nxa8!! h4 11.Bc7!! Qe8 12.Bxb8!! Nf6
+{#Stockfish VS Stanley9K}   1.f3? a6 2.d4!! h6 3.e4!! d5 4.Be3!! g5 5.Nc3!! h5 6.Nxd5!! f5 7.Bxg5!! Bg7 8.Bf4!! b6 9.Nxc7+!! Kd7 10.Nxa8!! h4 11.Bc7!! Qe8 12.Bxb8!! Nf6 13.Nxb6+!! Kd8 14.Nxc8!! a5 15.Na7!! Rh5 16.Bb5!! Bh6 17.Qd3!! Qc6 18.Bxc6!! fxe4 19.Qa6!! e5 20.Bd6!! Bd2+!! 21.Kf1!! exd4! 22.Qb6#
+
+
+

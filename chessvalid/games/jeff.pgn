@@ -1,0 +1,31 @@
+;Chessmaster 9000
+;Jeff
+
+
+;B00 King's Pawn}           1.e4!!
+;C20 Open GAME}             1.e4!! e5!!
+;C40 King's Knight}         1.e4!! e5!! 2.Nf3!!
+;C44 King's pawn GAME}      1.e4!! e5!! 2.Nf3!! Nc6!!
+;C60 Ruy Lopez}             1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!!
+;C60 Morphy DEF}            1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!!
+;C70 Columbus VAR}          1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!!
+;C77 Morphy DEF}            1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!!
+;C78 Columbus VAR}          1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!!
+;C80 Tarrasch DEF}          1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Nxe4!!
+;C80 Open DEF Main Line}    1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Nxe4!! 6.d4!! b5!! 7.Bb3!! d5!! 8.dxe5!! Be6!!
+;C82 Open DEF Main Line}    1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Nxe4!! 6.d4!! b5!! 7.Bb3!! d5!! 8.dxe5!! Be6!! 9.c3!!
+;C83 Classical DEF}         1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Nxe4!! 6.d4!! b5!! 7.Bb3!! d5!! 8.dxe5!! Be6!! 9.c3!! Be7!!
+;C83 St.Petersburg VAR}     1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Nxe4!! 6.d4!! b5!! 7.Bb3!! d5!! 8.dxe5!! Be6!! 9.c3!! Be7!! 10.Nbd2!!
+{Stockfish VS Stockfish}    1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Nxe4!! 6.d4!! b5!! 7.Bb3!! d5!! 8.dxe5!! Be6!! 9.c3!! Be7!! 10.Nbd2!! Nc5!! 11.Bc2!! d4!! 12.Nb3!! d3!! 13.Bb1!! Nxb3!! 14.axb3!! Bf5!! 15.Bf4!! O-O!! 16.b4!! Qd7!! 17.h3!! Rfd8!! 18.Re1!! a5!! 19.g4!! Bg6!! 20.bxa5!! Rxa5!! 21.Ba2!! Rf8!! 22.b4!! Ra4!! 23.e6!! Qd8!! 24.exf7+!! Bxf7!! 25.Bxf7+!! Rxf7!! 26.Rxa4!! bxa4!! 27.Bc1!! h5!! 28.gxh5!! Rf5!! 29.b5!! Qd5!! 30.bxc6!! Rxf3!! 31.Rxe7!! Qxh5!! {15} 32.Qe1!! Qg6+!! 33.Kh2!! Qf5!! 34.Re8+!! Kh7!! 35.Kg1!! Qg6+!! 36.Kh2!! Qf5!! 37.Kg1!! Qg6+!! 38.Kh2!! Qf5!! {REP} 1/2 1/2
+;C82 Italian VAR}           1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Nxe4!! 6.d4!! b5!! 7.Bb3!! d5!! 8.dxe5!! Be6!! 9.c3!! Bc5
+;C82 St.Petersburg VAR}     1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Nxe4!! 6.d4!! b5!! 7.Bb3!! d5!! 8.dxe5!! Be6!! 9.c3!! Bc5 10.Nbd2
+{#Stockfish VS Stockfish}   1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Nxe4!! 6.d4!! b5!! 7.Bb3!! d5!! 8.dxe5!! Be6!! 9.c3!! Bc5 10.Nbd2 O-O!! 11.Bc2!! Nxd2 12.Bxd2! g6 13.h3! Re8!! 14.Re1!! Bf8!! 15.Bg5!! Qd7!! 16.Qd2!! Na5!! 17.b3!! c5!! 18.Rad1!! c4!! 19.Bf6!! cxb3!! 20.axb3!! Nc6!! 21.Qf4!! Rac8!! 22.Re3!! Bg7!! 23.Bxg7!! Kxg7!! 24.Qf6+!! Kg8!! 25.Qh4!! Qe7!! 26.Ng5!! h5!! 27.Qg3!! Kg7!! 28.Rf3!! Qc7!! 29.Re1!! d4!! 30.Rf6!! Bd5!! 31.f4!! Ne7!! 32.f5!! Qxc3!! 33.Bd3!! Qd2!! 34.fxg6!! h4!! 35.Rxf7+!! Bxf7!! 36.Qxh4!! Bxg6!! 37.Bxg6!! Qxe1+!! 38.Qxe1!! Nxg6!! 39.e6!! Re7!! 40.Qf2!! Rd8!! 41.Nf7!! Rd5!! 42.Qf3!! Rxe6!! 43.Qxd5!! Kxf7!! 44.Qxd4!! Nf8!! 45.b4!! Ng6!! 46.Kh2!! Nf8!! 47.g4!! Re7!! 48.Qd5+!! Kg7!! 49.Qg5+!! Ng6!! 50.h4!! Re5!! 51.Qd8!! Re2+!! 52.Kg3!! Re3+!! 53.Kf2!! Re6!! 54.Qd7+!! Re7!! 55.Qd4+!! Kf8!! 56.h5!! Ne5!! 57.g5!! Kf7!! 58.Kg3!! Nc4!! 59.g6+!! Ke6!! 60.h6!! Rd7!! 61.Qg4+!! Ke7!! 62.Qg5+!! Kd6!! 63.h7!! Kc7!! 64.Qc5+!! Kb7!! 65.h8=Q!! Nb6!! 66.Qf6!! Rd3+!! 67.Kh4!! Rd6!! 68.Qfxd6!! a5!! 69.Qdxb6+!! Ka8!! 70.Qcc6#
+;                           1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Nxe4!! 6.d4!! b5!! 7.Bb3!! d5!! 8.dxe5!! Be6!! 9.c3!! Bc5 10.Nbd2 O-O!! 11.Bc2!! Nxd2 12.Bxd2! g6 13.h3! Bxh3
+{#Stockfish VS Jeff9K}      1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Nxe4!! 6.d4!! b5!! 7.Bb3!! d5!! 8.dxe5!! Be6!! 9.c3!! Bc5 10.Nbd2 O-O!! 11.Bc2!! Nxd2 12.Bxd2! g6 13.h3! Bxh3 14.gxh3 Qd7 15.Kg2 Rfb8 16.Bh6 Re8 17.Re1 b4 18.Ba4 bxc3 19.Rc1 Bxf2 20.Re2 cxb2 21.Rxb2 Re6 22.Rxf2 Rd8 23.Rfc2 Qe7 24.Rxc6 Rxc6 25.Rxc6 Rb8 26.Qxd5 Rd8 27.Qc5 Qxc5 28.Rxc5 c6 29.Rxc6 g5 30.e6 fxe6 31.Nxg5 Rd2+ 32.Kg1 Rd8 33.Bc2 Rb8 34.Rc7 Rb1+ 35.Bxb1 a5 36.Rc8#
+;                           1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Nxe4!! 6.d4!! b5!! 7.Bb3!! d5!! 8.dxe5!! Be6!! 9.c3!! Bc5 10.Nbd2 O-O!! 11.Bc2!! Nxd2 12.Bxd2! g6 13.h3! Qe7
+{#Stockfish VS Jeff9K}      1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Nxe4!! 6.d4!! b5!! 7.Bb3!! d5!! 8.dxe5!! Be6!! 9.c3!! Bc5 10.Nbd2 O-O!! 11.Bc2!! Nxd2 12.Bxd2! g6 13.h3! Qe7 14.b4!! Bb6 15.Bg5!! Qd7 16.Bf6!! Bxh3 17.gxh3!! Qxh3 18.Qxd5!! Rae8 19.Qxc6!! Re6 20.Qe4!! Qg3+ 21.Kh1!! Bxf2 22.Bb3!! Qh3+ 23.Nh2!! Rxf6 24.exf6!! Bg3 25.Qg2!! Qh4 26.Rad1!! Bxh2 27.Bxf7+!! Kh8 28.Qxh2!! Qe4+ 29.Qg2!! Qh4+ 30.Kg1!! Qh5 31.Rd3!! Qh6 32.Rh3!! Qxh3 33.Qxh3!! h5 34.Bxg6!! Kg8 35.Qd7!! Rxf6 36.Rxf6!! a5 37.Qh7#
+;C84 Closed DEF}            1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Be7!
+;C88 Closed}                1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Be7! 6.Re1!! b5! 7.Bb3!!
+;C88/C92 Closed DEF}        1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Be7! 6.Re1!! b5! 7.Bb3!! d6!! 8.c3!! O-O!! 9.h3!!
+{#Stockfish VS Jeff9K}      1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Ba4!! Nf6!! 5.O-O!! Be7! 6.Re1!! b5! 7.Bb3!! d6!! 8.c3!! O-O!! 9.h3!! Na5 10.Bc2! c5 11.d4! Qc7 12.Nbd2! Nc6 13.d5! Nd8 14.a4! Rb8 15.axb5! axb5 16.Qe2! Nh5 17.Nf1! g6 18.Be3! Nf4 19.Qd2! Nxh3+ 20.gxh3! b4 21.Bh6! Qd7 22.Bxf8! Bxf8 23.Qg5! bxc3 24.bxc3! Qxh3 25.Qxd8! Qg4+ 26.Ng3! Qf4 27.Re3! Qf4 28.Bd1! h5 29.Nxh5! Qh6 30.Nf6+! Kg7 31.Ne8+! Kh8 32.Nxd6! Kg8 33.Nxc8! Rb7 34.Nd6! Rb2 35.Nc4! Rb7 36.Nxe5! f5 37.Rg3! g5 38.Ra8! c4 39.Rxg5+! Kh7 40.Nd7! Qxg5+ 41.Qxg5! Rxd7 42.Qxf5+! Kh6 43.Qxd7! Kg5 44.Ra6! Bd6 45.Rxd6! Kf4 46.Qf5#
+

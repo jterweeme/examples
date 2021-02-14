@@ -1,0 +1,20 @@
+;!!B00 King's Pawn:         1.e4!!
+;!!C20 Open GAME:           1.e4!! e5!!
+;!!C40 King's Knight:       1.e4!! e5!! 2.Nf3!!
+;!!C44 King's pawn GAME:    1.e4!! e5!! 2.Nf3!! Nc6!!
+;!!C60 Ruy Lopez:           1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!!
+;!!Morphy DEF:              1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!!
+{Lucy9K}                    1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Bxc6 dxc6!! 5.g3 c5!! 6.d3 Bd6!! 7.b3 h5!! 8.Bd2 f6!! 9.a3 Bg4!! 10.Nc3 Ne7!! 11.h4 Nc6!! 12.Bh6
+                            1.e4!! e5!! 2.Nf3!! Nc6!! 3.Bb5!! a6!! 4.Bxc6 dxc6!! 5.g3 c5!! 6.d3 Bd6!! 7.b3 h5!! 8.Bd2 f6!! 9.a3 Bg4!! 10.Nc3 Ne7!! 11.h4 Nc6!! 12.Bh6 Rxh6!!
+;!B20 Sicilian DEF:         1.e4!! c5!
+;!!B50 Sicilian:            1.e4!! c5! 2.Nf3!! d6!!
+;!!Open Sicilian:           1.e4!! c5! 2.Nf3!! d6!! 3.d4!!
+;!!B54 Sicilian:            1.e4!! c5! 2.Nf3!! d6!! 3.d4!! cxd4!! 4.Nxd4!!
+                            1.e4!! c5! 2.Nf3!! d6!! 3.d4!! cxd4!! 4.Nxd4!! Bd7 5.Be3 e5 6.Nb5 Be6 7.f4 Nh6
+                            1.e4!! c5! 2.Nf3!! d6!! 3.d4!! cxd4!! 4.Nxd4!! Bd7 5.Be3 e5 6.Nb5 Be6 7.f4 Nh6 8.f5
+;!B30 Sicilian DEF:         1.e4!! c5! 2.Nf3!! Nc6!
+;!!B32 Sicilian DEF:        1.e4!! c5! 2.Nf3!! Nc6! 3.d4!!
+{Jonesie9K}                 1.e4!! c5! 2.Nf3!! Nc6! 3.d4!! cxd4!! 4.Nxd4!! e5 5.Nb5 Rb8 6.N1c3!! Ra8 7.Nd5!! Qa5+
+                            1.e4!! c5! 2.Nf3!! Nc6! 3.d4!! cxd4!! 4.Nxd4!! e5 5.Nb5 Rb8 6.N1c3!! Ra8 7.Nd5!! Qa5+ 8.Bd2!!
+
+

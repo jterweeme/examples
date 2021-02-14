@@ -14,11 +14,13 @@ SUBDIRS = base64\
     echosvr\
     exception\
     FileEditor\
+    grep\
     head\
     md5sum\
     mdiapp\
     memdc\
     netkatd\
+    nl\
     od\
     opengl1\
     overlap\

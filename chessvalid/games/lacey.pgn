@@ -1,0 +1,15 @@
+;Chessmaster 9000
+;Lacey (1308)
+
+;B00 King's Pawn}           1.e4!!
+{#Stockfish VS Lacey9K}     1.e4!! e5!! 2.Nf3!! d5 3.exd5!! Nf6 4.Nxe5!! Qxd5 5.Nf3!! Nc6 6.Nc3!! Qe6+ 7.Be2!! Bb4 8.O-O!! O-O 9.d4!! Bd7 10.d5!! Qf5 11.dxc6!! Bxc6 12.Nd4!! Qd7 13.Nxc6!! Qxc6 14.Bf3!! Qe6 15.Bxb7!! Bxc3 16.Bxa8!! Bxb2 17.Bxb2!! Rxa8 18.Re1!! Ne4 19.Qd4!! f6 20.Rxe4!! Qf7 21.Rae1!! Qxa2 22.Qd7!! Rf8 23.Re7!! Qxb2 24.Rxg7+!! Kh8!! 25.Rxh7+!! Kg8!! 26.Qg7#
+;B20 Sicilian DEF}          1.e4!! c5!
+;B27 Sicilian DEF}          1.e4!! c5! 2.Nf3!!
+{#Stockfish VS Lacey9K}     1.e4!! c5! 2.Nf3!! d5 3.exd5!! Nf6 4.Bb5+!! Bd7 5.Bxd7+!! Nbxd7 6.c4!! e6 7.Qe2!! Qe7 8.dxe6!! Qxe6 9.Qxe6+!! fxe6 10.O-O!! Bd6 11.Re1!! O-O 12.Rxe6!! Bf4 13.Nc3!! Rae8 14.Rxe8!! Rxe8 15.d3!! Be5 16.Bd2!! Bxc3 17.Bxc3!! Re2 18.Kf1!! Re6 19.Re1!! Rxe1+ 20.Kxe1!! Ng4 21.d4!! cxd4 22.Bxd4!! b6 23.h3!! Ngf6 24.Bxf6!! Nxf6 25.Ne5!! Ne4 26.Ke2!! a6 27.Ke3!! Nd6 28.Kd4!! Nf5+ 29.Kd5!! g6 30.b4!! Ne7+ 31.Ke6!! Nf5 32.Nf3!! Kf8 33.Kd7!! h6 34.g4!! Ne7 35.Ne5!! g5 36.c5!! Nd5 37.c6!! Nxb4 38.c7!! Kg7 39.Kd6!! Nxa2 40.c8=Q!! b5 41.Qd7+!! Kh8 42.Qf7!! a5 43.Ng6#
+;C00 French DEF}            1.e4!! e6!
+;C00 French DEF}            1.e4!! e6! 2.d4!!
+;C01 Classical VAR}         1.e4!! e6! 2.d4!! d5!!
+;C10 Paulsen ATK}           1.e4!! e6! 2.d4!! d5!! 3.Nc3!!
+;C11 Paulsen ATK}           1.e4!! e6! 2.d4!! d5!! 3.Nc3!! Nf6!!
+{#Stockfish VS Lacey9K}     1.e4!! e6! 2.d4!! d5!! 3.Nc3!! Nf6!! 4.Bg5!! dxe4 5.Nxe4!! Nc6 6.Nf3!! e5 7.d5!! Bb4+ 8.c3!! Kf8 9.cxb4!! Nxb4 10.Qd2!! Nbxd5 11.Bxf6!! gxf6 12.Bc4!! Be6 13.Qh6+!! Kg8 14.Bxd5!! Bxd5 15.Nxf6+!! Qxf6 16.Qxf6!! Bxf3 17.gxf3!! Re8 18.O-O-O!! c6 19.Qg5+!! Kf8!! 20.Qh6+!! Ke7!! 21.Qd6#
+
