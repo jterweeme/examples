@@ -3,6 +3,7 @@ TEMPLATE = subdirs
 SUBDIRS = base64\
     bgcolor\
     bitmap\
+    bzcat\
     cat\
     cechat\
     chatclient\
