@@ -1,38 +1,10 @@
 #include "stream.h"
+#include "bitstream.h"
 
 DecStream::DecStream(BitInputBase *bi) : _bi(bi)
 {
     _bi->ignore(32);
 }
-
-#if 0
-int DecStreamBuf::underflow()
-{
-    if (gptr() < egptr())
-        return (int)(*gptr());
-
-    char *base = _buffer;
-    char *start = base;
-
-    if (eback() == base)
-    {
-        memmove(base, egptr() - _put_back, _put_back);
-        start += _put_back;
-    }
-
-    _lastRead2 = _ds.read(start, 264 - (start - base));
-    _pos2 += _lastRead2;
-    if (_lastRead2 == 0) return EOF;
-    setg(base, start, start + _lastRead2);
-    return (uint8_t)(*gptr());
-}
-
-std::streampos DecStreamBuf::seekoff(std::ios::streamoff off, std::ios::seekdir way, std::ios::openmode m)
-{
-    std::streampos pos = _pos2 - ((uint64_t)egptr() - (uint64_t)gptr());
-    return pos;
-}
-#endif
 
 int DecStream::read(char *buf, int n)
 {

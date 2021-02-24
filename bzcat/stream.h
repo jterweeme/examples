@@ -2,6 +2,7 @@
 #define STREAM_H
 
 #include "block.h"
+#include <ostream>
 
 class DecStream
 {

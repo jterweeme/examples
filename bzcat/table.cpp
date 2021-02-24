@@ -2,6 +2,8 @@
 #include <iostream>
 #include <sstream>
 
+
+
 Table::Table(uint32_t symbolCount) : _codeLengths(258), _symbolCount(symbolCount)
 {
     _bases.fill(0);
@@ -84,7 +86,14 @@ void Table::dump(std::ostream &os) const
 
 std::string Table::toString() const
 {
-    std::ostringstream o; dump(o); return o.str();
+    std::ostringstream o;
+    dump(o);
+    return o.str();
+}
+
+Tables::Tables() : vector<Table>()
+{
+
 }
 
 void Tables::dump(std::ostream &os) const

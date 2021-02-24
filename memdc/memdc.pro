@@ -1,6 +1,6 @@
 TEMPLATE = app
 CONFIG += silent
-LIBS += -lgdi32 -lmsimg32
+LIBS += -lgdi32 -lmsimg32 -luser32
 SOURCES += dialog.cpp main.cpp MemDcUsage.cpp
 HEADERS += dialog.h MemDcUsage.h
 RC_FILE += resource.rc

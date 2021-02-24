@@ -1,4 +1,16 @@
 #include "block.h"
+#include "bitstream.h"
+#include "table.h"
+
+Block::Block()
+{
+    reset();
+}
+
+Block::~Block()
+{
+    delete[] _merged;
+}
 
 uint32_t Block::_nextSymbol(BitInputBase *bi, const Tables &t, const Fugt &selectors)
 {

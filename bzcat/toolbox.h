@@ -3,8 +3,13 @@
 
 #include <iostream>
 
+/*
+ * Fixed size vector
+ *
+ */
 template<class T> class Fector
 {
+private:
     uint32_t _size;
     uint32_t _pos = 0;
     T *_buf;
@@ -19,7 +24,10 @@ public:
         _pos = f._pos;
         _size = f._size;
         _buf = new T[_size];
-        for (uint32_t i = 0; i < _size; i++) _buf[i] = f._buf[i];
+
+        for (uint32_t i = 0; i < _size; i++)
+            _buf[i] = f._buf[i];
+
         return *this;
     }
 
@@ -36,7 +44,10 @@ public:
     T max(uint32_t range)
     {
         T a = 0;
-        for (uint32_t i = 0; i < range; i++) a = _max(_buf[i], a);
+
+        for (uint32_t i = 0; i < range; i++)
+            a = _max(_buf[i], a);
+
         return a;
     }
 
@@ -57,10 +68,13 @@ public:
     T &operator[](uint32_t i) { return _buf[i]; }
 };
 
+/*
+ * Fector uint8_t
+ */
 class Fugt : public Fector<uint8_t>
 {
 public:
-    Fugt(uint32_t size) : Fector<uint8_t>(size) { }
+    Fugt(uint32_t size);
     void dump(std::ostream &os) const;
     std::string toString() const;
 };

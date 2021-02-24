@@ -2,32 +2,64 @@
 #include "table.h"
 #include "block.h"
 #include "stream.h"
-#include <vector>
-#include <array>
 #include <fstream>
 
-MoveToFront::MoveToFront() : Fugt(256)
+#ifdef WIN32
+#include <io.h>
+#include <fcntl.h>
+#endif
+
+class Options
 {
-    for (uint32_t i = 0; i < 256; i++)
-        set(i, i);
+private:
+    bool _stdin;
+    std::string _fn;
+public:
+    Options();
+    bool stdInput() const;
+    void parse(int argc, char **argv);
+};
+
+Options::Options() : _stdin(true)
+{
+
 }
 
-uint8_t MoveToFront::indexToFront(uint32_t index)
+bool Options::stdInput() const
 {
-    uint8_t value = at(index);
-    for (uint32_t i = index; i > 0; i--) set(i, at(i - 1));
-    return set(0, value);
+    return _stdin;
+}
+
+void Options::parse(int argc, char **argv)
+{
+    if (argc > 1)
+    {
+        _stdin = false;
+        _fn = std::string(argv[1]);
+    }
 }
 
 int main(int argc, char **argv)
 {
+    Options o;
+    o.parse(argc, argv);
     std::ifstream ifs;
-    ifs.open(argv[1]);
+    std::istream *is = nullptr;
 
-    std::cerr << ifs.is_open();
+    if (o.stdInput())
+    {
+        is = &std::cin;
+#ifdef WIN32
+        _setmode(_fileno(stdin), _O_BINARY);
+#endif
+    }
+    else
+    {
+        ifs.open(argv[1], std::ios::binary);
+        is = &ifs;
+    }
 
-    std::cerr << "Bestand geopend\r\n";
-    BitInputStream bi(&ifs);
+    BitInputStream bi(is);
     DecStream ds(&bi);
     ds.extractTo(std::cout);
     ifs.close();

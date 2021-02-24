@@ -1,8 +1,11 @@
 #ifndef BLOCK_H
 #define BLOCK_H
 
-#include "bitstream.h"
-#include "table.h"
+#include <cstdint>
+
+class BitInputBase;
+class Fugt;
+class Tables;
 
 class Block
 {
@@ -13,8 +16,8 @@ private:
     uint32_t _nextSymbol(BitInputBase *bi, const Tables &t, const Fugt &selectors);
 public:
     void reset();
-    Block() { reset(); }
-    ~Block() { delete[] _merged; }
+    Block();
+    ~Block();
     int read();
     void init(BitInputBase *bi);
 };

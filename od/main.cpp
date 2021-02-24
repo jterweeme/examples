@@ -123,7 +123,9 @@ int main(int argc, char **argv)
     if (options.fStdin())
     {
 #ifdef WIN32
+#ifndef _MSC_VER
         _setmode(_fileno(stdin), _O_BINARY);
+#endif
 #endif
         hexDump(std::cout, std::cin);
     }

@@ -630,7 +630,7 @@ Nge2!! Nge3!! Nge4!! Nge5!! Nge6!! Nge7!! Ngf1!! Ngf2!! Ngf3!! Ngf4!! Ngf5!! Ngf
 Nhf1!! Nhf2!! Nhf3!! Nhf4!! Nhf5!! Nhf6!! Nhf7!! Nhf8!! Nhg4!! Nhg5!! Ngh6!!
 Nhg6!!
 O-O!! O-O-O!!
-Qab8!! Qad5!! Qbd6!! Qbe8# Qgd8!!
+Qab8!! Qad5!! Qbd6!! Qbe8# Qgd8!! Qha1!!
 Qa1!! Qa2!! Qa3!! Qa4!! Qa5!! Qa6!! Qa7!! Qa8!!
 Qb1!! Qb2!! Qb3!! Qb4!! Qb5!! Qb6!! Qb7!! Qb8!!
 Qc1!! Qc2!! Qc3!! Qc4!! Qc5!! Qc6!! Qc7!! Qc8!!
@@ -905,7 +905,7 @@ d1=Q# d1=R# d3# d4# d5# d6# d7# d8=Q# d8=R# d8=N#
 e1=R# e2# e3# e4# e5# e6# e7# e8=Q# e8=R#
 f2# f3# f4# f5# f6# f7#
 f1=Q# f1=B# f8=Q# f8=N#
-g1=Q# g3# g4# g5# g6# g8=Q# g8=B# g8=N# g8=R#
+g1=Q# g3# g4# g5# g6# g7# g8=Q# g8=B# g8=N# g8=R#
 h1=Q# h3# h4# h8=Q# h8=R#
 Ba3# Ba4# Ba5# Ba6#
 Bb3# Bb4# Bb5# Bb6# Bb7#
@@ -934,7 +934,7 @@ Qg1# Qg2# Qg3# Qg4# Qg5# Qg6# Qg7# Qg8#
 Qh1# Qh2# Qh3# Qh4# Qh5# Qh6# Qh7# Qh8#
 Q3h5# Q8g6#
 Qaa5# Qac8# Qad1# Qad2# Qae1# Qaf8#
-Qbb7# Qbc7# Qbc8# Qbd7# Qbf2#
+Qbb5# Qbb7# Qbc7# Qbc8# Qbd7# Qbf2#
 Qcb6# Qcc3# Qcc6# Qcc8# Qcg4# Qch5#
 Qda1# Qda4# Qdb6# Qdb7# Qdb8# Qdc7# Qdd8# Qdg5#
 Qec8# Qee1# Qef7# Qeg6# Qeh8#

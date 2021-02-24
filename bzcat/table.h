@@ -32,9 +32,8 @@ public:
 class Tables : public std::vector<Table>
 {
 public:
-    Tables() : vector<Table>() { }
+    Tables();
     void dump(std::ostream &os) const;
-    std::string toString() const;
 };
 
 #endif

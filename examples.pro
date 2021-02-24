@@ -17,6 +17,7 @@ SUBDIRS = base64\
     FileEditor\
     grep\
     head\
+    jpg2tga\
     md5sum\
     mdiapp\
     memdc\

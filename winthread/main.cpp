@@ -2,7 +2,7 @@
 
 DWORD WINAPI myThread(LPVOID lpParam)
 {
-
+    return 0;
 }
 
 int main()
