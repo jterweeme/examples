@@ -11,19 +11,20 @@
 #include <memory.h>
 #include <math.h>
 #include <assert.h>
+#include <cstdint>
 
 #include "stb_image.h"
-//------------------------------------------------------------------------------
+
 #ifndef max
 #define max(a,b)    (((a) > (b)) ? (a) : (b))
 #endif
 #ifndef min
 #define min(a,b)    (((a) < (b)) ? (a) : (b))
 #endif
-//------------------------------------------------------------------------------
+
 typedef unsigned char uint8;
 typedef unsigned int uint;
-//------------------------------------------------------------------------------
+
 static int print_usage()
 {
    printf("Usage: jpg2tga [source_file] [dest_file] <reduce>\n");
@@ -41,12 +42,11 @@ static uint g_nInFileOfs;
 //------------------------------------------------------------------------------
 unsigned char pjpeg_need_bytes_callback(unsigned char* pBuf, unsigned char buf_size, unsigned char *pBytes_actually_read, void *pCallback_data)
 {
-   uint n;
-   pCallback_data;
-   
-   n = min(g_nInFileSize - g_nInFileOfs, buf_size);
+   uint n = min(g_nInFileSize - g_nInFileOfs, buf_size);
+
    if (n && (fread(pBuf, 1, n, g_pInFile) != n))
       return PJPG_STREAM_READ_ERROR;
+
    *pBytes_actually_read = (unsigned char)(n);
    g_nInFileOfs += n;
    return 0;
@@ -62,46 +62,48 @@ unsigned char pjpeg_need_bytes_callback(unsigned char* pBuf, unsigned char buf_s
 // subsampling factor).
 uint8 *pjpeg_load_from_file(const char *pFilename, int *x, int *y, int *comps, pjpeg_scan_type_t *pScan_type, int reduce)
 {
-   pjpeg_image_info_t image_info;
-   int mcu_x = 0;
-   int mcu_y = 0;
-   uint row_pitch;
-   uint8 *pImage;
-   uint8 status;
-   uint decoded_width, decoded_height;
-   uint row_blocks_per_mcu, col_blocks_per_mcu;
+    pjpeg_image_info_t image_info;
+    int mcu_x = 0;
+    int mcu_y = 0;
+    uint row_pitch;
+    uint8_t *pImage;
+    uint8_t status;
+    uint decoded_width, decoded_height;
+    uint row_blocks_per_mcu, col_blocks_per_mcu;
+    *x = 0;
+    *y = 0;
+    *comps = 0;
 
-   *x = 0;
-   *y = 0;
-   *comps = 0;
-   if (pScan_type) *pScan_type = PJPG_GRAYSCALE;
+    if (pScan_type)
+        *pScan_type = PJPG_GRAYSCALE;
 
-   g_pInFile = fopen(pFilename, "rb");
-   if (!g_pInFile)
-      return NULL;
+    g_pInFile = fopen(pFilename, "rb");
 
-   g_nInFileOfs = 0;
+    if (!g_pInFile)
+        return NULL;
 
-   fseek(g_pInFile, 0, SEEK_END);
-   g_nInFileSize = ftell(g_pInFile);
-   fseek(g_pInFile, 0, SEEK_SET);
+    g_nInFileOfs = 0;
+
+    fseek(g_pInFile, 0, SEEK_END);
+    g_nInFileSize = ftell(g_pInFile);
+    fseek(g_pInFile, 0, SEEK_SET);
       
-   status = pjpeg_decode_init(&image_info, pjpeg_need_bytes_callback, NULL, (unsigned char)reduce);
+    status = pjpeg_decode_init(&image_info, pjpeg_need_bytes_callback, NULL, uint8_t(reduce));
          
-   if (status)
-   {
-      printf("pjpeg_decode_init() failed with status %u\n", status);
-      if (status == PJPG_UNSUPPORTED_MODE)
-      {
-         printf("Progressive JPEG files are not supported.\n");
-      }
+    if (status)
+    {
+        printf("pjpeg_decode_init() failed with status %u\n", status);
+        if (status == PJPG_UNSUPPORTED_MODE)
+        {
+            printf("Progressive JPEG files are not supported.\n");
+        }
 
-      fclose(g_pInFile);
-      return NULL;
-   }
+        fclose(g_pInFile);
+        return NULL;
+    }
    
-   if (pScan_type)
-      *pScan_type = image_info.m_scanType;
+    if (pScan_type)
+        *pScan_type = image_info.m_scanType;
 
    // In reduce mode output 1 pixel per 8x8 block.
    decoded_width = reduce ? (image_info.m_MCUSPerRow * image_info.m_MCUWidth) / 8 : image_info.m_width;
@@ -337,8 +339,8 @@ static void image_compare(image_compare_results *pResults, int width, int height
    else
       pResults->peak_snr = log10(255.0f / pResults->root_mean_squared) * 20.0f;
 }
-//------------------------------------------------------------------------------
-int main(int arg_c, char *arg_v[])
+
+int main(int argc, char **argv)
 {
    int n = 1;
    const char *pSrc_filename;
@@ -351,13 +353,14 @@ int main(int arg_c, char *arg_v[])
    
    printf("picojpeg example v1.1, Rich Geldreich <richgel99@gmail.com>, Compiled " __TIME__ " " __DATE__ "\n");
 
-   if ((arg_c < 3) || (arg_c > 4))
+   if ((argc < 3) || (argc > 4))
       return print_usage();
    
-   pSrc_filename = arg_v[n++];
-   pDst_filename = arg_v[n++];
-   if (arg_c == 4)
-      reduce = atoi(arg_v[n++]) != 0;
+   pSrc_filename = argv[n++];
+   pDst_filename = argv[n++];
+
+   if (argc == 4)
+      reduce = atoi(argv[n++]) != 0;
 
    printf("Source file:      \"%s\"\n", pSrc_filename);
    printf("Destination file: \"%s\"\n", pDst_filename);
@@ -424,5 +427,5 @@ int main(int arg_c, char *arg_v[])
 
    return EXIT_SUCCESS;
 }
-//------------------------------------------------------------------------------
+
 
