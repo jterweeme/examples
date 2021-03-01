@@ -15,6 +15,7 @@ SUBDIRS = base64\
     echosvr\
     exception\
     FileEditor\
+    gif2bmp\
     grep\
     head\
     jpg2tga\
@@ -26,6 +27,7 @@ SUBDIRS = base64\
     od\
     opengl1\
     overlap\
+    pack\
     property1\
     qrcode\
     rb\
