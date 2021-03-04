@@ -28,6 +28,7 @@ SUBDIRS = base64\
     opengl1\
     overlap\
     pack\
+    pcat\
     property1\
     qrcode\
     rb\
