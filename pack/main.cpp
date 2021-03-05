@@ -12,10 +12,10 @@
 #include <sys/stat.h>
 #include <vector>
 #include <string>
+#include <iostream>
 
 #define	END	256
 #define	BLKSIZE	512
-#define NAMELEN 80
 
 union FOUR
 {
@@ -23,14 +23,9 @@ union FOUR
     struct { char c0, c1, c2, c3; } c;
 };
 
-char g_inbuff[BLKSIZE];
-long outsize;
-union FOUR mask;
-char *maskshuff[4] = {&(mask.c.c3), &(mask.c.c2), &(mask.c.c1), &(mask.c.c0)};
-
-int static output(int infile, int outfile, long l_insize, int maxlev, long bits[END + 1], int levcount[25], char length[END + 1])
+static void output(int infile, int outfile, long &outsize, long l_insize, int maxlev, long bits[END + 1], int levcount[25], char length[END + 1])
 {
-    int inleft;
+    char g_inbuff[BLKSIZE];
     char *inp;
     char **q, *outp;
     char outbuff[BLKSIZE + 4];
@@ -64,21 +59,23 @@ int static output(int infile, int outfile, long l_insize, int maxlev, long bits[
     lseek(infile, 0L, 0);
     outsize = 0;
     int bitsleft = 8;
-    inleft = 0;
+    int inleft = 0;
+    union FOUR mask;
+    char *maskshuff[4] = {&mask.c.c3, &mask.c.c2, &mask.c.c1, &mask.c.c0};
 
     do
     {
         if (inleft <= 0)
         {
-            inleft = read(infile, inp = g_inbuff, BLKSIZE);
+            inp = g_inbuff;
+            inleft = read(infile, inp, BLKSIZE);
 
             if (inleft < 0)
             {
-                printf (": read error");
-                return (0);
+                throw ": read error";
             }
         }
-        c = (--inleft < 0) ? END : (*inp++ & 0377);
+        c = --inleft < 0 ? END : *inp++ & 0377;
         mask.l.lng = bits[c] << bitsleft;
         q = &maskshuff[0];
 
@@ -99,15 +96,15 @@ int static output(int infile, int outfile, long l_insize, int maxlev, long bits[
         {
             if (write(outfile, outbuff, BLKSIZE) != BLKSIZE)
             {
-wrerr:
-                printf (".z: write error");
-                return (0);
+                throw ".z: write error";
             }
+
             ((union FOUR *) outbuff)->l.lng = ((union FOUR *) &outbuff[BLKSIZE])->l.lng;
             outp -= BLKSIZE;
             outsize += BLKSIZE;
         }
-    } while (c != END);
+    }
+    while (c != END);
 
     if (bitsleft < 8)
         outp++;
@@ -115,10 +112,11 @@ wrerr:
     c = outp - outbuff;
 
     if (write(outfile, outbuff, c) != c)
-        goto wrerr;
+    {
+        throw ".z: write error";
+    }
 
     outsize += c;
-    return 1;
 }
 
 struct Heap
@@ -127,8 +125,6 @@ struct Heap
     int node;
 };
 
-Heap heap[END + 2];
-
 static void hmove(const Heap &src, Heap &dst)
 {
     dst.count = src.count;
@@ -136,12 +132,11 @@ static void hmove(const Heap &src, Heap &dst)
 }
 
 /* makes a heap out of heap[i],...,heap[n] */
-static void heapify(int i, int n)
+static void heapify(int i, int n, Heap *heap)
 {
-    int lastparent;
     struct Heap heapsubi;
     hmove(heap[i], heapsubi);
-    lastparent = n / 2;
+    int lastparent = n / 2;
 
     while (i <= lastparent)
     {
@@ -159,16 +154,14 @@ static void heapify(int i, int n)
     hmove(heapsubi, heap[i]);
 }
 
-
-//union FOUR g_insize;
-
-/* return 1 after successful packing, 0 otherwise */
-static int packfile(int infile, int outfile, long &l_insize)
+static void pack(int infile, int outfile, long &l_insize, long &outsize)
 {
     long g_count[END + 1];
 
     for (int i = 0; i < END; i++)
         g_count[i] = 0;
+
+    char g_inbuff[BLKSIZE];
 
     // gather frequency statistics
     for (int i; (i = read(infile, g_inbuff, BLKSIZE)) > 0;)
@@ -179,9 +172,9 @@ static int packfile(int infile, int outfile, long &l_insize)
     int diffbytes = -1;
     g_count[END] = 1;
     int n = 0;
-    //g_insize.l.lng = 0;
     l_insize = 0;
     int	parent[2 * END + 1];
+    Heap g_heap[END + 2];
 
     for (int i = END; i >= 0; i--)
     {
@@ -190,33 +183,31 @@ static int packfile(int infile, int outfile, long &l_insize)
         if (g_count[i] > 0)
         {
             diffbytes++;
-            //g_insize.l.lng += g_count[i];
             l_insize += g_count[i];
-            heap[++n].count = g_count[i];
-            heap[n].node = i;
+            g_heap[++n].count = g_count[i];
+            g_heap[n].node = i;
         }
     }
 
-    //g_insize.l.lng >>= 1;
     l_insize >>= 1;
 
     for (int i = n / 2; i >= 1; i--)
-        heapify(i, n);
+        heapify(i, n, g_heap);
 
     /* build Huffman tree */
     int lastnode = END;
 
     while (n > 1)
     {
-        parent[heap[1].node] = ++lastnode;
-        long inc = heap[1].count;
-        hmove(heap[n], heap[1]);
+        parent[g_heap[1].node] = ++lastnode;
+        long inc = g_heap[1].count;
+        hmove(g_heap[n], g_heap[1]);
         n--;
-        heapify(1, n);
-        parent[heap[1].node] = lastnode;
-        heap[1].node = lastnode;
-        heap[1].count += inc;
-        heapify(1, n);
+        heapify(1, n, g_heap);
+        parent[g_heap[1].node] = lastnode;
+        g_heap[1].node = lastnode;
+        g_heap[1].count += inc;
+        heapify(1, n, g_heap);
     }
 
     parent[lastnode] = 0;
@@ -251,23 +242,14 @@ static int packfile(int infile, int outfile, long &l_insize)
 
     if (g_maxlev > 24)
     {
-        /* can't occur unless insize.l.lng >= 2**24 */
-        printf (": Huffman tree has too many levels");
-        return 0;
-    }
-
-    /* bitch if no compression, but do it anyway */
-    outsize = ((bitsout + 7) >> 3) + 6 + g_maxlev + diffbytes;
-
-    if ((l_insize + BLKSIZE - 1) / BLKSIZE <= (outsize + BLKSIZE - 1) / BLKSIZE)
-    {
-        printf (": no saving");
+        /* can't occur unless insize >= 2**24 */
+        throw ": Huffman tree has too many levels";
     }
 
     /* compute bit patterns for each character */
     long inc = 1L << 24;
     inc >>= g_maxlev;
-    mask.l.lng = 0;
+    long foo = 0;
     long g_bits[END + 1];
 
     for (int i = g_maxlev; i > 0; i--)
@@ -276,16 +258,16 @@ static int packfile(int infile, int outfile, long &l_insize)
         {
             if (g_length[c] == i)
             {
-                g_bits[c] = mask.l.lng;
-                mask.l.lng += inc;
+                g_bits[c] = foo;
+                foo += inc;
             }
         }
 
-        mask.l.lng &= ~inc;
+        foo &= ~inc;
         inc <<= 1;
     }
 
-    return output(infile, outfile, l_insize, g_maxlev, g_bits, g_levcount, g_length);
+    output(infile, outfile, outsize, l_insize, g_maxlev, g_bits, g_levcount, g_length);
 }
 
 class Options
@@ -317,73 +299,51 @@ Options::fit Options::fcend() const
     return _files.cend();
 }
 
+static void packfile(std::string fn, std::ostream &msgs)
+{
+    msgs << fn;
+    int in_fd = open(fn.c_str(), 0);
+
+    if (in_fd < 0)
+        throw "Cannot open";
+
+    fn.append(".z");
+    int out_fd = open(fn.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644);
+
+    if (out_fd < 0)
+    {
+        close(in_fd);
+        throw "Cannot create file";
+    }
+
+    long insize = 0;
+    long outsize = 0;
+    pack(in_fd, out_fd, insize, outsize);
+    msgs << ": " << insize << " in, " << outsize << " out\r\n";
+    close(out_fd);
+    close(in_fd);
+}
+
 int main(int argc, char **argv)
 {
-    const char SUF0 = '.';
-    const char SUF1 = 'z';
-    int fcount = 0; /* count failures */
-    char filename[NAMELEN];
-    struct stat status;
+    Options o;
+    o.parse(argc, argv);
+    int failcount = 0;
 
-    for (int k = 1; k < argc; k++)
+    for (Options::fit it = o.fcbegin(); it != o.fcend(); ++it)
     {
-        fcount++; // increase failure count - expect the worst
-        printf("%s: %s", argv[0], argv[k]);
-        int sep = -1;
-        char *cp = filename;
-        int i;
-
-        for (i = 0; i < (NAMELEN - 3) && (*cp = argv[k][i]); i++)
-            if (*cp++ == '/')
-                sep = i;
-
-        int infile = open(filename, 0);
-
-        if (infile < 0)
+        try
         {
-            printf(": cannot open\n");
-            continue;
+            packfile(*it, std::cout);
         }
-
-        fstat(infile, &status);
-
-        *cp++ = SUF0;
-        *cp++ = SUF1;
-        *cp = '\0';
-        int	g_outfile = creat(filename, status.st_mode & 0xfff);
-
-        if (g_outfile < 0)
+        catch (...)
         {
-            printf(".z: cannot create\n");
-            goto closein;
+            failcount++;
+            std::cerr << "Error\r\n";
         }
-
-        long l_insize;
-
-        if (packfile(infile, g_outfile, l_insize))
-        {
-            fcount--;  /* success after all */
-
-            if (l_insize != 0)
-            {
-                long saved = l_insize - outsize;
-                printf(": %.1f%% saved\n", (double(saved) / double(l_insize)) * 100);
-            }
-            else
-            {
-                printf(": empty file\n");
-            }
-        }
-        else
-        {
-            printf(" - file unchanged\n");
-        }
-
-closein:
-        close(g_outfile);
-        close(infile);
     }
-    return fcount;
+
+    return failcount;
 }
 
 
