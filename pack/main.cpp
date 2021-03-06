@@ -13,6 +13,8 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <fstream>
+#include <algorithm>
 
 #define	END	256
 #define	BLKSIZE	512
@@ -23,15 +25,14 @@ union FOUR
     struct { char c0, c1, c2, c3; } c;
 };
 
-static void output(int infile, int outfile, long &outsize, long l_insize, int maxlev, long bits[END + 1], int levcount[25], char length[END + 1])
+static void output(std::ifstream &ifs, std::ostream &os, long &outsize, long l_insize, int maxlev, long bits[END + 1], int levcount[25], char length[END + 1])
 {
     char g_inbuff[BLKSIZE];
     char *inp;
-    char **q, *outp;
+    char **q;
     char outbuff[BLKSIZE + 4];
-    outbuff[0] = 0x1f;  /* ascii US */
-    outbuff[1] = 0x1e;  /* ascii RS */
-    /* output the length and the dictionary */
+    outbuff[0] = 0x1f;
+    outbuff[1] = 0x1e;
     long temp = l_insize;
 
     for (int i = 5; i >= 2; i--)
@@ -40,7 +41,7 @@ static void output(int infile, int outfile, long &outsize, long l_insize, int ma
         temp >>= 8;
     }
 
-    outp = &outbuff[6];
+    char *outp = outbuff + 6;
     *outp++ = maxlev;
 
     for (int i = 1; i < maxlev; i++)
@@ -48,34 +49,29 @@ static void output(int infile, int outfile, long &outsize, long l_insize, int ma
 
     *outp++ = levcount[maxlev] - 2;
 
-    int c;
-
     for (int i = 1; i <= maxlev; i++)
-        for (c = 0; c < END; c++)
-            if (length[c] == i)
-                *outp++ = c;
+        for (int j = 0; j < END; j++)
+            if (length[j] == i)
+                *outp++ = j;
 
-    /* output the text */
-    lseek(infile, 0L, 0);
+    ifs.clear();
+    ifs.seekg(0, std::ios::beg);
     outsize = 0;
     int bitsleft = 8;
     int inleft = 0;
     union FOUR mask;
     char *maskshuff[4] = {&mask.c.c3, &mask.c.c2, &mask.c.c1, &mask.c.c0};
+    int c;
 
     do
     {
         if (inleft <= 0)
         {
             inp = g_inbuff;
-            inleft = read(infile, inp, BLKSIZE);
-
-            if (inleft < 0)
-            {
-                throw ": read error";
-            }
+            ifs.read(inp, BLKSIZE);
+            inleft = ifs.gcount();
         }
-        c = --inleft < 0 ? END : *inp++ & 0377;
+        c = --inleft < 0 ? END : *inp++ & 0xff;
         mask.l.lng = bits[c] << bitsleft;
         q = &maskshuff[0];
 
@@ -94,11 +90,7 @@ static void output(int infile, int outfile, long &outsize, long l_insize, int ma
 
         if (outp >= &outbuff[BLKSIZE])
         {
-            if (write(outfile, outbuff, BLKSIZE) != BLKSIZE)
-            {
-                throw ".z: write error";
-            }
-
+            os.write(outbuff, BLKSIZE);
             ((union FOUR *) outbuff)->l.lng = ((union FOUR *) &outbuff[BLKSIZE])->l.lng;
             outp -= BLKSIZE;
             outsize += BLKSIZE;
@@ -110,12 +102,7 @@ static void output(int infile, int outfile, long &outsize, long l_insize, int ma
         outp++;
 
     c = outp - outbuff;
-
-    if (write(outfile, outbuff, c) != c)
-    {
-        throw ".z: write error";
-    }
-
+    os.write(outbuff, c);
     outsize += c;
 }
 
@@ -123,19 +110,20 @@ struct Heap
 {
     long int count;
     int node;
+    void set(const Heap &heap);
 };
 
-static void hmove(const Heap &src, Heap &dst)
+void Heap::set(const Heap &heap)
 {
-    dst.count = src.count;
-    dst.node = src.node;
+    count = heap.count;
+    node = heap.node;
 }
 
 /* makes a heap out of heap[i],...,heap[n] */
 static void heapify(int i, int n, Heap *heap)
 {
     struct Heap heapsubi;
-    hmove(heap[i], heapsubi);
+    heapsubi.set(heap[i]);
     int lastparent = n / 2;
 
     while (i <= lastparent)
@@ -148,13 +136,14 @@ static void heapify(int i, int n, Heap *heap)
         if (heapsubi.count < heap[k].count)
             break;
 
-        hmove(heap[k], heap[i]);
+        heap[i].set(heap[k]);
         i = k;
     }
-    hmove(heapsubi, heap[i]);
+
+    heap[i].set(heapsubi);
 }
 
-static void pack(int infile, int outfile, long &l_insize, long &outsize)
+static void pack(std::ifstream &ifs, std::ostream &os, long &l_insize, long &outsize)
 {
     long g_count[END + 1];
 
@@ -164,12 +153,19 @@ static void pack(int infile, int outfile, long &l_insize, long &outsize)
     char g_inbuff[BLKSIZE];
 
     // gather frequency statistics
-    for (int i; (i = read(infile, g_inbuff, BLKSIZE)) > 0;)
-        while (i > 0)
+    std::streamsize bytes_read = 0;
+
+    do
+    {
+        ifs.read(g_inbuff, BLKSIZE);
+        bytes_read = ifs.gcount();
+
+        for (int i = int(bytes_read); i > 0;)
             g_count[g_inbuff[--i] & 0xff] += 2;
+    }
+    while (bytes_read > 0);
 
     /* put occurring chars in heap with their counts */
-    int diffbytes = -1;
     g_count[END] = 1;
     int n = 0;
     l_insize = 0;
@@ -182,7 +178,6 @@ static void pack(int infile, int outfile, long &l_insize, long &outsize)
 
         if (g_count[i] > 0)
         {
-            diffbytes++;
             l_insize += g_count[i];
             g_heap[++n].count = g_count[i];
             g_heap[n].node = i;
@@ -201,7 +196,7 @@ static void pack(int infile, int outfile, long &l_insize, long &outsize)
     {
         parent[g_heap[1].node] = ++lastnode;
         long inc = g_heap[1].count;
-        hmove(g_heap[n], g_heap[1]);
+        g_heap[1].set(g_heap[n]);
         n--;
         heapify(1, n, g_heap);
         parent[g_heap[1].node] = lastnode;
@@ -211,24 +206,19 @@ static void pack(int infile, int outfile, long &l_insize, long &outsize)
     }
 
     parent[lastnode] = 0;
-
-    /* assign lengths to encoding for each character */
-    long bitsout = 0;
     int g_maxlev = 0;
     int g_levcount[25];
 
     for (int i = 1; i <= 24; i++)
         g_levcount[i] = 0;
 
-    int c;
-    int p;
     char g_length[END + 1];
 
     for (int i = 0; i <= END; i++)
     {
-        c = 0;
+        int c = 0;
 
-        for (p = parent[i]; p != 0; p = parent[p])
+        for (int p = parent[i]; p != 0; p = parent[p])
             c++;
 
         g_levcount[c]++;
@@ -236,8 +226,6 @@ static void pack(int infile, int outfile, long &l_insize, long &outsize)
 
         if (c > g_maxlev)
             g_maxlev = c;
-
-        bitsout += c * (g_count[i] >> 1);
     }
 
     if (g_maxlev > 24)
@@ -254,7 +242,7 @@ static void pack(int infile, int outfile, long &l_insize, long &outsize)
 
     for (int i = g_maxlev; i > 0; i--)
     {
-        for (c = 0; c <= END; c++)
+        for (int c = 0; c <= END; c++)
         {
             if (g_length[c] == i)
             {
@@ -267,7 +255,7 @@ static void pack(int infile, int outfile, long &l_insize, long &outsize)
         inc <<= 1;
     }
 
-    output(infile, outfile, outsize, l_insize, g_maxlev, g_bits, g_levcount, g_length);
+    output(ifs, os, outsize, l_insize, g_maxlev, g_bits, g_levcount, g_length);
 }
 
 class Options
@@ -302,26 +290,17 @@ Options::fit Options::fcend() const
 static void packfile(std::string fn, std::ostream &msgs)
 {
     msgs << fn;
-    int in_fd = open(fn.c_str(), 0);
-
-    if (in_fd < 0)
-        throw "Cannot open";
-
+    std::ifstream ifs;
+    ifs.open(fn, std::ifstream::binary);
     fn.append(".z");
-    int out_fd = open(fn.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644);
-
-    if (out_fd < 0)
-    {
-        close(in_fd);
-        throw "Cannot create file";
-    }
-
+    std::ofstream ofs;
+    ofs.open(fn, std::ofstream::binary);
     long insize = 0;
     long outsize = 0;
-    pack(in_fd, out_fd, insize, outsize);
+    pack(ifs, ofs, insize, outsize);
     msgs << ": " << insize << " in, " << outsize << " out\r\n";
-    close(out_fd);
-    close(in_fd);
+    ofs.close();
+    ifs.close();
 }
 
 int main(int argc, char **argv)
