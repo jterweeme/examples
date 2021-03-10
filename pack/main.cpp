@@ -88,7 +88,7 @@ int main(int argc, char **argv)
 
     try
     {
-        packfile("d:\\temp\\tada.wav", std::cout);
+        packfile("d:\\temp\\50sport.iso", std::cout);
     }
     catch (const std::exception &e)
     {

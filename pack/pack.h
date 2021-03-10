@@ -3,8 +3,9 @@
 
 #include <fstream>
 
-#define	END	256
-#define	BLKSIZE	512
+static constexpr uint16_t END = 256;
+static constexpr uint16_t BLKSIZE = 512;
+static constexpr uint8_t LEVEL_LIMIT = 24;
 
 union FOUR
 {

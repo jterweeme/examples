@@ -7,17 +7,17 @@ void Heap::set(const Heap &heap)
 }
 
 /* makes a heap out of heap[i],...,heap[n] */
-static void heapify(int i, int n, Heap *heap)
+static void heapify(uint32_t i, const uint32_t n, Heap *heap)
 {
     struct Heap heapsubi;
     heapsubi.set(heap[i]);
-    int lastparent = n / 2;
+    const uint32_t lastparent = n / 2;
 
     while (i <= lastparent)
     {
-        int k = 2 * i;
+        uint32_t k = 2 * i;
 
-        if (heap[k].count > heap[k+1].count && k < n)
+        if (heap[k].count > heap[k + 1].count && k < n)
             k++;
 
         if (heapsubi.count < heap[k].count)
@@ -33,7 +33,7 @@ static void heapify(int i, int n, Heap *heap)
 void pack(std::ifstream &ifs, std::ostream &os, long &l_insize, long &outsize)
 {
     uint32_t maxlev = 0;
-    int levcount[25] = {0};
+    uint32_t levcount[25] = {0};
     uint8_t length[END + 1];
     long bits[END + 1];
 
@@ -96,7 +96,7 @@ void pack(std::ifstream &ifs, std::ostream &os, long &l_insize, long &outsize)
 
         parent[lastnode] = 0;
 
-        for (int i = 0; i <= END; i++)
+        for (uint32_t i = 0; i <= END; i++)
         {
             uint32_t c = 0;
 
@@ -108,14 +108,14 @@ void pack(std::ifstream &ifs, std::ostream &os, long &l_insize, long &outsize)
             maxlev = std::max(maxlev, c);
         }
 
-        if (maxlev > 24)
+        if (maxlev > LEVEL_LIMIT)
         {
             /* can't occur unless insize >= 2**24 */
             throw std::range_error(": Huffman tree has too many levels");
         }
 
         /* compute bit patterns for each character */
-        for (uint32_t i = maxlev, foo = 0, inc = 1 << (24 - maxlev); i > 0; i--)
+        for (uint32_t i = maxlev, foo = 0, inc = 1 << (LEVEL_LIMIT - maxlev); i > 0; i--)
         {
             for (int c = 0; c <= END; c++)
             {
