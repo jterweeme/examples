@@ -13,14 +13,19 @@ union FOUR
     struct { char c0, c1, c2, c3; } c;
 };
 
-struct Heap
+class Heap
 {
-    long int count;
-    int node;
+private:
+    uint32_t _count;
+    uint32_t _node;
+public:
     void set(const Heap &heap);
+    void set(uint32_t count, uint32_t node);
+    uint32_t count() const;
+    uint32_t node() const;
 };
 
-void pack(std::ifstream &ifs, std::ostream &os, long &l_insize, long &outsize);
+void pack(std::ifstream &ifs, std::ostream &os, uint32_t &l_insize, uint32_t &outsize);
 
 #endif
 

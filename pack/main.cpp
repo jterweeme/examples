@@ -53,8 +53,7 @@ static void packfile(std::string fn, std::ostream &msgs)
     fn.append(".z");
     std::ofstream ofs;
     ofs.open(fn, std::ofstream::binary);
-    long insize = 0;
-    long outsize = 0;
+    uint32_t insize, outsize;
     pack(ifs, ofs, insize, outsize);
     msgs << ": " << insize << " in, " << outsize << " out\r\n";
     ofs.close();

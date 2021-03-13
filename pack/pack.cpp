@@ -1,9 +1,32 @@
+/*
+ *	Huffman encoding program
+ *	Adapted April 1979, from program by T.G. Szymanski, March 1978
+ *	Usage:	pack [[ - ] filename ... ] filename ...
+ *		- option: enable/disable listing of statistics
+ */
+
 #include "pack.h"
 
 void Heap::set(const Heap &heap)
 {
-    count = heap.count;
-    node = heap.node;
+    _count = heap._count;
+    _node = heap._node;
+}
+
+void Heap::set(uint32_t count, uint32_t node)
+{
+    _count = count;
+    _node = node;
+}
+
+uint32_t Heap::count() const
+{
+    return _count;
+}
+
+uint32_t Heap::node() const
+{
+    return _node;
 }
 
 /* makes a heap out of heap[i],...,heap[n] */
@@ -17,10 +40,10 @@ static void heapify(uint32_t i, const uint32_t n, Heap *heap)
     {
         uint32_t k = 2 * i;
 
-        if (heap[k].count > heap[k + 1].count && k < n)
+        if (heap[k].count() > heap[k + 1].count() && k < n)
             k++;
 
-        if (heapsubi.count < heap[k].count)
+        if (heapsubi.count() < heap[k].count())
             break;
 
         heap[i].set(heap[k]);
@@ -30,71 +53,79 @@ static void heapify(uint32_t i, const uint32_t n, Heap *heap)
     heap[i].set(heapsubi);
 }
 
-void pack(std::ifstream &ifs, std::ostream &os, long &l_insize, long &outsize)
+void pack(std::ifstream &ifs, std::ostream &os, uint32_t &insize, uint32_t &outsize)
 {
     uint32_t maxlev = 0;
     uint32_t levcount[25] = {0};
     uint8_t length[END + 1];
-    long bits[END + 1];
+    uint32_t bits[END + 1];
 
     {
-        long g_count[END + 1] = {0};
+        uint32_t count[END + 1] = {0};
 
         // gather frequency statistics
         while (ifs.good())
         {
             char g_inbuff[BLKSIZE];
             ifs.read(g_inbuff, BLKSIZE);
-            std::streamsize bytes_read = ifs.gcount();
+            uint32_t bytes_read = uint32_t(ifs.gcount());
 
-            for (int i = 0; i < int(bytes_read); ++i)
+            for (uint32_t i = 0; i < bytes_read; ++i)
             {
                 uint8_t byte = g_inbuff[i];
-                g_count[byte] += 2;
+                count[byte] += 2;
             }
         }
+
+        uint32_t parent[2 * END + 1];
 
         /* put occurring chars in heap with their counts */
-        g_count[END] = 1;
-        int n = 0;
-        l_insize = 0;
-        int	parent[2 * END + 1];
-        Heap g_heap[END + 2];
-
-        for (int i = END; i >= 0; i--)
         {
-            parent[i] = 0;
+            count[END] = 1;
+            uint32_t n = 0;
+            insize = 0;
 
-            if (g_count[i] > 0)
+            Heap g_heap[END + 2];
+
+            for (int i = END; i >= 0; i--)
             {
-                l_insize += g_count[i];
-                g_heap[++n].count = g_count[i];
-                g_heap[n].node = i;
+                parent[i] = 0;
+
+                if (count[i] > 0)
+                {
+                    insize += count[i];
+                    ++n;
+                    g_heap[n].set(count[i], i);
+                }
+            }
+
+            insize >>= 1;
+
+            for (uint32_t i = n / 2; i >= 1; --i)
+                heapify(i, n, g_heap);
+
+            /* build Huffman tree */
+            {
+                uint32_t lastnode = END;
+
+                while (n > 1)
+                {
+                    uint32_t tmp = g_heap[1].node();
+                    parent[tmp] = ++lastnode;
+                    uint32_t inc = g_heap[1].count();
+                    g_heap[1].set(g_heap[n]);
+                    n--;
+                    heapify(1, n, g_heap);
+                    tmp = g_heap[1].node();
+                    parent[tmp] = lastnode;
+                    tmp = g_heap[1].count();
+                    g_heap[1].set(tmp + inc, lastnode);
+                    heapify(1, n, g_heap);
+                }
+
+                parent[lastnode] = 0;
             }
         }
-
-        l_insize >>= 1;
-
-        for (int i = n / 2; i >= 1; --i)
-            heapify(i, n, g_heap);
-
-        /* build Huffman tree */
-        int lastnode = END;
-
-        while (n > 1)
-        {
-            parent[g_heap[1].node] = ++lastnode;
-            long inc = g_heap[1].count;
-            g_heap[1].set(g_heap[n]);
-            n--;
-            heapify(1, n, g_heap);
-            parent[g_heap[1].node] = lastnode;
-            g_heap[1].node = lastnode;
-            g_heap[1].count += inc;
-            heapify(1, n, g_heap);
-        }
-
-        parent[lastnode] = 0;
 
         for (uint32_t i = 0; i <= END; i++)
         {
@@ -115,9 +146,9 @@ void pack(std::ifstream &ifs, std::ostream &os, long &l_insize, long &outsize)
         }
 
         /* compute bit patterns for each character */
-        for (uint32_t i = maxlev, foo = 0, inc = 1 << (LEVEL_LIMIT - maxlev); i > 0; i--)
+        for (uint32_t i = maxlev, foo = 0, inc = 1 << (LEVEL_LIMIT - maxlev); i > 0; --i)
         {
-            for (int c = 0; c <= END; c++)
+            for (uint16_t c = 0; c <= END; ++c)
             {
                 if (length[c] == i)
                 {
@@ -133,14 +164,12 @@ void pack(std::ifstream &ifs, std::ostream &os, long &l_insize, long &outsize)
 
     {
         char g_inbuff[BLKSIZE];
-        char *inp;
-        char **q;
         char outbuff[BLKSIZE + 4];
         outbuff[0] = 0x1f;
         outbuff[1] = 0x1e;
-        long temp = l_insize;
+        long temp = insize;
 
-        for (int i = 5; i >= 2; i--)
+        for (int i = 5; i >= 2; --i)
         {
             outbuff[i] = char(temp & 0xff);
             temp >>= 8;
@@ -154,8 +183,8 @@ void pack(std::ifstream &ifs, std::ostream &os, long &l_insize, long &outsize)
 
         *outp++ = levcount[maxlev] - 2;
 
-        for (uint32_t i = 1; i <= maxlev; i++)
-            for (int j = 0; j < END; j++)
+        for (uint32_t i = 1; i <= maxlev; ++i)
+            for (uint16_t j = 0; j < END; ++j)
                 if (length[j] == i)
                     *outp++ = j;
 
@@ -170,6 +199,7 @@ void pack(std::ifstream &ifs, std::ostream &os, long &l_insize, long &outsize)
             union FOUR mask;
             char *maskshuff[4] = {&mask.c.c3, &mask.c.c2, &mask.c.c1, &mask.c.c0};
             int c;
+            char *inp;
 
             do
             {
@@ -182,7 +212,7 @@ void pack(std::ifstream &ifs, std::ostream &os, long &l_insize, long &outsize)
 
                 c = --inleft < 0 ? END : *inp++ & 0xff;
                 mask.l.lng = bits[c] << bitsleft;
-                q = &maskshuff[0];
+                char **q = &maskshuff[0];
 
                 if (bitsleft == 8)
                     *outp = **q++;
@@ -211,7 +241,7 @@ void pack(std::ifstream &ifs, std::ostream &os, long &l_insize, long &outsize)
         if (bitsleft < 8)
             outp++;
 
-        int n2 = outp - outbuff;
+        uint32_t n2 = outp - outbuff;
         os.write(outbuff, n2);
         outsize += n2;
     }
