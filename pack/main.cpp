@@ -10,7 +10,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
-#include <exception>
+#include <stdexcept>
 
 class Options
 {
