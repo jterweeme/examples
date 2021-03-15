@@ -1,25 +1,28 @@
-#include <unistd.h>
-#include <stdint.h>
 #include <stdexcept>
 #include <iostream>
 #include <iostream>
+#include <vector>
+#include <fstream>
 
-static int decode(const char *xeof, const short intnodes[25], char **tree, long origsize, short infile, short inleft, char *inbuff, char *inp)
+#ifdef WIN32
+#include <io.h>
+#include <fcntl.h>
+#endif
+
+static int decode(const char *xeof, const short intnodes[25], char **tree, long origsize, std::istream &infile, short inleft, char *inbuff, char *inp, std::ostream &os)
 {
-    char g_outbuff[BUFSIZ];
-    char *g_outp = &g_outbuff[0];
+    char outbuff[BUFSIZ];
+    char *g_outp = outbuff;
     uint32_t lev = 1;
     int i = 0;
-#if 0
-    std::cerr << inleft << "\r\n";
-    std::cerr.flush();
-#endif
 
     while (true)
     {
         if (inleft <= 0)
         {
-            inleft = read(infile, inp = &inbuff[0], BUFSIZ);
+            inp = inbuff;
+            infile.read(inp, BUFSIZ);
+            inleft = infile.gcount();
 
             if (inleft < 0)
                 throw std::runtime_error(".z: read error");
@@ -56,11 +59,8 @@ static int decode(const char *xeof, const short intnodes[25], char **tree, long 
 
             if (p == xeof)
             {
-                c = g_outp - &g_outbuff[0];
-
-                if (write(1, &g_outbuff[0], c) != c)
-                    throw std::runtime_error(": write error");
-
+                c = g_outp - outbuff;
+                os.write(outbuff, c);
                 origsize -= c;
 
                 if (origsize != 0)
@@ -68,13 +68,13 @@ static int decode(const char *xeof, const short intnodes[25], char **tree, long 
 
                 return (1);
             }
+
             *g_outp++ = *p;
 
-            if (g_outp == &g_outbuff[BUFSIZ])
+            if (g_outp == outbuff + BUFSIZ)
             {
-                if (write(1, g_outp = &g_outbuff[0], BUFSIZ) != BUFSIZ)
-                    throw std::runtime_error(": write error");
-
+                g_outp = outbuff;
+                os.write(g_outp, BUFSIZ);
                 origsize -= BUFSIZ;
             }
 
@@ -84,11 +84,12 @@ static int decode(const char *xeof, const short intnodes[25], char **tree, long 
     }
 }
 
-static int getdict(short infile)
+static int getdict(std::istream &infile, std::ostream &os)
 {
     char g_inbuff[BUFSIZ];
     g_inbuff[6] = 25;
-    short g_inleft = read(infile, &g_inbuff[0], BUFSIZ);
+    infile.read(g_inbuff, BUFSIZ);
+    std::streamsize g_inleft = infile.gcount();
 
     if (g_inleft < 0)
         throw std::runtime_error(".z: read error");
@@ -99,7 +100,7 @@ static int getdict(short infile)
     if (g_inbuff[1] != 0x1e)
         throw std::runtime_error(".z: not in packed format");
 
-    char *g_inp = &g_inbuff[2];
+    char *g_inp = g_inbuff + 2;
     long g_origsize = 0;
 
     for (int i = 0; i < 4; ++i)
@@ -113,11 +114,11 @@ static int getdict(short infile)
     short g_intnodes[25];
 
     for (int i = 1; i <= maxlev; ++i)
-        g_intnodes[i] = *g_inp++ & 0377;
+        g_intnodes[i] = *g_inp++ & 0xff;
 
     char *g_tree[25];
     char characters[256];
-    char *g_xeof = &characters[0];
+    char *g_xeof = characters;
 
     for (int i = 1; i <= maxlev; ++i)
     {
@@ -125,7 +126,7 @@ static int getdict(short infile)
 
         for (int c = g_intnodes[i]; c > 0; --c)
         {
-            if (g_xeof >= &characters[255])
+            if (g_xeof >= characters + 255)
                 throw std::runtime_error(".z: not in packed format");
 
             *g_xeof++ = *g_inp++;
@@ -134,30 +135,86 @@ static int getdict(short infile)
 
     *g_xeof++ = *g_inp++;
     g_intnodes[maxlev] += 2;
-    g_inleft -= g_inp - &g_inbuff[0];
+    g_inleft -= g_inp - g_inbuff;
 
     if (g_inleft < 0)
         throw std::runtime_error(".z: not in packed format");
 
     int nchildren = 0;
 
-    for (int i = maxlev; i >= 1; i--)
+    for (int i = maxlev; i >= 1; --i)
     {
         int c = g_intnodes[i];
         g_intnodes[i] = nchildren /= 2;
         nchildren += c;
     }
 
-    return decode(g_xeof, g_intnodes, g_tree, g_origsize, infile, g_inleft, g_inbuff, g_inp);
+    return decode(g_xeof, g_intnodes, g_tree, g_origsize, infile, g_inleft, g_inbuff, g_inp, os);
 }
 
-int main()
+class Options
+{
+private:
+    bool _stdin;
+    std::string _fn;
+public:
+    Options();
+    void parse(int argc, char **argv);
+    bool stdinput() const;
+    std::string fn() const;
+};
+
+Options::Options() : _stdin(true)
+{
+
+}
+
+void Options::parse(int argc, char **argv)
+{
+    if (argc > 1)
+    {
+        _fn = argv[1];
+        _stdin = false;
+    }
+}
+
+bool Options::stdinput() const
+{
+    return _stdin;
+}
+
+std::string Options::fn() const
+{
+    return _fn;
+}
+
+int main(int argc, char **argv)
 {
     int ret = -1;
 
+#ifdef WIN32
+    _setmode(_fileno(stdin), _O_BINARY);
+    _setmode(_fileno(stdout), _O_BINARY);
+#endif
+
     try
     {
-        ret = getdict(0);
+        Options o;
+        o.parse(argc, argv);
+
+        if (o.stdinput())
+        {
+            ret = getdict(std::cin, std::cout);
+        }
+        else
+        {
+            std::cerr << o.fn() << "\r\n";
+            std::cerr.flush();
+            std::ifstream ifs;
+            ifs.open(o.fn(), std::ios::binary);
+            ret = getdict(ifs, std::cout);
+            ifs.close();
+        }
     }
     catch (const std::exception &e)
     {
