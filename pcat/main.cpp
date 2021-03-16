@@ -1,3 +1,4 @@
+#include "toolbox.h"
 #include <stdexcept>
 #include <iostream>
 #include <iostream>
@@ -15,33 +16,31 @@ static void unpack(std::istream &infile, std::ostream &os)
 {
     uint16_t magic;
     infile.read((char *)(&magic), 2);
+    uint32_t origsize = 0;
+    infile.read((char *)(&origsize), 4);
+    origsize = Toolbox::be32toh(origsize);
+    std::cerr << "Length: " << origsize << "\r\n";
+    std::cerr.flush();
+    uint8_t maxlev = uint8_t(infile.get());
+
+    if (maxlev > LEVEL_LIMIT)
+        throw std::runtime_error(".z: not in packed format");
+
+    uint16_t intnodes[LEVEL_LIMIT + 1];
+
+    for (uint8_t i = 1; i <= maxlev; ++i)
+        intnodes[i] = uint16_t(infile.get());
 
     char inbuff[BUFSIZ];
     infile.read(inbuff, BUFSIZ);
     std::streamsize inleft = infile.gcount();
     char *inp = inbuff;
-    uint32_t origsize = 0;
-
-    for (int i = 0; i < 4; ++i)
-        origsize = origsize * 256 + (*inp++ & 0xff);
-
-    std::cerr << "Length: " << origsize << "\r\n";
-    std::cerr.flush();
-    uint8_t maxlev = *inp++ & 0xff;
-
-    if (maxlev > LEVEL_LIMIT)
-        throw std::runtime_error(".z: not in packed format");
-
-    short intnodes[LEVEL_LIMIT + 1];
-
-    for (int i = 1; i <= maxlev; ++i)
-        intnodes[i] = *inp++ & 0xff;
 
     char *tree[25];
     char characters[256];
     char *xeof = characters;
 
-    for (int i = 1; i <= maxlev; ++i)
+    for (uint8_t i = 1; i <= maxlev; ++i)
     {
         tree[i] = xeof;
 
@@ -180,6 +179,7 @@ std::string Options::fn() const
     return _fn;
 }
 
+#if 1
 int main(int argc, char **argv)
 {
 #ifdef WIN32
@@ -219,3 +219,33 @@ int main(int argc, char **argv)
 
     return 0;
 }
+#else
+int main()
+{
+#ifdef WIN32
+    _setmode(_fileno(stdin), _O_BINARY);
+    _setmode(_fileno(stdout), _O_BINARY);
+#endif
+
+    try
+    {
+        std::ifstream ifs;
+        ifs.open("d:\\temp\\nato.txt.z", std::ios::binary);
+        unpack(ifs, std::cout);
+        ifs.close();
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << "\r\n";
+        std::cerr.flush();
+    }
+    catch (...)
+    {
+        std::cerr << "Unknown error\r\n";
+        std::cerr.flush();
+    }
+
+    return 0;
+}
+#endif
+

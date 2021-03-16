@@ -8,5 +8,6 @@ CONFIG(debug, debug|release) {
 }
 
 COPIES += testFile
-SOURCES += main.cpp
+SOURCES += main.cpp toolbox.cpp
+HEADERS += toolbox.h
 
