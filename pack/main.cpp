@@ -62,7 +62,7 @@ static void packfile(std::string fn, std::ostream &msgs)
 
 int main(int argc, char **argv)
 {
-#if 0
+#if 1
     Options o;
     o.parse(argc, argv);
     int failcount = 0;

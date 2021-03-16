@@ -66,6 +66,7 @@ std::string Toolbox::hex64(DWORD64 dw64)
     return ret;
 }
 
+//TODO: IS NIET PORTABLE!!!
 uint32_t Toolbox::be32toh(uint32_t num)
 {
     return swapEndian(num);
