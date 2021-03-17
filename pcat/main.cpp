@@ -10,8 +10,6 @@
 #include <fcntl.h>
 #endif
 
-//static constexpr uint8_t LEVEL_LIMIT = 24;
-
 static void dumpIntnodes(std::ostream &os, uint16_t *intnodes, uint8_t n)
 {
 #if 1
@@ -25,31 +23,28 @@ static void dumpIntnodes(std::ostream &os, uint16_t *intnodes, uint8_t n)
 #endif
 }
 
-static void unpack(std::istream &infile, std::ostream &os)
+static void unpack(std::istream &is, std::ostream &os, bool verbose = false)
 {
     uint16_t magic;
-    infile.read((char *)(&magic), 2);
+    is.read((char *)(&magic), 2);
     uint32_t origsize = 0;
-    infile.read((char *)(&origsize), 4);
+    is.read((char *)(&origsize), 4);
     origsize = Toolbox::be32toh(origsize);
-    uint8_t maxlev = uint8_t(infile.get());
-#if 1
-    std::cerr << "Length: " << origsize << ", Levels: " << uint16_t(maxlev) << "\r\n";
-    std::cerr.flush();
-#endif
+    uint8_t maxlev = uint8_t(is.get());
+
+    if (verbose)
+    {
+        std::cerr << "Length: " << origsize << ", Levels: " << uint16_t(maxlev) << "\r\n";
+        std::cerr.flush();
+    }
 
     uint16_t intnodes[maxlev];
 
-
     for (uint8_t i = 0; i < maxlev; ++i)
-        intnodes[i] = uint16_t(infile.get());
+        intnodes[i] = uint16_t(is.get());
 
-
-#if 1
-    dumpIntnodes(std::cerr, intnodes, maxlev);
-#endif
-
-
+    if (verbose)
+        dumpIntnodes(std::cerr, intnodes, maxlev);
 
     char *tree[maxlev];
     char characters[256];
@@ -64,18 +59,20 @@ static void unpack(std::istream &infile, std::ostream &os)
             if (xeof >= characters + 255)
                 throw std::runtime_error(".z: not in packed format");
 
-            *xeof++ = char(infile.get());
+            *xeof++ = char(is.get());
         }
     }
 
-    *xeof++ = char(infile.get());
-#if 1
-    dumpIntnodes(std::cerr, intnodes, maxlev);
-#endif
+    *xeof++ = char(is.get());
+
+    if (verbose)
+        dumpIntnodes(std::cerr, intnodes, maxlev);
+
     intnodes[maxlev - 1] += 2;
-#if 1
-    dumpIntnodes(std::cerr, intnodes, maxlev);
-#endif
+
+    if (verbose)
+        dumpIntnodes(std::cerr, intnodes, maxlev);
+
     {
         uint32_t nchildren = 0;
 
@@ -87,14 +84,8 @@ static void unpack(std::istream &infile, std::ostream &os)
         }
     }
 
-#if 1
-    dumpIntnodes(std::cerr, intnodes, maxlev);
-#endif
-
-    char inbuff[BUFSIZ];
-    infile.read(inbuff, BUFSIZ);
-    std::streamsize inleft = infile.gcount();
-    char *inp = inbuff;
+    if (verbose)
+        dumpIntnodes(std::cerr, intnodes, maxlev);
 
     char outbuff[BUFSIZ];
     char *outp = outbuff;
@@ -102,58 +93,41 @@ static void unpack(std::istream &infile, std::ostream &os)
 
     while (true)
     {
-        if (inleft <= 0)
-        {
-            inp = inbuff;
-            infile.read(inp, BUFSIZ);
-            inleft = infile.gcount();
+        int c = is.get();
 
-            if (inleft < 0)
-                throw std::runtime_error(".z: read error");
-        }
-
-        if (--inleft < 0)
-        {
-            if (origsize == 0)
-                return;
-
-            throw std::runtime_error(".z: unpacking error");
-        }
-
-        int c = *inp++;
-        int bitsleft = 8;
-
-        while (--bitsleft >= 0)
+        for (uint8_t bit = 0; bit < 8; ++bit)
         {
             i *= 2;
 
             if (c & 0200)
-                i++;
+                ++i;
 
             c <<= 1;
-            int j = i - intnodes[lev - 1];
-
-            if (j < 0)
             {
-                ++lev;
-                continue;
+                int j = i - intnodes[lev - 1];
+
+                if (j < 0)
+                {
+                    ++lev;
+                    continue;
+                }
+
+                const char *p = tree[lev - 1] + j;
+
+                if (p == xeof)
+                {
+                    c = outp - outbuff;
+                    os.write(outbuff, c);
+                    origsize -= c;
+
+                    if (origsize != 0)
+                        throw std::runtime_error(".z: unpacking error");
+
+                    return;
+                }
+
+                *outp++ = *p;
             }
-
-            const char *p = tree[lev - 1] + j;
-
-            if (p == xeof)
-            {
-                c = outp - outbuff;
-                os.write(outbuff, c);
-                origsize -= c;
-
-                if (origsize != 0)
-                    throw std::runtime_error(".z: unpacking error");
-
-                return;
-            }
-
-            *outp++ = *p;
 
             if (outp == outbuff + BUFSIZ)
             {
@@ -219,7 +193,7 @@ int main(int argc, char **argv)
 
         if (o.stdinput())
         {
-            unpack(std::cin, std::cout);
+            unpack(std::cin, std::cout, true);
         }
         else
         {
@@ -227,7 +201,7 @@ int main(int argc, char **argv)
             std::cerr.flush();
             std::ifstream ifs;
             ifs.open(o.fn(), std::ios::binary);
-            unpack(ifs, std::cout);
+            unpack(ifs, std::cout, true);
             ifs.close();
         }
     }
@@ -256,7 +230,7 @@ int main()
     {
         std::ifstream ifs;
         ifs.open("d:\\temp\\nato.txt.z", std::ios::binary);
-        unpack(ifs, std::cout);
+        unpack(ifs, std::cout, true);
         ifs.close();
     }
     catch (const std::exception &e)
