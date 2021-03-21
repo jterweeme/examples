@@ -87,8 +87,6 @@ static void unpack(std::istream &is, std::ostream &os, bool verbose = false)
     if (verbose)
         dumpIntnodes(std::cerr, intnodes, maxlev);
 
-    char outbuff[BUFSIZ];
-    char *outp = outbuff;
     uint32_t lev = 1, i = 0;
 
     while (true)
@@ -103,39 +101,26 @@ static void unpack(std::istream &is, std::ostream &os, bool verbose = false)
                 ++i;
 
             c <<= 1;
+            int j = i - intnodes[lev - 1];
+
+            if (j < 0)
             {
-                int j = i - intnodes[lev - 1];
-
-                if (j < 0)
-                {
-                    ++lev;
-                    continue;
-                }
-
-                const char *p = tree[lev - 1] + j;
-
-                if (p == xeof)
-                {
-                    c = outp - outbuff;
-                    os.write(outbuff, c);
-                    origsize -= c;
-
-                    if (origsize != 0)
-                        throw std::runtime_error(".z: unpacking error");
-
-                    return;
-                }
-
-                *outp++ = *p;
+                ++lev;
+                continue;
             }
 
-            if (outp == outbuff + BUFSIZ)
+            const char *p = tree[lev - 1] + j;
+
+            if (p == xeof)
             {
-                outp = outbuff;
-                os.write(outp, BUFSIZ);
-                origsize -= BUFSIZ;
+                if (origsize != 0)
+                    throw std::runtime_error(".z: unpacking error");
+
+                return;
             }
 
+            os.put(*p);
+            --origsize;
             lev = 1;
             i = 0;
         }
