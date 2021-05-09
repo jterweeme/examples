@@ -32,7 +32,7 @@ uint32_t Heap::node() const
 /* makes a heap out of heap[i],...,heap[n] */
 static void heapify(uint32_t i, const uint32_t n, Heap *heap)
 {
-    struct Heap heapsubi;
+    Heap heapsubi;
     heapsubi.set(heap[i]);
     const uint32_t lastparent = n / 2;
 

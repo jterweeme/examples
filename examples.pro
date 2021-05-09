@@ -11,6 +11,7 @@ SUBDIRS = base64\
     chessvalid\
     colorbtn\
     commctrl1\
+    compress\
     contimeout\
     echosvr\
     exception\
@@ -43,5 +44,6 @@ SUBDIRS = base64\
     winthread\
     ws2client\
     ws2server\
+    zcat\
     zeit
 

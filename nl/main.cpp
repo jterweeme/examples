@@ -17,7 +17,8 @@ Options::Options() : _stdin(true)
 
 void Options::parse(int argc, char **argv)
 {
-
+    (void)argc;
+    (void)argv;
 }
 
 bool Options::stdinput() const

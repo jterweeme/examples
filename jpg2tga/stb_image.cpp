@@ -520,12 +520,11 @@ int stbi_write_tga(char const *filename, int x, int y, int comp, void *data)
                   "111 221 2222 11", 0,0,2, 0,0,0, 0,0,x,y, 24+8*has_alpha, 8*has_alpha);
 }
 
-// *************************************************************************************************
 // Radiance RGBE HDR loader
 // originally by Nicolas Schulz
 static int hdr_test(stbi *s)
 {
-   char *signature = "#?RADIANCE\n";
+   const char *signature = "#?RADIANCE\n";
    int i;
    for (i=0; signature[i]; ++i)
       if (get8(s) != signature[i])
@@ -535,7 +534,7 @@ static int hdr_test(stbi *s)
 
 int stbi_hdr_test_memory(stbi_uc const *buffer, int len)
 {
-   stbi s;
+    stbi s;
     start_mem(&s, buffer, len);
     return hdr_test(&s);
 }
@@ -697,7 +696,7 @@ unsigned char *stbi_jpeg_load(char const *filename, int *x, int *y, int *comp, i
    return data;
 }
 
-static uint8 *resample_row_hv_2(uint8 *out, uint8 *in_near, uint8 *in_far, int w, int hs)
+static uint8 *resample_row_hv_2(uint8 *out, uint8 *in_near, uint8 *in_far, int w, int)
 {
    // need to generate 2x2 samples for every one in input
    int i,t0,t1;
@@ -1341,26 +1340,28 @@ static int decode_jpeg_image(jpeg *j)
    return 1;
 }
 
-static uint8 *resample_row_1(uint8 *out, uint8 *in_near, uint8 *in_far, int w, int hs)
+static uint8 *resample_row_1(uint8 *, uint8 *in_near, uint8 *, int, int)
 {
-   return in_near;
+    return in_near;
 }
 
-static uint8* resample_row_v_2(uint8 *out, uint8 *in_near, uint8 *in_far, int w, int hs)
+static uint8 *resample_row_v_2(uint8 *out, uint8 *in_near, uint8 *in_far, int w, int)
 {
-   // need to generate two samples vertically for every one in input
-   int i;
-   for (i=0; i < w; ++i)
-      out[i] = div4(3*in_near[i] + in_far[i] + 2);
-   return out;
+    // need to generate two samples vertically for every one in input
+    for (int i=0; i < w; ++i)
+        out[i] = div4(3*in_near[i] + in_far[i] + 2);
+
+    return out;
 }
 
-static uint8*  resample_row_h_2(uint8 *out, uint8 *in_near, uint8 *in_far, int w, int hs)
+static uint8 *resample_row_h_2(uint8 *out, uint8 *in_near, uint8 *, int w, int)
 {
    // need to generate two samples horizontally for every one in input
    int i;
    uint8 *input = in_near;
-   if (w == 1) {
+
+   if (w == 1)
+   {
       // if only one sample, can't do any interpolation
       out[0] = out[1] = input[0];
       return out;
@@ -1368,7 +1369,9 @@ static uint8*  resample_row_h_2(uint8 *out, uint8 *in_near, uint8 *in_far, int w
 
    out[0] = input[0];
    out[1] = div4(input[0]*3 + input[1] + 2);
-   for (i=1; i < w-1; ++i) {
+
+   for (i=1; i < w-1; ++i)
+   {
       int n = 3*input[i]+2;
       out[i*2+0] = div4(n+input[i-1]);
       out[i*2+1] = div4(n+input[i+1]);
@@ -1799,11 +1802,15 @@ static int create_png_image_raw(png *a, uint8 *raw, uint32 raw_len, int out_n, u
    if (stbi_png_partial) y = 1;
    a->out = (uint8 *) malloc(x * y * out_n);
    if (!a->out) return e("outofmem", "Out of memory");
-   if (!stbi_png_partial) {
+
+   if (!stbi_png_partial)
+   {
       if (s->img_x == x && s->img_y == y)
-         if (raw_len != (img_n * x + 1) * y) return e("not enough pixels","Corrupt PNG");
+         if (raw_len != (img_n * x + 1) * y)
+            return e("not enough pixels","Corrupt PNG");
       else // interlaced:
-         if (raw_len < (img_n * x + 1) * y) return e("not enough pixels","Corrupt PNG");
+         if (raw_len < (img_n * x + 1) * y)
+             return e("not enough pixels","Corrupt PNG");
    }
    for (j=0; j < y; ++j) {
       uint8 *cur = a->out + stride*j;
@@ -3284,13 +3291,14 @@ char *stbi_zlib_decode_noheader_malloc(char const *buffer, int len, int *outlen)
 
 int stbi_zlib_decode_noheader_buffer(char *obuffer, int olen, const char *ibuffer, int ilen)
 {
-   zbuf a;
-   a.zbuffer = (uint8 *) ibuffer;
-   a.zbuffer_end = (uint8 *) ibuffer + ilen;
-   if (do_zlib(&a, obuffer, olen, 0, 0))
-      return (int) (a.zout - a.zout_start);
-   else
-      return -1;
+    zbuf a;
+    a.zbuffer = (uint8 *) ibuffer;
+    a.zbuffer_end = (uint8 *) ibuffer + ilen;
+
+    if (do_zlib(&a, obuffer, olen, 0, 0))
+        return (int) (a.zout - a.zout_start);
+
+    return -1;
 }
 
 
