@@ -18,13 +18,11 @@ SUBDIRS = base64\
     overlap\
     pack\
     pcat\
-    rb\
     sb\
     sx\
     tail\
     wc\
-    zcat\
-    zeit
+    zcat
 
 win32 | win64 {
     SUBDIRS += bgcolor\
@@ -41,13 +39,15 @@ win32 | win64 {
         opengl1\
         property1\
         qrcode\
+        rb\
         rx\
         tabs1\
         tictac\
         winanim\
         winthread\
         ws2client\
-        ws2server
+        ws2server\
+        zeit
 }
 
 

@@ -36,7 +36,7 @@ public:
     static std::string wstrtostr(const std::wstring &ws);
     void hexdump(std::ostream &os, const uint8_t *data, uint32_t len) const;
     static uint32_t swapEndian(uint32_t x);
-    static uint32_t be32toh(uint32_t num);
+    static uint32_t be32tohost(uint32_t num);
 };
 #endif
 

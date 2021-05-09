@@ -15,10 +15,10 @@ void Hash::dump(std::ostream &os) const
     Toolbox t;
     (void)t;
 
-    os << t.hex32(t.be32toh(h0())) <<
-          t.hex32(t.be32toh(h1())) <<
-          t.hex32(t.be32toh(h2())) <<
-          t.hex32(t.be32toh(h3()));
+    os << t.hex32(t.be32tohost(h0())) <<
+          t.hex32(t.be32tohost(h1())) <<
+          t.hex32(t.be32tohost(h2())) <<
+          t.hex32(t.be32tohost(h3()));
 }
 
 uint32_t Hash::h0() const

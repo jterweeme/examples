@@ -1,5 +1,6 @@
 #include "hasher.h"
 #include "chunk.h"
+#include <cstring>
 
 Hash Hasher::stream(std::istream &is)
 {

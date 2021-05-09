@@ -1,7 +1,6 @@
 #include "toolbox.h"
 #include <stdexcept>
 #include <iostream>
-#include <iostream>
 #include <vector>
 #include <fstream>
 
@@ -29,7 +28,7 @@ static void unpack(std::istream &is, std::ostream &os, bool verbose = false)
     is.read((char *)(&magic), 2);
     uint32_t origsize = 0;
     is.read((char *)(&origsize), 4);
-    origsize = Toolbox::be32toh(origsize);
+    origsize = Toolbox::be32tohost(origsize);
     uint8_t maxlev = uint8_t(is.get());
 
     if (verbose)
