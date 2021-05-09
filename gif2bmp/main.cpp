@@ -13,7 +13,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <fcntl.h>
-#include <io.h>
+//#include <io.h>
 #include <getopt.h>
 #include <cassert>
 #define __STDC_FORMAT_MACROS

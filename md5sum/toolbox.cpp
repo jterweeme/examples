@@ -1,7 +1,7 @@
 #include "toolbox.h"
 #include <algorithm>
 
-char Toolbox::bin(BYTE b)
+char Toolbox::bin(uint8_t b)
 {
     if (b == 1)
         return '1';
@@ -9,26 +9,27 @@ char Toolbox::bin(BYTE b)
     if (b == 0)
         return '0';
 
-    throw TEXT("Not a binary");
+    //throw TEXT("Not a binary");
+    throw "Not a binary";
     return 'x';
 }
 
-char Toolbox::nibble(BYTE n)
+char Toolbox::nibble(uint8_t n)
 {
     return n <= 9 ? '0' + char(n) : 'a' + char(n - 10);
 }
 
-std::string Toolbox::bin8(BYTE b)
+std::string Toolbox::bin8(uint8_t b)
 {
     std::string ret;
 
-    for (BYTE i = 8; i > 0;)
+    for (uint8_t i = 8; i > 0;)
         ret += b & 1 << --i ? '1' : '0';
 
     return ret;
 }
 
-std::string Toolbox::hex8(BYTE b)
+std::string Toolbox::hex8(uint8_t b)
 {
     std::string ret;
     ret += nibble(b >> 4 & 0xf);
@@ -36,13 +37,13 @@ std::string Toolbox::hex8(BYTE b)
     return ret;
 }
 
-void Toolbox::hex8(std::ostream &os, BYTE b)
+void Toolbox::hex8(std::ostream &os, uint8_t b)
 {
     os.put(nibble(b >> 4 & 0xf));
     os.put(nibble(b >> 0 & 0xf));
 }
 
-std::string Toolbox::hex16(WORD w)
+std::string Toolbox::hex16(uint16_t w)
 {
     std::string ret;
     ret += hex8(w >> 8 & 0xff);
@@ -50,7 +51,7 @@ std::string Toolbox::hex16(WORD w)
     return ret;
 }
 
-std::string Toolbox::hex32(DWORD dw)
+std::string Toolbox::hex32(uint32_t dw)
 {
     std::string ret;
     ret += hex16(dw >> 16 & 0xffff);
@@ -58,7 +59,7 @@ std::string Toolbox::hex32(DWORD dw)
     return ret;
 }
 
-std::string Toolbox::hex64(DWORD64 dw64)
+std::string Toolbox::hex64(uint64_t dw64)
 {
     std::string ret;
     ret += hex32(dw64 >> 32 & 0xffffffff);
@@ -170,11 +171,11 @@ std::string Toolbox::wstrtostr(const std::wstring &ws)
 
 }
 
-void Toolbox::hexdump(std::ostream &os, const BYTE *data, DWORD len) const
+void Toolbox::hexdump(std::ostream &os, const uint8_t *data, uint32_t len) const
 {
-    for (DWORD i = 0; i < len; i += 16)
+    for (uint32_t i = 0; i < len; i += 16)
     {
-        DWORD j = i;
+        uint32_t j = i;
 
         while (j < i + 16 && j < len)
         {

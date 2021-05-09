@@ -40,14 +40,14 @@ static FILE *g_pInFile;
 static uint g_nInFileSize;
 static uint g_nInFileOfs;
 //------------------------------------------------------------------------------
-unsigned char pjpeg_need_bytes_callback(unsigned char* pBuf, unsigned char buf_size, unsigned char *pBytes_actually_read, void *pCallback_data)
+unsigned char pjpeg_need_bytes_callback(uint8_t* pBuf, unsigned char buf_size, unsigned char *pBytes_actually_read, void *)
 {
    uint n = min(g_nInFileSize - g_nInFileOfs, buf_size);
 
    if (n && (fread(pBuf, 1, n, g_pInFile) != n))
       return PJPG_STREAM_READ_ERROR;
 
-   *pBytes_actually_read = (unsigned char)(n);
+   *pBytes_actually_read = uint8_t(n);
    g_nInFileOfs += n;
    return 0;
 }
@@ -111,6 +111,7 @@ uint8 *pjpeg_load_from_file(const char *pFilename, int *x, int *y, int *comps, p
 
    row_pitch = decoded_width * image_info.m_comps;
    pImage = (uint8 *)malloc(row_pitch * decoded_height);
+
    if (!pImage)
    {
       fclose(g_pInFile);

@@ -26,7 +26,7 @@ static void start_mem(stbi *s, uint8 const *buffer, int len)
    s->img_buffer_end = (uint8 *) buffer+len;
 }
 
-__forceinline static int get8(stbi *s)
+inline static int get8(stbi *s)
 {
    if (s->img_file) {
       int c = fgetc(s->img_file);
@@ -38,7 +38,7 @@ __forceinline static int get8(stbi *s)
    return 0;
 }
 
-__forceinline static int at_eof(stbi *s)
+inline static int at_eof(stbi *s)
 {
 #ifndef STBI_NO_STDIO
    if (s->img_file)
@@ -47,7 +47,7 @@ __forceinline static int at_eof(stbi *s)
    return s->img_buffer >= s->img_buffer_end;
 }
 
-__forceinline static uint8 get8u(stbi *s)
+inline static uint8 get8u(stbi *s)
 {
    return (uint8) get8(s);
 }
@@ -598,7 +598,7 @@ static void hdr_convert(float *output, stbi_uc *input, int req_comp)
     }
 }
 
-static uint8 *resample_row_generic(uint8 *out, uint8 *in_near, uint8 *in_far, int w, int hs)
+static uint8 *resample_row_generic(uint8 *out, uint8 *in_near, uint8*, int w, int hs)
 {
    // resample with nearest-neighbor
    int i,j;
@@ -608,7 +608,7 @@ static uint8 *resample_row_generic(uint8 *out, uint8 *in_near, uint8 *in_far, in
    return out;
 }
 
-__forceinline static int bitreverse16(int n)
+inline static int bitreverse16(int n)
 {
   n = ((n & 0xAAAA) >>  1) | ((n & 0x5555) << 1);
   n = ((n & 0xCCCC) >>  2) | ((n & 0x3333) << 2);
@@ -617,7 +617,7 @@ __forceinline static int bitreverse16(int n)
   return n;
 }
 
-__forceinline static int bit_reverse(int v, int bits)
+inline static int bit_reverse(int v, int bits)
 {
    assert(bits <= 16);
    // to bit reverse n bits, reverse 16 and shift
@@ -718,7 +718,7 @@ static uint8 *resample_row_hv_2(uint8 *out, uint8 *in_near, uint8 *in_far, int w
 }
 
 // take a -128..127 value and clamp it and convert to 0..255
-__forceinline static uint8 clamp(int x)
+inline static uint8 clamp(int x)
 {
     x += 128;
     // trick to use a single test to catch both cases
@@ -1140,7 +1140,7 @@ static void grow_buffer_unsafe(jpeg *j)
 static uint32 bmask[17]={0,1,3,7,15,31,63,127,255,511,1023,2047,4095,8191,16383,32767,65535};
 
 // decode a jpeg huffman value from the bitstream
-__forceinline static int decode(jpeg *j, huffman *h)
+inline static int decode(jpeg *j, huffman *h)
 {
    unsigned int temp;
    int c,k;
@@ -1191,7 +1191,7 @@ __forceinline static int decode(jpeg *j, huffman *h)
 
 // combined JPEG 'receive' and JPEG 'extend', since baseline
 // always extends everything it receives.
-__forceinline static int extend_receive(jpeg *j, int n)
+inline static int extend_receive(jpeg *j, int n)
 {
    unsigned int m = 1 << (n-1);
    unsigned int k;
@@ -2957,12 +2957,12 @@ unsigned char *stbi_load_from_memory(stbi_uc const *buffer, int len, int *x, int
       return stbi_bmp_load_from_memory(buffer,len,x,y,comp,req_comp);
    if (stbi_psd_test_memory(buffer,len))
       return stbi_psd_load_from_memory(buffer,len,x,y,comp,req_comp);
-   #ifndef STBI_NO_HDR
+#ifndef STBI_NO_HDR
    if (stbi_hdr_test_memory(buffer, len)) {
       float *hdr = stbi_hdr_load_from_memory(buffer, len,x,y,comp,req_comp);
       return hdr_to_ldr(hdr, *x, *y, req_comp ? req_comp : *comp);
    }
-   #endif
+#endif
    for (i=0; i < max_loaders; ++i)
       if (loaders[i]->test_memory(buffer,len))
          return loaders[i]->load_from_memory(buffer,len,x,y,comp,req_comp);
@@ -2972,7 +2972,7 @@ unsigned char *stbi_load_from_memory(stbi_uc const *buffer, int len, int *x, int
    return epuc("unknown image type", "Image not of any known type, or corrupt");
 }
 
-__forceinline static int zget8(zbuf *z)
+inline static int zget8(zbuf *z)
 {
    if (z->zbuffer >= z->zbuffer_end) return 0;
    return *z->zbuffer++;
@@ -3018,7 +3018,7 @@ static void fill_bits(zbuf *z)
    } while (z->num_bits <= 24);
 }
 
-__forceinline static unsigned int zreceive(zbuf *z, int n)
+inline static unsigned int zreceive(zbuf *z, int n)
 {
    unsigned int k;
    if (z->num_bits < n) fill_bits(z);
@@ -3028,7 +3028,7 @@ __forceinline static unsigned int zreceive(zbuf *z, int n)
    return k;
 }
 
-__forceinline static int zhuffman_decode(zbuf *a, zhuffman *z)
+inline static int zhuffman_decode(zbuf *a, zhuffman *z)
 {
    int b,s,k;
    if (a->num_bits < 16) fill_bits(a);
