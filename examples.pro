@@ -1,49 +1,53 @@
 TEMPLATE = subdirs
 
 SUBDIRS = base64\
-    bgcolor\
-    bitmap\
     bzcat\
     cat\
-    cechat\
-    chatclient\
-    chess1\
     chessvalid\
-    colorbtn\
-    commctrl1\
     compress\
     contimeout\
     echosvr\
     exception\
-    FileEditor\
     gif2bmp\
     grep\
     head\
     jpg2tga\
     md5sum\
-    mdiapp\
-    memdc\
-    netkatd\
     nl\
     od\
-    opengl1\
     overlap\
     pack\
     pcat\
-    property1\
-    qrcode\
     rb\
-    rx\
     sb\
     sx\
-    tabs1\
     tail\
-    tictac\
     wc\
-    winanim\
-    winthread\
-    ws2client\
-    ws2server\
     zcat\
     zeit
+
+win32 | win64 {
+    SUBDIRS += bgcolor\
+        bitmap\
+        cechat\
+        chatclient\
+        chess1\
+        colorbtn\
+        commctrl1\
+        FileEditor\
+        mdiapp\
+        memdc\
+        netkatd\
+        opengl1\
+        property1\
+        qrcode\
+        rx\
+        tabs1\
+        tictac\
+        winanim\
+        winthread\
+        ws2client\
+        ws2server
+}
+
 
