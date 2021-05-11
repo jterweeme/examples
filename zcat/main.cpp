@@ -1,6 +1,11 @@
 #include <cstring>
 #include <iostream>
 
+#ifdef WIN32
+#include <io.h>
+#include <fcntl.h>
+#endif
+
 typedef uint8_t char_type;
 typedef long int code_int;
 
@@ -271,6 +276,12 @@ int main(int argc, char **argv)
 {
     (void)argc;
     (void)argv;
+
+#ifdef WIN32
+    _setmode(_fileno(stdin), _O_BINARY);
+    _setmode(_fileno(stdout), _O_BINARY);
+#endif
+
     return decompress();
 }
 

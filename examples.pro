@@ -13,6 +13,7 @@ SUBDIRS = base64\
     head\
     jpg2tga\
     md5sum\
+    minilang\
     nl\
     od\
     overlap\
@@ -21,6 +22,7 @@ SUBDIRS = base64\
     sb\
     sx\
     tail\
+    tokenizer\
     wc\
     zcat
 

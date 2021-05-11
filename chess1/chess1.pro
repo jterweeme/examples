@@ -1,8 +1,13 @@
+#file: chess1.pro
+
 TEMPLATE = app
 CONFIG += silent
 DESTDIR = $$OUT_PWD/
 DEFINES -= UNICODE _UNICODE
 LIBS += -lgdi32 -luser32
+RC_FILE += resource.rc
+
+#TODO: Qt heeft voorziening voor het kopieren van bestanden
 
 copydata.commands = $(COPY_FILE) \"$$PWD\gnuchess.boo\" \"$$OUT_PWD/\"
 first.depends = $(first) copydata
@@ -38,8 +43,6 @@ HEADERS += board.h\
     toolbox.h\
     winclass.h\
     zeit.h
-
-RC_FILE += resource.rc
 
 OTHER_FILES += resource.rc\
     bishop.bmp\
