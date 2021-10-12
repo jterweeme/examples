@@ -1,3 +1,5 @@
+//file: hash.h
+
 #ifndef HASH_H
 #define HASH_H
 
@@ -21,6 +23,7 @@ public:
     uint32_t h2() const;
     uint32_t h3() const;
     void dump(std::ostream &os) const;
+    std::string toString() const;
 };
 
 #endif

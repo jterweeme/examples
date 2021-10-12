@@ -1,11 +1,12 @@
 /*
- *	Huffman encoding program
- *	Adapted April 1979, from program by T.G. Szymanski, March 1978
- *	Usage:	pack [[ - ] filename ... ] filename ...
- *		- option: enable/disable listing of statistics
+ *  Huffman encoding program
+ *  Adapted April 1979, from program by T.G. Szymanski, March 1978
+ *  Usage:  pack [[ - ] filename ... ] filename ...
+ *      - option: enable/disable listing of statistics
  */
 
 #include "pack.h"
+#include <algorithm>
 
 void Heap::set(const Heap &heap)
 {

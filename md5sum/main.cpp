@@ -33,6 +33,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLin
     return 0;
 }
 #else
+class Options
+{
+private:
+public:
+    void parse(int argc, char **argv);
+};
+
+void Options::parse(int argc, char **argv)
+{
+
+}
+
 int main(int argc, char **argv)
 {
     (void)argc;
@@ -41,8 +53,19 @@ int main(int argc, char **argv)
     _setmode(_fileno(stdin), _O_BINARY);
 #endif
     Hash hash = Hasher::stream(std::cin);
-    hash.dump(std::cout);
-    std::cout << "\n";
+#if 0
+    std::ifstream ifs;
+    ifs.open("d:\\temp\\random.dat", std::ios::binary);
+    char *buf = new char[1280256];
+    ifs.read(buf, 1280256);
+    Hash hash;
+    hash = Hasher::array(buf, 1280256);
+    delete[] buf;
+    std::cout << hash.toString() << "\r\n";
+    ifs.seekg(0, std::ios::beg);
+    hash = Hasher::stream(ifs);
+#endif
+    std::cout << hash.toString() << "\r\n";
     std::cout.flush();
     return 0;
 }

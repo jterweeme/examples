@@ -21,6 +21,17 @@ void Hash::dump(std::ostream &os) const
           t.hex32(t.be32tohost(h3()));
 }
 
+std::string Hash::toString() const
+{
+    Toolbox t;
+    std::string ret;
+    ret.append(t.hex32(t.be32tohost(h0())));
+    ret.append(t.hex32(t.be32tohost(h1())));
+    ret.append(t.hex32(t.be32tohost(h2())));
+    ret.append(t.hex32(t.be32tohost(h3())));
+    return ret;
+}
+
 uint32_t Hash::h0() const
 {
     return _h0;

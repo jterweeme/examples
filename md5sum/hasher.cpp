@@ -43,9 +43,13 @@ Hash Hasher::array(const char *s, size_t size)
 {
     Hash hash;
 
-    for (size_t i = 0; i < size; i+= 64)
+    for (size_t i = 0; i <= size; i+= 64)
     {
-        size_t readSize = (size - i) % 64;
+        size_t readSize = 64;
+
+        if (size - i < 64)
+            readSize = size - i;
+
         uint8_t data[64] = {0};
         memcpy(data, s + i, readSize);
         Chunk chunk;

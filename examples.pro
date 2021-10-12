@@ -8,20 +8,23 @@ SUBDIRS = base64\
     contimeout\
     echosvr\
     exception\
-    gif2bmp\
+    #gif2bmp\
     grep\
     head\
     jpg2tga\
+    ls\
+    lsq\
     md5sum\
     minilang\
     nl\
     od\
     overlap\
     pack\
-    pcat\
+    #pcat\
     sb\
     sx\
     tail\
+    timer1\
     tokenizer\
     wc\
     zcat

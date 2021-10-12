@@ -1,3 +1,5 @@
+//file: hasher.h
+
 #ifndef HASHER_H
 #define HASHER_H
 
