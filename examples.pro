@@ -12,10 +12,11 @@ SUBDIRS = base64\
     grep\
     head\
     jpg2tga\
-    ls\
+    #ls\
     lsq\
     md5sum\
     minilang\
+    mysql1\
     nl\
     od\
     overlap\
@@ -24,6 +25,7 @@ SUBDIRS = base64\
     sb\
     sx\
     tail\
+    test1\
     timer1\
     tokenizer\
     wc\
