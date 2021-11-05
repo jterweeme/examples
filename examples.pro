@@ -32,29 +32,7 @@ SUBDIRS = base64\
     zcat
 
 win32 | win64 {
-    SUBDIRS += bgcolor\
-        bitmap\
-        cechat\
-        chatclient\
-        chess1\
-        colorbtn\
-        commctrl1\
-        FileEditor\
-        mdiapp\
-        memdc\
-        netkatd\
-        opengl1\
-        property1\
-        qrcode\
-        rb\
-        rx\
-        tabs1\
-        tictac\
-        winanim\
-        winthread\
-        ws2client\
-        ws2server\
-        zeit
+    SUBDIRS += winapi
 }
 
 

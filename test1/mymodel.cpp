@@ -17,6 +17,21 @@ const char *NyModel::names[] = {
     "Carl"
 };
 
+QModelIndex NyModel::parent(const QModelIndex &) const
+{
+    return QModelIndex();
+}
+
+QModelIndex NyModel::index(int row, int column, const QModelIndex &parent) const
+{
+    return hasIndex(row, column, parent) ? createIndex(row, column) : QModelIndex();
+}
+
+int NyModel::columnCount(const QModelIndex &parent) const
+{
+    return parent.isValid() ? 0 : 1;
+}
+
 int NyModel::rowCount(const QModelIndex &) const
 {
     return 3;
