@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/images">
+        <file alias="globe">globe.svg</file>
+    </qresource>
+</RCC>
+

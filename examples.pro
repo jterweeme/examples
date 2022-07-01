@@ -1,6 +1,7 @@
 TEMPLATE = subdirs
 
-SUBDIRS = base64\
+SUBDIRS =\
+    base64\
     bzcat\
     cat\
     chessvalid\
@@ -23,6 +24,7 @@ SUBDIRS = base64\
     pack\
     #pcat\
     sb\
+    svgtest\
     sx\
     tail\
     test1\
