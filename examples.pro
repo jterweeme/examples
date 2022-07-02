@@ -17,6 +17,7 @@ SUBDIRS =\
     lsq\
     md5sum\
     minilang\
+    mp22wav\
     mysql1\
     nl\
     od\
