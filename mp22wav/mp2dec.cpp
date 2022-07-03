@@ -5,16 +5,29 @@
 #include <cstdlib>
 #include <cstring>
 #include <cstdint>
-
 #include "kjmp2.h"
 
-#define set_le32(p, x) \
-        do { \
-            (p)[0] =  (x)        & 0xFF; \
-            (p)[1] = ((x) >>  8) & 0xFF; \
-            (p)[2] = ((x) >> 16) & 0xFF; \
-            (p)[3] = ((x) >> 24) & 0xFF; \
-        } while (0)
+
+class Toolbox
+{
+public:
+    static void writeWLE(char *buf, uint16_t w);
+    static void writeDwLE(char *buf, uint32_t dw);
+};
+
+void Toolbox::writeWLE(char *buf, uint16_t w)
+{
+    buf[0] = char(w >> 0 & 0xff);
+    buf[1] = char(w >> 8 & 0xff);
+}
+
+void Toolbox::writeDwLE(char *buf, uint32_t dw)
+{
+    buf[0] = char(dw >>  0 & 0xff);
+    buf[1] = char(dw >>  8 & 0xff);
+    buf[2] = char(dw >> 16 & 0xff);
+    buf[3] = char(dw >> 24 & 0xff);
+}
 
 class CMain
 {
@@ -23,7 +36,7 @@ private:
     static constexpr uint32_t KJMP2_MAX_FRAME_SIZE = 1440;
     static constexpr uint32_t MAX_BUFSIZE = 1000 * KJMP2_MAX_FRAME_SIZE;
 public:
-    int run(int argc, char **argv);
+    int run(int argc, char **argv, const char *infn, const char *outfn);
 };
 
 int main(int argc, char **argv)
@@ -36,20 +49,36 @@ int main(int argc, char **argv)
         return 2;
     }
 
-    return inst.run(argc, argv);
+    char *outname;
+
+    if (argc > 2)
+    {
+        outname = argv[2];
+    }
+    else
+    {
+        char *dot = strrchr(argv[1], '.');
+        int size = dot ? (dot - argv[1]) : (int) strlen(argv[1]);
+        outname = (char *)(malloc(size + 5));
+        if (!outname) { return -1; }
+        memcpy((void*) outname, (const void*)argv[1], size);
+        strcpy(&outname[size], ".wav");
+    }
+
+    return inst.run(argc, argv, argv[1], outname);
 }
 
-int CMain::run(int argc, char **argv)
+int CMain::run(int argc, char **argv, const char *infn, const char *outname)
 {
-    char *outname;
+    //char *outname;
     uint8_t buffer[MAX_BUFSIZE];
     signed short samples[KJMP2_SAMPLES_PER_FRAME * 2];
     kjmp2_context_t mp2;
-    FILE *fin = fopen(argv[1], "rb");
+    FILE *fin = fopen(infn, "rb");
 
     if (!fin)
     {
-        printf("Could not open input file %s!\n", argv[1]);
+        printf("Could not open input file %s!\n", infn);
         return 1;
     }
 
@@ -65,49 +94,49 @@ int CMain::run(int argc, char **argv)
         fclose(fin);
         return 1;
     }
-
+/*
     if (argc > 2) {
         outname = argv[2];
     } else {
-        char *dot = strrchr(argv[1], '.');
-        int size = dot ? (dot - argv[1]) : (int) strlen(argv[1]);
+        char *dot = strrchr(infn, '.');
+        int size = dot ? (dot - infn) : (int) strlen(infn);
         outname = (char *)(malloc(size + 5));
         if (!outname) { return -1; }
-        memcpy((void*) outname, (const void*) argv[1], size);
+        memcpy((void*) outname, (const void*) infn, size);
         strcpy(&outname[size], ".wav");
     }
-
+*/
     FILE *fout = fopen(outname, "wb");
 
     if (!fout)
     {
-        printf("Could not open output file %s!\n", argv[1]);
+        printf("Could not open output file %s!\n", outname);
         return 1;
     }
+
+    Toolbox t;
 
     {
         uint8_t header[44];
         strncpy((char *)header + 0, "RIFF", 4);
-        set_le32(header + 4, 0); //cksize
+        t.writeDwLE((char *)(header + 4), 0);
         strncpy((char *)header + 8, "WAVE", 4);
         strncpy((char *)header + 12, "fmt ", 4);
-        set_le32(header + 16, 16);
-        header[20] = 1;
-        header[21] = 0;
-        header[22] = 2;
-        header[23] = 0;
-        set_le32(header + 24, rate);
+        t.writeDwLE((char *)(header + 16), 16);
+        t.writeWLE((char *)(header + 20), 1);
+        t.writeWLE((char *)(header + 22), 2);
+        t.writeDwLE((char *)(header + 24), rate);
         rate <<= 2;
-        set_le32(header + 28, rate);
+        t.writeDwLE((char *)(header + 28), rate);
         header[32] = 4;
         header[33] = 0;
         header[34] = 16;
         header[35] = 0;
         strncpy((char *)header + 36, "data", 4);
-        set_le32(header + 40, 0);
+        t.writeDwLE((char *)(header + 40), 0);
         fwrite((const void*) header, 44, 1, fout);
 
-        printf("Decoding %s into %s ...\n", argv[1], outname);
+        printf("Decoding %s into %s ...\n", infn, outname);
         int out_bytes = 0;
         int desync = 0;
         int eof = 0;
@@ -153,9 +182,9 @@ int CMain::run(int argc, char **argv)
             }
         }
 
-        set_le32(header + 40, out_bytes);
+        t.writeDwLE((char *)(header + 40), out_bytes);
         out_bytes += 36;
-        set_le32(&header[4], out_bytes);
+        t.writeDwLE((char *)(header + 4), out_bytes);
 
         //write WAV header
         fseek(fout, 0, SEEK_SET);
