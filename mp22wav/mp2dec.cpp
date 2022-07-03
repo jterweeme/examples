@@ -86,26 +86,25 @@ int CMain::run(int argc, char **argv)
     }
 
     {
-        uint8_t header[44] = {
-            /*  0 */  'R', 'I', 'F', 'F',
-            /*  4 */  0,0,0,0,  /* cksize */
-            /*  8 */  'W', 'A', 'V', 'E',
-            /* 12 */  'f', 'm', 't', ' ',
-            /* 16 */  16,0,0,0,  /* cksize */
-            /* 20 */  1,0,       /* wFormatTag = 1 (PCM) */
-            /* 22 */  2,0,       /* nChannels = 2 */
-            /* 24 */  0,0,0,0,   /* nSamplesPerSec */
-            /* 28 */  0,0,0,0,   /* nAvgBytesPerSec */
-            /* 32 */  4,0,       /* nBlockAlign = 4 */
-            /* 34 */  16,0,      /* wBitsPerSample */
-            /* 36 */  'd', 'a', 't', 'a',
-            /* 40 */  0,0,0,0,   /* cksize */
-        };
-
-
-        set_le32(&header[24], rate);
+        uint8_t header[44];
+        strncpy((char *)header + 0, "RIFF", 4);
+        set_le32(header + 4, 0); //cksize
+        strncpy((char *)header + 8, "WAVE", 4);
+        strncpy((char *)header + 12, "fmt ", 4);
+        set_le32(header + 16, 16);
+        header[20] = 1;
+        header[21] = 0;
+        header[22] = 2;
+        header[23] = 0;
+        set_le32(header + 24, rate);
         rate <<= 2;
-        set_le32(&header[28], rate);
+        set_le32(header + 28, rate);
+        header[32] = 4;
+        header[33] = 0;
+        header[34] = 16;
+        header[35] = 0;
+        strncpy((char *)header + 36, "data", 4);
+        set_le32(header + 40, 0);
         fwrite((const void*) header, 44, 1, fout);
 
         printf("Decoding %s into %s ...\n", argv[1], outname);
@@ -154,11 +153,13 @@ int CMain::run(int argc, char **argv)
             }
         }
 
-        fseek(fout, 0, SEEK_SET);
-        set_le32(&header[40], out_bytes);
+        set_le32(header + 40, out_bytes);
         out_bytes += 36;
         set_le32(&header[4], out_bytes);
-        (void) fwrite((const void*) header, 44, 1, fout);
+
+        //write WAV header
+        fseek(fout, 0, SEEK_SET);
+        fwrite((const void*) header, 44, 1, fout);
     }
     fclose(fout);
     fclose(fin);
