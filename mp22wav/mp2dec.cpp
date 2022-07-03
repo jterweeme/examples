@@ -36,7 +36,7 @@ private:
     static constexpr uint32_t KJMP2_MAX_FRAME_SIZE = 1440;
     static constexpr uint32_t MAX_BUFSIZE = 1000 * KJMP2_MAX_FRAME_SIZE;
 public:
-    int run(int argc, char **argv, const char *infn, const char *outfn);
+    int run(const char *infn, const char *outfn);
 };
 
 int main(int argc, char **argv)
@@ -65,12 +65,11 @@ int main(int argc, char **argv)
         strcpy(&outname[size], ".wav");
     }
 
-    return inst.run(argc, argv, argv[1], outname);
+    return inst.run(argv[1], outname);
 }
 
-int CMain::run(int argc, char **argv, const char *infn, const char *outname)
+int CMain::run(const char *infn, const char *outname)
 {
-    //char *outname;
     uint8_t buffer[MAX_BUFSIZE];
     signed short samples[KJMP2_SAMPLES_PER_FRAME * 2];
     kjmp2_context_t mp2;
@@ -94,18 +93,7 @@ int CMain::run(int argc, char **argv, const char *infn, const char *outname)
         fclose(fin);
         return 1;
     }
-/*
-    if (argc > 2) {
-        outname = argv[2];
-    } else {
-        char *dot = strrchr(infn, '.');
-        int size = dot ? (dot - infn) : (int) strlen(infn);
-        outname = (char *)(malloc(size + 5));
-        if (!outname) { return -1; }
-        memcpy((void*) outname, (const void*) infn, size);
-        strcpy(&outname[size], ".wav");
-    }
-*/
+
     FILE *fout = fopen(outname, "wb");
 
     if (!fout)
@@ -116,80 +104,80 @@ int CMain::run(int argc, char **argv, const char *infn, const char *outname)
 
     Toolbox t;
 
+
+    uint8_t header[44];
+    strncpy((char *)header + 0, "RIFF", 4);
+    t.writeDwLE((char *)(header + 4), 0);
+    strncpy((char *)header + 8, "WAVE", 4);
+    strncpy((char *)header + 12, "fmt ", 4);
+    t.writeDwLE((char *)(header + 16), 16);
+    t.writeWLE((char *)(header + 20), 1);
+    t.writeWLE((char *)(header + 22), 2);
+    t.writeDwLE((char *)(header + 24), rate);
+    rate <<= 2;
+    t.writeDwLE((char *)(header + 28), rate);
+    t.writeWLE((char *)(header + 32), 4);
+    t.writeWLE((char *)(header + 34), 16);
+    strncpy((char *)header + 36, "data", 4);
+    t.writeDwLE((char *)(header + 40), 0);
+
+    //write wav header to file
+    fwrite((const void*) header, 44, 1, fout);
+
+    printf("Decoding %s into %s ...\n", infn, outname);
+    int out_bytes = 0;
+    int desync = 0;
+    int eof = 0;
+    kjmp2_init(&mp2);
+
+    while (!eof || (bufsize > 4))
     {
-        uint8_t header[44];
-        strncpy((char *)header + 0, "RIFF", 4);
-        t.writeDwLE((char *)(header + 4), 0);
-        strncpy((char *)header + 8, "WAVE", 4);
-        strncpy((char *)header + 12, "fmt ", 4);
-        t.writeDwLE((char *)(header + 16), 16);
-        t.writeWLE((char *)(header + 20), 1);
-        t.writeWLE((char *)(header + 22), 2);
-        t.writeDwLE((char *)(header + 24), rate);
-        rate <<= 2;
-        t.writeDwLE((char *)(header + 28), rate);
-        header[32] = 4;
-        header[33] = 0;
-        header[34] = 16;
-        header[35] = 0;
-        strncpy((char *)header + 36, "data", 4);
-        t.writeDwLE((char *)(header + 40), 0);
-        fwrite((const void*) header, 44, 1, fout);
+        int bytes;
 
-        printf("Decoding %s into %s ...\n", infn, outname);
-        int out_bytes = 0;
-        int desync = 0;
-        int eof = 0;
-        kjmp2_init(&mp2);
-
-        while (!eof || (bufsize > 4))
+        if (!eof && (bufsize < int(KJMP2_MAX_FRAME_SIZE)))
         {
-            int bytes;
+            memcpy((void*) buffer, &buffer[bufpos], bufsize);
+            bufpos = 0;
+            in_offset += bufsize;
+            bytes = (int) fread((void*) &buffer[bufsize], 1, MAX_BUFSIZE - bufsize, fin);
+            if (bytes > 0) {
+                bufsize += bytes;
+            } else {
+                eof = 1;
+            }
+        }
+        else
+        {
+            bytes = (int) kjmp2_decode_frame(&mp2, &buffer[bufpos], samples);
 
-            if (!eof && (bufsize < KJMP2_MAX_FRAME_SIZE))
+            if ((bytes < 4) || (bytes > int(KJMP2_MAX_FRAME_SIZE)) || (bytes > bufsize))
             {
-                memcpy((void*) buffer, (const void*) &buffer[bufpos], bufsize);
-                bufpos = 0;
-                in_offset += bufsize;
-                bytes = (int) fread((void*) &buffer[bufsize], 1, MAX_BUFSIZE - bufsize, fin);
-                if (bytes > 0) {
-                    bufsize += bytes;
-                } else {
-                    eof = 1;
+                if (!desync)
+                {
+                    printf("Stream error detected at file offset %d.\n", in_offset + bufpos);
                 }
+
+                desync = bytes = 1;
             }
             else
             {
-                bytes = (int) kjmp2_decode_frame(&mp2, &buffer[bufpos], samples);
-
-                if ((bytes < 4) || (bytes > KJMP2_MAX_FRAME_SIZE) || (bytes > bufsize))
-                {
-                    if (!desync)
-                    {
-                        printf("Stream error detected at file offset %d.\n", in_offset + bufpos);
-                    }
-
-                    desync = bytes = 1;
-                }
-                else
-                {
-                    out_bytes += (int) fwrite((const void*) samples, 1, KJMP2_SAMPLES_PER_FRAME * 4, fout);
-                    desync = 0;
-                }
-
-                bufsize -= bytes;
-                bufpos += bytes;
+                out_bytes += (int) fwrite((const void*) samples, 1, KJMP2_SAMPLES_PER_FRAME * 4, fout);
+                desync = 0;
             }
+
+            bufsize -= bytes;
+            bufpos += bytes;
         }
-
-        t.writeDwLE((char *)(header + 40), out_bytes);
-        out_bytes += 36;
-        t.writeDwLE((char *)(header + 4), out_bytes);
-
-        //write WAV header
-        fseek(fout, 0, SEEK_SET);
-        fwrite((const void*) header, 44, 1, fout);
     }
+
+    t.writeDwLE((char *)(header + 40), out_bytes);
+    out_bytes += 36;
+    t.writeDwLE((char *)(header + 4), out_bytes);
+
+    //rewrite WAV header
+    fseek(fout, 0, SEEK_SET);
+    fwrite((const void*) header, 44, 1, fout);
+
     fclose(fout);
     fclose(fin);
     printf("Done.\n");

@@ -23,7 +23,7 @@
 
 #include <math.h>
 #include <cstdint>
-
+#include <algorithm>
 #include "kjmp2.h"
 
 #ifdef _MSC_VER
@@ -352,10 +352,6 @@ unsigned long kjmp2_decode_frame(
     const uint8_t *frame,
     int16_t *pcm)
 {
-    unsigned bit_rate_index_minus1;
-    unsigned sampling_frequency;
-    unsigned padding_bit;
-    unsigned mode;
     unsigned long frame_size;
     int bound, sblimit;
     int sb, ch, gr, part, idx, nch, i, j, sum;
@@ -375,12 +371,12 @@ unsigned long kjmp2_decode_frame(
     frame_pos = &frame[3];
 
     // read the rest of the header
-    bit_rate_index_minus1 = get_bits(4) - 1;
+    unsigned bit_rate_index_minus1 = get_bits(4) - 1;
 
     if (bit_rate_index_minus1 > 13)
         return 0;  // invalid bit rate or 'free format'
 
-    sampling_frequency = get_bits(2);
+    unsigned sampling_frequency = get_bits(2);
 
     if (sampling_frequency == 3)
         return 0;
@@ -389,14 +385,17 @@ unsigned long kjmp2_decode_frame(
         sampling_frequency += 4;
         bit_rate_index_minus1 += 14;
     }
-    padding_bit = get_bits(1);
+    unsigned padding_bit = get_bits(1);
     get_bits(1);  // discard private_bit
-    mode = get_bits(2);
+    unsigned mode = get_bits(2);
 
     // parse the mode_extension, set up the stereo bound
-    if (mode == JOINT_STEREO) {
+    if (mode == JOINT_STEREO)
+    {
         bound = (get_bits(2) + 1) << 2;
-    } else {
+    }
+    else
+    {
         get_bits(2);
         bound = (mode == MONO) ? 0 : 32;
     }
@@ -413,11 +412,14 @@ unsigned long kjmp2_decode_frame(
         return frame_size;  // no decoding
 
     // prepare the quantizer table lookups
-    if (sampling_frequency & 4) {
+    if (sampling_frequency & 4)
+    {
         // MPEG-2 (LSR)
         table_idx = 2;
         sblimit = 30;
-    } else {
+    }
+    else
+    {
         // MPEG-1
         table_idx = (mode == MONO) ? 0 : 1;
         table_idx = quant_lut_step1[table_idx][bit_rate_index_minus1];
@@ -425,13 +427,14 @@ unsigned long kjmp2_decode_frame(
         sblimit = table_idx & 63;
         table_idx >>= 6;
     }
-    if (bound > sblimit)
-        bound = sblimit;
+
+    bound = std::min(bound, sblimit);
 
     // read the allocation information
     for (sb = 0;  sb < bound;  ++sb)
         for (ch = 0;  ch < 2;  ++ch)
             allocation[ch][sb] = read_allocation(sb, table_idx);
+
     for (sb = bound;  sb < sblimit;  ++sb)
         allocation[0][sb] = allocation[1][sb] = read_allocation(sb, table_idx);
 
@@ -449,28 +452,34 @@ unsigned long kjmp2_decode_frame(
     }
 
     // read scale factors
-    for (sb = 0;  sb < sblimit;  ++sb) {
+    for (sb = 0;  sb < sblimit;  ++sb)
+    {
         for (ch = 0;  ch < nch;  ++ch)
-            if (allocation[ch][sb]) {
-                switch (scfsi[ch][sb]) {
-                    case 0: scalefactor[ch][sb][0] = get_bits(6);
-                            scalefactor[ch][sb][1] = get_bits(6);
-                            scalefactor[ch][sb][2] = get_bits(6);
-                            break;
-                    case 1: scalefactor[ch][sb][0] =
-                            scalefactor[ch][sb][1] = get_bits(6);
-                            scalefactor[ch][sb][2] = get_bits(6);
-                            break;
-                    case 2: scalefactor[ch][sb][0] =
-                            scalefactor[ch][sb][1] =
-                            scalefactor[ch][sb][2] = get_bits(6);
-                            break;
-                    case 3: scalefactor[ch][sb][0] = get_bits(6);
-                            scalefactor[ch][sb][1] =
-                            scalefactor[ch][sb][2] = get_bits(6);
-                            break;
+        {
+            if (allocation[ch][sb])
+            {
+                switch (scfsi[ch][sb])
+                {
+                case 0:
+                    scalefactor[ch][sb][0] = get_bits(6);
+                    scalefactor[ch][sb][1] = get_bits(6);
+                    scalefactor[ch][sb][2] = get_bits(6);
+                    break;
+                case 1:
+                    scalefactor[ch][sb][0] = scalefactor[ch][sb][1] = get_bits(6);
+                    scalefactor[ch][sb][2] = get_bits(6);
+                    break;
+                case 2:
+                    scalefactor[ch][sb][0] = scalefactor[ch][sb][1] = scalefactor[ch][sb][2] = get_bits(6);
+                    break;
+                case 3:
+                    scalefactor[ch][sb][0] = get_bits(6);
+                    scalefactor[ch][sb][1] = scalefactor[ch][sb][2] = get_bits(6);
+                    break;
                 }
             }
+        }
+
         if (mode == MONO)
             for (part = 0;  part < 3;  ++part)
                 scalefactor[1][sb][part] = scalefactor[0][sb][part];
@@ -478,56 +487,72 @@ unsigned long kjmp2_decode_frame(
 
     // coefficient input and reconstruction
     for (part = 0;  part < 3;  ++part)
-        for (gr = 0;  gr < 4;  ++gr) {
-
+    {
+        for (gr = 0;  gr < 4;  ++gr)
+        {
             // read the samples
             for (sb = 0;  sb < bound;  ++sb)
                 for (ch = 0;  ch < 2;  ++ch)
                     read_samples(allocation[ch][sb], scalefactor[ch][sb][part], &sample[ch][sb][0]);
-            for (sb = bound;  sb < sblimit;  ++sb) {
+
+            for (sb = bound;  sb < sblimit;  ++sb)
+            {
                 read_samples(allocation[0][sb], scalefactor[0][sb][part], &sample[0][sb][0]);
+
                 for (idx = 0;  idx < 3;  ++idx)
                     sample[1][sb][idx] = sample[0][sb][idx];
             }
+
             for (ch = 0;  ch < 2;  ++ch)
                for (sb = sblimit;  sb < 32;  ++sb)
                     for (idx = 0;  idx < 3;  ++idx)
                         sample[ch][sb][idx] = 0;
 
             // synthesis loop
-            for (idx = 0;  idx < 3;  ++idx) {
+            for (idx = 0;  idx < 3;  ++idx)
+            {
                 // shifting step
                 mp2->Voffs = table_idx = (mp2->Voffs - 64) & 1023;
 
-                for (ch = 0;  ch < 2;  ++ch) {
+                for (ch = 0;  ch < 2;  ++ch)
+                {
                     // matrixing
-                    for (i = 0;  i < 64;  ++i) {
+                    for (i = 0;  i < 64;  ++i)
+                    {
                         sum = 0;
+
                         for (j = 0;  j < 32;  ++j)
                             sum += N[i][j] * sample[ch][j][idx];  // 8b*15b=23b
+
                         // intermediate value is 28 bit (23 + 5), clamp to 14b
                         mp2->V[ch][table_idx + i] = (sum + 8192) >> 14;
                     }
 
                     // construction of U
                     for (i = 0;  i < 8;  ++i)
-                        for (j = 0;  j < 32;  ++j) {
+                    {
+                        for (j = 0;  j < 32;  ++j)
+                        {
                             U[(i << 6) + j]      = mp2->V[ch][(table_idx + (i << 7) + j     ) & 1023];
                             U[(i << 6) + j + 32] = mp2->V[ch][(table_idx + (i << 7) + j + 96) & 1023];
                         }
+                    }
 
                     // apply window
                     for (i = 0;  i < 512;  ++i)
                         U[i] = (U[i] * D[i] + 32) >> 6;
 
                     // output samples
-                    for (j = 0;  j < 32;  ++j) {
+                    for (j = 0; j < 32; ++j)
+                    {
                         sum = 0;
+
                         for (i = 0;  i < 16;  ++i)
                             sum -= U[(i << 5) + j];
+
                         sum = (sum + 8) >> 4;
-                        if (sum < -32768) sum = -32768;
-                        if (sum > 32767) sum = 32767;
+                        sum = std::max(sum, -32768);
+                        sum = std::min(sum, 32767);
                         pcm[(idx << 6) | (j << 1) | ch] = (signed short) sum;
                     }
                 } // end of synthesis channel loop
@@ -537,6 +562,6 @@ unsigned long kjmp2_decode_frame(
             pcm += 192;
 
         } // decoding of the granule finished
-
+    }
     return frame_size;
 }
