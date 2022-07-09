@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cstdint>
+#include <fcntl.h>
 #include "kjmp2.h"
 
 
@@ -29,6 +30,17 @@ void Toolbox::writeDwLE(char *buf, uint32_t dw)
     buf[3] = char(dw >> 24 & 0xff);
 }
 
+class COptions
+{
+public:
+    void parse(int argc, char **argv);
+};
+
+void COptions::parse(int argc, char **argv)
+{
+
+}
+
 class CMain
 {
 private:
@@ -50,7 +62,7 @@ int main(int argc, char **argv)
     }
 
     char *outname;
-
+#if 0
     if (argc > 2)
     {
         outname = argv[2];
@@ -64,7 +76,7 @@ int main(int argc, char **argv)
         memcpy((void*) outname, (const void*)argv[1], size);
         strcpy(&outname[size], ".wav");
     }
-
+#endif
     return inst.run(argv[1], outname);
 }
 
@@ -77,7 +89,7 @@ int CMain::run(const char *infn, const char *outname)
 
     if (!fin)
     {
-        printf("Could not open input file %s!\n", infn);
+        fprintf(stderr, "Could not open input file %s!\n", infn);
         return 1;
     }
 
@@ -89,16 +101,18 @@ int CMain::run(const char *infn, const char *outname)
 
     if (!rate)
     {
-        printf("Input is not a valid MP2 audio file, exiting.\n");
+        fprintf(stderr, "Input is not a valid MP2 audio file, exiting.\n");
         fclose(fin);
         return 1;
     }
 
-    FILE *fout = fopen(outname, "wb");
+    //FILE *fout = fopen("out.wav", "wb");
+    FILE *fout = stdout;
+    setmode(fileno(stdout), O_BINARY);
 
     if (!fout)
     {
-        printf("Could not open output file %s!\n", outname);
+        fprintf(stderr, "Could not open output file %s!\n", "out.wav");
         return 1;
     }
 
@@ -124,7 +138,7 @@ int CMain::run(const char *infn, const char *outname)
     //write wav header to file
     fwrite((const void*) header, 44, 1, fout);
 
-    printf("Decoding %s into %s ...\n", infn, outname);
+    //printf("Decoding %s into %s ...\n", infn, outname);
     int out_bytes = 0;
     int desync = 0;
     int eof = 0;
@@ -136,10 +150,11 @@ int CMain::run(const char *infn, const char *outname)
 
         if (!eof && (bufsize < int(KJMP2_MAX_FRAME_SIZE)))
         {
-            memcpy((void*) buffer, &buffer[bufpos], bufsize);
+            memcpy(buffer, buffer + bufpos, bufsize);
             bufpos = 0;
             in_offset += bufsize;
-            bytes = (int) fread((void*) &buffer[bufsize], 1, MAX_BUFSIZE - bufsize, fin);
+            bytes = (int) fread(buffer + bufsize, 1, MAX_BUFSIZE - bufsize, fin);
+
             if (bytes > 0) {
                 bufsize += bytes;
             } else {
@@ -154,7 +169,7 @@ int CMain::run(const char *infn, const char *outname)
             {
                 if (!desync)
                 {
-                    printf("Stream error detected at file offset %d.\n", in_offset + bufpos);
+                    fprintf(stderr, "Stream error detected at file offset %d.\n", in_offset + bufpos);
                 }
 
                 desync = bytes = 1;
@@ -170,16 +185,19 @@ int CMain::run(const char *infn, const char *outname)
         }
     }
 
-    t.writeDwLE((char *)(header + 40), out_bytes);
-    out_bytes += 36;
-    t.writeDwLE((char *)(header + 4), out_bytes);
+    if (false)
+    {
+        t.writeDwLE((char *)(header + 40), out_bytes);
+        out_bytes += 36;
+        t.writeDwLE((char *)(header + 4), out_bytes);
 
-    //rewrite WAV header
-    fseek(fout, 0, SEEK_SET);
-    fwrite((const void*) header, 44, 1, fout);
-
+        //rewrite WAV header
+        fseek(fout, 0, SEEK_SET);
+        fwrite((const void*) header, 44, 1, fout);
+    }
+    fflush(fout);
     fclose(fout);
     fclose(fin);
-    printf("Done.\n");
+    fprintf(stderr, "Done.\n");
     return 0;
 }
