@@ -26,19 +26,16 @@
 #include <algorithm>
 #include "kjmp2.h"
 
-// mode constants
-#define STEREO       0
-#define JOINT_STEREO 1
-#define DUAL_CHANNEL 2
-#define MONO         3
+//static constexpr uint8_t STEREO = 0;
+static constexpr uint8_t JOINT_STEREO = 1;
+//static constexpr uint8_t DUAL_CHANNEL = 2;
+static constexpr uint8_t MONO = 3;
 
-// sample rate table
 static constexpr uint16_t sample_rates[8] = {
     44100, 48000, 32000, 0,  // MPEG-1
     22050, 24000, 16000, 0   // MPEG-2
 };
 
-// bitrate table
 static constexpr short bitrates[28] = {
     32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384,  // MPEG-1
      8, 16, 24, 32, 40, 48,  56,  64,  80,  96, 112, 128, 144, 160   // MPEG-2
@@ -127,10 +124,10 @@ static constexpr char quant_lut_step1[2][16] = {
 };
 
 // quantizer lookup, step 2: bitrate class, sample rate -> B2 table idx, sblimit
-#define QUANT_TAB_A (27 | 64)   // Table 3-B.2a: high-rate, sblimit = 27
-#define QUANT_TAB_B (30 | 64)   // Table 3-B.2b: high-rate, sblimit = 30
-#define QUANT_TAB_C   8         // Table 3-B.2c:  low-rate, sblimit =  8
-#define QUANT_TAB_D  12         // Table 3-B.2d:  low-rate, sblimit = 12
+static constexpr char QUANT_TAB_A = (27 | 64);   // Table 3-B.2a: high-rate, sblimit = 27
+static constexpr char QUANT_TAB_B = (30 | 64);   // Table 3-B.2b: high-rate, sblimit = 30
+static constexpr char QUANT_TAB_C =  8;         // Table 3-B.2c:  low-rate, sblimit =  8
+static constexpr char QUANT_TAB_D = 12;         // Table 3-B.2d:  low-rate, sblimit = 12
 
 static constexpr char quant_lut_step2[3][4] = {
     //   44.1 kHz,      48 kHz,      32 kHz
@@ -199,9 +196,7 @@ static constexpr struct quantizer_spec quantizer_table[17] = {
     { 65535, 0, 16 }   // 17
 };
 
-// STATIC VARIABLES AND FUNCTIONS
-
-#define KJMP2_MAGIC 0x32706D
+static constexpr uint32_t KJMP2_MAGIC = 0x32706D;
 
 static int initialized = 0;
 static int bit_window;
@@ -295,7 +290,9 @@ static void read_samples(const struct quantizer_spec *q, int scalefactor, int *s
 
     // decode samples
     adj = q->nlevels;
-    if (q->grouping) {
+
+    if (q->grouping)
+    {
         // decode grouped samples
         val = get_bits(q->cw_bits);
         sample[0] = val % adj;
@@ -321,7 +318,7 @@ static void read_samples(const struct quantizer_spec *q, int scalefactor, int *s
     }
 }
 
-static const struct quantizer_spec *allocation[2][32];
+static const quantizer_spec *allocation[2][32];
 static int scfsi[2][32];
 static int scalefactor[2][32][3];
 static int sample[2][32][3];
