@@ -26,12 +26,6 @@
 #include <algorithm>
 #include "kjmp2.h"
 
-#ifdef _MSC_VER
-    #define FASTCALL __fastcall
-#else
-    #define FASTCALL
-#endif
-
 // mode constants
 #define STEREO       0
 #define JOINT_STEREO 1
@@ -39,22 +33,22 @@
 #define MONO         3
 
 // sample rate table
-static const unsigned short sample_rates[8] = {
+static constexpr uint16_t sample_rates[8] = {
     44100, 48000, 32000, 0,  // MPEG-1
     22050, 24000, 16000, 0   // MPEG-2
 };
 
 // bitrate table
-static const short bitrates[28] = {
+static constexpr short bitrates[28] = {
     32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384,  // MPEG-1
      8, 16, 24, 32, 40, 48,  56,  64,  80,  96, 112, 128, 144, 160   // MPEG-2
 };
 
 // scale factor base values (24-bit fixed-point)
-static const int scf_base[3] = { 0x02000000, 0x01965FEA, 0x01428A30 };
+static constexpr int scf_base[3] = { 0x02000000, 0x01965FEA, 0x01428A30 };
 
 // synthesis window
-static const int D[512] = {
+static constexpr int D[512] = {
      0x00000, 0x00000, 0x00000, 0x00000, 0x00000, 0x00000, 0x00000,-0x00001,
     -0x00001,-0x00001,-0x00001,-0x00002,-0x00002,-0x00003,-0x00003,-0x00004,
     -0x00004,-0x00005,-0x00006,-0x00006,-0x00007,-0x00008,-0x00009,-0x0000A,
@@ -125,7 +119,7 @@ static const int D[512] = {
 ///////////// Table 3-B.2: Possible quantization per subband ///////////////////
 
 // quantizer lookup, step 1: bitrate classes
-static const char quant_lut_step1[2][16] = {
+static constexpr char quant_lut_step1[2][16] = {
     // 32, 48, 56, 64, 80, 96,112,128,160,192,224,256,320,384 <- bitrate
     {   0,  0,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,  2,  2 },  // mono
     // 16, 24, 28, 32, 40, 48, 56, 64, 80, 96,112,128,160,192 <- BR / chan
@@ -137,7 +131,8 @@ static const char quant_lut_step1[2][16] = {
 #define QUANT_TAB_B (30 | 64)   // Table 3-B.2b: high-rate, sblimit = 30
 #define QUANT_TAB_C   8         // Table 3-B.2c:  low-rate, sblimit =  8
 #define QUANT_TAB_D  12         // Table 3-B.2d:  low-rate, sblimit = 12
-static const char quant_lut_step2[3][4] = {
+
+static constexpr char quant_lut_step2[3][4] = {
     //   44.1 kHz,      48 kHz,      32 kHz
     { QUANT_TAB_C, QUANT_TAB_C, QUANT_TAB_D },  // 32 - 48 kbit/sec/ch
     { QUANT_TAB_A, QUANT_TAB_A, QUANT_TAB_A },  // 56 - 80 kbit/sec/ch
@@ -146,7 +141,7 @@ static const char quant_lut_step2[3][4] = {
 
 // quantizer lookup, step 3: B2 table, subband -> nbal, row index
 // (upper 4 bits: nbal, lower 4 bits: row index)
-static const char quant_lut_step3[3][32] = {
+static constexpr char quant_lut_step3[3][32] = {
     // low-rate table (3-B.2c and 3-B.2d)
     { 0x44,0x44,                                                   // SB  0 -  1
       0x34,0x34,0x34,0x34,0x34,0x34,0x34,0x34,0x34,0x34            // SB  2 - 12
@@ -166,7 +161,7 @@ static const char quant_lut_step3[3][32] = {
 };
 
 // quantizer lookup, step 4: table row, allocation[] value -> quant table index
-static const char quant_lut_step4[6][16] = {
+static constexpr char quant_lut_step4[6][16] = {
     { 0, 1, 2, 17 },
     { 0, 1, 2, 3, 4, 5, 6, 17 },
     { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 17 },
@@ -176,14 +171,15 @@ static const char quant_lut_step4[6][16] = {
 };
 
 // quantizer specification structure
-struct quantizer_spec {
-    unsigned short nlevels;
-    unsigned char grouping;
-    unsigned char cw_bits;
+struct quantizer_spec
+{
+    uint16_t nlevels;
+    uint8_t grouping;
+    uint8_t cw_bits;
 };
 
 // quantizer table
-static const struct quantizer_spec quantizer_table[17] = {
+static constexpr struct quantizer_spec quantizer_table[17] = {
     {     3, 1,  5 },  //  1
     {     5, 1,  7 },  //  2
     {     7, 0,  3 },  //  3
@@ -203,10 +199,7 @@ static const struct quantizer_spec quantizer_table[17] = {
     { 65535, 0, 16 }   // 17
 };
 
-
-////////////////////////////////////////////////////////////////////////////////
-// STATIC VARIABLES AND FUNCTIONS                                             //
-////////////////////////////////////////////////////////////////////////////////
+// STATIC VARIABLES AND FUNCTIONS
 
 #define KJMP2_MAGIC 0x32706D
 
@@ -217,7 +210,7 @@ static const unsigned char *frame_pos;
 
 #define show_bits(bit_count) (bit_window >> (24 - (bit_count)))
 
-static int FASTCALL get_bits(int bit_count)
+static int get_bits(int bit_count)
 {
     int result = show_bits(bit_count);
     bit_window = (bit_window << bit_count) & 0xFFFFFF;
@@ -259,10 +252,11 @@ void kjmp2_init(kjmp2_context_t *mp2)
 //        stream.
 // return value: The sample rate of the stream in Hz, or zero if the stream
 //               isn't valid.
-int kjmp2_get_sample_rate(const unsigned char *frame)
+int kjmp2_get_sample_rate(const uint8_t *frame)
 {
     if (!frame)
         return 0;
+
     if (( frame[0]         != 0xFF)   // no valid syncword?
     ||  ((frame[1] & 0xF6) != 0xF4)   // no MPEG-1/2 Audio Layer II?
     ||  ((frame[2] - 0x10) >= 0xE0))  // invalid bitrate?
@@ -273,7 +267,7 @@ int kjmp2_get_sample_rate(const unsigned char *frame)
 }
 
 // DECODE HELPER FUNCTIONS
-static const struct quantizer_spec* FASTCALL read_allocation(int sb, int b2_table)
+static const struct quantizer_spec *read_allocation(int sb, int b2_table)
 {
     int table_idx = quant_lut_step3[b2_table][sb];
     table_idx = quant_lut_step4[table_idx & 15][get_bits(table_idx >> 4)];
@@ -281,7 +275,7 @@ static const struct quantizer_spec* FASTCALL read_allocation(int sb, int b2_tabl
 }
 
 
-static void FASTCALL read_samples(const struct quantizer_spec *q, int scalefactor, int *sample)
+static void read_samples(const struct quantizer_spec *q, int scalefactor, int *sample)
 {
     int idx, adj, scale;
     int val;

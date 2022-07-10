@@ -2,12 +2,11 @@
 // this file is public domain -- do with it whatever you want!
 
 #include <cstdio>
-#include <cstdlib>
 #include <cstring>
 #include <cstdint>
 #include <fcntl.h>
+#include <string>
 #include "kjmp2.h"
-
 
 class Toolbox
 {
@@ -19,10 +18,12 @@ public:
 class COptions
 {
 private:
-    bool _stdoutput = false;
+    bool _stdinput = false;
+    std::string _ifn;
 public:
     void parse(int argc, char **argv);
-    bool stdoutput() const;
+    bool stdinput() const;
+    std::string ifn() const;
 };
 
 class CWavHeader
@@ -89,12 +90,24 @@ void Toolbox::writeDwLE(char *buf, uint32_t dw)
 
 void COptions::parse(int argc, char **argv)
 {
-    _stdoutput = true;
+    if (argc < 2)
+    {
+        _stdinput = true;
+    }
+    else
+    {
+        _ifn = argv[1];
+    }
 }
 
-bool COptions::stdoutput() const
+bool COptions::stdinput() const
 {
-    return _stdoutput;
+    return _stdinput;
+}
+
+std::string COptions::ifn() const
+{
+    return _ifn;
 }
 
 int main(int argc, char **argv)
@@ -102,7 +115,17 @@ int main(int argc, char **argv)
     COptions opts;
     opts.parse(argc, argv);
     CMain inst;
-    FILE *fin = fopen(argv[1], "rb");
+    FILE *fin;
+
+    if (opts.stdinput())
+    {
+        fin = stdin;
+        setmode(fileno(stdin), O_BINARY);
+    }
+    else
+    {
+        fin = fopen(opts.ifn().c_str(), "rb");
+    }
     int ret = inst.run(fin, stdout);
     return ret;
 }
