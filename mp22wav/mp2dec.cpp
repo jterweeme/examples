@@ -16,6 +16,63 @@ public:
     static void writeDwLE(char *buf, uint32_t dw);
 };
 
+class COptions
+{
+private:
+    bool _stdoutput = false;
+public:
+    void parse(int argc, char **argv);
+    bool stdoutput() const;
+};
+
+class CWavHeader
+{
+private:
+    int _rate;
+public:
+    void rate(int val);
+    void write(FILE *fp) const;
+};
+
+class CMain
+{
+private:
+    static constexpr uint32_t KJMP2_SAMPLES_PER_FRAME = 1152;
+    static constexpr uint32_t KJMP2_MAX_FRAME_SIZE = 1440;
+    static constexpr uint32_t MAX_BUFSIZE = 1000 * KJMP2_MAX_FRAME_SIZE;
+public:
+    int run(FILE *fin, FILE *outfile);
+};
+
+void CWavHeader::rate(int val)
+{
+    _rate = val;
+}
+
+void CWavHeader::write(FILE *fp) const
+{
+    Toolbox t;
+
+
+    uint8_t header[44];
+    strncpy((char *)header + 0, "RIFF", 4);
+    t.writeDwLE((char *)(header + 4), 0);
+    strncpy((char *)header + 8, "WAVE", 4);
+    strncpy((char *)header + 12, "fmt ", 4);
+    t.writeDwLE((char *)(header + 16), 16);
+    t.writeWLE((char *)(header + 20), 1);
+    t.writeWLE((char *)(header + 22), 2);
+    t.writeDwLE((char *)(header + 24), _rate);
+    t.writeDwLE((char *)(header + 28), _rate << 2);
+    t.writeWLE((char *)(header + 32), 4);
+    t.writeWLE((char *)(header + 34), 16);
+    strncpy((char *)header + 36, "data", 4);
+    t.writeDwLE((char *)(header + 40), 0);
+
+    //write wav header to file
+    fwrite((const void*) header, 44, 1, fp);
+}
+
 void Toolbox::writeWLE(char *buf, uint16_t w)
 {
     buf[0] = char(w >> 0 & 0xff);
@@ -30,69 +87,31 @@ void Toolbox::writeDwLE(char *buf, uint32_t dw)
     buf[3] = char(dw >> 24 & 0xff);
 }
 
-class COptions
-{
-public:
-    void parse(int argc, char **argv);
-};
-
 void COptions::parse(int argc, char **argv)
 {
-
+    _stdoutput = true;
 }
 
-class CMain
+bool COptions::stdoutput() const
 {
-private:
-    static constexpr uint32_t KJMP2_SAMPLES_PER_FRAME = 1152;
-    static constexpr uint32_t KJMP2_MAX_FRAME_SIZE = 1440;
-    static constexpr uint32_t MAX_BUFSIZE = 1000 * KJMP2_MAX_FRAME_SIZE;
-public:
-    int run(const char *infn, const char *outfn);
-};
+    return _stdoutput;
+}
 
 int main(int argc, char **argv)
 {
+    COptions opts;
+    opts.parse(argc, argv);
     CMain inst;
-
-    if (argc < 2)
-    {
-        printf("Usage: %s <input.mp2> [<output.wav>]\n", argv[0]);
-        return 2;
-    }
-
-    char *outname;
-#if 0
-    if (argc > 2)
-    {
-        outname = argv[2];
-    }
-    else
-    {
-        char *dot = strrchr(argv[1], '.');
-        int size = dot ? (dot - argv[1]) : (int) strlen(argv[1]);
-        outname = (char *)(malloc(size + 5));
-        if (!outname) { return -1; }
-        memcpy((void*) outname, (const void*)argv[1], size);
-        strcpy(&outname[size], ".wav");
-    }
-#endif
-    return inst.run(argv[1], outname);
+    FILE *fin = fopen(argv[1], "rb");
+    int ret = inst.run(fin, stdout);
+    return ret;
 }
 
-int CMain::run(const char *infn, const char *outname)
+int CMain::run(FILE *fin, FILE *fout)
 {
     uint8_t buffer[MAX_BUFSIZE];
     signed short samples[KJMP2_SAMPLES_PER_FRAME * 2];
     kjmp2_context_t mp2;
-    FILE *fin = fopen(infn, "rb");
-
-    if (!fin)
-    {
-        fprintf(stderr, "Could not open input file %s!\n", infn);
-        return 1;
-    }
-
     int bufsize = (int) fread((void*) buffer, 1, MAX_BUFSIZE, fin);
     int bufpos = 0;
     int in_offset = 0;
@@ -106,8 +125,6 @@ int CMain::run(const char *infn, const char *outname)
         return 1;
     }
 
-    //FILE *fout = fopen("out.wav", "wb");
-    FILE *fout = stdout;
     setmode(fileno(stdout), O_BINARY);
 
     if (!fout)
@@ -116,27 +133,9 @@ int CMain::run(const char *infn, const char *outname)
         return 1;
     }
 
-    Toolbox t;
-
-
-    uint8_t header[44];
-    strncpy((char *)header + 0, "RIFF", 4);
-    t.writeDwLE((char *)(header + 4), 0);
-    strncpy((char *)header + 8, "WAVE", 4);
-    strncpy((char *)header + 12, "fmt ", 4);
-    t.writeDwLE((char *)(header + 16), 16);
-    t.writeWLE((char *)(header + 20), 1);
-    t.writeWLE((char *)(header + 22), 2);
-    t.writeDwLE((char *)(header + 24), rate);
-    rate <<= 2;
-    t.writeDwLE((char *)(header + 28), rate);
-    t.writeWLE((char *)(header + 32), 4);
-    t.writeWLE((char *)(header + 34), 16);
-    strncpy((char *)header + 36, "data", 4);
-    t.writeDwLE((char *)(header + 40), 0);
-
-    //write wav header to file
-    fwrite((const void*) header, 44, 1, fout);
+    CWavHeader h;
+    h.rate(rate);
+    h.write(fout);
 
     //printf("Decoding %s into %s ...\n", infn, outname);
     int out_bytes = 0;
@@ -184,7 +183,7 @@ int CMain::run(const char *infn, const char *outname)
             bufpos += bytes;
         }
     }
-
+#if 0
     if (false)
     {
         t.writeDwLE((char *)(header + 40), out_bytes);
@@ -195,6 +194,7 @@ int CMain::run(const char *infn, const char *outname)
         fseek(fout, 0, SEEK_SET);
         fwrite((const void*) header, 44, 1, fout);
     }
+#endif
     fflush(fout);
     fclose(fout);
     fclose(fin);
