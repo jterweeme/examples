@@ -192,14 +192,14 @@ static constexpr char quant_lut_step4[6][16] = {
     { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 }
 };
 
-struct quantizer_spec
+struct Quantizer_spec
 {
     uint16_t nlevels;
     uint8_t grouping;
     uint8_t cw_bits;
 };
 
-static constexpr struct quantizer_spec quantizer_table[17] = {
+static constexpr struct Quantizer_spec quantizer_table[17] = {
     {     3, 1,  5 },  //  1
     {     5, 1,  7 },  //  2
     {     7, 0,  3 },  //  3

@@ -26,18 +26,36 @@
 #include "kjmp2.h"
 
 static int initialized = 0;
-static int bit_window;
-static int bits_in_window;
-static const unsigned char *frame_pos;
 
-//#define show_bits(bit_count) (bit_window >> (24 - (bit_count)))
 
-static int show_bits(int bit_count)
+class BitBuffer
+{
+public:
+    static int bit_window;
+    static int bits_in_window;
+    static const unsigned char *frame_pos;
+    void init(const uint8_t *frame);
+    static int show_bits(int bit_count);
+    static int get_bits(int bit_count);
+};
+
+int BitBuffer::bit_window;
+int BitBuffer::bits_in_window;
+const unsigned char * BitBuffer::frame_pos;
+
+void BitBuffer::init(const uint8_t *frame)
+{
+    bit_window = frame[2] << 16;
+    bits_in_window = 8;
+    frame_pos = &frame[3];
+}
+
+int BitBuffer::show_bits(int bit_count)
 {
     return bit_window >> (24 - bit_count);
 }
 
-static int get_bits(int bit_count)
+int BitBuffer::get_bits(int bit_count)
 {
     int result = show_bits(bit_count);
     bit_window = (bit_window << bit_count) & 0xFFFFFF;
@@ -58,21 +76,24 @@ static int N[64][32];  // N[i][j] as 8-bit fixed-point
 // decoder instance.
 void kjmp2_init(kjmp2_context_t *mp2)
 {
-    int i, j;
     // check if global initialization is required
-    if (!initialized) {
+    if (!initialized)
+    {
         int *nptr = &N[0][0];
+
         // compute N[i][j]
-        for (i = 0;  i < 64;  ++i)
-            for (j = 0;  j < 32;  ++j)
-                *nptr++ = (int) (256.0 * cos(((16 + i) * ((j << 1) + 1)) * 0.0490873852123405));
+        for (int i = 0;  i < 64;  ++i)
+            for (int j = 0;  j < 32;  ++j)
+                *nptr++ = int(256.0 * cos(((16 + i) * ((j << 1) + 1)) * 0.0490873852123405));
+
         initialized = 1;
     }
 
     // perform local initialization: clean the context and put the magic in it
-    for (i = 0;  i < 2;  ++i)
-        for (j = 1023;  j >= 0;  --j)
+    for (int i = 0;  i < 2;  ++i)
+        for (int j = 1023;  j >= 0;  --j)
             mp2->V[i][j] = 0;
+
     mp2->Voffs = 0;
     mp2->id = KJMP2_MAGIC;
 }
@@ -97,15 +118,15 @@ int kjmp2_get_sample_rate(const uint8_t *frame)
 }
 
 // DECODE HELPER FUNCTIONS
-static const struct quantizer_spec *read_allocation(int sb, int b2_table)
+static const Quantizer_spec *read_allocation(int sb, int b2_table, BitBuffer &b)
 {
     int table_idx = quant_lut_step3[b2_table][sb];
-    table_idx = quant_lut_step4[table_idx & 15][get_bits(table_idx >> 4)];
+    table_idx = quant_lut_step4[table_idx & 15][b.get_bits(table_idx >> 4)];
     return table_idx ? (&quantizer_table[table_idx - 1]) : 0;
 }
 
 
-static void read_samples(const struct quantizer_spec *q, int scalefactor, int *sample)
+static void read_samples(const Quantizer_spec *q, int scalefactor, int *sample)
 {
     int idx, adj, scale;
     int val;
@@ -131,7 +152,7 @@ static void read_samples(const struct quantizer_spec *q, int scalefactor, int *s
     if (q->grouping)
     {
         // decode grouped samples
-        val = get_bits(q->cw_bits);
+        val = BitBuffer::get_bits(q->cw_bits);
         sample[0] = val % adj;
         val /= adj;
         sample[1] = val % adj;
@@ -139,7 +160,7 @@ static void read_samples(const struct quantizer_spec *q, int scalefactor, int *s
     } else {
         // decode direct samples
         for(idx = 0;  idx < 3;  ++idx)
-            sample[idx] = get_bits(q->cw_bits);
+            sample[idx] = BitBuffer::get_bits(q->cw_bits);
     }
 
     // postmultiply samples
@@ -157,7 +178,7 @@ static void read_samples(const struct quantizer_spec *q, int scalefactor, int *s
     }
 }
 
-static const quantizer_spec *allocation[2][32];
+static const Quantizer_spec *allocation[2][32];
 static int scfsi[2][32];
 static int scalefactor[2][32][3];
 static int sample[2][32][3];
@@ -183,7 +204,7 @@ unsigned long kjmp2_decode_frame(
     int16_t *pcm)
 {
     unsigned long frame_size;
-    int table_idx;
+
 
     // general sanity check
     if (!initialized || !mp2 || (mp2->id != KJMP2_MAGIC) || !frame)
@@ -194,17 +215,16 @@ unsigned long kjmp2_decode_frame(
         return 0;
 
     // set up the bitstream reader
-    bit_window = frame[2] << 16;
-    bits_in_window = 8;
-    frame_pos = &frame[3];
+    BitBuffer b;
+    b.init(frame);
 
     // read the rest of the header
-    unsigned bit_rate_index_minus1 = get_bits(4) - 1;
+    unsigned bit_rate_index_minus1 = b.get_bits(4) - 1;
 
     if (bit_rate_index_minus1 > 13)
         return 0;  // invalid bit rate or 'free format'
 
-    unsigned sampling_frequency = get_bits(2);
+    unsigned sampling_frequency = b.get_bits(2);
 
     if (sampling_frequency == 3)
         return 0;
@@ -213,27 +233,27 @@ unsigned long kjmp2_decode_frame(
         sampling_frequency += 4;
         bit_rate_index_minus1 += 14;
     }
-    unsigned padding_bit = get_bits(1);
-    get_bits(1);  // discard private_bit
-    unsigned mode = get_bits(2);
+    unsigned padding_bit = b.get_bits(1);
+    b.get_bits(1);  // discard private_bit
+    unsigned mode = b.get_bits(2);
     int bound, sblimit;
 
     // parse the mode_extension, set up the stereo bound
     if (mode == JOINT_STEREO)
     {
-        bound = (get_bits(2) + 1) << 2;
+        bound = (b.get_bits(2) + 1) << 2;
     }
     else
     {
-        get_bits(2);
+        b.get_bits(2);
         bound = (mode == MONO) ? 0 : 32;
     }
 
     // discard the last 4 bits of the header and the CRC value, if present
-    get_bits(4);
+    b.get_bits(4);
 
     if ((frame[1] & 1) == 0)
-        get_bits(16);
+        b.get_bits(16);
 
     // compute the frame size
     frame_size = (144000 * bitrates[bit_rate_index_minus1]
@@ -241,6 +261,8 @@ unsigned long kjmp2_decode_frame(
 
     if (!pcm)
         return frame_size;  // no decoding
+
+    int table_idx;
 
     // prepare the quantizer table lookups
     if (sampling_frequency & 4)
@@ -265,10 +287,10 @@ unsigned long kjmp2_decode_frame(
     // read the allocation information
     for (int sb = 0;  sb < bound;  ++sb)
         for (int ch = 0;  ch < 2;  ++ch)
-            allocation[ch][sb] = read_allocation(sb, table_idx);
+            allocation[ch][sb] = read_allocation(sb, table_idx, b);
 
     for (int sb = bound;  sb < sblimit;  ++sb)
-        allocation[0][sb] = allocation[1][sb] = read_allocation(sb, table_idx);
+        allocation[0][sb] = allocation[1][sb] = read_allocation(sb, table_idx, b);
 
     // read scale factor selector information
     int nch = (mode == MONO) ? 1 : 2;
@@ -277,7 +299,7 @@ unsigned long kjmp2_decode_frame(
     {
         for (int ch = 0;  ch < nch;  ++ch)
             if (allocation[ch][sb])
-                scfsi[ch][sb] = get_bits(2);
+                scfsi[ch][sb] = b.get_bits(2);
 
         if (mode == MONO)
             scfsi[1][sb] = scfsi[0][sb];
@@ -293,20 +315,20 @@ unsigned long kjmp2_decode_frame(
                 switch (scfsi[ch][sb])
                 {
                 case 0:
-                    scalefactor[ch][sb][0] = get_bits(6);
-                    scalefactor[ch][sb][1] = get_bits(6);
-                    scalefactor[ch][sb][2] = get_bits(6);
+                    scalefactor[ch][sb][0] = b.get_bits(6);
+                    scalefactor[ch][sb][1] = b.get_bits(6);
+                    scalefactor[ch][sb][2] = b.get_bits(6);
                     break;
                 case 1:
-                    scalefactor[ch][sb][0] = scalefactor[ch][sb][1] = get_bits(6);
-                    scalefactor[ch][sb][2] = get_bits(6);
+                    scalefactor[ch][sb][0] = scalefactor[ch][sb][1] = b.get_bits(6);
+                    scalefactor[ch][sb][2] = b.get_bits(6);
                     break;
                 case 2:
-                    scalefactor[ch][sb][0] = scalefactor[ch][sb][1] = scalefactor[ch][sb][2] = get_bits(6);
+                    scalefactor[ch][sb][0] = scalefactor[ch][sb][1] = scalefactor[ch][sb][2] = b.get_bits(6);
                     break;
                 case 3:
-                    scalefactor[ch][sb][0] = get_bits(6);
-                    scalefactor[ch][sb][1] = scalefactor[ch][sb][2] = get_bits(6);
+                    scalefactor[ch][sb][0] = b.get_bits(6);
+                    scalefactor[ch][sb][1] = scalefactor[ch][sb][2] = b.get_bits(6);
                     break;
                 }
             }
