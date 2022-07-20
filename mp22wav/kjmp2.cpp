@@ -30,7 +30,12 @@ static int bit_window;
 static int bits_in_window;
 static const unsigned char *frame_pos;
 
-#define show_bits(bit_count) (bit_window >> (24 - (bit_count)))
+//#define show_bits(bit_count) (bit_window >> (24 - (bit_count)))
+
+static int show_bits(int bit_count)
+{
+    return bit_window >> (24 - bit_count);
+}
 
 static int get_bits(int bit_count)
 {
