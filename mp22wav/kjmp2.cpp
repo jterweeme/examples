@@ -30,18 +30,15 @@ static int initialized = 0;
 
 class BitBuffer
 {
+private:
+    int bit_window;
+    int bits_in_window;
+    const uint8_t *frame_pos;
+    int show_bits(int bit_count);
 public:
-    static int bit_window;
-    static int bits_in_window;
-    static const unsigned char *frame_pos;
     void init(const uint8_t *frame);
-    static int show_bits(int bit_count);
-    static int get_bits(int bit_count);
+    int get_bits(int bit_count);
 };
-
-int BitBuffer::bit_window;
-int BitBuffer::bits_in_window;
-const unsigned char * BitBuffer::frame_pos;
 
 void BitBuffer::init(const uint8_t *frame)
 {
@@ -126,7 +123,7 @@ static const Quantizer_spec *read_allocation(int sb, int b2_table, BitBuffer &b)
 }
 
 
-static void read_samples(const Quantizer_spec *q, int scalefactor, int *sample)
+static void read_samples(const Quantizer_spec *q, int scalefactor, int *sample, BitBuffer &b)
 {
     int idx, adj, scale;
     int val;
@@ -152,15 +149,17 @@ static void read_samples(const Quantizer_spec *q, int scalefactor, int *sample)
     if (q->grouping)
     {
         // decode grouped samples
-        val = BitBuffer::get_bits(q->cw_bits);
+        val = b.get_bits(q->cw_bits);
         sample[0] = val % adj;
         val /= adj;
         sample[1] = val % adj;
         sample[2] = val / adj;
-    } else {
+    }
+    else
+    {
         // decode direct samples
         for(idx = 0;  idx < 3;  ++idx)
-            sample[idx] = BitBuffer::get_bits(q->cw_bits);
+            sample[idx] = b.get_bits(q->cw_bits);
     }
 
     // postmultiply samples
@@ -347,11 +346,11 @@ unsigned long kjmp2_decode_frame(
             // read the samples
             for (int sb = 0;  sb < bound;  ++sb)
                 for (int ch = 0;  ch < 2;  ++ch)
-                    read_samples(allocation[ch][sb], scalefactor[ch][sb][part], &sample[ch][sb][0]);
+                    read_samples(allocation[ch][sb], scalefactor[ch][sb][part], &sample[ch][sb][0], b);
 
             for (int sb = bound;  sb < sblimit;  ++sb)
             {
-                read_samples(allocation[0][sb], scalefactor[0][sb][part], &sample[0][sb][0]);
+                read_samples(allocation[0][sb], scalefactor[0][sb][part], &sample[0][sb][0], b);
 
                 for (int idx = 0;  idx < 3;  ++idx)
                     sample[1][sb][idx] = sample[0][sb][idx];
