@@ -125,8 +125,7 @@ static const Quantizer_spec *read_allocation(int sb, int b2_table, BitBuffer &b)
 
 static void read_samples(const Quantizer_spec *q, int scalefactor, int *sample, BitBuffer &b)
 {
-    int idx, adj, scale;
-    int val;
+    int idx, adj;
 
     if (!q)
     {
@@ -136,9 +135,12 @@ static void read_samples(const Quantizer_spec *q, int scalefactor, int *sample, 
     }
 
     // resolve scalefactor
-    if (scalefactor == 63) {
+    if (scalefactor == 63)
+    {
         scalefactor = 0;
-    } else {
+    }
+    else
+    {
         adj = scalefactor / 3;
         scalefactor = (scf_base[scalefactor % 3] + ((1 << adj) >> 1)) >> adj;
     }
@@ -149,7 +151,7 @@ static void read_samples(const Quantizer_spec *q, int scalefactor, int *sample, 
     if (q->grouping)
     {
         // decode grouped samples
-        val = b.get_bits(q->cw_bits);
+        int val = b.get_bits(q->cw_bits);
         sample[0] = val % adj;
         val /= adj;
         sample[1] = val % adj;
@@ -163,13 +165,13 @@ static void read_samples(const Quantizer_spec *q, int scalefactor, int *sample, 
     }
 
     // postmultiply samples
-    scale = 65536 / (adj + 1);
+    int scale = 65536 / (adj + 1);
     adj = ((adj + 1) >> 1) - 1;
 
     for (idx = 0;  idx < 3;  ++idx)
     {
         // step 1: renormalization to [-1..1]
-        val = (adj - sample[idx]) * scale;
+        int val = (adj - sample[idx]) * scale;
         // step 2: apply scalefactor
         sample[idx] = ( val * (scalefactor >> 12)                  // upper part
                     + ((val * (scalefactor & 4095) + 2048) >> 12)) // lower part
@@ -197,13 +199,10 @@ static int U[512];
 //               the next frame, if frames are consecutive in memory.
 // Note: pcm may be NULL. In this case, kjmp2_decode_frame() will return the
 //       size of the frame without actually decoding it.
-unsigned long kjmp2_decode_frame(
-    kjmp2_context_t *mp2,
-    const uint8_t *frame,
-    int16_t *pcm)
+unsigned long
+kjmp2_decode_frame(kjmp2_context_t *mp2, const uint8_t *frame, int16_t *pcm)
 {
     unsigned long frame_size;
-
 
     // general sanity check
     if (!initialized || !mp2 || (mp2->id != KJMP2_MAGIC) || !frame)

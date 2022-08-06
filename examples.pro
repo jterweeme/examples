@@ -9,6 +9,7 @@ SUBDIRS =\
     contimeout\
     echosvr\
     exception\
+    flac2wav\
     #gif2bmp\
     grep\
     head\
