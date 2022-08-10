@@ -30,7 +30,7 @@ import java.util.zip.DataFormatException;
 
 public final class SimpleDecodeFlacToWav
 {
-    int[][] samples;
+
 	
     public static void main(String[] args) throws IOException, DataFormatException
     {
@@ -111,11 +111,19 @@ public final class SimpleDecodeFlacToWav
 
         while (in.peek())
         {
-            decodeFrame(in, numChannels, sampleDepth, out);
+            FlacFrame frame = new FlacFrame();
+            frame.decodeFrame(in, numChannels, sampleDepth, out);
         }
 	}
 	
-    private void
+
+}
+
+final class FlacFrame
+{
+    int[][] samples;
+
+    public void
     decodeFrame(BitInputStream in, int numChannels, int sampleDepth, OutputStream out)
 			throws IOException, DataFormatException
     {
@@ -185,23 +193,23 @@ public final class SimpleDecodeFlacToWav
     decodeSubframes(BitInputStream in, int sampleDepth, int chanAsgn)
 			throws IOException, DataFormatException
     {
-		int blockSize = samples[0].length;
-		long[][] subframes = new long[samples.length][blockSize];
+        int blockSize = samples[0].length;
+        long[][] subframes = new long[samples.length][blockSize];
 
-		if (0 <= chanAsgn && chanAsgn <= 7)
+        if (0 <= chanAsgn && chanAsgn <= 7)
         {
-			for (int ch = 0; ch < samples.length; ch++)
-				decodeSubframe(in, sampleDepth, subframes[ch]);
-		}
+            for (int ch = 0; ch < samples.length; ch++)
+                decodeSubframe(in, sampleDepth, subframes[ch]);
+        }
         else if (8 <= chanAsgn && chanAsgn <= 10)
         {
-			decodeSubframe(in, sampleDepth + (chanAsgn == 9 ? 1 : 0), subframes[0]);
-			decodeSubframe(in, sampleDepth + (chanAsgn == 9 ? 0 : 1), subframes[1]);
+            decodeSubframe(in, sampleDepth + (chanAsgn == 9 ? 1 : 0), subframes[0]);
+            decodeSubframe(in, sampleDepth + (chanAsgn == 9 ? 0 : 1), subframes[1]);
 
-			if (chanAsgn == 8) 
+            if (chanAsgn == 8) 
             {
-				for (int i = 0; i < blockSize; i++)
-					subframes[1][i] = subframes[0][i] - subframes[1][i];
+                for (int i = 0; i < blockSize; i++)
+                    subframes[1][i] = subframes[0][i] - subframes[1][i];
 			}
             else if (chanAsgn == 9)
             {
@@ -269,12 +277,12 @@ public final class SimpleDecodeFlacToWav
 	}
 	
 	
-	private static void
+    private static void
     decodeFixedPredictionSubframe(BitInputStream in, int predOrder, int sampleDepth, long[] result)
-			throws IOException, DataFormatException
+        throws IOException, DataFormatException
     {
-		for (int i = 0; i < predOrder; i++)
-			result[i] = in.readSignedInt(sampleDepth);
+        for (int i = 0; i < predOrder; i++)
+            result[i] = in.readSignedInt(sampleDepth);
 
 		decodeResiduals(in, predOrder, result);
 		restoreLinearPrediction(result, FIXED_PREDICTION_COEFFICIENTS[predOrder], 0);
@@ -312,27 +320,28 @@ public final class SimpleDecodeFlacToWav
     {
         int method = in.readUint(2);
 
-		if (method >= 2)
-			throw new DataFormatException("Reserved residual coding method");
+        if (method >= 2)
+            throw new DataFormatException("Reserved residual coding method");
 
-		int paramBits = method == 0 ? 4 : 5;
-		int escapeParam = method == 0 ? 0xF : 0x1F;
+        int paramBits = method == 0 ? 4 : 5;
+        int escapeParam = method == 0 ? 0xF : 0x1F;
 		
-		int partitionOrder = in.readUint(4);
-		int numPartitions = 1 << partitionOrder;
+        int partitionOrder = in.readUint(4);
+        int numPartitions = 1 << partitionOrder;
 
-		if (result.length % numPartitions != 0)
-			throw new DataFormatException("Block size not divisible by number of Rice partitions");
+        if (result.length % numPartitions != 0)
+            throw new DataFormatException("Block size not divisible by number of Rice partitions");
 
-		int partitionSize = result.length / numPartitions;
+        int partitionSize = result.length / numPartitions;
 		
-		for (int i = 0; i < numPartitions; i++)
+        for (int i = 0; i < numPartitions; i++)
         {
-			int start = i * partitionSize + (i == 0 ? warmup : 0);
-			int end = (i + 1) * partitionSize;
+            int start = i * partitionSize + (i == 0 ? warmup : 0);
+            int end = (i + 1) * partitionSize;
 			
-			int param = in.readUint(paramBits);
-			if (param < escapeParam) {
+            int param = in.readUint(paramBits);
+
+            if (param < escapeParam) {
 				for (int j = start; j < end; j++)
 					result[j] = in.readRiceSignedInt(param);
 			} else {
