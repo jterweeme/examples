@@ -5,19 +5,25 @@
 
 #include <cstdint>
 
-class Matrix
+template <class T> class Matrix
 {
 private:
-    int *_buf;
+    T *_buf;
     unsigned _width;
     unsigned _height;
 public:
-    Matrix(unsigned x, unsigned y);
-    ~Matrix();
-    unsigned width() const;
-    unsigned height() const;
-    int *buf() const;
-    int at(unsigned x, unsigned y);
+    Matrix(unsigned x, unsigned y)
+    {
+        _width = x;
+        _height = y;
+        _buf = new T[x * y];
+    }
+
+    ~Matrix() { delete[] _buf; }
+    unsigned width() const { return _width; }
+    unsigned height() const { return _height; }
+    T *buf() const;
+    T at(unsigned x, unsigned y);
 };
 
 class Toolbox

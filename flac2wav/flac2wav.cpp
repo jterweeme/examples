@@ -50,7 +50,8 @@ static void restoreLinearPrediction(int *result, int *coefs, int shift)
     //for (int i = )
 }
 
-static void decodeFixedPredictionSubframe(BitInputStream &in, int predOrder, int sampleDepth, int *result, unsigned resultSize)
+static void decodeFixedPredictionSubframe(BitInputStream &in, int predOrder,
+    int sampleDepth, int *result, unsigned resultSize)
 {
     for (int i = 0; i < predOrder; i++)
         result[i] = in.readSignedInt(sampleDepth);
@@ -59,7 +60,8 @@ static void decodeFixedPredictionSubframe(BitInputStream &in, int predOrder, int
     restoreLinearPrediction(result, FIXED_PREDICTION_COEFFICIENTS[predOrder], 0);
 }
 
-static void decodeLinearPredictiveCodingSubframe(BitInputStream in, int lpcOrder, int sampleDepth, int *result)
+static void decodeLinearPredictiveCodingSubframe(BitInputStream in,
+    int lpcOrder, int sampleDepth, int *result)
 {
     for (int i = 0; i < lpcOrder; i++)
         result[i] = in.readSignedInt(sampleDepth);

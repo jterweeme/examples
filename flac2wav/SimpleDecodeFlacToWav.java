@@ -26,50 +26,52 @@ import java.nio.charset.StandardCharsets;
 import java.util.zip.DataFormatException;
 
 
-public final class SimpleDecodeFlacToWav {
+public final class SimpleDecodeFlacToWav
+{
+    int[][] samples;
 	
-	public static void main(String[] args) throws IOException, DataFormatException
+    public static void main(String[] args) throws IOException, DataFormatException
     {
-		if (args.length != 2)
+        if (args.length != 2)
         {
-			System.err.println("Usage: java SimpleDecodeFlacToWav InFile.flac OutFile.wav");
-			System.exit(1);
-			return;
-		}
+            System.err.println("Usage: java SimpleDecodeFlacToWav InFile.flac OutFile.wav");
+            System.exit(1);
+            return;
+        }
 
         BitInputStream in = new BitInputStream(new BufferedInputStream(new FileInputStream(args[0])));
         OutputStream out = new BufferedOutputStream(new FileOutputStream(args[1]));
-        decodeFile(in, out);
+        SimpleDecodeFlacToWav inst = new SimpleDecodeFlacToWav();
+        inst.decodeFile(in, out);
         out.close();
-	}
+    }
 	
-	
-	public static void decodeFile(BitInputStream in, OutputStream out)
+    public void decodeFile(BitInputStream in, OutputStream out)
         throws IOException, DataFormatException
     {
-		// Handle FLAC header and metadata blocks
-		if (in.readUint(32) != 0x664C6143)
-			throw new DataFormatException("Invalid magic string");
+        // Handle FLAC header and metadata blocks
+        if (in.readUint(32) != 0x664C6143)
+            throw new DataFormatException("Invalid magic string");
 
-		int sampleRate = -1;
-		int numChannels = -1;
-		int sampleDepth = -1;
-		long numSamples = -1;
+        int sampleRate = -1;
+        int numChannels = -1;
+        int sampleDepth = -1;
+        long numSamples = -1;
 
-		for (boolean last = false; !last; )
+        for (boolean last = false; !last; )
         {
-			last = in.readUint(1) != 0;
-			int type = in.readUint(7);
-			int length = in.readUint(24);
+            last = in.readUint(1) != 0;
+            int type = in.readUint(7);
+            int length = in.readUint(24);
 
-			if (type == 0)
+            if (type == 0)
             {
                 // Stream info block
-				in.readUint(16);
-				in.readUint(16);
-				in.readUint(24);
-				in.readUint(24);
-				sampleRate = in.readUint(20);
+                in.readUint(16);
+                in.readUint(16);
+                in.readUint(24);
+                in.readUint(24);
+                sampleRate = in.readUint(20);
 				numChannels = in.readUint(3) + 1;
 				sampleDepth = in.readUint(5) + 1;
 				numSamples = (long)in.readUint(18) << 18 | in.readUint(18);
@@ -104,11 +106,19 @@ public final class SimpleDecodeFlacToWav {
 		writeLittleInt(4, (int)sampleDataLen, out);
 		
 		// Decode FLAC audio frames and write raw samples
-		while (decodeFrame(in, numChannels, sampleDepth, out));
+
+        while (true)
+        {
+            boolean ret = decodeFrame(in, numChannels, sampleDepth, out);
+
+            if (ret == false)
+                break;
+        }
 	}
 	
 	
-	private static void writeLittleInt(int numBytes, int val, OutputStream out) throws IOException
+	private static void
+    writeLittleInt(int numBytes, int val, OutputStream out) throws IOException
     {
 		for (int i = 0; i < numBytes; i++)
 			out.write(val >>> (i * 8));
@@ -120,7 +130,8 @@ public final class SimpleDecodeFlacToWav {
 	}
 	
 	
-	private static boolean decodeFrame(BitInputStream in, int numChannels, int sampleDepth, OutputStream out)
+	private boolean
+    decodeFrame(BitInputStream in, int numChannels, int sampleDepth, OutputStream out)
 			throws IOException, DataFormatException
     {
 		// Read a ton of header fields, and ignore most of them
@@ -165,8 +176,9 @@ public final class SimpleDecodeFlacToWav {
 		in.readUint(8);
 		
 		// Decode each channel's subframe, then skip footer
-		int[][] samples = new int[numChannels][blockSize];
-		decodeSubframes(in, sampleDepth, chanAsgn, samples);
+		//int[][] samples = new int[numChannels][blockSize];
+        samples = new int[numChannels][blockSize];
+		decodeSubframes(in, sampleDepth, chanAsgn);
 		in.alignToByte();
 		in.readUint(16);
 		
@@ -183,15 +195,16 @@ public final class SimpleDecodeFlacToWav {
 	}
 	
 	
-	private static void decodeSubframes(BitInputStream in, int sampleDepth, int chanAsgn, int[][] result)
+	private void
+    decodeSubframes(BitInputStream in, int sampleDepth, int chanAsgn)
 			throws IOException, DataFormatException
     {
-		int blockSize = result[0].length;
-		long[][] subframes = new long[result.length][blockSize];
+		int blockSize = samples[0].length;
+		long[][] subframes = new long[samples.length][blockSize];
 
 		if (0 <= chanAsgn && chanAsgn <= 7)
         {
-			for (int ch = 0; ch < result.length; ch++)
+			for (int ch = 0; ch < samples.length; ch++)
 				decodeSubframe(in, sampleDepth, subframes[ch]);
 		}
         else if (8 <= chanAsgn && chanAsgn <= 10)
@@ -222,10 +235,10 @@ public final class SimpleDecodeFlacToWav {
 		} else
 			throw new DataFormatException("Reserved channel assignment");
 
-		for (int ch = 0; ch < result.length; ch++)
+		for (int ch = 0; ch < samples.length; ch++)
         {
 			for (int i = 0; i < blockSize; i++)
-				result[ch][i] = (int)subframes[ch][i];
+                samples[ch][i] = (int)subframes[ch][i];
 		}
 	}
 	
@@ -270,7 +283,8 @@ public final class SimpleDecodeFlacToWav {
 	}
 	
 	
-	private static void decodeFixedPredictionSubframe(BitInputStream in, int predOrder, int sampleDepth, long[] result)
+	private static void
+    decodeFixedPredictionSubframe(BitInputStream in, int predOrder, int sampleDepth, long[] result)
 			throws IOException, DataFormatException
     {
 		for (int i = 0; i < predOrder; i++)
@@ -289,23 +303,28 @@ public final class SimpleDecodeFlacToWav {
 	};
 	
 	
-	private static void decodeLinearPredictiveCodingSubframe(BitInputStream in, int lpcOrder, int sampleDepth, long[] result)
-			throws IOException, DataFormatException {
-		for (int i = 0; i < lpcOrder; i++)
-			result[i] = in.readSignedInt(sampleDepth);
-		int precision = in.readUint(4) + 1;
-		int shift = in.readSignedInt(5);
-		int[] coefs = new int[lpcOrder];
-		for (int i = 0; i < coefs.length; i++)
-			coefs[i] = in.readSignedInt(precision);
-		decodeResiduals(in, lpcOrder, result);
-		restoreLinearPrediction(result, coefs, shift);
-	}
-	
-	
-	private static void decodeResiduals(BitInputStream in, int warmup, long[] result) throws IOException, DataFormatException
+    private static void decodeLinearPredictiveCodingSubframe(BitInputStream in,
+        int lpcOrder, int sampleDepth, long[] result)
+			throws IOException, DataFormatException
     {
-		int method = in.readUint(2);
+        for (int i = 0; i < lpcOrder; i++)
+            result[i] = in.readSignedInt(sampleDepth);
+
+        int precision = in.readUint(4) + 1;
+        int shift = in.readSignedInt(5);
+        int[] coefs = new int[lpcOrder];
+
+        for (int i = 0; i < coefs.length; i++)
+            coefs[i] = in.readSignedInt(precision);
+
+        decodeResiduals(in, lpcOrder, result);
+        restoreLinearPrediction(result, coefs, shift);
+    }
+	
+    private static void decodeResiduals(BitInputStream in,
+        int warmup, long[] result) throws IOException, DataFormatException
+    {
+        int method = in.readUint(2);
 
 		if (method >= 2)
 			throw new DataFormatException("Reserved residual coding method");
@@ -350,43 +369,65 @@ public final class SimpleDecodeFlacToWav {
 
 
 
-final class BitInputStream implements AutoCloseable {
-	
+final class BitInputStream implements AutoCloseable
+{	
 	private InputStream in;
 	private long bitBuffer;
 	private int bitBufferLen;
 	
-	
-	public BitInputStream(InputStream in) {
+	public BitInputStream(InputStream in)
+    {
 		this.in = in;
 	}
 	
 	
-	public void alignToByte() {
+	public void alignToByte()
+    {
 		bitBufferLen -= bitBufferLen % 8;
 	}
 	
 	
-	public int readByte() throws IOException {
+	public int readByte() throws IOException
+    {
 		if (bitBufferLen >= 8)
 			return readUint(8);
 		else
 			return in.read();
 	}
 	
+    public boolean peek() throws IOException
+    {
+        if (bitBufferLen > 0)
+            return true;
+
+        int temp = in.read();
+
+        if (temp == -1)
+            return false;
+
+        bitBuffer = (bitBuffer << 8) | temp;
+        bitBufferLen += 8;
+        return true;
+    }
 	
-	public int readUint(int n) throws IOException {
-		while (bitBufferLen < n) {
+	public int readUint(int n) throws IOException
+    {
+		while (bitBufferLen < n)
+        {
 			int temp = in.read();
+
 			if (temp == -1)
 				throw new EOFException();
-			bitBuffer = (bitBuffer << 8) | temp;
-			bitBufferLen += 8;
+
+            bitBuffer = (bitBuffer << 8) | temp;
+            bitBufferLen += 8;
 		}
 		bitBufferLen -= n;
 		int result = (int)(bitBuffer >>> bitBufferLen);
+
 		if (n < 32)
 			result &= (1 << n) - 1;
+
 		return result;
 	}
 	

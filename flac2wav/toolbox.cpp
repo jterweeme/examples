@@ -18,25 +18,5 @@ uint8_t Toolbox::numberOfLeadingZeros(uint32_t x)
     return res;
 }
 
-Matrix::Matrix(unsigned x, unsigned y)
-{
-    _width = x;
-    _height = y;
-    _buf = new int[x * y];
-}
 
-Matrix::~Matrix()
-{
-    delete[] _buf;
-}
-
-unsigned Matrix::width() const
-{
-    return _width;
-}
-
-unsigned Matrix::height() const
-{
-    return _height;
-}
 
