@@ -107,12 +107,9 @@ public final class SimpleDecodeFlacToWav
 		
 		// Decode FLAC audio frames and write raw samples
 
-        while (true)
+        while (in.peek())
         {
-            boolean ret = decodeFrame(in, numChannels, sampleDepth, out);
-
-            if (ret == false)
-                break;
+            decodeFrame(in, numChannels, sampleDepth, out);
         }
 	}
 	
