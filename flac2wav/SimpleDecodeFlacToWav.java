@@ -21,6 +21,8 @@
  *   Software.
  */
 
+//Adapted by Jasper ter Weeme
+
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.DataFormatException;
@@ -90,20 +92,20 @@ public final class SimpleDecodeFlacToWav
 			throw new RuntimeException("Sample depth not supported");
 		
 		// Start writing WAV file headers
-		long sampleDataLen = numSamples * numChannels * (sampleDepth / 8);
-		writeString("RIFF", out);
-		writeLittleInt(4, (int)sampleDataLen + 36, out);
-		writeString("WAVE", out);
-		writeString("fmt ", out);
-		writeLittleInt(4, 16, out);
-		writeLittleInt(2, 0x0001, out);
-		writeLittleInt(2, numChannels, out);
-		writeLittleInt(4, sampleRate, out);
-		writeLittleInt(4, sampleRate * numChannels * (sampleDepth / 8), out);
-		writeLittleInt(2, numChannels * (sampleDepth / 8), out);
-		writeLittleInt(2, sampleDepth, out);
-		writeString("data", out);
-		writeLittleInt(4, (int)sampleDataLen, out);
+        long sampleDataLen = numSamples * numChannels * (sampleDepth / 8);
+        Toolbox.writeString("RIFF", out);
+        Toolbox.writeLittleInt(4, (int)sampleDataLen + 36, out);
+        Toolbox.writeString("WAVE", out);
+        Toolbox.writeString("fmt ", out);
+        Toolbox.writeLittleInt(4, 16, out);
+        Toolbox.writeLittleInt(2, 0x0001, out);
+        Toolbox.writeLittleInt(2, numChannels, out);
+        Toolbox.writeLittleInt(4, sampleRate, out);
+        Toolbox.writeLittleInt(4, sampleRate * numChannels * (sampleDepth / 8), out);
+        Toolbox.writeLittleInt(2, numChannels * (sampleDepth / 8), out);
+        Toolbox.writeLittleInt(2, sampleDepth, out);
+        Toolbox.writeString("data", out);
+        Toolbox.writeLittleInt(4, (int)sampleDataLen, out);
 		
 		// Decode FLAC audio frames and write raw samples
 
@@ -113,28 +115,12 @@ public final class SimpleDecodeFlacToWav
         }
 	}
 	
-	
-	private static void
-    writeLittleInt(int numBytes, int val, OutputStream out) throws IOException
-    {
-		for (int i = 0; i < numBytes; i++)
-			out.write(val >>> (i * 8));
-	}
-	
-	private static void writeString(String s, OutputStream out) throws IOException
-    {
-		out.write(s.getBytes(StandardCharsets.UTF_8));
-	}
-	
-	
-	private boolean
+    private void
     decodeFrame(BitInputStream in, int numChannels, int sampleDepth, OutputStream out)
 			throws IOException, DataFormatException
     {
 		// Read a ton of header fields, and ignore most of them
 		int temp = in.readByte();
-		if (temp == -1)
-			return false;
 		int sync = temp << 6 | in.readUint(6);
 		if (sync != 0x3FFE)
 			throw new DataFormatException("Sync code expected");
@@ -180,15 +166,18 @@ public final class SimpleDecodeFlacToWav
 		in.readUint(16);
 		
 		// Write the decoded samples
-		for (int i = 0; i < blockSize; i++) {
-			for (int j = 0; j < numChannels; j++) {
+		for (int i = 0; i < blockSize; i++)
+        {
+			for (int j = 0; j < numChannels; j++)
+            {
 				int val = samples[j][i];
+
 				if (sampleDepth == 8)
 					val += 128;
-				writeLittleInt(sampleDepth / 8, val, out);
+
+				Toolbox.writeLittleInt(sampleDepth / 8, val, out);
 			}
 		}
-		return true;
 	}
 	
 	
@@ -364,7 +353,20 @@ public final class SimpleDecodeFlacToWav
 	}
 }
 
-
+final class Toolbox
+{
+    public static void
+    writeLittleInt(int numBytes, int val, OutputStream out) throws IOException
+    {
+        for (int i = 0; i < numBytes; i++)
+            out.write(val >>> (i * 8));
+	}
+	
+    public static void writeString(String s, OutputStream out) throws IOException
+    {
+        out.write(s.getBytes(StandardCharsets.UTF_8));
+    }
+}
 
 final class BitInputStream implements AutoCloseable
 {	
