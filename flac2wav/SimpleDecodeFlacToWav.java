@@ -30,8 +30,6 @@ import java.util.zip.DataFormatException;
 
 public final class SimpleDecodeFlacToWav
 {
-
-	
     public static void main(String[] args) throws IOException, DataFormatException
     {
         if (args.length != 2)
@@ -108,54 +106,59 @@ public final class SimpleDecodeFlacToWav
         Toolbox.writeLittleInt(4, (int)sampleDataLen, out);
 		
 		// Decode FLAC audio frames and write raw samples
-
         while (in.peek())
         {
-            FlacFrame frame = new FlacFrame();
-            frame.decodeFrame(in, numChannels, sampleDepth, out);
+            FlacFrame frame = new FlacFrame(numChannels, sampleDepth);
+            frame.decode(in);
+            frame.write(out);
         }
 	}
-	
-
 }
 
 final class FlacFrame
 {
-    int[][] samples;
+    int[][] _samples;
+    int _blockSize;
+    int _numChannels;
+    int _sampleDepth;
 
-    public void
-    decodeFrame(BitInputStream in, int numChannels, int sampleDepth, OutputStream out)
-			throws IOException, DataFormatException
+    public FlacFrame(int numChannels, int sampleDepth)
     {
-		// Read a ton of header fields, and ignore most of them
-		int temp = in.readByte();
-		int sync = temp << 6 | in.readUint(6);
-		if (sync != 0x3FFE)
-			throw new DataFormatException("Sync code expected");
+        _numChannels = numChannels;
+        _sampleDepth = sampleDepth;
+    }
+
+    public void decode(BitInputStream in) throws IOException, DataFormatException
+    {
+        // Read a ton of header fields, and ignore most of them
+        int temp = in.readByte();
+        int sync = temp << 6 | in.readUint(6);
+
+        if (sync != 0x3FFE)
+            throw new DataFormatException("Sync code expected");
 		
-		in.readUint(1);
-		in.readUint(1);
-		int blockSizeCode = in.readUint(4);
-		int sampleRateCode = in.readUint(4);
-		int chanAsgn = in.readUint(4);
-		in.readUint(3);
-		in.readUint(1);
+        in.readUint(1);
+        in.readUint(1);
+        int blockSizeCode = in.readUint(4);
+        int sampleRateCode = in.readUint(4);
+        int chanAsgn = in.readUint(4);
+        in.readUint(3);
+        in.readUint(1);
 		
 		temp = Integer.numberOfLeadingZeros(~(in.readUint(8) << 24)) - 1;
 		for (int i = 0; i < temp; i++)
 			in.readUint(8);
 		
-		int blockSize;
 		if (blockSizeCode == 1)
-			blockSize = 192;
+			_blockSize = 192;
 		else if (2 <= blockSizeCode && blockSizeCode <= 5)
-			blockSize = 576 << (blockSizeCode - 2);
+			_blockSize = 576 << (blockSizeCode - 2);
 		else if (blockSizeCode == 6)
-			blockSize = in.readUint(8) + 1;
+			_blockSize = in.readUint(8) + 1;
 		else if (blockSizeCode == 7)
-			blockSize = in.readUint(16) + 1;
+			_blockSize = in.readUint(16) + 1;
 		else if (8 <= blockSizeCode && blockSizeCode <= 15)
-			blockSize = 256 << (blockSizeCode - 8);
+			_blockSize = 256 << (blockSizeCode - 8);
 		else
 			throw new DataFormatException("Reserved block size");
 		
@@ -168,37 +171,39 @@ final class FlacFrame
 		
 		// Decode each channel's subframe, then skip footer
 		//int[][] samples = new int[numChannels][blockSize];
-        samples = new int[numChannels][blockSize];
-		decodeSubframes(in, sampleDepth, chanAsgn);
+        _samples = new int[_numChannels][_blockSize];
+		decodeSubframes(in, _sampleDepth, chanAsgn);
 		in.alignToByte();
 		in.readUint(16);
-		
-		// Write the decoded samples
-		for (int i = 0; i < blockSize; i++)
-        {
-			for (int j = 0; j < numChannels; j++)
-            {
-				int val = samples[j][i];
+    }
 
-				if (sampleDepth == 8)
-					val += 128;
-
-				Toolbox.writeLittleInt(sampleDepth / 8, val, out);
-			}
-		}
-	}
-	
-	
-	private void
-    decodeSubframes(BitInputStream in, int sampleDepth, int chanAsgn)
-			throws IOException, DataFormatException
+    public void write(OutputStream out) throws IOException
     {
-        int blockSize = samples[0].length;
-        long[][] subframes = new long[samples.length][blockSize];
+        // Write the decoded samples
+        for (int i = 0; i < _blockSize; i++)
+        {
+            for (int j = 0; j < _numChannels; j++)
+            {
+                int val = _samples[j][i];
+
+                if (_sampleDepth == 8)
+                    val += 128;
+
+                Toolbox.writeLittleInt(_sampleDepth / 8, val, out);
+            }
+        }
+    }
+
+    private void
+    decodeSubframes(BitInputStream in, int sampleDepth, int chanAsgn)
+        throws IOException, DataFormatException
+    {
+        int blockSize = _samples[0].length;
+        long[][] subframes = new long[_samples.length][blockSize];
 
         if (0 <= chanAsgn && chanAsgn <= 7)
         {
-            for (int ch = 0; ch < samples.length; ch++)
+            for (int ch = 0; ch < _samples.length; ch++)
                 decodeSubframe(in, sampleDepth, subframes[ch]);
         }
         else if (8 <= chanAsgn && chanAsgn <= 10)
@@ -223,19 +228,21 @@ final class FlacFrame
 					long side = subframes[1][i];
 					long right = subframes[0][i] - (side >> 1);
 					subframes[1][i] = right;
-					subframes[0][i] = right + side;
-				}
-			}
-		} else
-			throw new DataFormatException("Reserved channel assignment");
-
-		for (int ch = 0; ch < samples.length; ch++)
+                    subframes[0][i] = right + side;
+                }
+            }
+        }
+        else
         {
-			for (int i = 0; i < blockSize; i++)
-                samples[ch][i] = (int)subframes[ch][i];
-		}
-	}
-	
+			throw new DataFormatException("Reserved channel assignment");
+        }
+
+        for (int ch = 0; ch < _samples.length; ch++)
+        {
+            for (int i = 0; i < blockSize; i++)
+                _samples[ch][i] = (int)subframes[ch][i];
+        }
+    }
 	
 	private static void decodeSubframe(BitInputStream in, int sampleDepth, long[] result)
 			throws IOException, DataFormatException
