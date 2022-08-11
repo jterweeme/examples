@@ -167,34 +167,6 @@ final class FlacFrame
 			in.readUint(16);
 		
 		in.readUint(8);
-		
-		// Decode each channel's subframe, then skip footer
-		decodeSubframes(in, chanAsgn);
-		in.alignToByte();
-		in.readUint(16);
-    }
-
-    public void write(OutputStream out) throws IOException
-    {
-        // Write the decoded samples
-        for (int i = 0; i < _blockSize; i++)
-        {
-            for (int j = 0; j < _numChannels; j++)
-            {
-                int val = (int)_samples[j][i];
-
-                if (_sampleDepth == 8)
-                    val += 128;
-
-                Toolbox.writeLittleInt(_sampleDepth / 8, val, out);
-            }
-        }
-    }
-
-    private void
-    decodeSubframes(BitInputStream in, int chanAsgn)
-        throws IOException, DataFormatException
-    {
         _samples = new long[_numChannels][_blockSize];
 
         if (0 <= chanAsgn && chanAsgn <= 7)
@@ -232,6 +204,26 @@ final class FlacFrame
         {
 			throw new DataFormatException("Reserved channel assignment");
         }
+
+		in.alignToByte();
+		in.readUint(16);
+    }
+
+    public void write(OutputStream out) throws IOException
+    {
+        // Write the decoded samples
+        for (int i = 0; i < _blockSize; i++)
+        {
+            for (int j = 0; j < _numChannels; j++)
+            {
+                int val = (int)_samples[j][i];
+
+                if (_sampleDepth == 8)
+                    val += 128;
+
+                Toolbox.writeLittleInt(_sampleDepth / 8, val, out);
+            }
+        }
     }
 	
 	private void decodeSubframe(BitInputStream in, int sampleDepth, long[] result)
@@ -263,7 +255,11 @@ final class FlacFrame
 		}
         else if (8 <= type && type <= 12)
         {
-			decodeFixedPredictionSubframe(in, type - 8, sampleDepth, result);
+            for (int i = 0; i < type - 8; i++)
+                result[i] = in.readSignedInt(sampleDepth);
+
+            decodeResiduals(in, type - 8, result);
+            restoreLinearPrediction(result, FIXED_PREDICTION_COEFFICIENTS[type - 8], 0);
         }
 		else if (32 <= type && type <= 63)
         {
@@ -278,29 +274,17 @@ final class FlacFrame
             result[i] <<= shift;
     }
 	
-    private void
-    decodeFixedPredictionSubframe(BitInputStream in, int predOrder, int sampleDepth, long[] result)
-        throws IOException, DataFormatException
-    {
-        for (int i = 0; i < predOrder; i++)
-            result[i] = in.readSignedInt(sampleDepth);
-
-		decodeResiduals(in, predOrder, result);
-		restoreLinearPrediction(result, FIXED_PREDICTION_COEFFICIENTS[predOrder], 0);
-	}
-	
-	private static final int[][] FIXED_PREDICTION_COEFFICIENTS = {
-		{},
-		{1},
-		{2, -1},
-		{3, -3, 1},
-		{4, -6, 4, -1},
-	};
-	
+    private static final int[][] FIXED_PREDICTION_COEFFICIENTS = {
+        {},
+        {1},
+        {2, -1},
+        {3, -3, 1},
+        {4, -6, 4, -1},
+    };
 	
     private void decodeLinearPredictiveCodingSubframe(BitInputStream in,
         int lpcOrder, int sampleDepth, long[] result)
-			throws IOException, DataFormatException
+        throws IOException, DataFormatException
     {
         for (int i = 0; i < lpcOrder; i++)
             result[i] = in.readSignedInt(sampleDepth);
