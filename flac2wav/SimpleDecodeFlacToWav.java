@@ -172,12 +172,12 @@ final class FlacFrame
         if (0 <= chanAsgn && chanAsgn <= 7)
         {
             for (int ch = 0; ch < _numChannels; ch++)
-                decodeSubframe(in, _sampleDepth, _samples[ch]);
+                decodeSubframe(in, _sampleDepth, ch);
         }
         else if (8 <= chanAsgn && chanAsgn <= 10)
         {
-            decodeSubframe(in, _sampleDepth + (chanAsgn == 9 ? 1 : 0), _samples[0]);
-            decodeSubframe(in, _sampleDepth + (chanAsgn == 9 ? 0 : 1), _samples[1]);
+            decodeSubframe(in, _sampleDepth + (chanAsgn == 9 ? 1 : 0), 0);
+            decodeSubframe(in, _sampleDepth + (chanAsgn == 9 ? 0 : 1), 1);
 
             if (chanAsgn == 8) 
             {
@@ -226,7 +226,7 @@ final class FlacFrame
         }
     }
 	
-	private void decodeSubframe(BitInputStream in, int sampleDepth, long[] result)
+	private void decodeSubframe(BitInputStream in, int sampleDepth, int ch)
 			throws IOException, DataFormatException
     {
 		in.readUint(1);
@@ -245,26 +245,26 @@ final class FlacFrame
             long ret = in.readSignedInt(sampleDepth);
 
             for (int i = 0; i < _blockSize; i++)
-                result[i] = ret;
+                _samples[ch][i] = ret;
         }
         else if (type == 1)
         {
             // Verbatim coding
             for (int i = 0; i < _blockSize; i++)
-                result[i] = in.readSignedInt(sampleDepth);
+                _samples[ch][i] = in.readSignedInt(sampleDepth);
 		}
         else if (8 <= type && type <= 12)
         {
             for (int i = 0; i < type - 8; i++)
-                result[i] = in.readSignedInt(sampleDepth);
+                _samples[ch][i] = in.readSignedInt(sampleDepth);
 
-            decodeResiduals(in, type - 8, result);
-            restoreLinearPrediction(result, FIXED_PREDICTION_COEFFICIENTS[type - 8], 0);
+            decodeResiduals(in, type - 8, _samples[ch]);
+            restoreLinearPrediction(_samples[ch], FIXED_PREDICTION_COEFFICIENTS[type - 8], 0);
         }
 		else if (32 <= type && type <= 63)
         {
             for (int i = 0; i < type - 31; i++)
-                result[i] = in.readSignedInt(sampleDepth);
+                _samples[ch][i] = in.readSignedInt(sampleDepth);
 
             int precision = in.readUint(4) + 1;
             int shift2 = in.readSignedInt(5);
@@ -273,8 +273,8 @@ final class FlacFrame
             for (int i = 0; i < coefs.length; i++)
                 coefs[i] = in.readSignedInt(precision);
 
-            decodeResiduals(in, type - 31, result);
-            restoreLinearPrediction(result, coefs, shift2);
+            decodeResiduals(in, type - 31, _samples[ch]);
+            restoreLinearPrediction(_samples[ch], coefs, shift2);
 
         }
         else
@@ -283,7 +283,7 @@ final class FlacFrame
 		}
 
         for (int i = 0; i < _blockSize; i++)
-            result[i] <<= shift;
+            _samples[ch][i] <<= shift;
     }
 	
     private static final int[][] FIXED_PREDICTION_COEFFICIENTS = {
