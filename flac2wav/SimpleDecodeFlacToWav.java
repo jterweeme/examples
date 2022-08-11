@@ -258,8 +258,8 @@ final class FlacFrame
             for (int i = 0; i < type - 8; i++)
                 _samples[ch][i] = in.readSignedInt(sampleDepth);
 
-            decodeResiduals(in, type - 8, _samples[ch]);
-            restoreLinearPrediction(_samples[ch], FIXED_PREDICTION_COEFFICIENTS[type - 8], 0);
+            decodeResiduals(in, type - 8, ch);
+            restoreLinearPrediction(ch, FIXED_PREDICTION_COEFFICIENTS[type - 8], 0);
         }
 		else if (32 <= type && type <= 63)
         {
@@ -273,9 +273,8 @@ final class FlacFrame
             for (int i = 0; i < coefs.length; i++)
                 coefs[i] = in.readSignedInt(precision);
 
-            decodeResiduals(in, type - 31, _samples[ch]);
-            restoreLinearPrediction(_samples[ch], coefs, shift2);
-
+            decodeResiduals(in, type - 31, ch);
+            restoreLinearPrediction(ch, coefs, shift2);
         }
         else
         {
@@ -294,8 +293,8 @@ final class FlacFrame
         {4, -6, 4, -1},
     };
 
-    private void decodeResiduals(BitInputStream in,
-        int warmup, long[] result) throws IOException, DataFormatException
+    private void decodeResiduals(BitInputStream in, int warmup, int ch)
+        throws IOException, DataFormatException
     {
         int method = in.readUint(2);
 
@@ -304,7 +303,6 @@ final class FlacFrame
 
         int paramBits = method == 0 ? 4 : 5;
         int escapeParam = method == 0 ? 0xF : 0x1F;
-		
         int partitionOrder = in.readUint(4);
         int numPartitions = 1 << partitionOrder;
 
@@ -317,33 +315,33 @@ final class FlacFrame
         {
             int start = i * partitionSize + (i == 0 ? warmup : 0);
             int end = (i + 1) * partitionSize;
-			
             int param = in.readUint(paramBits);
 
             if (param < escapeParam)
             {
 				for (int j = start; j < end; j++)
-					result[j] = in.readRiceSignedInt(param);
+					_samples[ch][j] = in.readRiceSignedInt(param);
 			}
             else
             {
 				int numBits = in.readUint(5);
+
 				for (int j = start; j < end; j++)
-					result[j] = in.readSignedInt(numBits);
+                    _samples[ch][j] = in.readSignedInt(numBits);
 			}
 		}
 	}
 	
-    private void restoreLinearPrediction(long[] result, int[] coefs, int shift)
+    private void restoreLinearPrediction(int ch, int[] coefs, int shift)
     {
         for (int i = coefs.length; i < _blockSize; i++)
         {
             long sum = 0;
 
             for (int j = 0; j < coefs.length; j++)
-                sum += result[i - 1 - j] * coefs[j];
+                sum += _samples[ch][i - 1 - j] * coefs[j];
 
-            result[i] += sum >> shift;
+            _samples[ch][i] += sum >> shift;
         }
     }
 }
