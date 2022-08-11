@@ -116,7 +116,7 @@ public final class SimpleDecodeFlacToWav
 
 final class FlacFrame
 {
-    long[][] _subframes;
+    long[][] _samples;
     int _blockSize;
     int _numChannels;
     int _sampleDepth;
@@ -143,8 +143,8 @@ final class FlacFrame
         int chanAsgn = in.readUint(4);
         in.readUint(3);
         in.readUint(1);
-		
 		temp = Integer.numberOfLeadingZeros(~(in.readUint(8) << 24)) - 1;
+
 		for (int i = 0; i < temp; i++)
 			in.readUint(8);
 		
@@ -181,7 +181,7 @@ final class FlacFrame
         {
             for (int j = 0; j < _numChannels; j++)
             {
-                int val = (int)_subframes[j][i];
+                int val = (int)_samples[j][i];
 
                 if (_sampleDepth == 8)
                     val += 128;
@@ -195,36 +195,36 @@ final class FlacFrame
     decodeSubframes(BitInputStream in, int chanAsgn)
         throws IOException, DataFormatException
     {
-        _subframes = new long[_numChannels][_blockSize];
+        _samples = new long[_numChannels][_blockSize];
 
         if (0 <= chanAsgn && chanAsgn <= 7)
         {
             for (int ch = 0; ch < _numChannels; ch++)
-                decodeSubframe(in, _sampleDepth, _subframes[ch]);
+                decodeSubframe(in, _sampleDepth, _samples[ch]);
         }
         else if (8 <= chanAsgn && chanAsgn <= 10)
         {
-            decodeSubframe(in, _sampleDepth + (chanAsgn == 9 ? 1 : 0), _subframes[0]);
-            decodeSubframe(in, _sampleDepth + (chanAsgn == 9 ? 0 : 1), _subframes[1]);
+            decodeSubframe(in, _sampleDepth + (chanAsgn == 9 ? 1 : 0), _samples[0]);
+            decodeSubframe(in, _sampleDepth + (chanAsgn == 9 ? 0 : 1), _samples[1]);
 
             if (chanAsgn == 8) 
             {
                 for (int i = 0; i < _blockSize; i++)
-                    _subframes[1][i] = _subframes[0][i] - _subframes[1][i];
+                    _samples[1][i] = _samples[0][i] - _samples[1][i];
             }
             else if (chanAsgn == 9)
             {
                 for (int i = 0; i < _blockSize; i++)
-                    _subframes[0][i] += _subframes[1][i];
+                    _samples[0][i] += _samples[1][i];
 			}
             else if (chanAsgn == 10)
             {
                 for (int i = 0; i < _blockSize; i++)
                 {
-                    long side = _subframes[1][i];
-                    long right = _subframes[0][i] - (side >> 1);
-                    _subframes[1][i] = right;
-                    _subframes[0][i] = right + side;
+                    long side = _samples[1][i];
+                    long right = _samples[0][i] - (side >> 1);
+                    _samples[1][i] = right;
+                    _samples[0][i] = right + side;
                 }
             }
         }
@@ -234,16 +234,17 @@ final class FlacFrame
         }
     }
 	
-	private static void decodeSubframe(BitInputStream in, int sampleDepth, long[] result)
+	private void decodeSubframe(BitInputStream in, int sampleDepth, long[] result)
 			throws IOException, DataFormatException
     {
 		in.readUint(1);
 		int type = in.readUint(6);
 		int shift = in.readUint(1);
-		if (shift == 1) {
+
+		if (shift == 1)
 			while (in.readUint(1) == 0)
 				shift++;
-		}
+
 		sampleDepth -= shift;
 		
 		if (type == 0)
@@ -251,14 +252,14 @@ final class FlacFrame
             // Constant coding
             long ret = in.readSignedInt(sampleDepth);
 
-            for (int i = 0; i < result.length; i++)
+            for (int i = 0; i < _blockSize; i++)
                 result[i] = ret;
         }
-		else if (type == 1)
+        else if (type == 1)
         {
             // Verbatim coding
-			for (int i = 0; i < result.length; i++)
-				result[i] = in.readSignedInt(sampleDepth);
+            for (int i = 0; i < _blockSize; i++)
+                result[i] = in.readSignedInt(sampleDepth);
 		}
         else if (8 <= type && type <= 12)
         {
@@ -273,11 +274,11 @@ final class FlacFrame
             throw new DataFormatException("Reserved subframe type");
 		}
 
-        for (int i = 0; i < result.length; i++)
+        for (int i = 0; i < _blockSize; i++)
             result[i] <<= shift;
     }
 	
-    private static void
+    private void
     decodeFixedPredictionSubframe(BitInputStream in, int predOrder, int sampleDepth, long[] result)
         throws IOException, DataFormatException
     {
@@ -297,7 +298,7 @@ final class FlacFrame
 	};
 	
 	
-    private static void decodeLinearPredictiveCodingSubframe(BitInputStream in,
+    private void decodeLinearPredictiveCodingSubframe(BitInputStream in,
         int lpcOrder, int sampleDepth, long[] result)
 			throws IOException, DataFormatException
     {
@@ -315,7 +316,7 @@ final class FlacFrame
         restoreLinearPrediction(result, coefs, shift);
     }
 	
-    private static void decodeResiduals(BitInputStream in,
+    private void decodeResiduals(BitInputStream in,
         int warmup, long[] result) throws IOException, DataFormatException
     {
         int method = in.readUint(2);
@@ -329,10 +330,10 @@ final class FlacFrame
         int partitionOrder = in.readUint(4);
         int numPartitions = 1 << partitionOrder;
 
-        if (result.length % numPartitions != 0)
+        if (_blockSize % numPartitions != 0)
             throw new DataFormatException("Block size not divisible by number of Rice partitions");
 
-        int partitionSize = result.length / numPartitions;
+        int partitionSize = _blockSize / numPartitions;
 		
         for (int i = 0; i < numPartitions; i++)
         {
@@ -341,10 +342,13 @@ final class FlacFrame
 			
             int param = in.readUint(paramBits);
 
-            if (param < escapeParam) {
+            if (param < escapeParam)
+            {
 				for (int j = start; j < end; j++)
 					result[j] = in.readRiceSignedInt(param);
-			} else {
+			}
+            else
+            {
 				int numBits = in.readUint(5);
 				for (int j = start; j < end; j++)
 					result[j] = in.readSignedInt(numBits);
@@ -352,14 +356,18 @@ final class FlacFrame
 		}
 	}
 	
-	private static void restoreLinearPrediction(long[] result, int[] coefs, int shift) {
-		for (int i = coefs.length; i < result.length; i++) {
-			long sum = 0;
-			for (int j = 0; j < coefs.length; j++)
-				sum += result[i - 1 - j] * coefs[j];
-			result[i] += sum >> shift;
-		}
-	}
+    private void restoreLinearPrediction(long[] result, int[] coefs, int shift)
+    {
+        for (int i = coefs.length; i < _blockSize; i++)
+        {
+            long sum = 0;
+
+            for (int j = 0; j < coefs.length; j++)
+                sum += result[i - 1 - j] * coefs[j];
+
+            result[i] += sum >> shift;
+        }
+    }
 }
 
 final class Toolbox
