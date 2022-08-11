@@ -41,12 +41,11 @@ public final class SimpleDecodeFlacToWav
 
         BitInputStream in = new BitInputStream(new BufferedInputStream(new FileInputStream(args[0])));
         OutputStream out = new BufferedOutputStream(new FileOutputStream(args[1]));
-        SimpleDecodeFlacToWav inst = new SimpleDecodeFlacToWav();
-        inst.decodeFile(in, out);
+        decodeFile(in, out);
         out.close();
     }
 	
-    public void decodeFile(BitInputStream in, OutputStream out)
+    public static void decodeFile(BitInputStream in, OutputStream out)
         throws IOException, DataFormatException
     {
         // Handle FLAC header and metadata blocks
@@ -118,6 +117,7 @@ public final class SimpleDecodeFlacToWav
 final class FlacFrame
 {
     int[][] _samples;
+    long[][] _subframes;
     int _blockSize;
     int _numChannels;
     int _sampleDepth;
@@ -170,9 +170,8 @@ final class FlacFrame
 		in.readUint(8);
 		
 		// Decode each channel's subframe, then skip footer
-		//int[][] samples = new int[numChannels][blockSize];
         _samples = new int[_numChannels][_blockSize];
-		decodeSubframes(in, _sampleDepth, chanAsgn);
+		decodeSubframes(in, chanAsgn);
 		in.alignToByte();
 		in.readUint(16);
     }
@@ -195,40 +194,40 @@ final class FlacFrame
     }
 
     private void
-    decodeSubframes(BitInputStream in, int sampleDepth, int chanAsgn)
+    decodeSubframes(BitInputStream in, int chanAsgn)
         throws IOException, DataFormatException
     {
-        int blockSize = _samples[0].length;
-        long[][] subframes = new long[_samples.length][blockSize];
+        //long[][] subframes = new long[_samples.length][_blockSize];
+        _subframes = new long[_samples.length][_blockSize];
 
         if (0 <= chanAsgn && chanAsgn <= 7)
         {
             for (int ch = 0; ch < _samples.length; ch++)
-                decodeSubframe(in, sampleDepth, subframes[ch]);
+                decodeSubframe(in, _sampleDepth, _subframes[ch]);
         }
         else if (8 <= chanAsgn && chanAsgn <= 10)
         {
-            decodeSubframe(in, sampleDepth + (chanAsgn == 9 ? 1 : 0), subframes[0]);
-            decodeSubframe(in, sampleDepth + (chanAsgn == 9 ? 0 : 1), subframes[1]);
+            decodeSubframe(in, _sampleDepth + (chanAsgn == 9 ? 1 : 0), _subframes[0]);
+            decodeSubframe(in, _sampleDepth + (chanAsgn == 9 ? 0 : 1), _subframes[1]);
 
             if (chanAsgn == 8) 
             {
-                for (int i = 0; i < blockSize; i++)
-                    subframes[1][i] = subframes[0][i] - subframes[1][i];
-			}
+                for (int i = 0; i < _blockSize; i++)
+                    _subframes[1][i] = _subframes[0][i] - _subframes[1][i];
+            }
             else if (chanAsgn == 9)
             {
-				for (int i = 0; i < blockSize; i++)
-					subframes[0][i] += subframes[1][i];
+                for (int i = 0; i < _blockSize; i++)
+                    _subframes[0][i] += _subframes[1][i];
 			}
             else if (chanAsgn == 10)
             {
-				for (int i = 0; i < blockSize; i++)
+                for (int i = 0; i < _blockSize; i++)
                 {
-					long side = subframes[1][i];
-					long right = subframes[0][i] - (side >> 1);
-					subframes[1][i] = right;
-                    subframes[0][i] = right + side;
+                    long side = _subframes[1][i];
+                    long right = _subframes[0][i] - (side >> 1);
+                    _subframes[1][i] = right;
+                    _subframes[0][i] = right + side;
                 }
             }
         }
@@ -239,8 +238,8 @@ final class FlacFrame
 
         for (int ch = 0; ch < _samples.length; ch++)
         {
-            for (int i = 0; i < blockSize; i++)
-                _samples[ch][i] = (int)subframes[ch][i];
+            for (int i = 0; i < _blockSize; i++)
+                _samples[ch][i] = (int)_subframes[ch][i];
         }
     }
 	
@@ -275,14 +274,17 @@ final class FlacFrame
 			decodeFixedPredictionSubframe(in, type - 8, sampleDepth, result);
         }
 		else if (32 <= type && type <= 63)
-			decodeLinearPredictiveCodingSubframe(in, type - 31, sampleDepth, result);
-		else
-			throw new DataFormatException("Reserved subframe type");
-		
-		for (int i = 0; i < result.length; i++)
-			result[i] <<= shift;
-	}
-	
+        {
+            decodeLinearPredictiveCodingSubframe(in, type - 31, sampleDepth, result);
+        }
+        else
+        {
+            throw new DataFormatException("Reserved subframe type");
+		}
+
+        for (int i = 0; i < result.length; i++)
+            result[i] <<= shift;
+    }
 	
     private static void
     decodeFixedPredictionSubframe(BitInputStream in, int predOrder, int sampleDepth, long[] result)

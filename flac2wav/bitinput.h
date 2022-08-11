@@ -12,6 +12,8 @@ private:
     long _bitBuffer;
     int _bitBufferLen;
 public:
+    void alignToByte();
+    bool peek();
     uint32_t readUint(int n);
     int readByte();
     int readSignedInt(int n);

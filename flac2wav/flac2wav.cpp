@@ -5,6 +5,21 @@
 #include "bitinput.h"
 #include "toolbox.h"
 
+class FlacFrame
+{
+private:
+    Matrix<int> *_samples;
+    int _blockSize;
+    int _numChannels;
+    int _sampleDepth;
+    void _decodeSubframes(BitInputStream &in, int chanAsgn);
+    
+public:
+    FlacFrame(int numChannels, int sampleDepth);
+    void decode(BitInputStream &in);
+    void write(std::ostream &os);
+};
+
 static void decodeResiduals(BitInputStream &in, int warmup, int *result, unsigned resultSize)
 {
     int method = in.readUint(2);
@@ -132,14 +147,9 @@ static void decodeSubframes(BitInputStream &in, int sampleDepth, int chanAsgn, M
     }
 }
 
-
-
-static bool decodeFrame(BitInputStream &in, int numChannels, int sampleDepth, std::ostream &os)
+void FlacFrame::decode(BitInputStream &in)
 {
     int temp = in.readByte();
-
-    if (temp == -1)
-        return false;
 
     int sync = temp << 6 | in.readUint(6);
 
@@ -184,23 +194,31 @@ static bool decodeFrame(BitInputStream &in, int numChannels, int sampleDepth, st
     // Decode each channel's subframe, then skip footer
     Matrix samples(numChannels, blockSize);
     decodeSubframes(in, sampleDepth, chanAsgn, samples);
-    //in.alignToByte();
+    in.alignToByte();
     in.readUint(16);
+}
 
-    // Write the decoded samples
-    for (int i = 0; i < blockSize; i++)
+void FlacFrame::write(std::ostream &os)
+{
+     // Write the decoded samples
+    for (int i = 0; i < _blockSize; i++)
     {
-        for (int j = 0; j < numChannels; j++)
+        for (int j = 0; j < _numChannels; j++)
         {
-            int val = samples.at(j, i);
+            int val = _samples->at(j, i);
 
-            if (sampleDepth == 8)
+            if (_sampleDepth == 8)
                 val += 128;
 
-            os << sampleDepth / 8;
+            os << _sampleDepth / 8;
         }
-    }
-    return true;
+    }   
+}
+
+FlacFrame::FlacFrame(int numChannels, int sampleDepth)
+{
+    _numChannels = numChannels;
+    _sampleDepth = sampleDepth;
 }
 
 static void decodeFile(BitInputStream &in, std::ostream &os)
@@ -255,9 +273,11 @@ static void decodeFile(BitInputStream &in, std::ostream &os)
     os << "data";
     os << sampleDataLen;
 
-    while (decodeFrame(in, numChannels, sampleDepth, os))
+    while (in.peek())
     {
-        continue;
+        FlacFrame frame(numChannels, sampleDepth);
+        frame.decode(in);
+        frame.write(os);
     }
 }
 
