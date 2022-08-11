@@ -116,7 +116,6 @@ public final class SimpleDecodeFlacToWav
 
 final class FlacFrame
 {
-    int[][] _samples;
     long[][] _subframes;
     int _blockSize;
     int _numChannels;
@@ -170,7 +169,6 @@ final class FlacFrame
 		in.readUint(8);
 		
 		// Decode each channel's subframe, then skip footer
-        _samples = new int[_numChannels][_blockSize];
 		decodeSubframes(in, chanAsgn);
 		in.alignToByte();
 		in.readUint(16);
@@ -183,7 +181,7 @@ final class FlacFrame
         {
             for (int j = 0; j < _numChannels; j++)
             {
-                int val = _samples[j][i];
+                int val = (int)_subframes[j][i];
 
                 if (_sampleDepth == 8)
                     val += 128;
@@ -197,12 +195,11 @@ final class FlacFrame
     decodeSubframes(BitInputStream in, int chanAsgn)
         throws IOException, DataFormatException
     {
-        //long[][] subframes = new long[_samples.length][_blockSize];
-        _subframes = new long[_samples.length][_blockSize];
+        _subframes = new long[_numChannels][_blockSize];
 
         if (0 <= chanAsgn && chanAsgn <= 7)
         {
-            for (int ch = 0; ch < _samples.length; ch++)
+            for (int ch = 0; ch < _numChannels; ch++)
                 decodeSubframe(in, _sampleDepth, _subframes[ch]);
         }
         else if (8 <= chanAsgn && chanAsgn <= 10)
@@ -234,12 +231,6 @@ final class FlacFrame
         else
         {
 			throw new DataFormatException("Reserved channel assignment");
-        }
-
-        for (int ch = 0; ch < _samples.length; ch++)
-        {
-            for (int i = 0; i < _blockSize; i++)
-                _samples[ch][i] = (int)_subframes[ch][i];
         }
     }
 	
