@@ -263,7 +263,19 @@ final class FlacFrame
         }
 		else if (32 <= type && type <= 63)
         {
-            decodeLinearPredictiveCodingSubframe(in, type - 31, sampleDepth, result);
+            for (int i = 0; i < type - 31; i++)
+                result[i] = in.readSignedInt(sampleDepth);
+
+            int precision = in.readUint(4) + 1;
+            int shift2 = in.readSignedInt(5);
+            int[] coefs = new int[type - 31];
+
+            for (int i = 0; i < coefs.length; i++)
+                coefs[i] = in.readSignedInt(precision);
+
+            decodeResiduals(in, type - 31, result);
+            restoreLinearPrediction(result, coefs, shift2);
+
         }
         else
         {
@@ -281,25 +293,7 @@ final class FlacFrame
         {3, -3, 1},
         {4, -6, 4, -1},
     };
-	
-    private void decodeLinearPredictiveCodingSubframe(BitInputStream in,
-        int lpcOrder, int sampleDepth, long[] result)
-        throws IOException, DataFormatException
-    {
-        for (int i = 0; i < lpcOrder; i++)
-            result[i] = in.readSignedInt(sampleDepth);
 
-        int precision = in.readUint(4) + 1;
-        int shift = in.readSignedInt(5);
-        int[] coefs = new int[lpcOrder];
-
-        for (int i = 0; i < coefs.length; i++)
-            coefs[i] = in.readSignedInt(precision);
-
-        decodeResiduals(in, lpcOrder, result);
-        restoreLinearPrediction(result, coefs, shift);
-    }
-	
     private void decodeResiduals(BitInputStream in,
         int warmup, long[] result) throws IOException, DataFormatException
     {
