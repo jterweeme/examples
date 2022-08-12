@@ -3,6 +3,7 @@
 #ifndef TOOLBOX_H
 #define TOOLBOX_H
 
+#include <istream>
 #include <cstdint>
 
 template <class T> class Matrix
@@ -19,18 +20,55 @@ public:
         _buf = new T[x * y];
     }
 
-    ~Matrix() { delete[] _buf; }
-    unsigned width() const { return _width; }
-    unsigned height() const { return _height; }
-    T *buf() const;
-    T at(unsigned x, unsigned y);
+    ~Matrix()
+    {
+        delete[] _buf;
+    }
+
+    unsigned width() const
+    {
+        return _width;
+    }
+
+    unsigned height() const
+    {
+        return _height;
+    }
+
+    T at(unsigned x, unsigned y) const
+    {
+        return *(_buf + x * _width + y);
+    }
+
+    void set(unsigned x, unsigned y, T value)
+    {
+        *(_buf + x * _width + y) = value;
+    }
 };
 
 class Toolbox
 {
 public:
     static uint8_t numberOfLeadingZeros(uint32_t x);
+    static void writeWLE(std::ostream &os, uint16_t w);
+    static void writeDwLE(std::ostream &os, uint32_t dw);
 };
 
+class BitInputStream
+{
+private:
+    std::istream *_is;
+    long _bitBuffer;
+    int _bitBufferLen;
+public:
+    BitInputStream(std::istream *is);
+    void alignToByte();
+    bool peek();
+    uint32_t readUint(int n);
+    int readByte();
+    int readSignedInt(int n);
+    int64_t readRiceSignedInt(int param);
+};
 #endif
+
 

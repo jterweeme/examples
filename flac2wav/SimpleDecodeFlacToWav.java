@@ -172,12 +172,12 @@ final class FlacFrame
         if (0 <= chanAsgn && chanAsgn <= 7)
         {
             for (int ch = 0; ch < _numChannels; ch++)
-                decodeSubframe(in, _sampleDepth, ch);
+                _decodeSubframe(in, _sampleDepth, ch);
         }
         else if (8 <= chanAsgn && chanAsgn <= 10)
         {
-            decodeSubframe(in, _sampleDepth + (chanAsgn == 9 ? 1 : 0), 0);
-            decodeSubframe(in, _sampleDepth + (chanAsgn == 9 ? 0 : 1), 1);
+            _decodeSubframe(in, _sampleDepth + (chanAsgn == 9 ? 1 : 0), 0);
+            _decodeSubframe(in, _sampleDepth + (chanAsgn == 9 ? 0 : 1), 1);
 
             if (chanAsgn == 8) 
             {
@@ -226,7 +226,7 @@ final class FlacFrame
         }
     }
 	
-	private void decodeSubframe(BitInputStream in, int sampleDepth, int ch)
+	private void _decodeSubframe(BitInputStream in, int sampleDepth, int ch)
 			throws IOException, DataFormatException
     {
 		in.readUint(1);
@@ -258,8 +258,8 @@ final class FlacFrame
             for (int i = 0; i < type - 8; i++)
                 _samples[ch][i] = in.readSignedInt(sampleDepth);
 
-            decodeResiduals(in, type - 8, ch);
-            restoreLinearPrediction(ch, FIXED_PREDICTION_COEFFICIENTS[type - 8], 0);
+            _decodeResiduals(in, type - 8, ch);
+            _restoreLinearPrediction(ch, FIXED_PREDICTION_COEFFICIENTS[type - 8], 0);
         }
 		else if (32 <= type && type <= 63)
         {
@@ -273,8 +273,8 @@ final class FlacFrame
             for (int i = 0; i < coefs.length; i++)
                 coefs[i] = in.readSignedInt(precision);
 
-            decodeResiduals(in, type - 31, ch);
-            restoreLinearPrediction(ch, coefs, shift2);
+            _decodeResiduals(in, type - 31, ch);
+            _restoreLinearPrediction(ch, coefs, shift2);
         }
         else
         {
@@ -293,7 +293,7 @@ final class FlacFrame
         {4, -6, 4, -1},
     };
 
-    private void decodeResiduals(BitInputStream in, int warmup, int ch)
+    private void _decodeResiduals(BitInputStream in, int warmup, int ch)
         throws IOException, DataFormatException
     {
         int method = in.readUint(2);
@@ -332,7 +332,7 @@ final class FlacFrame
 		}
 	}
 	
-    private void restoreLinearPrediction(int ch, int[] coefs, int shift)
+    private void _restoreLinearPrediction(int ch, int[] coefs, int shift)
     {
         for (int i = coefs.length; i < _blockSize; i++)
         {

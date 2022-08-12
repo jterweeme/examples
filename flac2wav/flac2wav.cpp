@@ -1,42 +1,40 @@
 //file: flac2wav.cpp
 
 #include <iostream>
-#include <vector>
-#include "bitinput.h"
 #include "toolbox.h"
 
 class FlacFrame
 {
 private:
-    Matrix<int> *_samples;
+    Matrix<int64_t> *_samples;
     int _blockSize;
     int _numChannels;
     int _sampleDepth;
-    void _decodeSubframes(BitInputStream &in, int chanAsgn);
-    
+    void _decodeSubframe(BitInputStream &in, int sampleDepth, int ch);
+    void _decodeResiduals(BitInputStream &in, int warmup, int ch);
+    void _restoreLinearPrediction(int ch, int *coefs, int shift);
 public:
     FlacFrame(int numChannels, int sampleDepth);
     void decode(BitInputStream &in);
     void write(std::ostream &os);
 };
 
-static void decodeResiduals(BitInputStream &in, int warmup, int *result, unsigned resultSize)
+void FlacFrame::_decodeResiduals(BitInputStream &in, int warmup, int ch)
 {
     int method = in.readUint(2);
 
     if (method >= 2)
-        throw std::exception();
+        throw "Reserved residual coding method";
 
     int paramBits = method == 0 ? 4 : 5;
     int escapeParam = method == 0 ? 0xF : 0x1F;
-
     int partitionOrder = in.readUint(4);
     int numPartitions = 1 << partitionOrder;
 
-    if (resultSize % numPartitions != 0)
-        throw std::exception();
+    if (_blockSize % numPartitions != 0)
+        throw "Block size not divisible by number of Rice partitions";
 
-    int partitionSize = resultSize / numPartitions;
+    int partitionSize = _blockSize / numPartitions;
 
     for (int i = 0; i < numPartitions; i++)
     {
@@ -48,51 +46,24 @@ static void decodeResiduals(BitInputStream &in, int warmup, int *result, unsigne
         if (param < escapeParam)
         {
             for (int j = start; j < end; j++)
-                result[j] = in.readRiceSignedInt(param);
+                _samples->set(ch, j, in.readRiceSignedInt(param));
         }
         else
         {
             int numBits = in.readUint(5);
 
             for (int j = start; j < end; j++)
-                result[j] = in.readSignedInt(numBits);
+                _samples->set(ch, j, in.readSignedInt(numBits));
         }
     }
 }
 
-static void restoreLinearPrediction(int *result, int *coefs, int shift)
+void FlacFrame::_restoreLinearPrediction(int ch, int *coefs, int shift)
 {
     //for (int i = )
 }
 
-static void decodeFixedPredictionSubframe(BitInputStream &in, int predOrder,
-    int sampleDepth, int *result, unsigned resultSize)
-{
-    for (int i = 0; i < predOrder; i++)
-        result[i] = in.readSignedInt(sampleDepth);
-
-    decodeResiduals(in, predOrder, result, resultSize);
-    restoreLinearPrediction(result, FIXED_PREDICTION_COEFFICIENTS[predOrder], 0);
-}
-
-static void decodeLinearPredictiveCodingSubframe(BitInputStream in,
-    int lpcOrder, int sampleDepth, int *result)
-{
-    for (int i = 0; i < lpcOrder; i++)
-        result[i] = in.readSignedInt(sampleDepth);
-
-    int precision = in.readUint(4) + 1;
-    int shift = in.readSignedInt(5);
-    int *coefs = new int[lpcOrder];
-
-    for (int i = 0; i < lpcOrder; i++)
-        coefs[i] = in.readSignedInt(precision);
-
-    decodeResiduals(in, lpcOrder, result);
-    restoreLinearPrediction(result, coefs, shift);
-}
-
-static void decodeSubframe(BitInputStream &in, int sampleDepth, int *result, unsigned resultSize)
+void FlacFrame::_decodeSubframe(BitInputStream &in, int sampleDepth, int ch)
 {
     in.readUint(1);
     int type = in.readUint(6);
@@ -109,52 +80,41 @@ static void decodeSubframe(BitInputStream &in, int sampleDepth, int *result, uns
     if (type == 0)
     {
         // Constant coding
-        for (unsigned i = 0; i < resultSize; ++i)
-            result[i] = in.readSignedInt(sampleDepth);
+        for (unsigned i = 0; i < _blockSize; ++i)
+            _samples->set(ch, i, in.readSignedInt(sampleDepth));
     }
     else if (type == 1)
     {
         // Verbatim coding
-        for (unsigned i = 0; i < resultSize; ++i)
-            result[i] = in.readSignedInt(sampleDepth);
+        for (unsigned i = 0; i < _blockSize; ++i)
+            _samples->set(ch, i, in.readSignedInt(sampleDepth));
     }
     else if (8 <= type && type <= 12)
     {
-        decodeFixedPredictionSubframe(in, type - 8, sampleDepth, result, resultSize);
     }
     else if (32 <= type && type <= 63)
     {
-        decodeLinearPredictiveCodingSubframe(in, type - 31, sampleDepth, result);
     }
     else
     {
-        throw std::exception();
+        throw "Reserved subframe type";
     }
 
-    for (unsigned i = 0; i < resultSize; ++i)
-        result[i] <<= shift;
-}
-
-static void decodeSubframes(BitInputStream &in, int sampleDepth, int chanAsgn, Matrix &mat)
-{
-    int blockSize = mat.width();
-    Matrix subframes(mat.width(), blockSize);
-
-    if (chanAsgn <= 7)
+    for (unsigned i = 0; i < _blockSize; ++i)
     {
-        for (unsigned ch = 0; ch < mat.width(); ++ch)
-            decodeSubframe(in, sampleDepth, subframes.buf(), subframes.width());
+        int64_t temp = _samples->at(ch, i);
+        temp <<= shift;
+        _samples->set(ch, i, temp);
     }
 }
 
 void FlacFrame::decode(BitInputStream &in)
 {
     int temp = in.readByte();
-
     int sync = temp << 6 | in.readUint(6);
 
     if (sync != 0x3ffe)
-        throw std::exception();
+        throw "Sync code expected";
 
     in.readUint(1);
     in.readUint(1);
@@ -163,26 +123,23 @@ void FlacFrame::decode(BitInputStream &in)
     int chanAsgn = in.readUint(4);
     in.readUint(3);
     in.readUint(1);
-
     temp = Toolbox::numberOfLeadingZeros(~(in.readUint(8) << 24)) - 1;
 
-    for (int i = 0; i < temp; i++)
+    for (int i = 0; i < temp; ++i)
         in.readUint(8);
 
-    int blockSize;
-
     if (blockSizeCode == 1)
-        blockSize = 192;
+        _blockSize = 192;
     else if (2 <= blockSizeCode && blockSizeCode <= 5)
-        blockSize = 576 << (blockSizeCode - 2);
+        _blockSize = 576 << (blockSizeCode - 2);
     else if (blockSizeCode == 6)
-        blockSize = in.readUint(8) + 1;
+        _blockSize = in.readUint(8) + 1;
     else if (blockSizeCode == 7)
-        blockSize = in.readUint(16) + 1;
+        _blockSize = in.readUint(16) + 1;
     else if (8 <= blockSizeCode && blockSizeCode <= 15)
-        blockSize = 256 << (blockSizeCode - 8);
+        _blockSize = 256 << (blockSizeCode - 8);
     else
-        throw std::exception();
+        throw "Reserved block size";
 
     if (sampleRateCode == 12)
         in.readUint(8);
@@ -190,10 +147,8 @@ void FlacFrame::decode(BitInputStream &in)
         in.readUint(16);
 
     in.readUint(8);
+    _samples = new Matrix<int64_t>(_numChannels, _blockSize);
 
-    // Decode each channel's subframe, then skip footer
-    Matrix samples(numChannels, blockSize);
-    decodeSubframes(in, sampleDepth, chanAsgn, samples);
     in.alignToByte();
     in.readUint(16);
 }
@@ -205,7 +160,7 @@ void FlacFrame::write(std::ostream &os)
     {
         for (int j = 0; j < _numChannels; j++)
         {
-            int val = _samples->at(j, i);
+            int val = int(_samples->at(j, i));
 
             if (_sampleDepth == 8)
                 val += 128;
@@ -224,7 +179,7 @@ FlacFrame::FlacFrame(int numChannels, int sampleDepth)
 static void decodeFile(BitInputStream &in, std::ostream &os)
 {
     if (in.readUint(32) != 0x664c6143)
-        throw std::exception();
+        throw "Invalid magic string";
 
     int sampleRate = -1;
     int numChannels = -1;
@@ -258,20 +213,28 @@ static void decodeFile(BitInputStream &in, std::ostream &os)
         }
     }
 
-    long sampleDataLen = numSamples * numChannels * (sampleDepth / 8);
+    if (sampleRate == -1)
+        throw "Stream info metadata block absent";
+
+    if (sampleDepth % 8 != 0)
+        throw "Sample depth not supported";
+
+    int64_t sampleDataLen = numSamples * numChannels * (sampleDepth / 8);
     os << "RIFF";
-    os << sampleDataLen + 36;
+    Toolbox::writeDwLE(os, sampleDataLen + 36);
     os << "WAVE";
-    os << "fmt";
-    os << 16;
-    os << 1;
-    os << numChannels;
-    os << sampleRate;
-    os << sampleRate * numChannels * (sampleDepth / 8);
-    os << (uint16_t)(numChannels * (sampleDepth / 8));
-    os << sampleDepth;
+    os << "fmt ";
+    Toolbox::writeDwLE(os, 16);
+    Toolbox::writeWLE(os, 1);
+    Toolbox::writeWLE(os, numChannels);
+    Toolbox::writeDwLE(os, sampleRate);
+    Toolbox::writeDwLE(os, sampleRate * numChannels * (sampleDepth / 8));
+    Toolbox::writeWLE(os, numChannels * (sampleDepth / 8));
+    Toolbox::writeWLE(os, sampleDepth);
     os << "data";
-    os << sampleDataLen;
+    Toolbox::writeDwLE(os, sampleDataLen);
+    std::cerr << sampleDataLen << "\r\n";
+    std::cerr.flush();
 
     while (in.peek())
     {
@@ -283,7 +246,21 @@ static void decodeFile(BitInputStream &in, std::ostream &os)
 
 int main()
 {
-    BitInputStream bin;
-    decodeFile(bin, std::cout);
+    try
+    {
+        BitInputStream bin(&std::cin);
+        decodeFile(bin, std::cout);
+    }
+    catch (const char *e)
+    {
+        std::cerr << e << "\r\n";
+        std::cerr.flush();
+    }
+    catch (...)
+    {
+        std::cerr << "Unknown exception\r\n";
+        std::cerr.flush();
+    }
+    return 0;
 }
 
