@@ -12,7 +12,7 @@ private:
     int _sampleDepth;
     void _decodeSubframe(BitInputStream &in, int sampleDepth, int ch);
     void _decodeResiduals(BitInputStream &in, int warmup, int ch);
-    void _restoreLinearPrediction(int ch, int *coefs, int shift);
+    void _restoreLinearPrediction(int ch, const int *coefs, int shift, int length);
 public:
     FlacFrame(int numChannels, int sampleDepth);
     void decode(BitInputStream &in);
@@ -40,7 +40,6 @@ void FlacFrame::_decodeResiduals(BitInputStream &in, int warmup, int ch)
     {
         int start = i * partitionSize + (i == 0 ? warmup : 0);
         int end = (i + 1) * partitionSize;
-
         int param = in.readUint(paramBits);
 
         if (param < escapeParam)
@@ -58,9 +57,28 @@ void FlacFrame::_decodeResiduals(BitInputStream &in, int warmup, int ch)
     }
 }
 
-void FlacFrame::_restoreLinearPrediction(int ch, int *coefs, int shift)
+static constexpr int FIXED_PREDICTION_COEFFICIENTS[][4] =
 {
-    //for (int i = )
+    {0, 0, 0, 0},
+    {1, 0, 0, 0},
+    {2, -1, 0, 0},
+    {3, -3, 1, 0},
+    {4, -6, 4, -1}
+};
+
+void FlacFrame::_restoreLinearPrediction(int ch, const int *coefs, int shift, int length)
+{
+    for (int i = length; i < _blockSize; ++i)
+    {
+        int64_t sum = 0;
+
+        for (int j = 0; j < length; ++j)
+            sum += _samples->at(ch, i - 1 - j) * coefs[j];
+
+        int64_t temp = _samples->at(ch, i);
+        temp += sum >> shift;
+        _samples->set(ch, i, temp);
+    }
 }
 
 void FlacFrame::_decodeSubframe(BitInputStream &in, int sampleDepth, int ch)
@@ -76,6 +94,8 @@ void FlacFrame::_decodeSubframe(BitInputStream &in, int sampleDepth, int ch)
     }
 
     sampleDepth -= shift;
+    std::cerr << "Type: " << type << "\r\n";
+    std::cerr.flush();
 
     if (type == 0)
     {
@@ -91,9 +111,26 @@ void FlacFrame::_decodeSubframe(BitInputStream &in, int sampleDepth, int ch)
     }
     else if (8 <= type && type <= 12)
     {
+        for (int i = 0; i < _blockSize; ++i)
+            _samples->set(ch, i, in.readSignedInt(sampleDepth));
+
+        _decodeResiduals(in, type - 8, ch);
+        _restoreLinearPrediction(ch, FIXED_PREDICTION_COEFFICIENTS[type - 8], 0, type - 8);
     }
     else if (32 <= type && type <= 63)
     {
+        for (int i = 0; i < type - 31; ++i)
+            _samples->set(ch, i, in.readSignedInt(sampleDepth));
+
+        int precision = in.readUint(4) + 1;
+        int shift2 = in.readSignedInt(5);
+        int coefs[type - 31];
+
+        for (int i = 0; i < type - 31; ++i)
+            coefs[i] = in.readSignedInt(precision);
+
+        _decodeResiduals(in, type - 31, ch);
+        _restoreLinearPrediction(ch, coefs, shift2, type - 31);
     }
     else
     {
@@ -112,6 +149,9 @@ void FlacFrame::decode(BitInputStream &in)
 {
     int temp = in.readByte();
     int sync = temp << 6 | in.readUint(6);
+
+    std::cerr << "Sync: " << sync << "\r\n";
+    std::cerr.flush();
 
     if (sync != 0x3ffe)
         throw "Sync code expected";
@@ -149,6 +189,42 @@ void FlacFrame::decode(BitInputStream &in)
     in.readUint(8);
     _samples = new Matrix<int64_t>(_numChannels, _blockSize);
 
+    if (0 <= chanAsgn && chanAsgn <= 7)
+    {
+        for (int ch = 0; ch < _numChannels; ++ch)
+            _decodeSubframe(in, _sampleDepth, ch);
+    }
+    else if (8 <= chanAsgn && chanAsgn <= 10)
+    {
+        _decodeSubframe(in, _sampleDepth + (chanAsgn == 9 ? 1 : 0), 0);
+        _decodeSubframe(in, _sampleDepth + (chanAsgn == 9 ? 0 : 1), 1);
+
+        if (chanAsgn == 8)
+        {
+            for (int i = 0; i < _blockSize; ++i)
+                _samples->set(1, i, _samples->at(0, i) - _samples->at(1, i));
+        }
+        else if (chanAsgn == 9)
+        {
+            for (int i = 0; i < _blockSize; ++i)
+                _samples->set(0, i, _samples->at(0, i) + _samples->at(1, i));
+        }
+        else if (chanAsgn == 10)
+        {
+            for (int i = 0; i < _blockSize; ++i)
+            {
+                int64_t side = _samples->at(1, i);
+                int64_t right = _samples->at(0, i) - (side >> 1);
+                _samples->set(1, i, right);
+                _samples->set(0, i, right + side);
+            }
+        }
+    }
+    else
+    {
+        throw "Reserved channel assignment";
+    }
+
     in.alignToByte();
     in.readUint(16);
 }
@@ -184,7 +260,7 @@ static void decodeFile(BitInputStream &in, std::ostream &os)
     int sampleRate = -1;
     int numChannels = -1;
     int sampleDepth = -1;
-    long numSamples = -1;
+    int64_t numSamples = -1;
 
     for (bool last = false; !last;)
     {
@@ -201,7 +277,7 @@ static void decodeFile(BitInputStream &in, std::ostream &os)
             sampleRate = in.readUint(20);
             numChannels = in.readUint(3) + 1;
             sampleDepth = in.readUint(5) + 1;
-            numSamples = (long)in.readUint(18) << 18 | in.readUint(18);
+            numSamples = (int64_t)in.readUint(18) << 18 | in.readUint(18);
 
             for (int i = 0; i < 16; i++)
                 in.readUint(8);

@@ -6,6 +6,18 @@
 #include <istream>
 #include <cstdint>
 
+template <class T> class SimpleVector
+{
+private:
+    T *_buf;
+    unsigned _length;
+public:
+    unsigned length() const
+    {
+        return _length;
+    }
+};
+
 template <class T> class Matrix
 {
 private:
