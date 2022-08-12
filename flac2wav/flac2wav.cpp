@@ -1,6 +1,7 @@
 //file: flac2wav.cpp
 
 #include <iostream>
+#include <fstream>
 #include "toolbox.h"
 
 class FlacFrame
@@ -21,6 +22,10 @@ public:
 
 void FlacFrame::_decodeResiduals(BitInputStream &in, int warmup, int ch)
 {
+#if 0
+    std::cerr << "DecodeResiduals" << "\r\n";
+    std::cerr.flush();
+#endif
     int method = in.readUint(2);
 
     if (method >= 2)
@@ -85,6 +90,10 @@ void FlacFrame::_decodeSubframe(BitInputStream &in, int sampleDepth, int ch)
 {
     in.readUint(1);
     int type = in.readUint(6);
+#if 0
+    std::cerr << "Subframe type: " << type << "\r\n";
+    std::cerr.flush();
+#endif
     int shift = in.readUint(1);
 
     if (shift == 1)
@@ -94,8 +103,6 @@ void FlacFrame::_decodeSubframe(BitInputStream &in, int sampleDepth, int ch)
     }
 
     sampleDepth -= shift;
-    std::cerr << "Type: " << type << "\r\n";
-    std::cerr.flush();
 
     if (type == 0)
     {
@@ -111,8 +118,15 @@ void FlacFrame::_decodeSubframe(BitInputStream &in, int sampleDepth, int ch)
     }
     else if (8 <= type && type <= 12)
     {
-        for (int i = 0; i < _blockSize; ++i)
-            _samples->set(ch, i, in.readSignedInt(sampleDepth));
+        for (int i = 0; i < type - 8; ++i)
+        {
+            int64_t sample = in.readSignedInt(sampleDepth);
+#if 0
+            std::cerr << "Sample: " << sample << "\r\n";
+            std::cerr.flush();
+#endif
+            _samples->set(ch, i, sample);
+        }
 
         _decodeResiduals(in, type - 8, ch);
         _restoreLinearPrediction(ch, FIXED_PREDICTION_COEFFICIENTS[type - 8], 0, type - 8);
@@ -150,9 +164,6 @@ void FlacFrame::decode(BitInputStream &in)
     int temp = in.readByte();
     int sync = temp << 6 | in.readUint(6);
 
-    std::cerr << "Sync: " << sync << "\r\n";
-    std::cerr.flush();
-
     if (sync != 0x3ffe)
         throw "Sync code expected";
 
@@ -180,6 +191,11 @@ void FlacFrame::decode(BitInputStream &in)
         _blockSize = 256 << (blockSizeCode - 8);
     else
         throw "Reserved block size";
+
+#if 0
+    std::cerr << "Blocksize: " << _blockSize << "\r\n";
+    std::cerr.flush();
+#endif
 
     if (sampleRateCode == 12)
         in.readUint(8);
@@ -237,11 +253,23 @@ void FlacFrame::write(std::ostream &os)
         for (int j = 0; j < _numChannels; j++)
         {
             int val = int(_samples->at(j, i));
-
+#if 0
+            std::cerr << "Value: " << val << "\r\n";
+            std::cerr.flush();
+#endif
             if (_sampleDepth == 8)
+            {
                 val += 128;
-
-            os << _sampleDepth / 8;
+                os.put(val % 0xff);
+            }
+            else if (_sampleDepth == 16)
+            {
+                Toolbox::writeWLE(os, val);
+            }
+            else
+            {
+                throw "Unsupported sample depth";
+            }
         }
     }   
 }
@@ -254,7 +282,9 @@ FlacFrame::FlacFrame(int numChannels, int sampleDepth)
 
 static void decodeFile(BitInputStream &in, std::ostream &os)
 {
-    if (in.readUint(32) != 0x664c6143)
+    uint32_t magic = in.readUint(32);
+
+    if (magic != 0x664c6143)
         throw "Invalid magic string";
 
     int sampleRate = -1;
@@ -309,8 +339,6 @@ static void decodeFile(BitInputStream &in, std::ostream &os)
     Toolbox::writeWLE(os, sampleDepth);
     os << "data";
     Toolbox::writeDwLE(os, sampleDataLen);
-    std::cerr << sampleDataLen << "\r\n";
-    std::cerr.flush();
 
     while (in.peek())
     {
@@ -320,12 +348,16 @@ static void decodeFile(BitInputStream &in, std::ostream &os)
     }
 }
 
-int main()
+int main(int argc, char **argv)
 {
+
     try
     {
-        BitInputStream bin(&std::cin);
-        decodeFile(bin, std::cout);
+        std::ifstream ifs(argv[1]);
+        std::ofstream ofs(argv[2]);
+
+        BitInputStream bin(&ifs);
+        decodeFile(bin, ofs);
     }
     catch (const char *e)
     {
@@ -334,7 +366,7 @@ int main()
     }
     catch (...)
     {
-        std::cerr << "Unknown exception\r\n";
+        std::cerr << "Onbekend exception\r\n";
         std::cerr.flush();
     }
     return 0;

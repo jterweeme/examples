@@ -74,9 +74,12 @@ public final class SimpleDecodeFlacToWav
 				numChannels = in.readUint(3) + 1;
 				sampleDepth = in.readUint(5) + 1;
 				numSamples = (long)in.readUint(18) << 18 | in.readUint(18);
+
 				for (int i = 0; i < 16; i++)
 					in.readUint(8);
-			} else {
+			}
+            else
+            {
 				for (int i = 0; i < length; i++)
 					in.readUint(8);
 			}
@@ -161,6 +164,8 @@ final class FlacFrame
 		else
 			throw new DataFormatException("Reserved block size");
 		
+        System.err.println("Blocksize: " + _blockSize);
+
 		if (sampleRateCode == 12)
 			in.readUint(8);
 		else if (sampleRateCode == 13 || sampleRateCode == 14)
@@ -231,6 +236,7 @@ final class FlacFrame
     {
 		in.readUint(1);
 		int type = in.readUint(6);
+        System.err.println("Subframe type: " + type);
 		int shift = in.readUint(1);
 
 		if (shift == 1)
@@ -256,7 +262,11 @@ final class FlacFrame
         else if (8 <= type && type <= 12)
         {
             for (int i = 0; i < type - 8; i++)
-                _samples[ch][i] = in.readSignedInt(sampleDepth);
+            {
+                long sample = in.readSignedInt(sampleDepth);
+                System.err.println("Sample: " + sample);
+                _samples[ch][i] = sample;
+            }
 
             _decodeResiduals(in, type - 8, ch);
             _restoreLinearPrediction(ch, FIXED_PREDICTION_COEFFICIENTS[type - 8], 0);
