@@ -2,7 +2,70 @@
 
 #include <iostream>
 #include <fstream>
-#include "toolbox.h"
+
+template <class T> class Matrix
+{
+private:
+    T *_buf;
+    unsigned _width;
+    unsigned _height;
+public:
+    Matrix(unsigned x, unsigned y)
+    {
+        _width = x;
+        _height = y;
+        _buf = new T[x * y];
+    }
+
+    ~Matrix()
+    {
+        delete[] _buf;
+    }
+
+    unsigned width() const
+    {
+        return _width;
+    }
+
+    unsigned height() const
+    {
+        return _height;
+    }
+
+    T at(unsigned x, unsigned y) const
+    {
+        return *(_buf + x * _width + y);
+    }
+
+    void set(unsigned x, unsigned y, T value)
+    {
+        *(_buf + x * _width + y) = value;
+    }
+};
+
+class Toolbox
+{
+public:
+    static uint8_t numberOfLeadingZeros(uint32_t x);
+    static void writeWLE(std::ostream &os, uint16_t w);
+    static void writeDwLE(std::ostream &os, uint32_t dw);
+};
+
+class BitInputStream
+{
+private:
+    std::istream *_is;
+    long _bitBuffer;
+    int _bitBufferLen;
+public:
+    BitInputStream(std::istream *is);
+    void alignToByte();
+    bool peek();
+    uint32_t readUint(int n);
+    int readByte();
+    int readSignedInt(int n);
+    int64_t readRiceSignedInt(int param);
+};
 
 class FlacFrame
 {
@@ -90,7 +153,7 @@ void FlacFrame::_decodeSubframe(BitInputStream &in, int sampleDepth, int ch)
 {
     in.readUint(1);
     int type = in.readUint(6);
-#if 0
+#if 1
     std::cerr << "Subframe type: " << type << "\r\n";
     std::cerr.flush();
 #endif
@@ -347,6 +410,107 @@ static void decodeFile(BitInputStream &in, std::ostream &os)
         frame.write(os);
     }
 }
+
+uint8_t Toolbox::numberOfLeadingZeros(uint32_t x)
+{
+    // Keep shifting x by one until leftmost bit
+    // does not become 1.
+    int total_bits = sizeof(x) * 8;
+    int res = 0;
+
+    while ( !(x & (1 << (total_bits - 1))) )
+    {
+        x = (x << 1);
+        res++;
+    }
+
+    return res;
+}
+
+void Toolbox::writeWLE(std::ostream &os, uint16_t w)
+{
+    os.put(w >> 0 & 0xff);
+    os.put(w >> 8 & 0xff);
+}
+
+void Toolbox::writeDwLE(std::ostream &os, uint32_t dw)
+{
+    os.put(dw >>  0 & 0xff);
+    os.put(dw >>  8 & 0xff);
+    os.put(dw >> 16 & 0xff);
+    os.put(dw >> 24 & 0xff);
+}
+
+BitInputStream::BitInputStream(std::istream *is) : _is(is)
+{
+}
+
+void BitInputStream::alignToByte()
+{
+    _bitBufferLen -= _bitBufferLen % 8;
+}
+
+int BitInputStream::readByte()
+{
+    if (_bitBufferLen >= 8)
+        return readUint(8);
+
+    return _is->get();
+}
+
+bool BitInputStream::peek()
+{
+    if (_bitBufferLen > 0)
+        return true;
+
+    int temp = _is->get();
+
+    if (temp == -1)
+        return false;
+
+    _bitBuffer = (_bitBuffer << 8) | temp;
+    _bitBufferLen += 8;
+    return true;
+}
+
+uint32_t BitInputStream::readUint(int n)
+{
+    while (_bitBufferLen < n)
+    {
+        int temp = _is->get();
+
+        if (temp == -1)
+            throw std::exception();
+
+        _bitBuffer = (_bitBuffer << 8) | temp;
+        _bitBufferLen += 8;
+    }
+
+    _bitBufferLen -= n;
+    int result = int(_bitBuffer >> _bitBufferLen);
+
+    if (n < 32)
+        result &= (1 << n) - 1;
+
+    return result;
+}
+
+int BitInputStream::readSignedInt(int n)
+{
+    return (readUint(n) << (32 - n)) >> (32 - n);
+}
+
+int64_t BitInputStream::readRiceSignedInt(int param)
+{
+    int64_t val = 0;
+
+    while (readUint(1) == 0)
+        ++val;
+    
+    val = (val << param) | readUint(param);
+    return (val >> 1) ^ -(val & 1);
+}
+
 
 int main(int argc, char **argv)
 {
