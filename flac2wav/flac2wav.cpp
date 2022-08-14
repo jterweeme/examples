@@ -55,7 +55,6 @@ public:
     uint64_t readUint(int n);
     int readByte();
     int64_t readSignedInt(int n);
-    int readSignedInt2(int n);
     int64_t readRiceSignedInt(int param);
 };
 
@@ -137,12 +136,9 @@ void FlacFrame::_restoreLinearPrediction(int ch, const int *coefs, uint8_t shift
         for (int j = 0; j < length; ++j)
             sum += _samples->at(ch, i - 1 - j) * coefs[j];
 
-        std::cerr << "RLP: " << sum;
         int64_t temp = _samples->at(ch, i);
         temp += sum >> shift;
         _samples->set(ch, i, temp);
-        std::cerr << " | " << _samples->at(ch, i) << "\r\n";
-        std::cerr.flush();
     }
 }
 
@@ -150,10 +146,6 @@ void FlacFrame::_decodeSubframe(BitInputStream &in, int sampleDepth, int ch)
 {
     in.readUint(1);
     uint8_t type = in.readUint(6);
-#if 1
-    std::cerr << "Subframe type: " << uint16_t(type) << "\r\n";
-    std::cerr.flush();
-#endif
     int shift = in.readUint(1);
 
     if (shift == 1)
@@ -201,14 +193,6 @@ void FlacFrame::_decodeSubframe(BitInputStream &in, int sampleDepth, int ch)
         for (uint8_t i = 0; i < type - 31; ++i)
             coefs[i] = in.readSignedInt(precision);
 
-#if 1
-        for (uint8_t i = 0; i < type - 31; ++i)
-            std::cerr << coefs[i] << " ";
-
-        std::cerr << "\r\n";
-        std::cerr.flush();
-#endif
-
         _decodeResiduals(in, type - 31, ch);
         _restoreLinearPrediction(ch, coefs, shift2, type - 31);
     }
@@ -240,8 +224,6 @@ void FlacFrame::decode(BitInputStream &in)
     uint8_t blockSizeCode = in.readUint(4);
     uint8_t sampleRateCode = in.readUint(4);
     uint8_t chanAsgn = in.readUint(4);
-    std::cerr << "ChanAsgn: " << uint16_t(chanAsgn) << "\r\n";
-    std::cerr.flush();
 
     {
         in.readUint(3);
@@ -267,11 +249,6 @@ void FlacFrame::decode(BitInputStream &in)
         _blockSize = 256 << (blockSizeCode - 8);
     else
         throw "Reserved block size";
-
-#if 0
-    std::cerr << "Blocksize: " << _blockSize << "\r\n";
-    std::cerr.flush();
-#endif
 
     if (sampleRateCode == 12)
         in.readUint(8);
@@ -330,10 +307,7 @@ void FlacFrame::write(std::ostream &os)
         for (int j = 0; j < _numChannels; j++)
         {
             int val = int(_samples->at(j, i));
-#if 0
-            std::cerr << "Value: " << val << "\r\n";
-            std::cerr.flush();
-#endif
+
             if (_sampleDepth == 8)
             {
                 val += 128;
@@ -416,21 +390,12 @@ static void decodeFile(BitInputStream &in, std::ostream &os)
     Toolbox::writeWLE(os, sampleDepth);
     os << "data";
     Toolbox::writeDwLE(os, sampleDataLen);
-    uint32_t nFrame = 0;
 
     while (in.peek())
     {
-#if 0
-        if (nFrame >= 10)
-            break;
-#endif
-        std::cerr << "Frame: " << nFrame << "\r\n";
-        std::cerr.flush();
-
         FlacFrame frame(numChannels, sampleDepth);
         frame.decode(in);
         frame.write(os);
-        ++nFrame;
     }
 }
 
@@ -505,10 +470,6 @@ uint64_t BitInputStream::readUint(int n)
 int64_t BitInputStream::readSignedInt(int n)
 {
     return (int32_t(readUint(n)) << (32 - n)) >> (32 - n);
-}
-
-int BitInputStream::readSignedInt2(int n)
-{
 }
 
 int64_t BitInputStream::readRiceSignedInt(int param)
