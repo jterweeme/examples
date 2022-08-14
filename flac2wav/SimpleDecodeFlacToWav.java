@@ -44,7 +44,7 @@ public final class SimpleDecodeFlacToWav
         decodeFile(in, out);
         out.close();
     }
-	
+    
     public static void decodeFile(BitInputStream in, OutputStream out)
         throws IOException, DataFormatException
     {
@@ -71,27 +71,27 @@ public final class SimpleDecodeFlacToWav
                 in.readUint(24);
                 in.readUint(24);
                 sampleRate = in.readUint(20);
-				numChannels = in.readUint(3) + 1;
-				sampleDepth = in.readUint(5) + 1;
-				numSamples = (long)in.readUint(18) << 18 | in.readUint(18);
+                numChannels = in.readUint(3) + 1;
+                sampleDepth = in.readUint(5) + 1;
+                numSamples = (long)in.readUint(18) << 18 | in.readUint(18);
 
-				for (int i = 0; i < 16; i++)
-					in.readUint(8);
-			}
+                for (int i = 0; i < 16; i++)
+                    in.readUint(8);
+            }
             else
             {
-				for (int i = 0; i < length; i++)
-					in.readUint(8);
-			}
-		}
+                for (int i = 0; i < length; i++)
+                    in.readUint(8);
+            }
+        }
 
-		if (sampleRate == -1)
-			throw new DataFormatException("Stream info metadata block absent");
+        if (sampleRate == -1)
+            throw new DataFormatException("Stream info metadata block absent");
 
-		if (sampleDepth % 8 != 0)
-			throw new RuntimeException("Sample depth not supported");
-		
-		// Start writing WAV file headers
+        if (sampleDepth % 8 != 0)
+            throw new RuntimeException("Sample depth not supported");
+        
+        // Start writing WAV file headers
         long sampleDataLen = numSamples * numChannels * (sampleDepth / 8);
         Toolbox.writeString("RIFF", out);
         Toolbox.writeLittleInt(4, (int)sampleDataLen + 36, out);
@@ -106,15 +106,15 @@ public final class SimpleDecodeFlacToWav
         Toolbox.writeLittleInt(2, sampleDepth, out);
         Toolbox.writeString("data", out);
         Toolbox.writeLittleInt(4, (int)sampleDataLen, out);
-		
-		// Decode FLAC audio frames and write raw samples
+        
+        // Decode FLAC audio frames and write raw samples
         while (in.peek())
         {
             FlacFrame frame = new FlacFrame(numChannels, sampleDepth);
             frame.decode(in);
             frame.write(out);
         }
-	}
+    }
 }
 
 final class FlacFrame
@@ -138,40 +138,41 @@ final class FlacFrame
 
         if (sync != 0x3FFE)
             throw new DataFormatException("Sync code expected");
-		
-        in.readUint(1);
-        in.readUint(1);
+        
+        in.readUint(2);
         int blockSizeCode = in.readUint(4);
         int sampleRateCode = in.readUint(4);
         int chanAsgn = in.readUint(4);
-        in.readUint(3);
-        in.readUint(1);
-		temp = Integer.numberOfLeadingZeros(~(in.readUint(8) << 24)) - 1;
+        in.readUint(4);
+        temp = in.readUint(8);
 
-		for (int i = 0; i < temp; i++)
-			in.readUint(8);
-		
-		if (blockSizeCode == 1)
-			_blockSize = 192;
-		else if (2 <= blockSizeCode && blockSizeCode <= 5)
-			_blockSize = 576 << (blockSizeCode - 2);
-		else if (blockSizeCode == 6)
-			_blockSize = in.readUint(8) + 1;
-		else if (blockSizeCode == 7)
-			_blockSize = in.readUint(16) + 1;
-		else if (8 <= blockSizeCode && blockSizeCode <= 15)
-			_blockSize = 256 << (blockSizeCode - 8);
-		else
-			throw new DataFormatException("Reserved block size");
-		
+        while (temp >= 0b11000000)
+        {
+            in.readUint(8);
+            temp = (temp << 1) & 0xff;
+        }
+
+        if (blockSizeCode == 1)
+            _blockSize = 192;
+        else if (2 <= blockSizeCode && blockSizeCode <= 5)
+            _blockSize = 576 << (blockSizeCode - 2);
+        else if (blockSizeCode == 6)
+            _blockSize = in.readUint(8) + 1;
+        else if (blockSizeCode == 7)
+            _blockSize = in.readUint(16) + 1;
+        else if (8 <= blockSizeCode && blockSizeCode <= 15)
+            _blockSize = 256 << (blockSizeCode - 8);
+        else
+            throw new DataFormatException("Reserved block size");
+        
         System.err.println("Blocksize: " + _blockSize);
 
-		if (sampleRateCode == 12)
-			in.readUint(8);
-		else if (sampleRateCode == 13 || sampleRateCode == 14)
-			in.readUint(16);
-		
-		in.readUint(8);
+        if (sampleRateCode == 12)
+            in.readUint(8);
+        else if (sampleRateCode == 13 || sampleRateCode == 14)
+            in.readUint(16);
+        
+        in.readUint(8);
         _samples = new long[_numChannels][_blockSize];
 
         if (0 <= chanAsgn && chanAsgn <= 7)
@@ -193,7 +194,7 @@ final class FlacFrame
             {
                 for (int i = 0; i < _blockSize; i++)
                     _samples[0][i] += _samples[1][i];
-			}
+            }
             else if (chanAsgn == 10)
             {
                 for (int i = 0; i < _blockSize; i++)
@@ -207,11 +208,11 @@ final class FlacFrame
         }
         else
         {
-			throw new DataFormatException("Reserved channel assignment");
+            throw new DataFormatException("Reserved channel assignment");
         }
 
-		in.alignToByte();
-		in.readUint(16);
+        in.alignToByte();
+        in.readUint(16);
     }
 
     public void write(OutputStream out) throws IOException
@@ -230,22 +231,22 @@ final class FlacFrame
             }
         }
     }
-	
-	private void _decodeSubframe(BitInputStream in, int sampleDepth, int ch)
-			throws IOException, DataFormatException
+    
+    private void _decodeSubframe(BitInputStream in, int sampleDepth, int ch)
+            throws IOException, DataFormatException
     {
-		in.readUint(1);
-		int type = in.readUint(6);
+        in.readUint(1);
+        int type = in.readUint(6);
         System.err.println("Subframe type: " + type);
-		int shift = in.readUint(1);
+        int shift = in.readUint(1);
 
-		if (shift == 1)
-			while (in.readUint(1) == 0)
-				shift++;
+        if (shift == 1)
+            while (in.readUint(1) == 0)
+                shift++;
 
-		sampleDepth -= shift;
-		
-		if (type == 0)
+        sampleDepth -= shift;
+        
+        if (type == 0)
         {
             // Constant coding
             long ret = in.readSignedInt(sampleDepth);
@@ -258,7 +259,7 @@ final class FlacFrame
             // Verbatim coding
             for (int i = 0; i < _blockSize; i++)
                 _samples[ch][i] = in.readSignedInt(sampleDepth);
-		}
+        }
         else if (8 <= type && type <= 12)
         {
             for (int i = 0; i < type - 8; i++)
@@ -271,16 +272,17 @@ final class FlacFrame
             _decodeResiduals(in, type - 8, ch);
             _restoreLinearPrediction(ch, FIXED_PREDICTION_COEFFICIENTS[type - 8], 0);
         }
-		else if (32 <= type && type <= 63)
+        else if (32 <= type && type <= 63)
         {
             for (int i = 0; i < type - 31; i++)
                 _samples[ch][i] = in.readSignedInt(sampleDepth);
 
             int precision = in.readUint(4) + 1;
-            int shift2 = in.readSignedInt(5);
+            int shift2 = in.readUint(5);
+            System.err.println("Shift2: " + shift2);
             int[] coefs = new int[type - 31];
 
-            for (int i = 0; i < coefs.length; i++)
+            for (int i = 0; i < type - 31; i++)
                 coefs[i] = in.readSignedInt(precision);
 
             _decodeResiduals(in, type - 31, ch);
@@ -289,12 +291,12 @@ final class FlacFrame
         else
         {
             throw new DataFormatException("Reserved subframe type");
-		}
+        }
 
         for (int i = 0; i < _blockSize; i++)
             _samples[ch][i] <<= shift;
     }
-	
+    
     private static final int[][] FIXED_PREDICTION_COEFFICIENTS = {
         {},
         {1},
@@ -320,7 +322,7 @@ final class FlacFrame
             throw new DataFormatException("Block size not divisible by number of Rice partitions");
 
         int partitionSize = _blockSize / numPartitions;
-		
+
         for (int i = 0; i < numPartitions; i++)
         {
             int start = i * partitionSize + (i == 0 ? warmup : 0);
@@ -329,19 +331,19 @@ final class FlacFrame
 
             if (param < escapeParam)
             {
-				for (int j = start; j < end; j++)
-					_samples[ch][j] = in.readRiceSignedInt(param);
-			}
+                for (int j = start; j < end; j++)
+                    _samples[ch][j] = in.readRiceSignedInt(param);
+            }
             else
             {
-				int numBits = in.readUint(5);
+                int numBits = in.readUint(5);
 
-				for (int j = start; j < end; j++)
+                for (int j = start; j < end; j++)
                     _samples[ch][j] = in.readSignedInt(numBits);
-			}
-		}
-	}
-	
+            }
+        }
+    }
+
     private void _restoreLinearPrediction(int ch, int[] coefs, int shift)
     {
         for (int i = coefs.length; i < _blockSize; i++)
@@ -363,8 +365,8 @@ final class Toolbox
     {
         for (int i = 0; i < numBytes; i++)
             out.write(val >>> (i * 8));
-	}
-	
+    }
+    
     public static void writeString(String s, OutputStream out) throws IOException
     {
         out.write(s.getBytes(StandardCharsets.UTF_8));
@@ -372,31 +374,31 @@ final class Toolbox
 }
 
 final class BitInputStream implements AutoCloseable
-{	
-	private InputStream in;
-	private long bitBuffer;
-	private int bitBufferLen;
-	
-	public BitInputStream(InputStream in)
+{   
+    private InputStream in;
+    private long bitBuffer;
+    private int bitBufferLen;
+    
+    public BitInputStream(InputStream in)
     {
-		this.in = in;
-	}
-	
-	
-	public void alignToByte()
+        this.in = in;
+    }
+    
+    
+    public void alignToByte()
     {
-		bitBufferLen -= bitBufferLen % 8;
-	}
-	
-	
-	public int readByte() throws IOException
+        bitBufferLen -= bitBufferLen % 8;
+    }
+    
+    
+    public int readByte() throws IOException
     {
-		if (bitBufferLen >= 8)
-			return readUint(8);
-		else
-			return in.read();
-	}
-	
+        if (bitBufferLen >= 8)
+            return readUint(8);
+        else
+            return in.read();
+    }
+    
     public boolean peek() throws IOException
     {
         if (bitBufferLen > 0)
@@ -411,45 +413,45 @@ final class BitInputStream implements AutoCloseable
         bitBufferLen += 8;
         return true;
     }
-	
-	public int readUint(int n) throws IOException
-    {
-		while (bitBufferLen < n)
-        {
-			int temp = in.read();
 
-			if (temp == -1)
-				throw new EOFException();
+    public int readUint(int n) throws IOException
+    {
+        while (bitBufferLen < n)
+        {
+            int temp = in.read();
+
+            if (temp == -1)
+                throw new EOFException();
 
             bitBuffer = (bitBuffer << 8) | temp;
             bitBufferLen += 8;
-		}
-		bitBufferLen -= n;
-		int result = (int)(bitBuffer >>> bitBufferLen);
+        }
+        bitBufferLen -= n;
+        int result = (int)(bitBuffer >>> bitBufferLen);
 
-		if (n < 32)
-			result &= (1 << n) - 1;
+        if (n < 32)
+            result &= (1 << n) - 1;
 
-		return result;
-	}
-	
-	
-	public int readSignedInt(int n) throws IOException {
-		return (readUint(n) << (32 - n)) >> (32 - n);
-	}
-	
-	
-	public long readRiceSignedInt(int param) throws IOException {
-		long val = 0;
-		while (readUint(1) == 0)
-			val++;
-		val = (val << param) | readUint(param);
-		return (val >>> 1) ^ -(val & 1);
-	}
-	
-	
-	public void close() throws IOException {
-		in.close();
-	}
-	
+        return result;
+    }
+    
+    public int readSignedInt(int n) throws IOException
+    {
+        return (readUint(n) << (32 - n)) >> (32 - n);
+    }
+
+    public long readRiceSignedInt(int param) throws IOException
+    {
+        long val = 0;
+        while (readUint(1) == 0)
+            val++;
+        val = (val << param) | readUint(param);
+        return (val >>> 1) ^ -(val & 1);
+    }
+
+    public void close() throws IOException
+    {
+        in.close();
+    }
 }
+
