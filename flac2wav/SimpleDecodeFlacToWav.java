@@ -285,6 +285,11 @@ final class FlacFrame
             for (int i = 0; i < type - 31; i++)
                 coefs[i] = in.readSignedInt(precision);
 
+            for (int i = 0; i < type - 31; i++)
+                System.err.print(coefs[i] + " ");
+
+            System.err.print("\r\n");
+
             _decodeResiduals(in, type - 31, ch);
             _restoreLinearPrediction(ch, coefs, shift2);
         }
@@ -354,6 +359,7 @@ final class FlacFrame
                 sum += _samples[ch][i - 1 - j] * coefs[j];
 
             _samples[ch][i] += sum >> shift;
+            System.err.println("RLP: " + _samples[ch][i]);
         }
     }
 }

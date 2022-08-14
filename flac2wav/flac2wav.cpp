@@ -21,6 +21,11 @@ public:
         delete[] _buf;
     }
 
+    void clear() {
+        for (unsigned i = 0; i < _width * _height; ++i)
+            _buf[i] = 0;
+    }
+
     T at(unsigned x, unsigned y) const {
         return *(_buf + x * _width + y);
     }
@@ -50,6 +55,7 @@ public:
     uint64_t readUint(int n);
     int readByte();
     int64_t readSignedInt(int n);
+    int readSignedInt2(int n);
     int64_t readRiceSignedInt(int param);
 };
 
@@ -131,9 +137,12 @@ void FlacFrame::_restoreLinearPrediction(int ch, const int *coefs, uint8_t shift
         for (int j = 0; j < length; ++j)
             sum += _samples->at(ch, i - 1 - j) * coefs[j];
 
+        std::cerr << "RLP: " << sum;
         int64_t temp = _samples->at(ch, i);
         temp += sum >> shift;
         _samples->set(ch, i, temp);
+        std::cerr << " | " << _samples->at(ch, i) << "\r\n";
+        std::cerr.flush();
     }
 }
 
@@ -191,6 +200,14 @@ void FlacFrame::_decodeSubframe(BitInputStream &in, int sampleDepth, int ch)
 
         for (uint8_t i = 0; i < type - 31; ++i)
             coefs[i] = in.readSignedInt(precision);
+
+#if 1
+        for (uint8_t i = 0; i < type - 31; ++i)
+            std::cerr << coefs[i] << " ";
+
+        std::cerr << "\r\n";
+        std::cerr.flush();
+#endif
 
         _decodeResiduals(in, type - 31, ch);
         _restoreLinearPrediction(ch, coefs, shift2, type - 31);
@@ -263,6 +280,7 @@ void FlacFrame::decode(BitInputStream &in)
 
     in.readUint(8);
     _samples = new Matrix<int64_t>(_numChannels, _blockSize);
+    _samples->clear();
 
     if (0 <= chanAsgn && chanAsgn <= 7)
     {
@@ -486,7 +504,11 @@ uint64_t BitInputStream::readUint(int n)
 
 int64_t BitInputStream::readSignedInt(int n)
 {
-    return (readUint(n) << (32 - n)) >> (32 - n);
+    return (int32_t(readUint(n)) << (32 - n)) >> (32 - n);
+}
+
+int BitInputStream::readSignedInt2(int n)
+{
 }
 
 int64_t BitInputStream::readRiceSignedInt(int param)
