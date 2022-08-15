@@ -21,11 +21,6 @@ public:
         delete[] _buf;
     }
 
-    void clear() {
-        for (unsigned i = 0; i < _width * _height; ++i)
-            _buf[i] = 0;
-    }
-
     T at(unsigned x, unsigned y) const {
         return *(_buf + x * _width + y);
     }
@@ -257,7 +252,6 @@ void FlacFrame::decode(BitInputStream &in)
 
     in.readUint(8);
     _samples = new Matrix<int64_t>(_numChannels, _blockSize);
-    _samples->clear();
 
     if (0 <= chanAsgn && chanAsgn <= 7)
     {
@@ -469,7 +463,14 @@ uint64_t BitInputStream::readUint(int n)
 
 int64_t BitInputStream::readSignedInt(int n)
 {
-    return (int32_t(readUint(n)) << (32 - n)) >> (32 - n);
+    int64_t buf = int64_t(readUint(n));
+
+    if (buf <= 1 << n - 1)
+        return buf;
+
+    return buf - (1 << n);
+    
+    //return (int32_t(readUint(n)) << (32 - n)) >> (32 - n);
 }
 
 int64_t BitInputStream::readRiceSignedInt(int param)
@@ -480,7 +481,8 @@ int64_t BitInputStream::readRiceSignedInt(int param)
         ++val;
     
     val = (val << param) | readUint(param);
-    return (val >> 1) ^ -(val & 1);
+    int64_t ret = (val >> 1) ^ -(val & 1);
+    return ret;
 }
 
 

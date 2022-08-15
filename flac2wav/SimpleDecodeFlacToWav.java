@@ -24,7 +24,6 @@
 //Adapted by Jasper ter Weeme
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.zip.DataFormatException;
 
 
@@ -133,7 +132,8 @@ final class FlacFrame
     public void decode(BitInputStream in) throws IOException, DataFormatException
     {
         // Read a ton of header fields, and ignore most of them
-        int temp = in.readByte();
+        //int temp = in.readByte();
+        int temp = in.readUint(8);
         int sync = temp << 6 | in.readUint(6);
 
         if (sync != 0x3FFE)
@@ -165,8 +165,6 @@ final class FlacFrame
         else
             throw new DataFormatException("Reserved block size");
         
-        System.err.println("Blocksize: " + _blockSize);
-
         if (sampleRateCode == 12)
             in.readUint(8);
         else if (sampleRateCode == 13 || sampleRateCode == 14)
@@ -237,7 +235,6 @@ final class FlacFrame
     {
         in.readUint(1);
         int type = in.readUint(6);
-        System.err.println("Subframe type: " + type);
         int shift = in.readUint(1);
 
         if (shift == 1)
@@ -265,7 +262,6 @@ final class FlacFrame
             for (int i = 0; i < type - 8; i++)
             {
                 long sample = in.readSignedInt(sampleDepth);
-                System.err.println("Sample: " + sample);
                 _samples[ch][i] = sample;
             }
 
@@ -279,16 +275,10 @@ final class FlacFrame
 
             int precision = in.readUint(4) + 1;
             int shift2 = in.readUint(5);
-            System.err.println("Shift2: " + shift2);
             int[] coefs = new int[type - 31];
 
             for (int i = 0; i < type - 31; i++)
                 coefs[i] = in.readSignedInt(precision);
-
-            for (int i = 0; i < type - 31; i++)
-                System.err.print(coefs[i] + " ");
-
-            System.err.print("\r\n");
 
             _decodeResiduals(in, type - 31, ch);
             _restoreLinearPrediction(ch, coefs, shift2);
@@ -359,7 +349,6 @@ final class FlacFrame
                 sum += _samples[ch][i - 1 - j] * coefs[j];
 
             _samples[ch][i] += sum >> shift;
-            System.err.println("RLP: " + _samples[ch][i]);
         }
     }
 }
@@ -375,7 +364,8 @@ final class Toolbox
     
     public static void writeString(String s, OutputStream out) throws IOException
     {
-        out.write(s.getBytes(StandardCharsets.UTF_8));
+        //out.write(s.getBytes(StandardCharsets.UTF_8));
+        out.write(s.getBytes());
     }
 }
 
@@ -390,19 +380,9 @@ final class BitInputStream implements AutoCloseable
         this.in = in;
     }
     
-    
     public void alignToByte()
     {
         bitBufferLen -= bitBufferLen % 8;
-    }
-    
-    
-    public int readByte() throws IOException
-    {
-        if (bitBufferLen >= 8)
-            return readUint(8);
-        else
-            return in.read();
     }
     
     public boolean peek() throws IOException
@@ -443,16 +423,20 @@ final class BitInputStream implements AutoCloseable
     
     public int readSignedInt(int n) throws IOException
     {
-        return (readUint(n) << (32 - n)) >> (32 - n);
+        int buf = readUint(n);
+        return buf <= 1 << n - 1 ? buf : buf - (1 << n);
     }
 
     public long readRiceSignedInt(int param) throws IOException
     {
         long val = 0;
+
         while (readUint(1) == 0)
             val++;
-        val = (val << param) | readUint(param);
-        return (val >>> 1) ^ -(val & 1);
+
+        val = val << param | readUint(param);
+        long ret = val >>> 1 ^ -(val & 1);
+        return ret;
     }
 
     public void close() throws IOException
