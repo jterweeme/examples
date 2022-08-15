@@ -289,7 +289,9 @@ final class FlacFrame
         }
 
         for (int i = 0; i < _blockSize; i++)
+        {
             _samples[ch][i] <<= shift;
+        }
     }
     
     private static final int[][] FIXED_PREDICTION_COEFFICIENTS = {

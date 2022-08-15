@@ -7,13 +7,9 @@ template <class T> class Matrix
 {
 private:
     T *_buf;
-    unsigned _width;
-    unsigned _height;
+    unsigned _x, _y;
 public:
-    Matrix(unsigned x, unsigned y)
-    {
-        _width = x;
-        _height = y;
+    Matrix(unsigned x, unsigned y) : _x(x), _y(y) {
         _buf = new T[x * y];
     }
 
@@ -22,11 +18,11 @@ public:
     }
 
     T at(unsigned x, unsigned y) const {
-        return *(_buf + x * _width + y);
+        return *(_buf + x * _y + y);
     }
 
     void set(unsigned x, unsigned y, T value) {
-        *(_buf + x * _width + y) = value;
+        *(_buf + x * _y + y) = value;
     }
 };
 
@@ -57,7 +53,7 @@ class FlacFrame
 {
 private:
     Matrix<int64_t> *_samples;
-    int _blockSize;
+    uint32_t _blockSize;
     int _numChannels;
     int _sampleDepth;
     void _decodeSubframe(BitInputStream &in, int sampleDepth, int ch);
@@ -85,18 +81,18 @@ void FlacFrame::_decodeResiduals(BitInputStream &in, int warmup, int ch)
     uint8_t paramBits = method == 0 ? 4 : 5;
     uint8_t escapeParam = method == 0 ? 0xF : 0x1F;
     uint8_t partitionOrder = in.readUint(4);
-    uint16_t numPartitions = 1 << partitionOrder;
+    uint32_t numPartitions = 1 << partitionOrder;
 
     if (_blockSize % numPartitions != 0)
         throw "Block size not divisible by number of Rice partitions";
 
-    int partitionSize = _blockSize / numPartitions;
+    uint32_t partitionSize = _blockSize / numPartitions;
 
-    for (int i = 0; i < numPartitions; i++)
+    for (uint32_t i = 0; i < numPartitions; i++)
     {
         int start = i * partitionSize + (i == 0 ? warmup : 0);
         int end = (i + 1) * partitionSize;
-        int param = in.readUint(paramBits);
+        uint8_t param = in.readUint(paramBits);
 
         if (param < escapeParam)
         {
@@ -141,7 +137,7 @@ void FlacFrame::_decodeSubframe(BitInputStream &in, int sampleDepth, int ch)
 {
     in.readUint(1);
     uint8_t type = in.readUint(6);
-    int shift = in.readUint(1);
+    uint8_t shift = in.readUint(1);
 
     if (shift == 1)
     {
@@ -463,14 +459,7 @@ uint64_t BitInputStream::readUint(int n)
 
 int64_t BitInputStream::readSignedInt(int n)
 {
-    int64_t buf = int64_t(readUint(n));
-
-    if (buf <= 1 << n - 1)
-        return buf;
-
-    return buf - (1 << n);
-    
-    //return (int32_t(readUint(n)) << (32 - n)) >> (32 - n);
+    return int64_t(readUint(n) << 64 - n) >> 64 - n;
 }
 
 int64_t BitInputStream::readRiceSignedInt(int param)
