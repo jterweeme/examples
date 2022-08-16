@@ -937,7 +937,7 @@ static INLINE int alloc_table(vlc_t *vlc, int size) {
     vlc->table_size += size;
     if (vlc->table_size > vlc->table_allocated) {
         vlc->table_allocated += (1 << vlc->bits);
-        vlc->table = realloc(vlc->table, sizeof(VLC_TYPE) * 2 * vlc->table_allocated);
+        vlc->table = (int16_t (*)[2])(realloc(vlc->table, sizeof(VLC_TYPE) * 2 * vlc->table_allocated));
         if (!vlc->table)
             return -1;
     }
@@ -2491,10 +2491,10 @@ static int mp3_decode_init(mp3_context_t *s) {
         }
 
         /* compute n ^ (4/3) and store it in mantissa/exp format */
-        table_4_3_exp= malloc(TABLE_4_3_SIZE * sizeof(table_4_3_exp[0]));
+        table_4_3_exp= (int8_t *)(malloc(TABLE_4_3_SIZE * sizeof(table_4_3_exp[0])));
         if(!table_4_3_exp)
             return -1;
-        table_4_3_value= malloc(TABLE_4_3_SIZE * sizeof(table_4_3_value[0]));
+        table_4_3_value= (uint32_t *)(malloc(TABLE_4_3_SIZE * sizeof(table_4_3_value[0])));
         if(!table_4_3_value)
             return -1;
 
@@ -2652,7 +2652,7 @@ int mp3_decode(mp3_decoder_t *dec, void *buf, int bytes, signed short *out, mp3_
     int res, size = -1;
     mp3_context_t *s = (mp3_context_t*) dec;
     if (!s) return 0;
-    res = mp3_decode_frame(s, (int16_t*) out, &size, buf, bytes);
+    res = mp3_decode_frame(s, (int16_t*) out, &size, (uint8_t *)(buf), bytes);
     if (res < 0) return 0;
     if (info) {
         info->sample_rate = s->sample_rate;

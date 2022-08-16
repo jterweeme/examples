@@ -2,6 +2,7 @@
 // this file is public domain -- do with it whatever you want!
 #include "minimp3.h"
 #include <unistd.h>
+#include <cstring>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/types.h>
@@ -9,7 +10,7 @@
 #include <sys/ioctl.h>
 #include <linux/soundcard.h>
 
-size_t strlen(const char *s);
+//size_t strlen(const char *s);
 #define out(text) write(1, (const void *) text, strlen(text))
 
 int main(int argc, char *argv[]) {
@@ -45,7 +46,7 @@ int main(int argc, char *argv[]) {
     out(argv[1]);
 
     mp3 = mp3_create();
-    frame_size = mp3_decode(mp3, stream_pos, bytes_left, sample_buf, &info);
+    frame_size = mp3_decode((void**)mp3, stream_pos, bytes_left, sample_buf, &info);
     if (!frame_size) {
         out("\nError: not a valid MP3 audio file!\n");
         return 1;
@@ -75,7 +76,7 @@ int main(int argc, char *argv[]) {
         stream_pos += frame_size;
         bytes_left -= frame_size;
         write(pcm, (const void *) sample_buf, info.audio_bytes);
-        frame_size = mp3_decode(mp3, stream_pos, bytes_left, sample_buf, NULL);
+        frame_size = mp3_decode((void**)mp3, stream_pos, bytes_left, sample_buf, NULL);
     }
 
     close(pcm);
