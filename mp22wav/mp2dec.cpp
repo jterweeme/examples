@@ -120,7 +120,9 @@ int main(int argc, char **argv)
     if (opts.stdinput())
     {
         fin = stdin;
+#ifdef _WIN32
         setmode(fileno(stdin), O_BINARY);
+#endif
     }
     else
     {
@@ -147,9 +149,9 @@ int CMain::run(FILE *fin, FILE *fout)
         fclose(fin);
         return 1;
     }
-
+#ifdef _WIN32
     setmode(fileno(stdout), O_BINARY);
-
+#endif
     if (!fout)
     {
         fprintf(stderr, "Could not open output file %s!\n", "out.wav");

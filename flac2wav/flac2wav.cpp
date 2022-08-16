@@ -1,5 +1,7 @@
 //file: flac2wav.cpp
 
+//adapted from https://www.nayuki.io/page/simple-flac-implementation
+
 #include <iostream>
 #include <fstream>
 
@@ -480,11 +482,26 @@ int main(int argc, char **argv)
 
     try
     {
-        std::ifstream ifs(argv[1]);
-        std::ofstream ofs(argv[2]);
+        std::istream *is;
+        std::ostream *os;
+        std::ifstream ifs;
+        std::ofstream ofs;
 
-        BitInputStream bin(&ifs);
-        decodeFile(bin, ofs);
+        if (argc == 3)
+        {
+            ifs.open(argv[1]);
+            ofs.open(argv[2]);
+            is = &ifs;
+            os = &ofs;
+        }
+        else
+        {
+            is = &std::cin;
+            os = &std::cout;
+        }
+
+        BitInputStream bin(is);
+        decodeFile(bin, *os);
     }
     catch (const char *e)
     {
