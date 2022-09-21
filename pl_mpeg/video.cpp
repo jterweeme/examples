@@ -630,6 +630,7 @@ static int plm_video_decode_sequence_header(plm_video_t *self)
     return TRUE;
 }
 
+// Create a video decoder with a plm_buffer as source.
 plm_video_t * plm_video_create_with_buffer(plm_buffer_t *buffer, int destroy_when_done) {
     plm_video_t *self = (plm_video_t *)malloc(sizeof(plm_video_t));
     memset(self, 0, sizeof(plm_video_t));
@@ -646,7 +647,7 @@ plm_video_t * plm_video_create_with_buffer(plm_buffer_t *buffer, int destroy_whe
 }
 
 
-
+// Destroy a video decoder and free all data.
 void plm_video_destroy(plm_video_t *self) {
     if (self->destroy_buffer_when_done) {
         plm_buffer_destroy(self->buffer);
@@ -659,10 +660,12 @@ void plm_video_destroy(plm_video_t *self) {
     free(self);
 }
 
+// Get the framerate in frames per second.
 double plm_video_get_framerate(plm_video_t *self)
 {   return plm_video_has_header(self) ? self->framerate : 0;
 }
 
+// Get the display width/height.
 int plm_video_get_width(plm_video_t *self)
 {
     return plm_video_has_header(self) ? self->width : 0;
@@ -673,19 +676,27 @@ int plm_video_get_height(plm_video_t *self)
     return plm_video_has_header(self) ? self->height : 0;
 }
 
+// Set "no delay" mode. When enabled, the decoder assumes that the video does
+// *not* contain any B-Frames. This is useful for reducing lag when streaming.
+// The default is FALSE.
 void plm_video_set_no_delay(plm_video_t *self, int no_delay) {
     self->assume_no_b_frames = no_delay;
 }
 
+// Get the current internal time in seconds.
 double plm_video_get_time(plm_video_t *self) {
     return self->time;
 }
 
+// Set the current internal time in seconds. This is only useful when you
+// manipulate the underlying video buffer and want to enforce a correct
+// timestamps.
 void plm_video_set_time(plm_video_t *self, double time) {
     self->frames_decoded = self->framerate * time;
     self->time = time;
 }
 
+// Rewind the internal buffer. See plm_buffer_rewind().
 void plm_video_rewind(plm_video_t *self)
 {
     plm_buffer_rewind(self->buffer);
@@ -695,12 +706,16 @@ void plm_video_rewind(plm_video_t *self)
     self->start_code = -1;
 }
 
+// Get whether the file has ended. This will be cleared on rewind.
 int plm_video_has_ended(plm_video_t *self) {
     return plm_buffer_has_ended(self->buffer);
 }
 
 void plm_video_decode_picture(plm_video_t *self);
 
+// Decode and return one frame of video and advance the internal time by 
+// 1/framerate seconds. The returned frame_t is valid until the next call of
+// plm_video_decode() or until the video decoder is destroyed.
 plm_frame_t *plm_video_decode(plm_video_t *self)
 {
     if (!plm_video_has_header(self))
@@ -767,6 +782,8 @@ plm_frame_t *plm_video_decode(plm_video_t *self)
     return frame;
 }
 
+// Get whether a sequence header was found and we can accurately report on
+// dimensions and framerate.
 int plm_video_has_header(plm_video_t *self)
 {
     if (self->has_sequence_header)
@@ -1299,55 +1316,5 @@ void plm_video_decode_block(plm_video_t *self, int block)
         }
     }
 }
-
-
-
-// YCbCr conversion following the BT.601 standard:
-// https://infogalactic.com/info/YCbCr#ITU-R_BT.601_conversion
-
-#define PLM_PUT_PIXEL(RI, GI, BI, Y_OFFSET, DEST_OFFSET) \
-    y = ((frame->y.data[y_index + Y_OFFSET]-16) * 76309) >> 16; \
-    dest[d_index + DEST_OFFSET + RI] = plm_clamp(y + r); \
-    dest[d_index + DEST_OFFSET + GI] = plm_clamp(y - g); \
-    dest[d_index + DEST_OFFSET + BI] = plm_clamp(y + b);
-
-#define PLM_DEFINE_FRAME_CONVERT_FUNCTION(NAME, BYTES_PER_PIXEL, RI, GI, BI) \
-    void NAME(plm_frame_t *frame, uint8_t *dest, int stride) { \
-        int cols = frame->width >> 1; \
-        int rows = frame->height >> 1; \
-        int yw = frame->y.width; \
-        int cw = frame->cb.width; \
-        for (int row = 0; row < rows; row++) { \
-            int c_index = row * cw; \
-            int y_index = row * 2 * yw; \
-            int d_index = row * 2 * stride; \
-            for (int col = 0; col < cols; col++) { \
-                int y; \
-                int cr = frame->cr.data[c_index] - 128; \
-                int cb = frame->cb.data[c_index] - 128; \
-                int r = (cr * 104597) >> 16; \
-                int g = (cb * 25674 + cr * 53278) >> 16; \
-                int b = (cb * 132201) >> 16; \
-                PLM_PUT_PIXEL(RI, GI, BI, 0,      0); \
-                PLM_PUT_PIXEL(RI, GI, BI, 1,      BYTES_PER_PIXEL); \
-                PLM_PUT_PIXEL(RI, GI, BI, yw,     stride); \
-                PLM_PUT_PIXEL(RI, GI, BI, yw + 1, stride + BYTES_PER_PIXEL); \
-                c_index += 1; \
-                y_index += 2; \
-                d_index += 2 * BYTES_PER_PIXEL; \
-            } \
-        } \
-    }
-
-PLM_DEFINE_FRAME_CONVERT_FUNCTION(plm_frame_to_rgb,  3, 0, 1, 2)
-PLM_DEFINE_FRAME_CONVERT_FUNCTION(plm_frame_to_bgr,  3, 2, 1, 0)
-PLM_DEFINE_FRAME_CONVERT_FUNCTION(plm_frame_to_rgba, 4, 0, 1, 2)
-PLM_DEFINE_FRAME_CONVERT_FUNCTION(plm_frame_to_bgra, 4, 2, 1, 0)
-PLM_DEFINE_FRAME_CONVERT_FUNCTION(plm_frame_to_argb, 4, 1, 2, 3)
-PLM_DEFINE_FRAME_CONVERT_FUNCTION(plm_frame_to_abgr, 4, 3, 2, 1)
-
-
-#undef PLM_PUT_PIXEL
-#undef PLM_DEFINE_FRAME_CONVERT_FUNCTION
 
 

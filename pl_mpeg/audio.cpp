@@ -242,6 +242,7 @@ const plm_quantizer_spec_t *plm_audio_read_allocation(plm_audio_t *self, int sb,
 void plm_audio_read_samples(plm_audio_t *self, int ch, int sb, int part); 
 void plm_audio_idct36(int s[32][3], int ss, float *d, int dp);
 
+// Create an audio decoder with a plm_buffer as source.
 plm_audio_t *plm_audio_create_with_buffer(plm_buffer_t *buffer, int destroy_when_done) {
     plm_audio_t *self = (plm_audio_t *)malloc(sizeof(plm_audio_t));
     memset(self, 0, sizeof(plm_audio_t));
@@ -260,6 +261,7 @@ plm_audio_t *plm_audio_create_with_buffer(plm_buffer_t *buffer, int destroy_when
     return self;
 }
 
+// Destroy an audio decoder and free all data.
 void plm_audio_destroy(plm_audio_t *self)
 {
     if (self->destroy_buffer_when_done)
@@ -268,6 +270,8 @@ void plm_audio_destroy(plm_audio_t *self)
     free(self);
 }
 
+// Get whether a frame header was found and we can accurately report on
+// samplerate.
 int plm_audio_has_header(plm_audio_t *self) {
     if (self->has_header) {
         return TRUE;
@@ -277,22 +281,28 @@ int plm_audio_has_header(plm_audio_t *self) {
     return self->has_header;
 }
 
+// Get the samplerate in samples per second.
 int plm_audio_get_samplerate(plm_audio_t *self) {
     return plm_audio_has_header(self)
         ? PLM_AUDIO_SAMPLE_RATE[self->samplerate_index]
         : 0;
 }
 
+// Get the current internal time in seconds.
 double plm_audio_get_time(plm_audio_t *self) {
     return self->time;
 }
 
+// Set the current internal time in seconds. This is only useful when you
+// manipulate the underlying video buffer and want to enforce a correct
+// timestamps.
 void plm_audio_set_time(plm_audio_t *self, double time) {
     self->samples_decoded = time * 
         (double)PLM_AUDIO_SAMPLE_RATE[self->samplerate_index];
     self->time = time;
 }
 
+// Rewind the internal buffer. See plm_buffer_rewind().
 void plm_audio_rewind(plm_audio_t *self) {
     plm_buffer_rewind(self->buffer);
     self->time = 0;
@@ -300,11 +310,17 @@ void plm_audio_rewind(plm_audio_t *self) {
     self->next_frame_data_size = 0;
 }
 
+// Get whether the file has ended. This will be cleared on rewind.
 int plm_audio_has_ended(plm_audio_t *self) {
     return plm_buffer_has_ended(self->buffer);
 }
 
-plm_samples_t *plm_audio_decode(plm_audio_t *self) {
+// Decode and return one "frame" of audio and advance the internal time by 
+// (PLM_AUDIO_SAMPLES_PER_FRAME/samplerate) seconds. The returned samples_t 
+// is valid until the next call of plm_audio_decode() or until the audio
+// decoder is destroyed.
+plm_samples_t *plm_audio_decode(plm_audio_t *self)
+{
     // Do we have at least enough information to decode the frame header?
     if (!self->next_frame_data_size) {
         if (!plm_buffer_has(self->buffer, 48)) {

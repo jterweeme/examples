@@ -16,6 +16,8 @@ void plm_read_video_packet(plm_buffer_t *buffer, void *user);
 void plm_read_audio_packet(plm_buffer_t *buffer, void *user);
 void plm_read_packets(plm_t *self, int requested_type);
 
+// Create a plmpeg instance with a filename. Returns NULL if the file could not
+// be opened.
 plm_t *plm_create_with_filename(const char *filename) {
     plm_buffer_t *buffer = plm_buffer_create_with_filename(filename);
     if (!buffer) {
@@ -24,16 +26,25 @@ plm_t *plm_create_with_filename(const char *filename) {
     return plm_create_with_buffer(buffer, TRUE);
 }
 
+// Create a plmpeg instance with a file handle. Pass TRUE to close_when_done to
+// let plmpeg call fclose() on the handle when plm_destroy() is called.
 plm_t *plm_create_with_file(FILE *fh, int close_when_done) {
     plm_buffer_t *buffer = plm_buffer_create_with_file(fh, close_when_done);
     return plm_create_with_buffer(buffer, TRUE);
 }
 
+// Create a plmpeg instance with a pointer to memory as source. This assumes the
+// whole file is in memory. The memory is not copied. Pass TRUE to 
+// free_when_done to let plmpeg call free() on the pointer when plm_destroy() 
+// is called.
 plm_t *plm_create_with_memory(uint8_t *bytes, size_t length, int free_when_done) {
     plm_buffer_t *buffer = plm_buffer_create_with_memory(bytes, length, free_when_done);
     return plm_create_with_buffer(buffer, TRUE);
 }
 
+// Create a plmpeg instance with a plm_buffer as source. Pass TRUE to
+// destroy_when_done to let plmpeg call plm_buffer_destroy() on the buffer when
+// plm_destroy() is called.
 plm_t *plm_create_with_buffer(plm_buffer_t *buffer, int destroy_when_done) {
     plm_t *self = (plm_t *)malloc(sizeof(plm_t));
     memset(self, 0, sizeof(plm_t));
@@ -46,7 +57,8 @@ plm_t *plm_create_with_buffer(plm_buffer_t *buffer, int destroy_when_done) {
     return self;
 }
 
-int plm_init_decoders(plm_t *self) {
+int plm_init_decoders(plm_t *self)
+{
     if (self->has_decoders) {
         return TRUE;
     }
@@ -83,7 +95,9 @@ int plm_init_decoders(plm_t *self) {
     return TRUE;
 }
 
-void plm_destroy(plm_t *self) {
+// Destroy a plmpeg instance and free all data.
+void plm_destroy(plm_t *self)
+{
     if (self->video_decoder) {
         plm_video_destroy(self->video_decoder);
     }
@@ -95,10 +109,16 @@ void plm_destroy(plm_t *self) {
     free(self);
 }
 
+// Get or set whether audio decoding is enabled. Default TRUE.
 int plm_get_audio_enabled(plm_t *self) {
     return self->audio_enabled;
 }
 
+// Get whether we have headers on all available streams and we can accurately
+// report the number of video/audio streams, video dimensions, framerate and
+// audio samplerate.
+// This returns FALSE if the file is not an MPEG-PS file or - when not using a
+// file as source - when not enough data is available yet.
 int plm_has_headers(plm_t *self) {
     if (!plm_demux_has_headers(self->demux)) {
         return FALSE;
@@ -131,6 +151,7 @@ void plm_set_audio_enabled(plm_t *self, int enabled) {
         : 0;
 }
 
+// Set the desired audio stream (0--3). Default 0.
 void plm_set_audio_stream(plm_t *self, int stream_index) {
     if (stream_index < 0 || stream_index > 3) {
         return;
@@ -141,6 +162,7 @@ void plm_set_audio_stream(plm_t *self, int stream_index) {
     plm_set_audio_enabled(self, self->audio_enabled);
 }
 
+// Get or set whether video decoding is enabled. Default TRUE.
 int plm_get_video_enabled(plm_t *self) {
     return self->video_enabled;
 }
@@ -158,10 +180,12 @@ void plm_set_video_enabled(plm_t *self, int enabled) {
         : 0;
 }
 
+// Get the number of video streams (0--1) reported in the system header.
 int plm_get_num_video_streams(plm_t *self) {
     return plm_demux_get_num_video_streams(self->demux);
 }
 
+// Get the display width/height of the video stream.
 int plm_get_width(plm_t *self) {
     return (plm_init_decoders(self) && self->video_decoder)
         ? plm_video_get_width(self->video_decoder)
@@ -174,22 +198,29 @@ int plm_get_height(plm_t *self) {
         : 0;
 }
 
+// Get the framerate of the video stream in frames per second.
 double plm_get_framerate(plm_t *self) {
     return (plm_init_decoders(self) && self->video_decoder)
         ? plm_video_get_framerate(self->video_decoder)
         : 0;
 }
 
+// Get the number of audio streams (0--4) reported in the system header.
 int plm_get_num_audio_streams(plm_t *self) {
     return plm_demux_get_num_audio_streams(self->demux);
 }
 
+// Get the samplerate of the audio stream in samples per second.
 int plm_get_samplerate(plm_t *self) {
     return (plm_init_decoders(self) && self->audio_decoder)
         ? plm_audio_get_samplerate(self->audio_decoder)
         : 0;
 }
 
+// Get or set the audio lead time in seconds - the time in which audio samples
+// are decoded in advance (or behind) the video decode time. Typically this
+// should be set to the duration of the buffer of the audio API that you use
+// for output. E.g. for SDL2: (SDL_AudioSpec.samples / samplerate)
 double plm_get_audio_lead_time(plm_t *self) {
     return self->audio_lead_time;
 }
@@ -198,14 +229,17 @@ void plm_set_audio_lead_time(plm_t *self, double lead_time) {
     self->audio_lead_time = lead_time;
 }
 
+// Get the current internal time in seconds.
 double plm_get_time(plm_t *self) {
     return self->time;
 }
 
+// Get the video duration of the underlying source in seconds.
 double plm_get_duration(plm_t *self) {
     return plm_demux_get_duration(self->demux, PLM_DEMUX_PACKET_VIDEO_1);
 }
 
+// Rewind all buffers back to the beginning.
 void plm_rewind(plm_t *self) {
     if (self->video_decoder) {
         plm_video_rewind(self->video_decoder);
@@ -219,6 +253,7 @@ void plm_rewind(plm_t *self) {
     self->time = 0;
 }
 
+// Get or set looping. Default FALSE.
 int plm_get_loop(plm_t *self) {
     return self->loop;
 }
@@ -227,6 +262,8 @@ void plm_set_loop(plm_t *self, int loop) {
     self->loop = loop;
 }
 
+// Get whether the file has ended. If looping is enabled, this will always
+// return FALSE.
 int plm_has_ended(plm_t *self) {
     return self->has_ended;
 }
@@ -338,14 +375,13 @@ plm_frame_t *plm_decode_video(plm_t *self)
 // decode audio, you should disable video via plm_set_video_enabled().
 // The returned plm_samples_t is valid until the next call to plm_decode_audio()
 // or until plm_destroy() is called.
-plm_samples_t *plm_decode_audio(plm_t *self) {
-    if (!plm_init_decoders(self)) {
+plm_samples_t *plm_decode_audio(plm_t *self)
+{
+    if (!plm_init_decoders(self))
         return NULL;
-    }
 
-    if (!self->audio_packet_type) {
+    if (!self->audio_packet_type)
         return NULL;
-    }
 
     plm_samples_t *samples = plm_audio_decode(self->audio_decoder);
     if (samples) {
@@ -406,6 +442,9 @@ void plm_read_packets(plm_t *self, int requested_type)
     }
 }
 
+// Similar to plm_seek(), but will not call the video_decode_callback,
+// audio_decode_callback or make any attempts to sync audio.
+// Returns the found frame or NULL if no frame could be found.
 plm_frame_t *plm_seek_frame(plm_t *self, double time, int seek_exact) {
     if (!plm_init_decoders(self))
         return NULL;
@@ -519,6 +558,8 @@ int plm_buffer_no_start_code(plm_buffer_t *self);
 int16_t plm_buffer_read_vlc(plm_buffer_t *self, const plm_vlc_t *table);
 uint16_t plm_buffer_read_vlc_uint(plm_buffer_t *self, const plm_vlc_uint_t *table);
 
+// Create a buffer instance with a filename. Returns NULL if the file could not
+// be opened.
 plm_buffer_t *plm_buffer_create_with_filename(const char *filename)
 {
     FILE *fh = fopen(filename, "rb");
@@ -529,6 +570,8 @@ plm_buffer_t *plm_buffer_create_with_filename(const char *filename)
     return plm_buffer_create_with_file(fh, TRUE);
 }
 
+// Create a buffer instance with a file handle. Pass TRUE to close_when_done
+// to let plmpeg call fclose() on the handle when plm_destroy() is called.
 plm_buffer_t *plm_buffer_create_with_file(FILE *fh, int close_when_done)
 {
     plm_buffer_t *self = plm_buffer_create_with_capacity(PLM_BUFFER_DEFAULT_SIZE);
@@ -545,7 +588,12 @@ plm_buffer_t *plm_buffer_create_with_file(FILE *fh, int close_when_done)
     return self;
 }
 
-plm_buffer_t *plm_buffer_create_with_memory(uint8_t *bytes, size_t length, int free_when_done) {
+// Create a buffer instance with a pointer to memory as source. This assumes
+// the whole file is in memory. The bytes are not copied. Pass 1 to 
+// free_when_done to let plmpeg call free() on the pointer when plm_destroy() 
+// is called.
+plm_buffer_t *plm_buffer_create_with_memory(uint8_t *bytes, size_t length, int free_when_done)
+{
     plm_buffer_t *self = (plm_buffer_t *)malloc(sizeof(plm_buffer_t));
     memset(self, 0, sizeof(plm_buffer_t));
     self->capacity = length;
@@ -558,6 +606,8 @@ plm_buffer_t *plm_buffer_create_with_memory(uint8_t *bytes, size_t length, int f
     return self;
 }
 
+// Create an empty buffer with an initial capacity. The buffer will grow
+// as needed. Data that has already been read, will be discarded.
 plm_buffer_t *plm_buffer_create_with_capacity(size_t capacity) {
     plm_buffer_t *self = (plm_buffer_t *)malloc(sizeof(plm_buffer_t));
     memset(self, 0, sizeof(plm_buffer_t));
@@ -569,6 +619,10 @@ plm_buffer_t *plm_buffer_create_with_capacity(size_t capacity) {
     return self;
 }
 
+// Create an empty buffer with an initial capacity. The buffer will grow
+// as needed. Decoded data will *not* be discarded. This can be used when
+// loading a file over the network, without needing to throttle the download. 
+// It also allows for seeking in the already loaded data.
 plm_buffer_t *plm_buffer_create_for_appending(size_t initial_capacity) {
     plm_buffer_t *self = plm_buffer_create_with_capacity(initial_capacity);
     self->mode = PLM_BUFFER_MODE_APPEND;
@@ -576,6 +630,7 @@ plm_buffer_t *plm_buffer_create_for_appending(size_t initial_capacity) {
     return self;
 }
 
+// Destroy a buffer instance and free all data
 void plm_buffer_destroy(plm_buffer_t *self) {
     if (self->fh && self->close_when_done) {
         fclose(self->fh);
@@ -586,12 +641,16 @@ void plm_buffer_destroy(plm_buffer_t *self) {
     free(self);
 }
 
+// Get the total size. For files, this returns the file size. For all other 
+// types it returns the number of bytes currently in the buffer.
 size_t plm_buffer_get_size(plm_buffer_t *self) {
     return (self->mode == PLM_BUFFER_MODE_FILE)
         ? self->total_size
         : self->length;
 }
 
+// Get the number of remaining (yet unread) bytes in the buffer. This can be
+// useful to throttle writing.
 size_t plm_buffer_get_remaining(plm_buffer_t *self) {
     return self->length - (self->bit_index >> 3);
 }
@@ -634,15 +693,23 @@ size_t plm_buffer_write(plm_buffer_t *self, uint8_t *bytes, size_t length) {
     return length;
 }
 
+// Mark the current byte length as the end of this buffer and signal that no 
+// more data is expected to be written to it. This function should be called
+// just after the last plm_buffer_write().
+// For _with_capacity buffers, this is cleared on a plm_buffer_rewind().
 void plm_buffer_signal_end(plm_buffer_t *self) {
     self->total_size = self->length;
 }
 
-void plm_buffer_set_load_callback(plm_buffer_t *self, plm_buffer_load_callback fp, void *user) {
+// Set a callback that is called whenever the buffer needs more data
+void plm_buffer_set_load_callback(plm_buffer_t *self, plm_buffer_load_callback fp, void *user)
+{
     self->load_callback = fp;
     self->load_callback_user_data = user;
 }
 
+// Rewind the buffer back to the beginning. When loading from a file handle,
+// this also seeks to the beginning of the file.
 void plm_buffer_rewind(plm_buffer_t *self) {
     plm_buffer_seek(self, 0);
 }
@@ -703,6 +770,8 @@ void plm_buffer_load_file_callback(plm_buffer_t *self, void *user)
         self->has_ended = TRUE;
 }
 
+// Get whether the read position of the buffer is at the end and no more data 
+// is expected.
 int plm_buffer_has_ended(plm_buffer_t *self) {
     return self->has_ended;
 }
@@ -810,17 +879,18 @@ int plm_buffer_has_start_code(plm_buffer_t *self, int code) {
     return current;
 }
 
-int plm_buffer_peek_non_zero(plm_buffer_t *self, int bit_count) {
-    if (!plm_buffer_has(self, bit_count)) {
+int plm_buffer_peek_non_zero(plm_buffer_t *self, int bit_count)
+{
+    if (!plm_buffer_has(self, bit_count))
         return FALSE;
-    }
 
     int val = plm_buffer_read(self, bit_count);
     self->bit_index -= bit_count;
     return val != 0;
 }
 
-int16_t plm_buffer_read_vlc(plm_buffer_t *self, const plm_vlc_t *table) {
+int16_t plm_buffer_read_vlc(plm_buffer_t *self, const plm_vlc_t *table)
+{
     plm_vlc_t state = {0, 0};
     do {
         state = table[state.index + plm_buffer_read(self, 1)];
@@ -868,7 +938,10 @@ double plm_demux_decode_time(plm_demux_t *self);
 plm_packet_t *plm_demux_decode_packet(plm_demux_t *self, int type);
 plm_packet_t *plm_demux_get_packet(plm_demux_t *self);
 
-plm_demux_t *plm_demux_create(plm_buffer_t *buffer, int destroy_when_done) {
+// Create a demuxer with a plm_buffer as source. This will also attempt to read
+// the pack and system headers from the buffer.
+plm_demux_t *plm_demux_create(plm_buffer_t *buffer, int destroy_when_done)
+{
     plm_demux_t *self = (plm_demux_t *)malloc(sizeof(plm_demux_t));
     memset(self, 0, sizeof(plm_demux_t));
 
@@ -883,6 +956,7 @@ plm_demux_t *plm_demux_create(plm_buffer_t *buffer, int destroy_when_done) {
     return self;
 }
 
+// Destroy a demuxer and free all data.
 void plm_demux_destroy(plm_demux_t *self) {
     if (self->destroy_buffer_when_done) {
         plm_buffer_destroy(self->buffer);
@@ -890,6 +964,8 @@ void plm_demux_destroy(plm_demux_t *self) {
     free(self);
 }
 
+// Returns TRUE/FALSE whether pack and system headers have been found. This will
+// attempt to read the headers if non are present yet.
 int plm_demux_has_headers(plm_demux_t *self) {
     if (self->has_headers) {
         return TRUE;
@@ -950,14 +1026,19 @@ int plm_demux_has_headers(plm_demux_t *self) {
     return TRUE;
 }
 
+// Returns the number of video streams found in the system header. This will
+// attempt to read the system header if non is present yet.
 int plm_demux_get_num_video_streams(plm_demux_t *self) {
     return plm_demux_has_headers(self) ? self->num_video_streams : 0;
 }
 
+// Returns the number of audio streams found in the system header. This will
+// attempt to read the system header if non is present yet.
 int plm_demux_get_num_audio_streams(plm_demux_t *self) {
     return plm_demux_has_headers(self) ? self->num_audio_streams : 0;
 }
 
+// Rewind the internal buffer. See plm_buffer_rewind().
 void plm_demux_rewind(plm_demux_t *self) {
     plm_buffer_rewind(self->buffer);
     self->current_packet.length = 0;
@@ -965,6 +1046,7 @@ void plm_demux_rewind(plm_demux_t *self) {
     self->start_code = -1;
 }
 
+// Get whether the file has ended. This will be cleared on seeking or rewind.
 int plm_demux_has_ended(plm_demux_t *self) {
     return plm_buffer_has_ended(self->buffer);
 }
@@ -976,6 +1058,8 @@ void plm_demux_buffer_seek(plm_demux_t *self, size_t pos) {
     self->start_code = -1;
 }
 
+// Get the PTS of the first packet of this type. Returns PLM_PACKET_INVALID_TS
+// if not packet of this packet type can be found.
 double plm_demux_get_start_time(plm_demux_t *self, int type) {
     if (self->start_time != PLM_PACKET_INVALID_TS) {
         return self->start_time;
@@ -1001,6 +1085,9 @@ double plm_demux_get_start_time(plm_demux_t *self, int type) {
     return self->start_time;
 }
 
+// Get the duration for the specified packet type - i.e. the span between the
+// the first PTS and the last PTS in the data source. This only makes sense when
+// the underlying data source is a file or fixed memory.
 double plm_demux_get_duration(plm_demux_t *self, int type) {
     size_t file_size = plm_buffer_get_size(self->buffer);
 
@@ -1046,7 +1133,13 @@ double plm_demux_get_duration(plm_demux_t *self, int type) {
     return self->duration;
 }
 
-plm_packet_t *plm_demux_seek(plm_demux_t *self, double seek_time, int type, int force_intra) {
+// Seek to a packet of the specified type with a PTS just before specified time.
+// If force_intra is TRUE, only packets containing an intra frame will be 
+// considered - this only makes sense when the type is PLM_DEMUX_PACKET_VIDEO_1.
+// Note that the specified time is considered 0-based, regardless of the first 
+// PTS in the data source.
+plm_packet_t *plm_demux_seek(plm_demux_t *self, double seek_time, int type, int force_intra)
+{
     if (!plm_demux_has_headers(self)) {
         return NULL;
     }
@@ -1189,6 +1282,8 @@ plm_packet_t *plm_demux_seek(plm_demux_t *self, double seek_time, int type, int 
     return NULL;
 }
 
+// Decode and return the next packet. The returned packet_t is valid until
+// the next call to plm_demux_decode() or until the demuxer is destroyed.
 plm_packet_t *plm_demux_decode(plm_demux_t *self) {
     if (!plm_demux_has_headers(self)) {
         return NULL;
