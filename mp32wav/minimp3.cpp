@@ -21,11 +21,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-//#include "libc.h"
-#include <stdint.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdint>
+#include <cstddef>
+#include <cstdlib>
+#include <cstring>
 #include <math.h>
 #include "minimp3.h"
 
@@ -60,32 +59,9 @@
 #define FRAC_RND(a) (((a) + (FRAC_ONE/2)) >> FRAC_BITS)
 #define FIXHR(a) ((int)((a) * (1LL<<32) + 0.5))
 
-#ifndef _MSC_VER
-    #define MULL(a,b) (((int64_t)(a) * (int64_t)(b)) >> FRAC_BITS)
-    #define MULH(a,b) (((int64_t)(a) * (int64_t)(b)) >> 32)
-#else
-    static INLINE int MULL(int a, int b) {
-        int res;
-        __asm {
-            mov eax, a
-            imul b
-            shr eax, 15
-            shl edx, 17
-            or eax, edx
-            mov res, eax
-        }
-        return res;
-    }
-    static INLINE int MULH(int a, int b) {
-        int res;
-        __asm {
-            mov eax, a
-            imul b
-            mov res, edx
-        }
-        return res;
-    }
-#endif
+
+
+
 #define MULS(ra, rb) ((ra) * (rb))
 
 #define ISQRT2 FIXR(0.70710678118654752440)
@@ -95,8 +71,6 @@
 #define EXTRABYTES 24
 
 #define VLC_TYPE int16_t
-
-////////////////////////////////////////////////////////////////////////////////
 
 struct _granule;
 
@@ -174,16 +148,14 @@ static float csa_table_float[8][4];
 static int32_t mdct_win[8][36];
 static int16_t window[512];
 
-////////////////////////////////////////////////////////////////////////////////
-
-static const uint16_t mp3_bitrate_tab[2][15] = {
+static constexpr uint16_t mp3_bitrate_tab[2][15] = {
     {0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320 },
     {0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160}
 };
 
-static const uint16_t mp3_freq_tab[3] = { 44100, 48000, 32000 };
+static constexpr uint16_t mp3_freq_tab[3] = { 44100, 48000, 32000 };
 
-static const int32_t mp3_enwindow[257] = {
+static constexpr int32_t mp3_enwindow[257] = {
      0,    -1,    -1,    -1,    -1,    -1,    -1,    -2,
     -2,    -2,    -2,    -3,    -3,    -4,    -4,    -5,
     -5,    -6,    -7,    -7,    -8,    -9,   -10,   -11,
@@ -219,12 +191,12 @@ static const int32_t mp3_enwindow[257] = {
  75038,
 };
 
-static const uint8_t slen_table[2][16] = {
+static constexpr uint8_t slen_table[2][16] = {
     { 0, 0, 0, 0, 3, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4 },
     { 0, 1, 2, 3, 0, 1, 2, 3, 1, 2, 3, 1, 2, 3, 2, 3 },
 };
 
-static const uint8_t lsf_nsf_table[6][3][4] = {
+static constexpr uint8_t lsf_nsf_table[6][3][4] = {
     { {  6,  5,  5, 5 }, {  9,  9,  9, 9 }, {  6,  9,  9, 9 } },
     { {  6,  5,  7, 3 }, {  9,  9, 12, 6 }, {  6,  9, 12, 6 } },
     { { 11, 10,  0, 0 }, { 18, 18,  0, 0 }, { 15, 18,  0, 0 } },
@@ -233,55 +205,55 @@ static const uint8_t lsf_nsf_table[6][3][4] = {
     { {  8,  8,  5, 0 }, { 15, 12,  9, 0 }, {  6, 18,  9, 0 } },
 };
 
-static const uint16_t mp3_huffcodes_1[4] = {
+static constexpr uint16_t mp3_huffcodes_1[4] = {
  0x0001, 0x0001, 0x0001, 0x0000,
 };
 
-static const uint8_t mp3_huffbits_1[4] = {
+static constexpr uint8_t mp3_huffbits_1[4] = {
   1,  3,  2,  3,
 };
 
-static const uint16_t mp3_huffcodes_2[9] = {
+static constexpr uint16_t mp3_huffcodes_2[9] = {
  0x0001, 0x0002, 0x0001, 0x0003, 0x0001, 0x0001, 0x0003, 0x0002,
  0x0000,
 };
 
-static const uint8_t mp3_huffbits_2[9] = {
+static constexpr uint8_t mp3_huffbits_2[9] = {
   1,  3,  6,  3,  3,  5,  5,  5,
   6,
 };
 
-static const uint16_t mp3_huffcodes_3[9] = {
+static constexpr uint16_t mp3_huffcodes_3[9] = {
  0x0003, 0x0002, 0x0001, 0x0001, 0x0001, 0x0001, 0x0003, 0x0002,
  0x0000,
 };
 
-static const uint8_t mp3_huffbits_3[9] = {
+static constexpr uint8_t mp3_huffbits_3[9] = {
   2,  2,  6,  3,  2,  5,  5,  5,
   6,
 };
 
-static const uint16_t mp3_huffcodes_5[16] = {
+static constexpr uint16_t mp3_huffcodes_5[16] = {
  0x0001, 0x0002, 0x0006, 0x0005, 0x0003, 0x0001, 0x0004, 0x0004,
  0x0007, 0x0005, 0x0007, 0x0001, 0x0006, 0x0001, 0x0001, 0x0000,
 };
 
-static const uint8_t mp3_huffbits_5[16] = {
+static constexpr uint8_t mp3_huffbits_5[16] = {
   1,  3,  6,  7,  3,  3,  6,  7,
   6,  6,  7,  8,  7,  6,  7,  8,
 };
 
-static const uint16_t mp3_huffcodes_6[16] = {
+static constexpr uint16_t mp3_huffcodes_6[16] = {
  0x0007, 0x0003, 0x0005, 0x0001, 0x0006, 0x0002, 0x0003, 0x0002,
  0x0005, 0x0004, 0x0004, 0x0001, 0x0003, 0x0003, 0x0002, 0x0000,
 };
 
-static const uint8_t mp3_huffbits_6[16] = {
+static constexpr uint8_t mp3_huffbits_6[16] = {
   3,  3,  5,  7,  3,  2,  4,  5,
   4,  4,  5,  6,  6,  5,  6,  7,
 };
 
-static const uint16_t mp3_huffcodes_7[36] = {
+static constexpr uint16_t mp3_huffcodes_7[36] = {
  0x0001, 0x0002, 0x000a, 0x0013, 0x0010, 0x000a, 0x0003, 0x0003,
  0x0007, 0x000a, 0x0005, 0x0003, 0x000b, 0x0004, 0x000d, 0x0011,
  0x0008, 0x0004, 0x000c, 0x000b, 0x0012, 0x000f, 0x000b, 0x0002,
@@ -289,7 +261,7 @@ static const uint16_t mp3_huffcodes_7[36] = {
  0x0005, 0x0003, 0x0002, 0x0000,
 };
 
-static const uint8_t mp3_huffbits_7[36] = {
+static constexpr uint8_t mp3_huffbits_7[36] = {
   1,  3,  6,  8,  8,  9,  3,  4,
   6,  7,  7,  8,  6,  5,  7,  8,
   8,  9,  7,  7,  8,  9,  9,  9,
@@ -297,7 +269,7 @@ static const uint8_t mp3_huffbits_7[36] = {
   9, 10, 10, 10,
 };
 
-static const uint16_t mp3_huffcodes_8[36] = {
+static constexpr uint16_t mp3_huffcodes_8[36] = {
  0x0003, 0x0004, 0x0006, 0x0012, 0x000c, 0x0005, 0x0005, 0x0001,
  0x0002, 0x0010, 0x0009, 0x0003, 0x0007, 0x0003, 0x0005, 0x000e,
  0x0007, 0x0003, 0x0013, 0x0011, 0x000f, 0x000d, 0x000a, 0x0004,
@@ -305,7 +277,7 @@ static const uint16_t mp3_huffcodes_8[36] = {
  0x0004, 0x0001, 0x0001, 0x0000,
 };
 
-static const uint8_t mp3_huffbits_8[36] = {
+static constexpr uint8_t mp3_huffbits_8[36] = {
   2,  3,  6,  8,  8,  9,  3,  2,
   4,  8,  8,  8,  6,  4,  6,  8,
   8,  9,  8,  8,  8,  9,  9, 10,
@@ -313,7 +285,7 @@ static const uint8_t mp3_huffbits_8[36] = {
   9,  9, 11, 11,
 };
 
-static const uint16_t mp3_huffcodes_9[36] = {
+static constexpr uint16_t mp3_huffcodes_9[36] = {
  0x0007, 0x0005, 0x0009, 0x000e, 0x000f, 0x0007, 0x0006, 0x0004,
  0x0005, 0x0005, 0x0006, 0x0007, 0x0007, 0x0006, 0x0008, 0x0008,
  0x0008, 0x0005, 0x000f, 0x0006, 0x0009, 0x000a, 0x0005, 0x0001,
@@ -321,7 +293,7 @@ static const uint16_t mp3_huffcodes_9[36] = {
  0x0006, 0x0002, 0x0006, 0x0000,
 };
 
-static const uint8_t mp3_huffbits_9[36] = {
+static constexpr uint8_t mp3_huffbits_9[36] = {
   3,  3,  5,  6,  8,  9,  3,  3,
   4,  5,  6,  8,  4,  4,  5,  6,
   7,  8,  6,  5,  6,  7,  7,  8,
@@ -329,7 +301,7 @@ static const uint8_t mp3_huffbits_9[36] = {
   8,  8,  9,  9,
 };
 
-static const uint16_t mp3_huffcodes_10[64] = {
+static constexpr uint16_t mp3_huffcodes_10[64] = {
  0x0001, 0x0002, 0x000a, 0x0017, 0x0023, 0x001e, 0x000c, 0x0011,
  0x0003, 0x0003, 0x0008, 0x000c, 0x0012, 0x0015, 0x000c, 0x0007,
  0x000b, 0x0009, 0x000f, 0x0015, 0x0020, 0x0028, 0x0013, 0x0006,
@@ -340,7 +312,7 @@ static const uint16_t mp3_huffcodes_10[64] = {
  0x0009, 0x0008, 0x0007, 0x0008, 0x0004, 0x0004, 0x0002, 0x0000,
 };
 
-static const uint8_t mp3_huffbits_10[64] = {
+static constexpr uint8_t mp3_huffbits_10[64] = {
   1,  3,  6,  8,  9,  9,  9, 10,
   3,  4,  6,  7,  8,  9,  8,  8,
   6,  6,  7,  8,  9, 10,  9,  9,
@@ -351,7 +323,7 @@ static const uint8_t mp3_huffbits_10[64] = {
   9,  8,  9, 10, 10, 11, 11, 11,
 };
 
-static const uint16_t mp3_huffcodes_11[64] = {
+static constexpr uint16_t mp3_huffcodes_11[64] = {
  0x0003, 0x0004, 0x000a, 0x0018, 0x0022, 0x0021, 0x0015, 0x000f,
  0x0005, 0x0003, 0x0004, 0x000a, 0x0020, 0x0011, 0x000b, 0x000a,
  0x000b, 0x0007, 0x000d, 0x0012, 0x001e, 0x001f, 0x0014, 0x0005,
@@ -362,7 +334,7 @@ static const uint16_t mp3_huffcodes_11[64] = {
  0x000b, 0x0004, 0x0006, 0x0006, 0x0006, 0x0003, 0x0002, 0x0000,
 };
 
-static const uint8_t mp3_huffbits_11[64] = {
+static constexpr uint8_t mp3_huffbits_11[64] = {
   2,  3,  5,  7,  8,  9,  8,  9,
   3,  3,  4,  6,  8,  8,  7,  8,
   5,  5,  6,  7,  8,  9,  8,  8,
@@ -373,7 +345,7 @@ static const uint8_t mp3_huffbits_11[64] = {
   8,  7,  8,  9, 10, 10, 10, 10,
 };
 
-static const uint16_t mp3_huffcodes_12[64] = {
+static constexpr uint16_t mp3_huffcodes_12[64] = {
  0x0009, 0x0006, 0x0010, 0x0021, 0x0029, 0x0027, 0x0026, 0x001a,
  0x0007, 0x0005, 0x0006, 0x0009, 0x0017, 0x0010, 0x001a, 0x000b,
  0x0011, 0x0007, 0x000b, 0x000e, 0x0015, 0x001e, 0x000a, 0x0007,
@@ -384,7 +356,7 @@ static const uint16_t mp3_huffcodes_12[64] = {
  0x001b, 0x000c, 0x0008, 0x000c, 0x0006, 0x0003, 0x0001, 0x0000,
 };
 
-static const uint8_t mp3_huffbits_12[64] = {
+static constexpr uint8_t mp3_huffbits_12[64] = {
   4,  3,  5,  7,  8,  9,  9,  9,
   3,  3,  4,  5,  7,  7,  8,  8,
   5,  4,  5,  6,  7,  8,  7,  8,
@@ -395,7 +367,7 @@ static const uint8_t mp3_huffbits_12[64] = {
   9,  8,  8,  9,  9,  9,  9, 10,
 };
 
-static const uint16_t mp3_huffcodes_13[256] = {
+static constexpr uint16_t mp3_huffcodes_13[256] = {
  0x0001, 0x0005, 0x000e, 0x0015, 0x0022, 0x0033, 0x002e, 0x0047,
  0x002a, 0x0034, 0x0044, 0x0034, 0x0043, 0x002c, 0x002b, 0x0013,
  0x0003, 0x0004, 0x000c, 0x0013, 0x001f, 0x001a, 0x002c, 0x0021,
@@ -430,7 +402,7 @@ static const uint16_t mp3_huffcodes_13[256] = {
  0x0011, 0x000c, 0x0010, 0x0008, 0x0001, 0x0001, 0x0000, 0x0001,
 };
 
-static const uint8_t mp3_huffbits_13[256] = {
+static constexpr uint8_t mp3_huffbits_13[256] = {
   1,  4,  6,  7,  8,  9,  9, 10,
   9, 10, 11, 11, 12, 12, 13, 13,
   3,  4,  6,  7,  8,  8,  9,  9,
@@ -465,7 +437,7 @@ static const uint8_t mp3_huffbits_13[256] = {
  15, 15, 16, 16, 19, 18, 19, 16,
 };
 
-static const uint16_t mp3_huffcodes_15[256] = {
+static constexpr uint16_t mp3_huffcodes_15[256] = {
  0x0007, 0x000c, 0x0012, 0x0035, 0x002f, 0x004c, 0x007c, 0x006c,
  0x0059, 0x007b, 0x006c, 0x0077, 0x006b, 0x0051, 0x007a, 0x003f,
  0x000d, 0x0005, 0x0010, 0x001b, 0x002e, 0x0024, 0x003d, 0x0033,
@@ -500,7 +472,7 @@ static const uint16_t mp3_huffcodes_15[256] = {
  0x0015, 0x0010, 0x000a, 0x0006, 0x0008, 0x0006, 0x0002, 0x0000,
 };
 
-static const uint8_t mp3_huffbits_15[256] = {
+static constexpr uint8_t mp3_huffbits_15[256] = {
   3,  4,  5,  7,  7,  8,  9,  9,
   9, 10, 10, 11, 11, 11, 12, 13,
   4,  3,  5,  6,  7,  7,  8,  8,
@@ -535,7 +507,7 @@ static const uint8_t mp3_huffbits_15[256] = {
  12, 12, 12, 12, 13, 13, 13, 13,
 };
 
-static const uint16_t mp3_huffcodes_16[256] = {
+static constexpr uint16_t mp3_huffcodes_16[256] = {
  0x0001, 0x0005, 0x000e, 0x002c, 0x004a, 0x003f, 0x006e, 0x005d,
  0x00ac, 0x0095, 0x008a, 0x00f2, 0x00e1, 0x00c3, 0x0178, 0x0011,
  0x0003, 0x0004, 0x000c, 0x0014, 0x0023, 0x003e, 0x0035, 0x002f,
@@ -570,7 +542,7 @@ static const uint16_t mp3_huffcodes_16[256] = {
  0x000d, 0x000c, 0x000a, 0x0007, 0x0005, 0x0003, 0x0001, 0x0003,
 };
 
-static const uint8_t mp3_huffbits_16[256] = {
+static constexpr uint8_t mp3_huffbits_16[256] = {
   1,  4,  6,  8,  9,  9, 10, 10,
  11, 11, 11, 12, 12, 12, 13,  9,
   3,  4,  6,  7,  8,  9,  9,  9,
@@ -605,7 +577,7 @@ static const uint8_t mp3_huffbits_16[256] = {
  11, 11, 11, 11, 11, 11, 11,  8,
 };
 
-static const uint16_t mp3_huffcodes_24[256] = {
+static constexpr uint16_t mp3_huffcodes_24[256] = {
  0x000f, 0x000d, 0x002e, 0x0050, 0x0092, 0x0106, 0x00f8, 0x01b2,
  0x01aa, 0x029d, 0x028d, 0x0289, 0x026d, 0x0205, 0x0408, 0x0058,
  0x000e, 0x000c, 0x0015, 0x0026, 0x0047, 0x0082, 0x007a, 0x00d8,
@@ -640,7 +612,7 @@ static const uint16_t mp3_huffcodes_24[256] = {
  0x0007, 0x0006, 0x0004, 0x0007, 0x0005, 0x0003, 0x0001, 0x0003,
 };
 
-static const uint8_t mp3_huffbits_24[256] = {
+static constexpr uint8_t mp3_huffbits_24[256] = {
   4,  4,  6,  7,  8,  9,  9, 10,
  10, 11, 11, 11, 11, 11, 12,  9,
   4,  4,  5,  6,  7,  8,  8,  9,
@@ -675,7 +647,7 @@ static const uint8_t mp3_huffbits_24[256] = {
   7,  7,  7,  8,  8,  8,  8,  4,
 };
 
-static const huff_table_t mp3_huff_tables[16] = {
+static constexpr huff_table_t mp3_huff_tables[16] = {
 { 1, NULL, NULL },
 { 2, mp3_huffbits_1, mp3_huffcodes_1 },
 { 3, mp3_huffbits_2, mp3_huffcodes_2 },
@@ -694,7 +666,7 @@ static const huff_table_t mp3_huff_tables[16] = {
 { 16, mp3_huffbits_24, mp3_huffcodes_24 },
 };
 
-static const uint8_t mp3_huff_data[32][2] = {
+static constexpr uint8_t mp3_huff_data[32][2] = {
 { 0, 0 },
 { 1, 0 },
 { 2, 0 },
@@ -729,7 +701,7 @@ static const uint8_t mp3_huff_data[32][2] = {
 { 15, 13 },
 };
 
-static const uint8_t mp3_quad_codes[2][16] = {
+static constexpr uint8_t mp3_quad_codes[2][16] = {
     {  1,  5,  4,  5,  6,  5,  4,  4, 7,  3,  6,  0,  7,  2,  3,  1, },
     { 15, 14, 13, 12, 11, 10,  9,  8, 7,  6,  5,  4,  3,  2,  1,  0, },
 };
@@ -826,9 +798,7 @@ static INLINE int unaligned32_be(const uint8_t *p)
 #define NEG_SSR32(a,s) ((( int32_t)(a))>>(32-(s)))
 #define NEG_USR32(a,s) (((uint32_t)(a))>>(32-(s)))
 
-#define OPEN_READER(name, gb) \
-        int name##_index= (gb)->index;\
-        int name##_cache= 0;\
+
 
 #define CLOSE_READER(name, gb)\
         (gb)->index= name##_index;\
@@ -854,9 +824,6 @@ static INLINE int unaligned32_be(const uint8_t *p)
 #define SHOW_UBITS(name, gb, num)\
         NEG_USR32(name##_cache, num)
 
-#define SHOW_SBITS(name, gb, num)\
-        NEG_SSR32(name##_cache, num)
-
 #define GET_CACHE(name, gb)\
         ((uint32_t)name##_cache)
 
@@ -880,6 +847,10 @@ static void init_get_bits(bitstream_t *s, const uint8_t *buffer, int bit_size) {
     s->buffer_end= buffer + buffer_size;
     s->index=0;
 }
+
+#define OPEN_READER(name, gb) \
+        int name##_index= (gb)->index;\
+        int name##_cache= 0;\
 
 static INLINE unsigned int get_bits(bitstream_t *s, int n){
     register int tmp;
@@ -1223,6 +1194,8 @@ static void reorder_block(mp3_context_t *s, granule_t *g)
     }
 }
 
+#define MULH(a,b) (((int64_t)(a) * (int64_t)(b)) >> 32)
+
 static void compute_antialias(mp3_context_t *s, granule_t *g) {
     int32_t *ptr, *csa;
     int n, i;
@@ -1260,6 +1233,8 @@ static void compute_antialias(mp3_context_t *s, granule_t *g) {
         ptr += 18;
     }
 }
+
+#define MULL(a,b) (((int64_t)(a) * (int64_t)(b)) >> FRAC_BITS)
 
 static void compute_stereo(
     mp3_context_t *s, granule_t *g0, granule_t *g1
