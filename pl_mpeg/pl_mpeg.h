@@ -260,16 +260,11 @@ typedef void(*plm_buffer_load_callback)(plm_buffer_t *self, void *user);
 
 // Callback function type for decoded video frames used by the high-level
 // plm_* interface
-typedef void(*plm_video_decode_callback)
-    (plm_frame_t *frame, void *user);
+typedef void(*plm_video_decode_callback)(plm_frame_t *frame, void *user);
 
 // Callback function type for decoded audio samples used by the high-level
 // plm_* interface
-typedef void(*plm_audio_decode_callback)
-    (plm_samples_t *samples, void *user);
-
-
-
+typedef void(*plm_audio_decode_callback)(plm_samples_t *samples, void *user);
 
 // The default size for buffers created from files or by the high-level API
 #ifndef PLM_BUFFER_DEFAULT_SIZE
@@ -306,6 +301,33 @@ struct plm_quantizer_spec_t
     uint8_t bits;
 };
 
+class Demux
+{
+public:
+    plm_demux_t *demux;
+    static constexpr int PLM_DEMUX_PACKET_PRIVATE = 0xBD;
+    static constexpr int PLM_DEMUX_PACKET_AUDIO_1 = 0xC0;
+    static constexpr int PLM_DEMUX_PACKET_AUDIO_2 = 0xC1;
+    static constexpr int PLM_DEMUX_PACKET_AUDIO_3 = 0xC2;
+    static constexpr int PLM_DEMUX_PACKET_AUDIO_4 = 0xC2;
+    static constexpr int PLM_DEMUX_PACKET_VIDEO_1 = 0xE0;
+    static plm_demux_t *plm_demux_create(plm_buffer_t *buffer, int destroy_when_done);
+    static void plm_demux_buffer_seek(plm_demux_t *self, size_t pos);
+    static double plm_demux_decode_time(plm_demux_t *self);
+    static plm_packet_t *plm_demux_decode_packet(plm_demux_t *self, int type);
+    static plm_packet_t *plm_demux_get_packet(plm_demux_t *self);
+    static void plm_demux_destroy(plm_demux_t *self);
+    static int plm_demux_has_headers(plm_demux_t *self);
+    static int plm_demux_get_num_video_streams(plm_demux_t *self);
+    static int plm_demux_get_num_audio_streams(plm_demux_t *self);
+    static void plm_demux_rewind(plm_demux_t *self);
+    static int plm_demux_has_ended(plm_demux_t *self);
+    static plm_packet_t *plm_demux_seek(plm_demux_t *self, double time, int type, int force_intra);
+    static double plm_demux_get_start_time(plm_demux_t *self, int type);
+    static double plm_demux_get_duration(plm_demux_t *self, int type);
+    static plm_packet_t *plm_demux_decode(plm_demux_t *self);
+};
+
 class PLM
 {
 private:
@@ -315,7 +337,7 @@ private:
     int _has_decoders = 0;
     int _video_enabled = 0;
     int _video_packet_type = 0;
-    plm_demux_t *demux;
+    Demux _demux;
     plm_buffer_t *video_buffer;
     plm_video_t *video_decoder;
     plm_video_decode_callback video_decode_callback;
@@ -414,34 +436,16 @@ public:
     static int plm_buffer_peek_non_zero(plm_buffer_t *self, int bit_count);
 };
 
-class Demux
-{
-public:
-    static constexpr int PLM_DEMUX_PACKET_PRIVATE = 0xBD;
-    static constexpr int PLM_DEMUX_PACKET_AUDIO_1 = 0xC0;
-    static constexpr int PLM_DEMUX_PACKET_AUDIO_2 = 0xC1;
-    static constexpr int PLM_DEMUX_PACKET_AUDIO_3 = 0xC2;
-    static constexpr int PLM_DEMUX_PACKET_AUDIO_4 = 0xC2;
-    static constexpr int PLM_DEMUX_PACKET_VIDEO_1 = 0xE0;
-    static plm_demux_t *plm_demux_create(plm_buffer_t *buffer, int destroy_when_done);
-    static void plm_demux_buffer_seek(plm_demux_t *self, size_t pos);
-    static double plm_demux_decode_time(plm_demux_t *self);
-    static plm_packet_t *plm_demux_decode_packet(plm_demux_t *self, int type);
-    static plm_packet_t *plm_demux_get_packet(plm_demux_t *self);
-    static void plm_demux_destroy(plm_demux_t *self);
-    static int plm_demux_has_headers(plm_demux_t *self);
-    static int plm_demux_get_num_video_streams(plm_demux_t *self);
-    static int plm_demux_get_num_audio_streams(plm_demux_t *self);
-    static void plm_demux_rewind(plm_demux_t *self);
-    static int plm_demux_has_ended(plm_demux_t *self);
-    static plm_packet_t *plm_demux_seek(plm_demux_t *self, double time, int type, int force_intra);
-    static double plm_demux_get_start_time(plm_demux_t *self, int type);
-    static double plm_demux_get_duration(plm_demux_t *self, int type);
-    static plm_packet_t *plm_demux_decode(plm_demux_t *self);
-};
+
 
 class Audio
 {
+private:
+    static int plm_audio_find_frame_sync(plm_audio_t *self);
+    static void plm_audio_idct36(int s[32][3], int ss, float *d, int dp);
+
+    static const plm_quantizer_spec_t *plm_audio_read_allocation(
+        plm_audio_t *self, int sb, int tab3);
 public:
     static int plm_audio_has_header(plm_audio_t *self);
     static double plm_audio_get_time(plm_audio_t *self);
@@ -451,14 +455,9 @@ public:
     static plm_samples_t *plm_audio_decode(plm_audio_t *self);
     static int plm_audio_get_samplerate(plm_audio_t *self);
     static void plm_audio_rewind(plm_audio_t *self);
-    static int plm_audio_find_frame_sync(plm_audio_t *self);
     static int plm_audio_decode_header(plm_audio_t *self);
     static void plm_audio_decode_frame(plm_audio_t *self);
     static void plm_audio_read_samples(plm_audio_t *self, int ch, int sb, int part);
-    static void plm_audio_idct36(int s[32][3], int ss, float *d, int dp);
-
-    static const plm_quantizer_spec_t *plm_audio_read_allocation(
-        plm_audio_t *self, int sb, int tab3);
 
     static plm_audio_t *plm_audio_create_with_buffer(
         plm_buffer_t *buffer, int destroy_when_done);
