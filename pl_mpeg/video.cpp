@@ -477,7 +477,7 @@ static inline uint8_t plm_clamp(int n) {
     return n;
 }
 
-static void plm_video_idct(int *block)
+void Video::plm_video_idct(int *block)
 {
     // Transform columns
     for (int i = 0; i < 8; ++i)
@@ -541,7 +541,7 @@ static void plm_video_idct(int *block)
     }
 }
 
-static void plm_video_init_frame(plm_video_t *self, plm_frame_t *frame, uint8_t *base)
+void Video::plm_video_init_frame(plm_video_t *self, plm_frame_t *frame, uint8_t *base)
 {
     size_t luma_plane_size = self->luma_width * self->luma_height;
     size_t chroma_plane_size = self->chroma_width * self->chroma_height;
@@ -561,33 +561,33 @@ static void plm_video_init_frame(plm_video_t *self, plm_frame_t *frame, uint8_t 
     frame->cb.data = base + luma_plane_size + chroma_plane_size;
 }
 
-static int plm_video_decode_sequence_header(plm_video_t *self)
+int Video::plm_video_decode_sequence_header(plm_video_t *self)
 {
     int max_header_size = 64 + 2 * 64 * 8; // 64 bit header + 2x 64 byte matrix
 
-    if (!plm_buffer_has(self->buffer, max_header_size))
+    if (!Buffer::plm_buffer_has(self->buffer, max_header_size))
         return FALSE;
 
-    self->width = plm_buffer_read(self->buffer, 12);
-    self->height = plm_buffer_read(self->buffer, 12);
+    self->width = Buffer::plm_buffer_read(self->buffer, 12);
+    self->height = Buffer::plm_buffer_read(self->buffer, 12);
 
     if (self->width <= 0 || self->height <= 0) {
         return FALSE;
     }
 
     // Skip pixel aspect ratio
-    plm_buffer_skip(self->buffer, 4);
+    Buffer::plm_buffer_skip(self->buffer, 4);
 
-    self->framerate = PLM_VIDEO_PICTURE_RATE[plm_buffer_read(self->buffer, 4)];
+    self->framerate = PLM_VIDEO_PICTURE_RATE[Buffer::plm_buffer_read(self->buffer, 4)];
 
     // Skip bit_rate, marker, buffer_size and constrained bit
-    plm_buffer_skip(self->buffer, 18 + 1 + 10 + 1);
+    Buffer::plm_buffer_skip(self->buffer, 18 + 1 + 10 + 1);
 
     // Load custom intra quant matrix?
-    if (plm_buffer_read(self->buffer, 1)) { 
+    if (Buffer::plm_buffer_read(self->buffer, 1)) { 
         for (int i = 0; i < 64; i++) {
             int idx = PLM_VIDEO_ZIG_ZAG[i];
-            self->intra_quant_matrix[idx] = plm_buffer_read(self->buffer, 8);
+            self->intra_quant_matrix[idx] = Buffer::plm_buffer_read(self->buffer, 8);
         }
     }
     else {
@@ -595,10 +595,12 @@ static int plm_video_decode_sequence_header(plm_video_t *self)
     }
 
     // Load custom non intra quant matrix?
-    if (plm_buffer_read(self->buffer, 1)) { 
-        for (int i = 0; i < 64; i++) {
+    if (Buffer::plm_buffer_read(self->buffer, 1))
+    {
+        for (int i = 0; i < 64; i++)
+        {
             int idx = PLM_VIDEO_ZIG_ZAG[i];
-            self->non_intra_quant_matrix[idx] = plm_buffer_read(self->buffer, 8);
+            self->non_intra_quant_matrix[idx] = Buffer::plm_buffer_read(self->buffer, 8);
         }
     }
     else {
@@ -631,7 +633,8 @@ static int plm_video_decode_sequence_header(plm_video_t *self)
 }
 
 // Create a video decoder with a plm_buffer as source.
-plm_video_t * plm_video_create_with_buffer(plm_buffer_t *buffer, int destroy_when_done) {
+plm_video_t *Video::plm_video_create_with_buffer(plm_buffer_t *buffer, int destroy_when_done)
+{
     plm_video_t *self = (plm_video_t *)malloc(sizeof(plm_video_t));
     memset(self, 0, sizeof(plm_video_t));
     
@@ -639,7 +642,7 @@ plm_video_t * plm_video_create_with_buffer(plm_buffer_t *buffer, int destroy_whe
     self->destroy_buffer_when_done = destroy_when_done;
 
     // Attempt to decode the sequence header
-    self->start_code = plm_buffer_find_start_code(self->buffer, PLM_START_SEQUENCE);
+    self->start_code = Buffer::plm_buffer_find_start_code(self->buffer, PLM_START_SEQUENCE);
     if (self->start_code != -1) {
         plm_video_decode_sequence_header(self);
     }
@@ -648,30 +651,29 @@ plm_video_t * plm_video_create_with_buffer(plm_buffer_t *buffer, int destroy_whe
 
 
 // Destroy a video decoder and free all data.
-void plm_video_destroy(plm_video_t *self) {
-    if (self->destroy_buffer_when_done) {
-        plm_buffer_destroy(self->buffer);
-    }
+void Video::plm_video_destroy(plm_video_t *self)
+{
+    if (self->destroy_buffer_when_done)
+        Buffer::plm_buffer_destroy(self->buffer);
 
-    if (self->has_sequence_header) {
+    if (self->has_sequence_header)
         free(self->frames_data);
-    }
 
     free(self);
 }
 
 // Get the framerate in frames per second.
-double plm_video_get_framerate(plm_video_t *self)
+double Video::plm_video_get_framerate(plm_video_t *self)
 {   return plm_video_has_header(self) ? self->framerate : 0;
 }
 
 // Get the display width/height.
-int plm_video_get_width(plm_video_t *self)
+int Video::plm_video_get_width(plm_video_t *self)
 {
     return plm_video_has_header(self) ? self->width : 0;
 }
 
-int plm_video_get_height(plm_video_t *self)
+int Video::plm_video_get_height(plm_video_t *self)
 {
     return plm_video_has_header(self) ? self->height : 0;
 }
@@ -679,27 +681,27 @@ int plm_video_get_height(plm_video_t *self)
 // Set "no delay" mode. When enabled, the decoder assumes that the video does
 // *not* contain any B-Frames. This is useful for reducing lag when streaming.
 // The default is FALSE.
-void plm_video_set_no_delay(plm_video_t *self, int no_delay) {
+void Video::plm_video_set_no_delay(plm_video_t *self, int no_delay) {
     self->assume_no_b_frames = no_delay;
 }
 
 // Get the current internal time in seconds.
-double plm_video_get_time(plm_video_t *self) {
+double Video::plm_video_get_time(plm_video_t *self) {
     return self->time;
 }
 
 // Set the current internal time in seconds. This is only useful when you
 // manipulate the underlying video buffer and want to enforce a correct
 // timestamps.
-void plm_video_set_time(plm_video_t *self, double time) {
+void Video::plm_video_set_time(plm_video_t *self, double time) {
     self->frames_decoded = self->framerate * time;
     self->time = time;
 }
 
 // Rewind the internal buffer. See plm_buffer_rewind().
-void plm_video_rewind(plm_video_t *self)
+void Video::plm_video_rewind(plm_video_t *self)
 {
-    plm_buffer_rewind(self->buffer);
+    Buffer::plm_buffer_rewind(self->buffer);
     self->time = 0;
     self->frames_decoded = 0;
     self->has_reference_frame = FALSE;
@@ -707,24 +709,24 @@ void plm_video_rewind(plm_video_t *self)
 }
 
 // Get whether the file has ended. This will be cleared on rewind.
-int plm_video_has_ended(plm_video_t *self) {
-    return plm_buffer_has_ended(self->buffer);
+int Video::plm_video_has_ended(plm_video_t *self) {
+    return Buffer::plm_buffer_has_ended(self->buffer);
 }
-
-void plm_video_decode_picture(plm_video_t *self);
 
 // Decode and return one frame of video and advance the internal time by 
 // 1/framerate seconds. The returned frame_t is valid until the next call of
 // plm_video_decode() or until the video decoder is destroyed.
-plm_frame_t *plm_video_decode(plm_video_t *self)
+plm_frame_t *Video::plm_video_decode(plm_video_t *self)
 {
     if (!plm_video_has_header(self))
         return NULL;
     
     plm_frame_t *frame = NULL;
-    do {
-        if (self->start_code != PLM_START_PICTURE) {
-            self->start_code = plm_buffer_find_start_code(self->buffer, PLM_START_PICTURE);
+    do
+    {
+        if (self->start_code != PLM_START_PICTURE)
+        {
+            self->start_code = Buffer::plm_buffer_find_start_code(self->buffer, PLM_START_PICTURE);
             
             if (self->start_code == -1) {
                 // If we reached the end of the file and the previously decoded
@@ -732,7 +734,7 @@ plm_frame_t *plm_video_decode(plm_video_t *self)
                 if (
                     self->has_reference_frame &&
                     !self->assume_no_b_frames &&
-                    plm_buffer_has_ended(self->buffer) && (
+                    Buffer::plm_buffer_has_ended(self->buffer) && (
                         self->picture_type == PLM_VIDEO_PICTURE_TYPE_INTRA ||
                         self->picture_type == PLM_VIDEO_PICTURE_TYPE_PREDICTIVE
                     )
@@ -752,12 +754,12 @@ plm_frame_t *plm_video_decode(plm_video_t *self)
         // next picture, but the source has ended, we assume that this last
         // picture is in the buffer.
         if (
-            plm_buffer_has_start_code(self->buffer, PLM_START_PICTURE) == -1 &&
-            !plm_buffer_has_ended(self->buffer)
+            Buffer::plm_buffer_has_start_code(self->buffer, PLM_START_PICTURE) == -1 &&
+            !Buffer::plm_buffer_has_ended(self->buffer)
         ) {
             return NULL;
         }
-        plm_buffer_discard_read_bytes(self->buffer);
+        Buffer::plm_buffer_discard_read_bytes(self->buffer);
         
         plm_video_decode_picture(self);
 
@@ -784,13 +786,13 @@ plm_frame_t *plm_video_decode(plm_video_t *self)
 
 // Get whether a sequence header was found and we can accurately report on
 // dimensions and framerate.
-int plm_video_has_header(plm_video_t *self)
+int Video::plm_video_has_header(plm_video_t *self)
 {
     if (self->has_sequence_header)
         return TRUE;
 
     if (self->start_code != PLM_START_SEQUENCE)
-        self->start_code = plm_buffer_find_start_code(self->buffer, PLM_START_SEQUENCE);
+        self->start_code = Buffer::plm_buffer_find_start_code(self->buffer, PLM_START_SEQUENCE);
     
     if (self->start_code == -1)
         return FALSE;
@@ -801,12 +803,11 @@ int plm_video_has_header(plm_video_t *self)
     return TRUE;
 }
 
-void plm_video_decode_slice(plm_video_t *self, int slice);
-
-void plm_video_decode_picture(plm_video_t *self) {
-    plm_buffer_skip(self->buffer, 10); // skip temporalReference
-    self->picture_type = plm_buffer_read(self->buffer, 3);
-    plm_buffer_skip(self->buffer, 16); // skip vbv_delay
+void Video::plm_video_decode_picture(plm_video_t *self)
+{
+    Buffer::plm_buffer_skip(self->buffer, 10); // skip temporalReference
+    self->picture_type = Buffer::plm_buffer_read(self->buffer, 3);
+    Buffer::plm_buffer_skip(self->buffer, 16); // skip vbv_delay
 
     // D frames or unknown coding type
     if (self->picture_type <= 0 || self->picture_type > PLM_VIDEO_PICTURE_TYPE_B) {
@@ -818,8 +819,8 @@ void plm_video_decode_picture(plm_video_t *self) {
         self->picture_type == PLM_VIDEO_PICTURE_TYPE_PREDICTIVE ||
         self->picture_type == PLM_VIDEO_PICTURE_TYPE_B
     ) {
-        self->motion_forward.full_px = plm_buffer_read(self->buffer, 1);
-        int f_code = plm_buffer_read(self->buffer, 3);
+        self->motion_forward.full_px = Buffer::plm_buffer_read(self->buffer, 1);
+        int f_code = Buffer::plm_buffer_read(self->buffer, 3);
         if (f_code == 0) {
             // Ignore picture with zero f_code
             return;
@@ -828,9 +829,10 @@ void plm_video_decode_picture(plm_video_t *self) {
     }
 
     // Backward full_px, f_code
-    if (self->picture_type == PLM_VIDEO_PICTURE_TYPE_B) {
-        self->motion_backward.full_px = plm_buffer_read(self->buffer, 1);
-        int f_code = plm_buffer_read(self->buffer, 3);
+    if (self->picture_type == PLM_VIDEO_PICTURE_TYPE_B)
+    {
+        self->motion_backward.full_px = Buffer::plm_buffer_read(self->buffer, 1);
+        int f_code = Buffer::plm_buffer_read(self->buffer, 3);
         if (f_code == 0) {
             // Ignore picture with zero f_code
             return;
@@ -849,7 +851,7 @@ void plm_video_decode_picture(plm_video_t *self) {
 
     // Find first slice start code; skip extension and user data
     do {
-        self->start_code = plm_buffer_next_start_code(self->buffer);
+        self->start_code = Buffer::plm_buffer_next_start_code(self->buffer);
     } while (
         self->start_code == PLM_START_EXTENSION || 
         self->start_code == PLM_START_USER_DATA
@@ -861,7 +863,7 @@ void plm_video_decode_picture(plm_video_t *self) {
         if (self->macroblock_address >= self->mb_size - 2) {
             break;
         }
-        self->start_code = plm_buffer_next_start_code(self->buffer);
+        self->start_code = Buffer::plm_buffer_next_start_code(self->buffer);
     }
 
     // If this is a reference picture rotate the prediction pointers
@@ -874,28 +876,20 @@ void plm_video_decode_picture(plm_video_t *self) {
     }
 }
 
-void plm_video_decode_motion_vectors(plm_video_t *self);
-int plm_video_decode_motion_vector(plm_video_t *self, int r_size, int motion);
-void plm_video_predict_macroblock(plm_video_t *self);
-void plm_video_copy_macroblock(plm_video_t *self, plm_frame_t *s, int motion_h, int motion_v);
-void plm_video_interpolate_macroblock(plm_video_t *self, plm_frame_t *s, int motion_h, int motion_v);
-void plm_video_process_macroblock(plm_video_t *self, uint8_t *s, uint8_t *d, int mh, int mb, int bs, int interp);
-void plm_video_decode_block(plm_video_t *self, int block);
-
-static void plm_video_decode_macroblock(plm_video_t *self)
+void Video::plm_video_decode_macroblock(plm_video_t *self)
 {
     // Decode increment
     int increment = 0;
-    int t = plm_buffer_read_vlc(self->buffer, PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT);
+    int t = Buffer::plm_buffer_read_vlc(self->buffer, PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT);
 
     while (t == 34) {
         // macroblock_stuffing
-        t = plm_buffer_read_vlc(self->buffer, PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT);
+        t = Buffer::plm_buffer_read_vlc(self->buffer, PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT);
     }
     while (t == 35) {
         // macroblock_escape
         increment += 33;
-        t = plm_buffer_read_vlc(self->buffer, PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT);
+        t = Buffer::plm_buffer_read_vlc(self->buffer, PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT);
     }
     increment += t;
 
@@ -946,7 +940,7 @@ static void plm_video_decode_macroblock(plm_video_t *self)
 
     // Process the current macroblock
     const plm_vlc_t *table = PLM_VIDEO_MACROBLOCK_TYPE[self->picture_type];
-    self->macroblock_type = plm_buffer_read_vlc(self->buffer, table);
+    self->macroblock_type = Buffer::plm_buffer_read_vlc(self->buffer, table);
 
     self->macroblock_intra = (self->macroblock_type & 0x01);
     self->motion_forward.is_set = (self->macroblock_type & 0x08);
@@ -954,7 +948,7 @@ static void plm_video_decode_macroblock(plm_video_t *self)
 
     // Quantizer scale
     if ((self->macroblock_type & 0x10) != 0) {
-        self->quantizer_scale = plm_buffer_read(self->buffer, 5);
+        self->quantizer_scale = Buffer::plm_buffer_read(self->buffer, 5);
     }
 
     if (self->macroblock_intra) {
@@ -974,7 +968,7 @@ static void plm_video_decode_macroblock(plm_video_t *self)
 
     // Decode blocks
     int cbp = ((self->macroblock_type & 0x02) != 0)
-        ? plm_buffer_read_vlc(self->buffer, PLM_VIDEO_CODE_BLOCK_PATTERN)
+        ? Buffer::plm_buffer_read_vlc(self->buffer, PLM_VIDEO_CODE_BLOCK_PATTERN)
         : (self->macroblock_intra ? 0x3f : 0);
 
     for (int block = 0, mask = 0x20; block < 6; block++) {
@@ -985,7 +979,8 @@ static void plm_video_decode_macroblock(plm_video_t *self)
     }
 }
 
-void plm_video_decode_slice(plm_video_t *self, int slice) {
+void Video::plm_video_decode_slice(plm_video_t *self, int slice)
+{
     self->slice_begin = TRUE;
     self->macroblock_address = (slice - 1) * self->mb_width - 1;
 
@@ -996,27 +991,28 @@ void plm_video_decode_slice(plm_video_t *self, int slice) {
     self->dc_predictor[1] = 128;
     self->dc_predictor[2] = 128;
 
-    self->quantizer_scale = plm_buffer_read(self->buffer, 5);
+    self->quantizer_scale = Buffer::plm_buffer_read(self->buffer, 5);
 
     // Skip extra
-    while (plm_buffer_read(self->buffer, 1)) {
-        plm_buffer_skip(self->buffer, 8);
+    while (Buffer::plm_buffer_read(self->buffer, 1)) {
+        Buffer::plm_buffer_skip(self->buffer, 8);
     }
 
     do {
         plm_video_decode_macroblock(self);
     } while (
         self->macroblock_address < self->mb_size - 1 &&
-        plm_buffer_peek_non_zero(self->buffer, 23)
+        Buffer::plm_buffer_peek_non_zero(self->buffer, 23)
     );
 }
 
 
 
-void plm_video_decode_motion_vectors(plm_video_t *self) {
-
+void Video::plm_video_decode_motion_vectors(plm_video_t *self)
+{
     // Forward
-    if (self->motion_forward.is_set) {
+    if (self->motion_forward.is_set)
+    {
         int r_size = self->motion_forward.r_size;
         self->motion_forward.h = plm_video_decode_motion_vector(self, r_size, self->motion_forward.h);
         self->motion_forward.v = plm_video_decode_motion_vector(self, r_size, self->motion_forward.v);
@@ -1035,15 +1031,15 @@ void plm_video_decode_motion_vectors(plm_video_t *self) {
     }
 }
 
-int plm_video_decode_motion_vector(plm_video_t *self, int r_size, int motion)
+int Video::plm_video_decode_motion_vector(plm_video_t *self, int r_size, int motion)
 {
     int fscale = 1 << r_size;
-    int m_code = plm_buffer_read_vlc(self->buffer, PLM_VIDEO_MOTION);
+    int m_code = Buffer::plm_buffer_read_vlc(self->buffer, PLM_VIDEO_MOTION);
     int r = 0;
     int d;
 
     if ((m_code != 0) && (fscale != 1)) {
-        r = plm_buffer_read(self->buffer, r_size);
+        r = Buffer::plm_buffer_read(self->buffer, r_size);
         d = ((abs(m_code) - 1) << r_size) + r + 1;
         if (m_code < 0) {
             d = -d;
@@ -1064,7 +1060,7 @@ int plm_video_decode_motion_vector(plm_video_t *self, int r_size, int motion)
     return motion;
 }
 
-void plm_video_predict_macroblock(plm_video_t *self)
+void Video::plm_video_predict_macroblock(plm_video_t *self)
 {
     int fw_h = self->motion_forward.h;
     int fw_v = self->motion_forward.v;
@@ -1098,14 +1094,18 @@ void plm_video_predict_macroblock(plm_video_t *self)
     }
 }
 
-void plm_video_copy_macroblock(plm_video_t *self, plm_frame_t *s, int motion_h, int motion_v) {
+void Video::plm_video_copy_macroblock(
+    plm_video_t *self, plm_frame_t *s, int motion_h, int motion_v)
+{
     plm_frame_t *d = &self->frame_current;
     plm_video_process_macroblock(self, s->y.data, d->y.data, motion_h, motion_v, 16, FALSE);
     plm_video_process_macroblock(self, s->cr.data, d->cr.data, motion_h / 2, motion_v / 2, 8, FALSE);
     plm_video_process_macroblock(self, s->cb.data, d->cb.data, motion_h / 2, motion_v / 2, 8, FALSE);
 }
 
-void plm_video_interpolate_macroblock(plm_video_t *self, plm_frame_t *s, int motion_h, int motion_v) {
+void Video::plm_video_interpolate_macroblock(
+    plm_video_t *self, plm_frame_t *s, int motion_h, int motion_v)
+{
     plm_frame_t *d = &self->frame_current;
     plm_video_process_macroblock(self, s->y.data, d->y.data, motion_h, motion_v, 16, TRUE);
     plm_video_process_macroblock(self, s->cr.data, d->cr.data, motion_h / 2, motion_v / 2, 8, TRUE);
@@ -1124,7 +1124,12 @@ void plm_video_interpolate_macroblock(plm_video_t *self, plm_frame_t *s, int mot
         DEST_INDEX += dest_scan; \
     }} while(FALSE)
 
-void plm_video_process_macroblock(
+#define PLM_MB_CASE(INTERPOLATE, ODD_H, ODD_V, OP) \
+    case ((INTERPOLATE << 2) | (ODD_H << 1) | (ODD_V)): \
+        PLM_BLOCK_SET(d, di, dw, si, dw, block_size, OP); \
+        break
+
+void Video::plm_video_process_macroblock(
     plm_video_t *self, uint8_t *s, uint8_t *d,
     int motion_h, int motion_v, int block_size, int interpolate
 ) {
@@ -1139,14 +1144,9 @@ void plm_video_process_macroblock(
     unsigned int di = (self->mb_row * dw + self->mb_col) * block_size;
     
     unsigned int max_address = (dw * (self->mb_height * block_size - block_size + 1) - block_size);
-    if (si > max_address || di > max_address) {
-        return; // corrupt video
-    }
 
-    #define PLM_MB_CASE(INTERPOLATE, ODD_H, ODD_V, OP) \
-        case ((INTERPOLATE << 2) | (ODD_H << 1) | (ODD_V)): \
-            PLM_BLOCK_SET(d, di, dw, si, dw, block_size, OP); \
-            break
+    if (si > max_address || di > max_address)
+        return; // corrupt video
 
     switch (interpolate << 2 | odd_h << 1 | odd_v)
     {
@@ -1159,28 +1159,28 @@ void plm_video_process_macroblock(
         PLM_MB_CASE(1, 1, 0, (d[di] + ((s[si] + s[si + 1] + 1) >> 1) + 1) >> 1);
         PLM_MB_CASE(1, 1, 1, (d[di] + ((s[si] + s[si + 1] + s[si + dw] + s[si + dw + 1] + 2) >> 2) + 1) >> 1);
     }
-
-    #undef PLM_MB_CASE
 }
+#undef PLM_MB_CASE
 
-void plm_video_decode_block(plm_video_t *self, int block)
+void Video::plm_video_decode_block(plm_video_t *self, int block)
 {
     int n = 0;
     uint8_t *quant_matrix;
 
     // Decode DC coefficient of intra-coded blocks
-    if (self->macroblock_intra) {
+    if (self->macroblock_intra)
+    {
         int predictor;
         int dct_size;
 
         // DC prediction
         int plane_index = block > 3 ? block - 3 : 0;
         predictor = self->dc_predictor[plane_index];
-        dct_size = plm_buffer_read_vlc(self->buffer, PLM_VIDEO_DCT_SIZE[plane_index]);
+        dct_size = Buffer::plm_buffer_read_vlc(self->buffer, PLM_VIDEO_DCT_SIZE[plane_index]);
 
         // Read DC coeff
         if (dct_size > 0) {
-            int differential = plm_buffer_read(self->buffer, dct_size);
+            int differential = Buffer::plm_buffer_read(self->buffer, dct_size);
             if ((differential & (1 << (dct_size - 1))) != 0) {
                 self->block_data[0] = predictor + differential;
             }
@@ -1209,21 +1209,21 @@ void plm_video_decode_block(plm_video_t *self, int block)
     int level = 0;
     while (TRUE) {
         int run = 0;
-        uint16_t coeff = plm_buffer_read_vlc_uint(self->buffer, PLM_VIDEO_DCT_COEFF);
+        uint16_t coeff = Buffer::plm_buffer_read_vlc_uint(self->buffer, PLM_VIDEO_DCT_COEFF);
 
-        if ((coeff == 0x0001) && (n > 0) && (plm_buffer_read(self->buffer, 1) == 0)) {
+        if ((coeff == 0x0001) && (n > 0) && (Buffer::plm_buffer_read(self->buffer, 1) == 0)) {
             // end_of_block
             break;
         }
         if (coeff == 0xffff) {
             // escape
-            run = plm_buffer_read(self->buffer, 6);
-            level = plm_buffer_read(self->buffer, 8);
+            run = Buffer::plm_buffer_read(self->buffer, 6);
+            level = Buffer::plm_buffer_read(self->buffer, 8);
             if (level == 0) {
-                level = plm_buffer_read(self->buffer, 8);
+                level = Buffer::plm_buffer_read(self->buffer, 8);
             }
             else if (level == 128) {
-                level = plm_buffer_read(self->buffer, 8) - 256;
+                level = Buffer::plm_buffer_read(self->buffer, 8) - 256;
             }
             else if (level > 128) {
                 level = level - 256;
@@ -1232,9 +1232,9 @@ void plm_video_decode_block(plm_video_t *self, int block)
         else {
             run = coeff >> 8;
             level = coeff & 0xff;
-            if (plm_buffer_read(self->buffer, 1)) {
+
+            if (Buffer::plm_buffer_read(self->buffer, 1))
                 level = -level;
-            }
         }
 
         n += run;

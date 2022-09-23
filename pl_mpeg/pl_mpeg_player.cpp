@@ -142,7 +142,7 @@ void CApp::app_on_audio(plm_t *mpeg, plm_samples_t *samples, void *)
 
 void CApp::app_destroy()
 {
-    plm_destroy(plm);
+    PLM::plm_destroy(plm);
 	
     if (audio_device)
         SDL_CloseAudioDevice(audio_device);
@@ -166,9 +166,9 @@ void CApp::app_update()
 
 		// Seek 3sec forward/backward using arrow keys
 		if (ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_RIGHT)
-			seek_to = plm_get_time(plm) + 3;
+			seek_to = PLM::plm_get_time(plm) + 3;
 		else if (ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_LEFT)
-			seek_to = plm_get_time(plm) - 3;
+			seek_to = PLM::plm_get_time(plm) - 3;
     }
 
     // Compute the delta time since the last app_update(), limit max step to 
@@ -188,20 +188,20 @@ void CApp::app_update()
     {
         int sx, sy;
         SDL_GetWindowSize(window, &sx, &sy);
-        seek_to = plm_get_duration(plm) * ((float)mouse_x / (float)sx);
+        seek_to = PLM::plm_get_duration(plm) * ((float)mouse_x / (float)sx);
     }
 	
     // Seek or advance decode
     if (seek_to != -1)
     {
         SDL_ClearQueuedAudio(audio_device);
-        plm_seek(plm, seek_to, FALSE);
+        PLM::plm_seek(plm, seek_to, FALSE);
 	}
 	else {
-		plm_decode(plm, elapsed_time);
+		PLM::plm_decode(plm, elapsed_time);
 	}
 
-    if (plm_has_ended(plm))
+    if (PLM::plm_has_ended(plm))
         wants_to_quit = TRUE;
 	
     glClear(GL_COLOR_BUFFER_BIT);
@@ -260,34 +260,33 @@ void CApp::app_on_video(plm_t *mpeg, plm_frame_t *frame, void *)
 void CApp::app_create(const char *filename)
 {
     _inst = this;
-	
-	// Initialize plmpeg, load the video file, install decode callbacks
-	plm = plm_create_with_filename(filename);
+    
+    // Initialize plmpeg, load the video file, install decode callbacks
+    plm = PLM::plm_create_with_filename(filename);
 
-	if (!plm)
+    if (!plm)
     {
-		SDL_Log("Couldn't open %s", filename);
-		exit(1);
-	}
+        SDL_Log("Couldn't open %s", filename);
+        exit(1);
+    }
 
-	int samplerate = plm_get_samplerate(plm);
+    int samplerate = PLM::plm_get_samplerate(plm);
 
-	SDL_Log(
-		"Opened %s - framerate: %f, samplerate: %d, duration: %f",
-		filename, 
-		plm_get_framerate(plm),
-		plm_get_samplerate(plm),
-		plm_get_duration(plm)
-	);
+    SDL_Log(
+        "Opened %s - framerate: %f, samplerate: %d, duration: %f",
+        filename, 
+        PLM::plm_get_framerate(plm),
+        PLM::plm_get_samplerate(plm),
+        PLM::plm_get_duration(plm));
 	
-    plm_set_video_decode_callback(plm, app_on_video, nullptr);
-    plm_set_audio_decode_callback(plm, app_on_audio, nullptr);
+    PLM::plm_set_video_decode_callback(plm, app_on_video, nullptr);
+    PLM::plm_set_audio_decode_callback(plm, app_on_audio, nullptr);
 	
-	plm_set_loop(plm, TRUE);
-	plm_set_audio_enabled(plm, TRUE);
-	plm_set_audio_stream(plm, 0);
+    PLM::plm_set_loop(plm, TRUE);
+    PLM::plm_set_audio_enabled(plm, TRUE);
+    PLM::plm_set_audio_stream(plm, 0);
 
-    if (plm_get_num_audio_streams(plm) > 0)
+    if (PLM::plm_get_num_audio_streams(plm) > 0)
     {
         // Initialize SDL Audio
         SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
@@ -305,14 +304,14 @@ void CApp::app_create(const char *filename)
 		SDL_PauseAudioDevice(audio_device, 0);
 
 		// Adjust the audio lead time according to the audio_spec buffer size
-		plm_set_audio_lead_time(plm, (double)audio_spec.samples / (double)samplerate);
+		PLM::plm_set_audio_lead_time(plm, (double)audio_spec.samples / (double)samplerate);
 	}
 	
 	// Create SDL Window
     window = SDL_CreateWindow(
 		"pl_mpeg",
 		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-		plm_get_width(plm), plm_get_height(plm),
+		PLM::plm_get_width(plm), PLM::plm_get_height(plm),
 		SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
 	);
     gl = SDL_GL_CreateContext(window);
