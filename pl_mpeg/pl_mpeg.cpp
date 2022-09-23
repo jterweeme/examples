@@ -40,7 +40,7 @@ void PLM::plm_create_with_memory(uint8_t *bytes, size_t length, int free_when_do
 // plm_destroy() is called.
 void PLM::plm_create_with_buffer(plm_buffer_t *buffer, int destroy_when_done)
 {
-    _demux.demux = Demux::plm_demux_create(buffer, destroy_when_done);
+    _demux.demux = _demux.plm_demux_create(buffer, destroy_when_done);
     _video_enabled = TRUE;
     audio_enabled = TRUE;
     plm_init_decoders();
@@ -51,10 +51,10 @@ int PLM::plm_init_decoders()
     if (_has_decoders)
         return TRUE;
 
-    if (!Demux::plm_demux_has_headers(_demux.demux))
+    if (!_demux.plm_demux_has_headers(_demux.demux))
         return FALSE;
 
-    if (Demux::plm_demux_get_num_video_streams(_demux.demux) > 0)
+    if (_demux.plm_demux_get_num_video_streams(_demux.demux) > 0)
     {
         if (_video_enabled)
             _video_packet_type = Demux::PLM_DEMUX_PACKET_VIDEO_1;
@@ -65,7 +65,7 @@ int PLM::plm_init_decoders()
             video_buffer, PLM::plm_read_video_packet, this);
     }
 
-    if (Demux::plm_demux_get_num_audio_streams(_demux.demux) > 0)
+    if (_demux.plm_demux_get_num_audio_streams(_demux.demux) > 0)
     {
         if (audio_enabled)
             audio_packet_type = Demux::PLM_DEMUX_PACKET_AUDIO_1 + audio_stream_index;
@@ -73,7 +73,7 @@ int PLM::plm_init_decoders()
         audio_buffer = Buffer::plm_buffer_create_with_capacity(PLM_BUFFER_DEFAULT_SIZE);
 
         Buffer::plm_buffer_set_load_callback(
-            audio_buffer, PLM::plm_read_audio_packet, this);
+            audio_buffer, plm_read_audio_packet, this);
     }
 
     if (video_buffer)
@@ -95,7 +95,7 @@ void PLM::plm_destroy()
     if (audio_decoder)
         Audio::plm_audio_destroy(audio_decoder);
 
-    Demux::plm_demux_destroy(_demux.demux);
+    _demux.plm_demux_destroy(_demux.demux);
 }
 
 // Get or set whether audio decoding is enabled. Default TRUE.
@@ -110,7 +110,7 @@ int PLM::plm_get_audio_enabled() {
 // file as source - when not enough data is available yet.
 int PLM::plm_has_headers()
 {
-    if (!Demux::plm_demux_has_headers(_demux.demux))
+    if (!_demux.plm_demux_has_headers(_demux.demux))
         return FALSE;
     
     if (!plm_init_decoders())
@@ -173,7 +173,7 @@ void PLM::plm_set_video_enabled(int enabled)
 
 // Get the number of video streams (0--1) reported in the system header.
 int PLM::plm_get_num_video_streams() {
-    return Demux::plm_demux_get_num_video_streams(_demux.demux);
+    return _demux.plm_demux_get_num_video_streams(_demux.demux);
 }
 
 // Get the display width/height of the video stream.
@@ -196,7 +196,7 @@ double PLM::plm_get_framerate() {
 
 // Get the number of audio streams (0--4) reported in the system header.
 int PLM::plm_get_num_audio_streams() {
-    return Demux::plm_demux_get_num_audio_streams(_demux.demux);
+    return _demux.plm_demux_get_num_audio_streams(_demux.demux);
 }
 
 // Get the samplerate of the audio stream in samples per second.
@@ -224,7 +224,7 @@ double PLM::plm_get_time() {
 
 // Get the video duration of the underlying source in seconds.
 double PLM::plm_get_duration() {
-    return Demux::plm_demux_get_duration(_demux.demux, Demux::PLM_DEMUX_PACKET_VIDEO_1);
+    return _demux.plm_demux_get_duration(_demux.demux, Demux::PLM_DEMUX_PACKET_VIDEO_1);
 }
 
 // Rewind all buffers back to the beginning.
@@ -236,7 +236,7 @@ void PLM::plm_rewind()
     if (audio_decoder)
         Audio::plm_audio_rewind(audio_decoder);
 
-    Demux::plm_demux_rewind(_demux.demux);
+    _demux.plm_demux_rewind(_demux.demux);
     _time = 0;
 }
 
@@ -282,8 +282,8 @@ void PLM::plm_decode(double tick)
     if (!plm_init_decoders())
         return;
 
-    int decode_video = (video_decode_callback && _video_packet_type);
-    int decode_audio = (audio_decode_callback && audio_packet_type);
+    int decode_video = video_decode_callback && _video_packet_type;
+    int decode_audio = audio_decode_callback && audio_packet_type;
 
     if (!decode_video && !decode_audio) {
         // Nothing to do here
@@ -329,7 +329,7 @@ void PLM::plm_decode(double tick)
     // Did all sources we wanted to decode fail and the demuxer is at the end?
     if ((!decode_video || decode_video_failed) && 
         (!decode_audio || decode_audio_failed) &&
-        Demux::plm_demux_has_ended(_demux.demux)
+        _demux.plm_demux_has_ended(_demux.demux)
     ) {
         plm_handle_end();
         return;
@@ -355,7 +355,7 @@ plm_frame_t *PLM::plm_decode_video()
 
     if (frame)
         _time = frame->time;
-    else if (Demux::plm_demux_has_ended(_demux.demux))
+    else if (_demux.plm_demux_has_ended(_demux.demux))
         plm_handle_end();
     
     return frame;
@@ -378,7 +378,7 @@ plm_samples_t *PLM::plm_decode_audio()
     if (samples) {
         _time = samples->time;
     }
-    else if (Demux::plm_demux_has_ended(_demux.demux)) {
+    else if (_demux.plm_demux_has_ended(_demux.demux)) {
         plm_handle_end();
     }
     return samples;
@@ -410,7 +410,7 @@ void PLM::plm_read_audio_packet(plm_buffer_t *buffer, void *user)
 void PLM::plm_read_packets(PLM *self, int requested_type)
 {
     plm_packet_t *packet;
-    while ((packet = Demux::plm_demux_decode(self->_demux.demux)))
+    while ((packet = self->_demux.plm_demux_decode(self->_demux.demux)))
     {
         if (packet->type == self->_video_packet_type) {
             Buffer::plm_buffer_write(self->video_buffer, packet->data, packet->length);
@@ -424,7 +424,7 @@ void PLM::plm_read_packets(PLM *self, int requested_type)
         }
     }
 
-    if (Demux::plm_demux_has_ended(self->_demux.demux))
+    if (self->_demux.plm_demux_has_ended(self->_demux.demux))
     {
         if (self->video_buffer)
             Buffer::plm_buffer_signal_end(self->video_buffer);
@@ -447,8 +447,8 @@ plm_frame_t *PLM::plm_seek_frame(double time, int seek_exact)
 
     int type = _video_packet_type;
 
-    double start_time = Demux::plm_demux_get_start_time(_demux.demux, type);
-    double duration = Demux::plm_demux_get_duration(_demux.demux, type);
+    double start_time = _demux.plm_demux_get_start_time(_demux.demux, type);
+    double duration = _demux.plm_demux_get_duration(_demux.demux, type);
 
     if (time < 0) {
         time = 0;
@@ -457,7 +457,7 @@ plm_frame_t *PLM::plm_seek_frame(double time, int seek_exact)
         time = duration;
     }
     
-    plm_packet_t *packet = Demux::plm_demux_seek(_demux.demux, time, type, TRUE);
+    plm_packet_t *packet = _demux.plm_demux_seek(_demux.demux, time, type, TRUE);
     if (!packet) {
         return NULL;
     }
@@ -483,9 +483,8 @@ plm_frame_t *PLM::plm_seek_frame(double time, int seek_exact)
     // Enable writing to the audio buffer again?
     audio_packet_type = previous_audio_packet_type;
 
-    if (frame) {
+    if (frame)
         _time = frame->time;
-    }
 
     _has_ended = FALSE;
     return frame;
@@ -521,11 +520,11 @@ int PLM::plm_seek(double time, int seek_exact)
     // with a PTS greater than the current time is found. plm_decode() is then
     // called to decode enough audio data to satisfy the audio_lead_time.
 
-    double start_time = Demux::plm_demux_get_start_time(_demux.demux, _video_packet_type);
+    double start_time = _demux.plm_demux_get_start_time(_demux.demux, _video_packet_type);
     Audio::plm_audio_rewind(audio_decoder);
 
     plm_packet_t *packet = NULL;
-    while ((packet = Demux::plm_demux_decode(_demux.demux)))
+    while ((packet = _demux.plm_demux_decode(_demux.demux)))
     {
         if (packet->type == _video_packet_type) {
             Buffer::plm_buffer_write(video_buffer, packet->data, packet->length);
