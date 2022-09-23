@@ -301,10 +301,35 @@ struct plm_quantizer_spec_t
     uint8_t bits;
 };
 
+typedef struct plm_demux_t {
+    plm_buffer_t *buffer;
+    int destroy_buffer_when_done;
+    double system_clock_ref;
+
+    size_t last_file_size;
+    double last_decoded_pts;
+    double start_time;
+    double duration;
+
+    int start_code;
+    int has_pack_header;
+    int has_system_header;
+    int has_headers;
+
+    int num_audio_streams;
+    int num_video_streams;
+    plm_packet_t current_packet;
+    plm_packet_t next_packet;
+} plm_demux_t;
+
 class Demux
 {
-public:
+private:
+    static constexpr int PLM_START_PACK = 0xBA;
+    static constexpr int PLM_START_END = 0xB9;
+    static constexpr int PLM_START_SYSTEM = 0xBB;
     plm_demux_t *demux;
+public:
     static constexpr int PLM_DEMUX_PACKET_PRIVATE = 0xBD;
     static constexpr int PLM_DEMUX_PACKET_AUDIO_1 = 0xC0;
     static constexpr int PLM_DEMUX_PACKET_AUDIO_2 = 0xC1;
@@ -312,20 +337,20 @@ public:
     static constexpr int PLM_DEMUX_PACKET_AUDIO_4 = 0xC2;
     static constexpr int PLM_DEMUX_PACKET_VIDEO_1 = 0xE0;
     void plm_demux_create(plm_buffer_t *buffer, int destroy_when_done);
-    void plm_demux_buffer_seek(plm_demux_t *self, size_t pos);
+    void plm_demux_buffer_seek(size_t pos);
     double plm_demux_decode_time();
     plm_packet_t *plm_demux_decode_packet(int type);
     plm_packet_t *plm_demux_get_packet();
     void plm_demux_destroy();
-    int plm_demux_has_headers(plm_demux_t *self);
+    int plm_demux_has_headers();
     int plm_demux_get_num_video_streams();
     int plm_demux_get_num_audio_streams();
     void plm_demux_rewind();
     int plm_demux_has_ended();
-    plm_packet_t *plm_demux_seek(plm_demux_t *self, double time, int type, int force_intra);
-    double plm_demux_get_start_time(plm_demux_t *self, int type);
-    double plm_demux_get_duration(plm_demux_t *self, int type);
-    plm_packet_t *plm_demux_decode(plm_demux_t *self);
+    plm_packet_t *plm_demux_seek(double time, int type, int force_intra);
+    double plm_demux_get_start_time(int type);
+    double plm_demux_get_duration(int type);
+    plm_packet_t *plm_demux_decode();
 };
 
 class PLM
