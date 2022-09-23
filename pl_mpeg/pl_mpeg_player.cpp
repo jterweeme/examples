@@ -134,7 +134,7 @@ void CApp::app_on_audio(plm_t *mpeg, plm_samples_t *samples, void *)
 
 void CApp::app_destroy()
 {
-    PLM::plm_destroy(plm);
+    _plm.plm_destroy(plm);
 	
     if (audio_device)
         SDL_CloseAudioDevice(audio_device);
@@ -158,9 +158,9 @@ void CApp::app_update()
 
 		// Seek 3sec forward/backward using arrow keys
 		if (ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_RIGHT)
-			seek_to = PLM::plm_get_time(plm) + 3;
+			seek_to = _plm.plm_get_time(plm) + 3;
 		else if (ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_LEFT)
-			seek_to = PLM::plm_get_time(plm) - 3;
+			seek_to = _plm.plm_get_time(plm) - 3;
     }
 
     // Compute the delta time since the last app_update(), limit max step to 
@@ -180,20 +180,20 @@ void CApp::app_update()
     {
         int sx, sy;
         SDL_GetWindowSize(window, &sx, &sy);
-        seek_to = PLM::plm_get_duration(plm) * ((float)mouse_x / (float)sx);
+        seek_to = _plm.plm_get_duration(plm) * ((float)mouse_x / (float)sx);
     }
 	
     // Seek or advance decode
     if (seek_to != -1)
     {
         SDL_ClearQueuedAudio(audio_device);
-        PLM::plm_seek(plm, seek_to, FALSE);
+        _plm.plm_seek(plm, seek_to, FALSE);
 	}
 	else {
-		PLM::plm_decode(plm, elapsed_time);
+		_plm.plm_decode(plm, elapsed_time);
 	}
 
-    if (PLM::plm_has_ended(plm))
+    if (_plm.plm_has_ended(plm))
         wants_to_quit = TRUE;
 	
     glClear(GL_COLOR_BUFFER_BIT);
