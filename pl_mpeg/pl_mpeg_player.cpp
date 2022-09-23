@@ -99,8 +99,8 @@ const char * const APP_FRAGMENT_SHADER_YCRCB = APP_SHADER_SOURCE(
 class CApp
 {
 private:
-    static void app_on_video(plm_t *mpeg, plm_frame_t *frame, void *);
-    static void app_on_audio(plm_t *mpeg, plm_samples_t *samples, void *);
+    static void app_on_video(plm_frame_t *frame, void *);
+    static void app_on_audio(plm_samples_t *samples, void *);
     GLuint app_create_texture(GLuint index, const char *name);
     GLuint app_compile_shader(GLenum type, const char *source);
     static void app_update_texture(GLuint unit, GLuint texture, plm_plane_t *plane);
@@ -125,7 +125,7 @@ public:
 
 CApp *CApp::_inst = nullptr;
 
-void CApp::app_on_audio(plm_t *mpeg, plm_samples_t *samples, void *)
+void CApp::app_on_audio(plm_samples_t *samples, void *)
 {
 	int size = sizeof(float) * samples->count * 2;
 	SDL_QueueAudio(_inst->audio_device, samples->interleaved, size);
@@ -240,7 +240,7 @@ void CApp::app_update_texture(GLuint unit, GLuint texture, plm_plane_t *plane)
         GL_LUMINANCE, GL_UNSIGNED_BYTE, plane->data);
 }
 
-void CApp::app_on_video(plm_t *mpeg, plm_frame_t *frame, void *)
+void CApp::app_on_video(plm_frame_t *frame, void *)
 {
     app_update_texture(GL_TEXTURE0, _inst->_texture_y, &frame->y);
     app_update_texture(GL_TEXTURE1, _inst->_texture_cb, &frame->cb);

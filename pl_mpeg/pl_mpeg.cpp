@@ -304,7 +304,7 @@ void PLM::plm_decode(double tick)
         {
             plm_frame_t *frame = Video::plm_video_decode(video_decoder);
             if (frame) {
-                video_decode_callback(nullptr, frame, video_decode_callback_user_data);
+                video_decode_callback(frame, video_decode_callback_user_data);
                 did_decode = TRUE;
             }
             else {
@@ -317,7 +317,7 @@ void PLM::plm_decode(double tick)
             plm_samples_t *samples = Audio::plm_audio_decode(audio_decoder);
             if (samples)
             {
-                audio_decode_callback(nullptr, samples, audio_decode_callback_user_data);
+                audio_decode_callback(samples, audio_decode_callback_user_data);
                 did_decode = TRUE;
             }
             else {
@@ -512,7 +512,7 @@ int PLM::plm_seek(double time, int seek_exact)
         return FALSE;
 
     if (video_decode_callback)
-        video_decode_callback(nullptr, frame, video_decode_callback_user_data);    
+        video_decode_callback(frame, video_decode_callback_user_data);    
 
     // If audio is not enabled we are done here.
     if (!audio_packet_type)

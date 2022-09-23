@@ -257,17 +257,16 @@ typedef struct plm_audio_t plm_audio_t;
 // Callback function for plm_buffer when it needs more data
 typedef void(*plm_buffer_load_callback)(plm_buffer_t *self, void *user);
 
-typedef struct plm_t plm_t;
 
 // Callback function type for decoded video frames used by the high-level
 // plm_* interface
 typedef void(*plm_video_decode_callback)
-    (plm_t *self, plm_frame_t *frame, void *user);
+    (plm_frame_t *frame, void *user);
 
 // Callback function type for decoded audio samples used by the high-level
 // plm_* interface
 typedef void(*plm_audio_decode_callback)
-    (plm_t *self, plm_samples_t *samples, void *user);
+    (plm_samples_t *samples, void *user);
 
 
 
