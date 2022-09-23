@@ -14,7 +14,8 @@ plm_t *PLM::plm_create_with_filename(const char *filename)
     if (!buffer) {
         return NULL;
     }
-    return plm_create_with_buffer(buffer, TRUE);
+    _plm = plm_create_with_buffer(buffer, TRUE);
+    return _plm;
 }
 
 // Create a plmpeg instance with a file handle. Pass TRUE to close_when_done to
@@ -22,7 +23,8 @@ plm_t *PLM::plm_create_with_filename(const char *filename)
 plm_t *PLM::plm_create_with_file(FILE *fh, int close_when_done)
 {
     plm_buffer_t *buffer = Buffer::plm_buffer_create_with_file(fh, close_when_done);
-    return plm_create_with_buffer(buffer, TRUE);
+    _plm = plm_create_with_buffer(buffer, TRUE);
+    return _plm;
 }
 
 // Create a plmpeg instance with a pointer to memory as source. This assumes the
@@ -32,7 +34,8 @@ plm_t *PLM::plm_create_with_file(FILE *fh, int close_when_done)
 plm_t *PLM::plm_create_with_memory(uint8_t *bytes, size_t length, int free_when_done)
 {
     plm_buffer_t *buffer = Buffer::plm_buffer_create_with_memory(bytes, length, free_when_done);
-    return plm_create_with_buffer(buffer, TRUE);
+    _plm = plm_create_with_buffer(buffer, TRUE);
+    return _plm;
 }
 
 // Create a plmpeg instance with a plm_buffer as source. Pass TRUE to
@@ -40,15 +43,15 @@ plm_t *PLM::plm_create_with_memory(uint8_t *bytes, size_t length, int free_when_
 // plm_destroy() is called.
 plm_t *PLM::plm_create_with_buffer(plm_buffer_t *buffer, int destroy_when_done)
 {
-    plm_t *self = (plm_t *)malloc(sizeof(plm_t));
-    memset(self, 0, sizeof(plm_t));
+    _plm = (plm_t *)malloc(sizeof(plm_t));
+    memset(_plm, 0, sizeof(plm_t));
 
-    self->demux = Demux::plm_demux_create(buffer, destroy_when_done);
-    self->video_enabled = TRUE;
-    self->audio_enabled = TRUE;
-    plm_init_decoders(self);
+    _plm->demux = Demux::plm_demux_create(buffer, destroy_when_done);
+    _plm->video_enabled = TRUE;
+    _plm->audio_enabled = TRUE;
+    plm_init_decoders(_plm);
 
-    return self;
+    return _plm;
 }
 
 int PLM::plm_init_decoders(plm_t *self)
@@ -67,7 +70,7 @@ int PLM::plm_init_decoders(plm_t *self)
         self->video_buffer = Buffer::plm_buffer_create_with_capacity(PLM_BUFFER_DEFAULT_SIZE);
 
         Buffer::plm_buffer_set_load_callback(
-            self->video_buffer, PLM::plm_read_video_packet, self);
+            self->video_buffer, PLM::plm_read_video_packet, this);
     }
 
     if (Demux::plm_demux_get_num_audio_streams(self->demux) > 0)
@@ -78,7 +81,7 @@ int PLM::plm_init_decoders(plm_t *self)
         self->audio_buffer = Buffer::plm_buffer_create_with_capacity(PLM_BUFFER_DEFAULT_SIZE);
 
         Buffer::plm_buffer_set_load_callback(
-            self->audio_buffer, PLM::plm_read_audio_packet, self);
+            self->audio_buffer, PLM::plm_read_audio_packet, this);
     }
 
     if (self->video_buffer)
@@ -268,8 +271,8 @@ int PLM::plm_has_ended(plm_t *self) {
 // Parameter will be passed to your callback.
 void PLM::plm_set_video_decode_callback(plm_t *self, plm_video_decode_callback fp, void *user)
 {
-    self->video_decode_callback = fp;
-    self->video_decode_callback_user_data = user;
+    video_decode_callback = fp;
+    video_decode_callback_user_data = user;
 }
 
 // Set the callback for decoded audio samples used with plm_decode(). If no 
@@ -277,8 +280,8 @@ void PLM::plm_set_video_decode_callback(plm_t *self, plm_video_decode_callback f
 // Parameter will be passed to your callback.
 void PLM::plm_set_audio_decode_callback(plm_t *self, plm_audio_decode_callback fp, void *user)
 {
-    self->audio_decode_callback = fp;
-    self->audio_decode_callback_user_data = user;
+    audio_decode_callback = fp;
+    audio_decode_callback_user_data = user;
 }
 
 // Advance the internal timer by seconds and decode video/audio up to this time.
@@ -290,8 +293,8 @@ void PLM::plm_decode(plm_t *self, double tick)
     if (!plm_init_decoders(self))
         return;
 
-    int decode_video = (self->video_decode_callback && self->video_packet_type);
-    int decode_audio = (self->audio_decode_callback && self->audio_packet_type);
+    int decode_video = (video_decode_callback && self->video_packet_type);
+    int decode_audio = (audio_decode_callback && self->audio_packet_type);
 
     if (!decode_video && !decode_audio) {
         // Nothing to do here
@@ -312,7 +315,7 @@ void PLM::plm_decode(plm_t *self, double tick)
         {
             plm_frame_t *frame = Video::plm_video_decode(self->video_decoder);
             if (frame) {
-                self->video_decode_callback(self, frame, self->video_decode_callback_user_data);
+                video_decode_callback(self, frame, video_decode_callback_user_data);
                 did_decode = TRUE;
             }
             else {
@@ -324,7 +327,7 @@ void PLM::plm_decode(plm_t *self, double tick)
         {
             plm_samples_t *samples = Audio::plm_audio_decode(self->audio_decoder);
             if (samples) {
-                self->audio_decode_callback(self, samples, self->audio_decode_callback_user_data);
+                audio_decode_callback(self, samples, audio_decode_callback_user_data);
                 did_decode = TRUE;
             }
             else {
@@ -404,14 +407,16 @@ void PLM::plm_handle_end(plm_t *self) {
 void PLM::plm_read_video_packet(plm_buffer_t *buffer, void *user)
 {
     PLM_UNUSED(buffer);
-    plm_t *self = (plm_t *)user;
+    PLM *plm = (PLM *)(user);
+    plm_t *self = plm->_plm;
     plm_read_packets(self, self->video_packet_type);
 }
 
 void PLM::plm_read_audio_packet(plm_buffer_t *buffer, void *user)
 {
     PLM_UNUSED(buffer);
-    plm_t *self = (plm_t *)user;
+    PLM *plm = (PLM *)(user);
+    plm_t *self = plm->_plm;
     plm_read_packets(self, self->audio_packet_type);
 }
 
@@ -518,8 +523,8 @@ int PLM::plm_seek(plm_t *self, double time, int seek_exact)
     if (!frame)
         return FALSE;
 
-    if (self->video_decode_callback)
-        self->video_decode_callback(self, frame, self->video_decode_callback_user_data);    
+    if (video_decode_callback)
+        video_decode_callback(self, frame, video_decode_callback_user_data);    
 
     // If audio is not enabled we are done here.
     if (!self->audio_packet_type)
