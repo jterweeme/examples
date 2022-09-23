@@ -114,7 +114,6 @@ private:
     SDL_AudioDeviceID audio_device;
     SDL_GLContext gl;
     GLuint shader_program;
-    plm_t *plm;
     double last_time;
     PLM _plm;
 public:
@@ -134,7 +133,7 @@ void CApp::app_on_audio(plm_t *mpeg, plm_samples_t *samples, void *)
 
 void CApp::app_destroy()
 {
-    _plm.plm_destroy(plm);
+    _plm.plm_destroy();
 	
     if (audio_device)
         SDL_CloseAudioDevice(audio_device);
@@ -158,9 +157,9 @@ void CApp::app_update()
 
 		// Seek 3sec forward/backward using arrow keys
 		if (ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_RIGHT)
-			seek_to = _plm.plm_get_time(plm) + 3;
+			seek_to = _plm.plm_get_time() + 3;
 		else if (ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_LEFT)
-			seek_to = _plm.plm_get_time(plm) - 3;
+			seek_to = _plm.plm_get_time() - 3;
     }
 
     // Compute the delta time since the last app_update(), limit max step to 
@@ -180,20 +179,20 @@ void CApp::app_update()
     {
         int sx, sy;
         SDL_GetWindowSize(window, &sx, &sy);
-        seek_to = _plm.plm_get_duration(plm) * ((float)mouse_x / (float)sx);
+        seek_to = _plm.plm_get_duration() * ((float)mouse_x / (float)sx);
     }
 	
     // Seek or advance decode
     if (seek_to != -1)
     {
         SDL_ClearQueuedAudio(audio_device);
-        _plm.plm_seek(plm, seek_to, FALSE);
+        _plm.plm_seek(seek_to, FALSE);
 	}
 	else {
-		_plm.plm_decode(plm, elapsed_time);
+		_plm.plm_decode(elapsed_time);
 	}
 
-    if (_plm.plm_has_ended(plm))
+    if (_plm.plm_has_ended())
         wants_to_quit = TRUE;
 	
     glClear(GL_COLOR_BUFFER_BIT);
@@ -253,31 +252,24 @@ void CApp::app_create(const char *filename)
     _inst = this;
     
     // Initialize plmpeg, load the video file, install decode callbacks
-    plm = _plm.plm_create_with_filename(filename);
-
-    if (!plm)
-    {
-        SDL_Log("Couldn't open %s", filename);
-        exit(1);
-    }
-
-    int samplerate = _plm.plm_get_samplerate(plm);
+    _plm.plm_create_with_filename(filename);
+    int samplerate = _plm.plm_get_samplerate();
 
     SDL_Log(
         "Opened %s - framerate: %f, samplerate: %d, duration: %f",
         filename, 
-        _plm.plm_get_framerate(plm),
-        _plm.plm_get_samplerate(plm),
-        _plm.plm_get_duration(plm));
+        _plm.plm_get_framerate(),
+        _plm.plm_get_samplerate(),
+        _plm.plm_get_duration());
 	
-    _plm.plm_set_video_decode_callback(plm, app_on_video, nullptr);
-    _plm.plm_set_audio_decode_callback(plm, app_on_audio, nullptr);
+    _plm.plm_set_video_decode_callback(app_on_video, nullptr);
+    _plm.plm_set_audio_decode_callback(app_on_audio, nullptr);
 	
-    _plm.plm_set_loop(plm, TRUE);
-    _plm.plm_set_audio_enabled(plm, TRUE);
-    _plm.plm_set_audio_stream(plm, 0);
+    _plm.plm_set_loop(TRUE);
+    _plm.plm_set_audio_enabled(TRUE);
+    _plm.plm_set_audio_stream(0);
 
-    if (_plm.plm_get_num_audio_streams(plm) > 0)
+    if (_plm.plm_get_num_audio_streams() > 0)
     {
         // Initialize SDL Audio
         SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
@@ -292,19 +284,19 @@ void CApp::app_create(const char *filename)
         if (audio_device == 0)
             SDL_Log("Failed to open audio device: %s", SDL_GetError());
 
-		SDL_PauseAudioDevice(audio_device, 0);
+        SDL_PauseAudioDevice(audio_device, 0);
 
-		// Adjust the audio lead time according to the audio_spec buffer size
-		_plm.plm_set_audio_lead_time(plm, (double)audio_spec.samples / (double)samplerate);
-	}
+        // Adjust the audio lead time according to the audio_spec buffer size
+        _plm.plm_set_audio_lead_time((double)audio_spec.samples / (double)samplerate);
+    }
 	
-	// Create SDL Window
+    // Create SDL Window
     window = SDL_CreateWindow(
-		"pl_mpeg",
-		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-		_plm.plm_get_width(plm), _plm.plm_get_height(plm),
-		SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
-	);
+        "pl_mpeg",
+        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        _plm.plm_get_width(), _plm.plm_get_height(),
+        SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+
     gl = SDL_GL_CreateContext(window);
 	
 	SDL_GL_SetSwapInterval(1);

@@ -300,11 +300,6 @@ typedef struct plm_buffer_t {
     enum plm_buffer_mode mode;
 } plm_buffer_t;
 
-typedef struct plm_t
-{
-
-} plm_t;
-
 struct plm_quantizer_spec_t
 {
     unsigned short levels;
@@ -315,7 +310,6 @@ struct plm_quantizer_spec_t
 class PLM
 {
 private:
-    plm_t *_plm;
     int _loop = 0;
     double _time;
     int _has_ended = 0;
@@ -329,9 +323,9 @@ private:
     void *video_decode_callback_user_data;
     plm_audio_decode_callback audio_decode_callback;
     void *audio_decode_callback_user_data;
-    plm_t *plm_create_with_file(FILE *fh, int close_when_done);
-    plm_t *plm_create_with_memory(uint8_t *bytes, size_t length, int free_when_done);
-    plm_t *plm_create_with_buffer(plm_buffer_t *buffer, int destroy_when_done);
+    void plm_create_with_file(FILE *fh, int close_when_done);
+    void plm_create_with_memory(uint8_t *bytes, size_t length, int free_when_done);
+    void plm_create_with_buffer(plm_buffer_t *buffer, int destroy_when_done);
     static void plm_read_packets(PLM *self, int requested_type);
     static void plm_read_audio_packet(plm_buffer_t *buffer, void *user);
     static void plm_read_video_packet(plm_buffer_t *buffer, void *user);
@@ -342,42 +336,42 @@ private:
     int audio_stream_index = 0;
     int audio_packet_type = 0;
 public:
-    plm_t *plm_create_with_filename(const char *filename);
-    int plm_init_decoders(plm_t *self);
-    void plm_handle_end(plm_t *self);
-    void plm_destroy(plm_t *self);
-    int plm_has_headers(plm_t *self);
-    int plm_get_video_enabled(plm_t *self);
-    void plm_set_video_enabled(plm_t *self, int enabled);
-    int plm_get_num_video_streams(plm_t *self);
-    int plm_get_width(plm_t *self);
-    int plm_get_height(plm_t *self);
-    double plm_get_framerate(plm_t *self);
-    int plm_get_audio_enabled(plm_t *self);
-    void plm_set_audio_enabled(plm_t *self, int enabled);
-    int plm_get_num_audio_streams(plm_t *self);
-    void plm_set_audio_stream(plm_t *self, int stream_index);
-    int plm_get_samplerate(plm_t *self);
-    double plm_get_audio_lead_time(plm_t *self);
-    void plm_set_audio_lead_time(plm_t *self, double lead_time);
-    double plm_get_time(plm_t *self);
-    double plm_get_duration(plm_t *self);
-    void plm_rewind(plm_t *self);
-    int plm_get_loop(plm_t *self);
-    void plm_set_loop(plm_t *self, int loop);
-    int plm_has_ended(plm_t *self);
+    void plm_create_with_filename(const char *filename);
+    int plm_init_decoders();
+    void plm_handle_end();
+    void plm_destroy();
+    int plm_has_headers();
+    int plm_get_video_enabled();
+    void plm_set_video_enabled(int enabled);
+    int plm_get_num_video_streams();
+    int plm_get_width();
+    int plm_get_height();
+    double plm_get_framerate();
+    int plm_get_audio_enabled();
+    void plm_set_audio_enabled(int enabled);
+    int plm_get_num_audio_streams();
+    void plm_set_audio_stream(int stream_index);
+    int plm_get_samplerate();
+    double plm_get_audio_lead_time();
+    void plm_set_audio_lead_time(double lead_time);
+    double plm_get_time();
+    double plm_get_duration();
+    void plm_rewind();
+    int plm_get_loop();
+    void plm_set_loop(int loop);
+    int plm_has_ended();
 
     void plm_set_video_decode_callback(
-        plm_t *self, plm_video_decode_callback fp, void *user);
+        plm_video_decode_callback fp, void *user);
 
     void plm_set_audio_decode_callback(
-        plm_t *self, plm_audio_decode_callback fp, void *user);
+        plm_audio_decode_callback fp, void *user);
 
-    void plm_decode(plm_t *self, double seconds);
-    plm_frame_t *plm_decode_video(plm_t *self);
-    plm_samples_t *plm_decode_audio(plm_t *self);
-    int plm_seek(plm_t *self, double time, int seek_exact);
-    plm_frame_t *plm_seek_frame(plm_t *self, double time, int seek_exact);
+    void plm_decode(double seconds);
+    plm_frame_t *plm_decode_video();
+    plm_samples_t *plm_decode_audio();
+    int plm_seek(double time, int seek_exact);
+    plm_frame_t *plm_seek_frame(double time, int seek_exact);
 };
 
 class Buffer
