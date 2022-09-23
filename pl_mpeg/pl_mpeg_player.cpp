@@ -94,15 +94,6 @@ const char * const APP_FRAGMENT_SHADER_YCRCB = APP_SHADER_SOURCE(
 		gl_FragColor = vec4(y, cb, cr, 1.0) * rec601;
 	}
 );
-
-const char * const APP_FRAGMENT_SHADER_RGB = APP_SHADER_SOURCE(
-	uniform sampler2D texture_rgb;
-	varying vec2 tex_coord;
-
-	void main() {
-		gl_FragColor = vec4(texture2D(texture_rgb, tex_coord).rgb, 1.0);
-	}
-);
 #undef APP_SHADER_SOURCE
 
 class CApp
@@ -125,6 +116,7 @@ private:
     GLuint shader_program;
     plm_t *plm;
     double last_time;
+    PLM _plm;
 public:
     int wants_to_quit = 0;
     void app_create(const char *filename);
@@ -245,8 +237,7 @@ void CApp::app_update_texture(GLuint unit, GLuint texture, plm_plane_t *plane)
 	glActiveTexture(unit);
 	glBindTexture(GL_TEXTURE_2D, texture);
 
-    glTexImage2D(
-        GL_TEXTURE_2D, 0, GL_LUMINANCE, plane->width, plane->height, 0,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, plane->width, plane->height, 0,
         GL_LUMINANCE, GL_UNSIGNED_BYTE, plane->data);
 }
 
@@ -262,7 +253,7 @@ void CApp::app_create(const char *filename)
     _inst = this;
     
     // Initialize plmpeg, load the video file, install decode callbacks
-    plm = PLM::plm_create_with_filename(filename);
+    plm = _plm.plm_create_with_filename(filename);
 
     if (!plm)
     {
@@ -270,23 +261,23 @@ void CApp::app_create(const char *filename)
         exit(1);
     }
 
-    int samplerate = PLM::plm_get_samplerate(plm);
+    int samplerate = _plm.plm_get_samplerate(plm);
 
     SDL_Log(
         "Opened %s - framerate: %f, samplerate: %d, duration: %f",
         filename, 
-        PLM::plm_get_framerate(plm),
-        PLM::plm_get_samplerate(plm),
-        PLM::plm_get_duration(plm));
+        _plm.plm_get_framerate(plm),
+        _plm.plm_get_samplerate(plm),
+        _plm.plm_get_duration(plm));
 	
-    PLM::plm_set_video_decode_callback(plm, app_on_video, nullptr);
-    PLM::plm_set_audio_decode_callback(plm, app_on_audio, nullptr);
+    _plm.plm_set_video_decode_callback(plm, app_on_video, nullptr);
+    _plm.plm_set_audio_decode_callback(plm, app_on_audio, nullptr);
 	
-    PLM::plm_set_loop(plm, TRUE);
-    PLM::plm_set_audio_enabled(plm, TRUE);
-    PLM::plm_set_audio_stream(plm, 0);
+    _plm.plm_set_loop(plm, TRUE);
+    _plm.plm_set_audio_enabled(plm, TRUE);
+    _plm.plm_set_audio_stream(plm, 0);
 
-    if (PLM::plm_get_num_audio_streams(plm) > 0)
+    if (_plm.plm_get_num_audio_streams(plm) > 0)
     {
         // Initialize SDL Audio
         SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
@@ -304,14 +295,14 @@ void CApp::app_create(const char *filename)
 		SDL_PauseAudioDevice(audio_device, 0);
 
 		// Adjust the audio lead time according to the audio_spec buffer size
-		PLM::plm_set_audio_lead_time(plm, (double)audio_spec.samples / (double)samplerate);
+		_plm.plm_set_audio_lead_time(plm, (double)audio_spec.samples / (double)samplerate);
 	}
 	
 	// Create SDL Window
     window = SDL_CreateWindow(
 		"pl_mpeg",
 		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-		PLM::plm_get_width(plm), PLM::plm_get_height(plm),
+		_plm.plm_get_width(plm), _plm.plm_get_height(plm),
 		SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
 	);
     gl = SDL_GL_CreateContext(window);
