@@ -310,16 +310,6 @@ typedef struct plm_demux_t {
     double last_decoded_pts;
     double start_time;
     double duration;
-
-    int start_code;
-    int has_pack_header;
-    int has_system_header;
-    int has_headers;
-
-    int num_audio_streams;
-    int num_video_streams;
-    plm_packet_t current_packet;
-    plm_packet_t next_packet;
 } plm_demux_t;
 
 class Demux
@@ -329,6 +319,14 @@ private:
     static constexpr int PLM_START_END = 0xB9;
     static constexpr int PLM_START_SYSTEM = 0xBB;
     plm_demux_t *demux;
+    int _start_code = 0;
+    int _has_pack_header = 0;
+    int _has_system_header = 0;
+    int _has_headers = 0;
+    int _num_audio_streams = 0;
+    int _num_video_streams = 0;
+    plm_packet_t _current_packet;
+    plm_packet_t _next_packet;
 public:
     static constexpr int PLM_DEMUX_PACKET_PRIVATE = 0xBD;
     static constexpr int PLM_DEMUX_PACKET_AUDIO_1 = 0xC0;
