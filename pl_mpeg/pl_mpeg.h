@@ -248,10 +248,70 @@ struct plm_samples_t {
 #endif
 };
 
-
+struct plm_video_motion_t
+{
+    int full_px;
+    int is_set;
+    int r_size;
+    int h;
+    int v;
+};
 
 typedef struct plm_buffer_t plm_buffer_t;
-typedef struct plm_video_t plm_video_t;
+
+struct plm_video_t {
+    double framerate;
+    double time;
+    int frames_decoded;
+    int width;
+    int height;
+    int mb_width;
+    int mb_height;
+    int mb_size;
+
+    int luma_width;
+    int luma_height;
+
+    int chroma_width;
+    int chroma_height;
+
+    int start_code;
+    int picture_type;
+
+    plm_video_motion_t motion_forward;
+    plm_video_motion_t motion_backward;
+
+    int has_sequence_header;
+
+    int quantizer_scale;
+    int slice_begin;
+    int macroblock_address;
+
+    int mb_row;
+    int mb_col;
+
+    int macroblock_type;
+    int macroblock_intra;
+
+    int dc_predictor[3];
+
+    plm_buffer_t *buffer;
+    int destroy_buffer_when_done;
+
+    plm_frame_t frame_current;
+    plm_frame_t frame_forward;
+    plm_frame_t frame_backward;
+
+    uint8_t *frames_data;
+
+    int block_data[64];
+    uint8_t intra_quant_matrix[64];
+    uint8_t non_intra_quant_matrix[64];
+
+    int has_reference_frame;
+    int assume_no_b_frames;
+};
+
 typedef struct plm_audio_t plm_audio_t;
 
 // Callback function for plm_buffer when it needs more data
@@ -346,6 +406,44 @@ public:
     plm_packet_t *plm_demux_decode();
 };
 
+class Video
+{
+private:
+    plm_video_t *_video;
+    void plm_video_copy_macroblock(
+        plm_video_t *self, plm_frame_t *s, int motion_h, int motion_v);
+
+    void plm_video_process_macroblock(
+        plm_video_t *self, uint8_t *s, uint8_t *d, int mh, int mb, int bs, int interp);
+
+    void plm_video_interpolate_macroblock(
+        plm_video_t *self, plm_frame_t *s, int motion_h, int motion_v);
+
+    void plm_video_decode_block(plm_video_t *self, int block);
+    void plm_video_predict_macroblock(plm_video_t *self);
+    void plm_video_idct(int *block);
+    void plm_video_decode_picture();
+    void plm_video_decode_macroblock(plm_video_t *self);
+    void plm_video_decode_slice(plm_video_t *self, int slice);
+    void plm_video_decode_motion_vectors(plm_video_t *self);
+    void plm_video_init_frame(plm_video_t *self, plm_frame_t *frame, uint8_t *base);
+    int plm_video_decode_sequence_header(plm_video_t *self);
+    int plm_video_decode_motion_vector(plm_video_t *self, int r_size, int motion);
+public:
+    void plm_video_destroy();
+    int plm_video_has_header();
+    double plm_video_get_framerate();
+    int plm_video_get_width();
+    int plm_video_get_height();
+    void plm_video_set_no_delay(int no_delay);
+    double plm_video_get_time();
+    void plm_video_set_time(double time);
+    void plm_video_rewind();
+    int plm_video_has_ended();
+    plm_frame_t *plm_video_decode();
+    plm_video_t *plm_video_create_with_buffer(plm_buffer_t *buffer, int destroy_when_done);
+};
+
 class PLM
 {
 private:
@@ -358,6 +456,7 @@ private:
     Demux _demux;
     plm_buffer_t *video_buffer;
     plm_video_t *video_decoder;
+    Video _video;
     plm_video_decode_callback video_decode_callback = nullptr;
     void *video_decode_callback_user_data = nullptr;
     plm_audio_decode_callback audio_decode_callback = nullptr;
@@ -424,10 +523,10 @@ public:
     static uint16_t plm_buffer_read_vlc_uint(plm_buffer_t *self, const plm_vlc_uint_t *table);
     static plm_buffer_t *plm_buffer_create_with_filename(const char *filename);
     static plm_buffer_t *plm_buffer_create_with_file(FILE *fh, int close_when_done);
-
+#if 0
     static plm_buffer_t *plm_buffer_create_with_memory(
         uint8_t *bytes, size_t length, int free_when_done);
-
+#endif
     static plm_buffer_t *plm_buffer_create_with_capacity(size_t capacity);
     static plm_buffer_t *plm_buffer_create_for_appending(size_t initial_capacity);
     static void plm_buffer_destroy(plm_buffer_t *self);
@@ -481,42 +580,7 @@ public:
         plm_buffer_t *buffer, int destroy_when_done);
 };
 
-class Video
-{
-private:
-    static void plm_video_copy_macroblock(
-        plm_video_t *self, plm_frame_t *s, int motion_h, int motion_v);
 
-    static void plm_video_process_macroblock(
-        plm_video_t *self, uint8_t *s, uint8_t *d, int mh, int mb, int bs, int interp);
-
-    static void plm_video_interpolate_macroblock(
-        plm_video_t *self, plm_frame_t *s, int motion_h, int motion_v);
-
-    static void plm_video_decode_block(plm_video_t *self, int block);
-    static void plm_video_predict_macroblock(plm_video_t *self);
-    static void plm_video_idct(int *block);
-    static void plm_video_decode_picture(plm_video_t *self);
-    static void plm_video_decode_macroblock(plm_video_t *self);
-    static void plm_video_decode_slice(plm_video_t *self, int slice);
-    static void plm_video_decode_motion_vectors(plm_video_t *self);
-    static void plm_video_init_frame(plm_video_t *self, plm_frame_t *frame, uint8_t *base);
-    static int plm_video_decode_sequence_header(plm_video_t *self);
-    static int plm_video_decode_motion_vector(plm_video_t *self, int r_size, int motion);
-public:
-    static void plm_video_destroy(plm_video_t *self);
-    static int plm_video_has_header(plm_video_t *self);
-    static double plm_video_get_framerate(plm_video_t *self);
-    static int plm_video_get_width(plm_video_t *self);
-    static int plm_video_get_height(plm_video_t *self);
-    static void plm_video_set_no_delay(plm_video_t *self, int no_delay);
-    static double plm_video_get_time(plm_video_t *self);
-    static void plm_video_set_time(plm_video_t *self, double time);
-    static void plm_video_rewind(plm_video_t *self);
-    static int plm_video_has_ended(plm_video_t *self);
-    static plm_frame_t *plm_video_decode(plm_video_t *self);
-    static plm_video_t *plm_video_create_with_buffer(plm_buffer_t *buffer, int destroy_when_done);
-};
 #endif
 
 

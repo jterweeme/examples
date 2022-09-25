@@ -29,11 +29,13 @@ void PLM::plm_create_with_file(FILE *fh, int close_when_done)
 // whole file is in memory. The memory is not copied. Pass TRUE to 
 // free_when_done to let plmpeg call free() on the pointer when plm_destroy() 
 // is called.
+#if 0
 void PLM::plm_create_with_memory(uint8_t *bytes, size_t length, int free_when_done)
 {
     plm_buffer_t *buffer = Buffer::plm_buffer_create_with_memory(bytes, length, free_when_done);
     plm_create_with_buffer(buffer, TRUE);
 }
+#endif
 
 // Create a plmpeg instance with a plm_buffer as source. Pass TRUE to
 // destroy_when_done to let plmpeg call plm_buffer_destroy() on the buffer when
@@ -77,7 +79,7 @@ int PLM::plm_init_decoders()
     }
 
     if (video_buffer)
-        video_decoder = Video::plm_video_create_with_buffer(video_buffer, TRUE);
+        video_decoder = _video.plm_video_create_with_buffer(video_buffer, TRUE);
 
     if (audio_buffer)
         audio_decoder = Audio::plm_audio_create_with_buffer(audio_buffer, TRUE);
@@ -90,7 +92,7 @@ int PLM::plm_init_decoders()
 void PLM::plm_destroy()
 {
     if (video_decoder)
-        Video::plm_video_destroy(video_decoder);
+        _video.plm_video_destroy();
     
     if (audio_decoder)
         Audio::plm_audio_destroy(audio_decoder);
@@ -116,8 +118,7 @@ int PLM::plm_has_headers()
     if (!plm_init_decoders())
         return FALSE;
 
-    if (
-        (video_decoder && !Video::plm_video_has_header(video_decoder)) ||
+    if ((video_decoder && !_video.plm_video_has_header()) ||
         (audio_decoder && !Audio::plm_audio_has_header(audio_decoder))
     ) {
         return FALSE;
@@ -179,19 +180,19 @@ int PLM::plm_get_num_video_streams() {
 // Get the display width/height of the video stream.
 int PLM::plm_get_width() {
     return (plm_init_decoders() && video_decoder)
-        ? Video::plm_video_get_width(video_decoder) : 0;
+        ? _video.plm_video_get_width() : 0;
 }
 
 int PLM::plm_get_height()
 {
     return (plm_init_decoders() && video_decoder)
-        ? Video::plm_video_get_height(video_decoder) : 0;
+        ? _video.plm_video_get_height() : 0;
 }
 
 // Get the framerate of the video stream in frames per second.
 double PLM::plm_get_framerate() {
     return (plm_init_decoders() && video_decoder)
-        ? Video::plm_video_get_framerate(video_decoder) : 0;
+        ? _video.plm_video_get_framerate() : 0;
 }
 
 // Get the number of audio streams (0--4) reported in the system header.
@@ -231,7 +232,7 @@ double PLM::plm_get_duration() {
 void PLM::plm_rewind()
 {
     if (video_decoder)
-        Video::plm_video_rewind(video_decoder);
+        _video.plm_video_rewind();
 
     if (audio_decoder)
         Audio::plm_audio_rewind(audio_decoder);
@@ -300,9 +301,9 @@ void PLM::plm_decode(double tick)
     do {
         did_decode = FALSE;
         
-        if (decode_video && Video::plm_video_get_time(video_decoder) < video_target_time)
+        if (decode_video && _video.plm_video_get_time() < video_target_time)
         {
-            plm_frame_t *frame = Video::plm_video_decode(video_decoder);
+            plm_frame_t *frame = _video.plm_video_decode();
             if (frame) {
                 video_decode_callback(frame, video_decode_callback_user_data);
                 did_decode = TRUE;
@@ -351,7 +352,7 @@ plm_frame_t *PLM::plm_decode_video()
     if (!_video_packet_type)
         return NULL;
 
-    plm_frame_t *frame = Video::plm_video_decode(video_decoder);
+    plm_frame_t *frame = _video.plm_video_decode();
 
     if (frame)
         _time = frame->time;
@@ -467,16 +468,16 @@ plm_frame_t *PLM::plm_seek_frame(double time, int seek_exact)
     audio_packet_type = 0;
 
     // Clear video buffer and decode the found packet
-    Video::plm_video_rewind(video_decoder);
-    Video::plm_video_set_time(video_decoder, packet->pts - start_time);
+    _video.plm_video_rewind();
+    _video.plm_video_set_time(packet->pts - start_time);
     Buffer::plm_buffer_write(video_buffer, packet->data, packet->length);
-    plm_frame_t *frame = Video::plm_video_decode(video_decoder); 
+    plm_frame_t *frame = _video.plm_video_decode(); 
 
     // If we want to seek to an exact frame, we have to decode all frames
     // on top of the intra frame we just jumped to.
     if (seek_exact)
         while (frame && frame->time < time)
-            frame = Video::plm_video_decode(video_decoder);
+            frame = _video.plm_video_decode();
 
     // Enable writing to the audio buffer again?
     audio_packet_type = previous_audio_packet_type;
@@ -573,6 +574,7 @@ plm_buffer_t *Buffer::plm_buffer_create_with_file(FILE *fh, int close_when_done)
 // the whole file is in memory. The bytes are not copied. Pass 1 to 
 // free_when_done to let plmpeg call free() on the pointer when plm_destroy() 
 // is called.
+#if 0
 plm_buffer_t *Buffer::plm_buffer_create_with_memory(
     uint8_t *bytes, size_t length, int free_when_done)
 {
@@ -587,6 +589,7 @@ plm_buffer_t *Buffer::plm_buffer_create_with_memory(
     self->discard_read_bytes = FALSE;
     return self;
 }
+#endif
 
 // Create an empty buffer with an initial capacity. The buffer will grow
 // as needed. Data that has already been read, will be discarded.
