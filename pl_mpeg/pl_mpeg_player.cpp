@@ -114,7 +114,7 @@ private:
     SDL_AudioDeviceID audio_device;
     SDL_GLContext gl;
     GLuint shader_program;
-    double last_time;
+    double last_time = 0;
     PLM _plm;
 public:
     int wants_to_quit = 0;

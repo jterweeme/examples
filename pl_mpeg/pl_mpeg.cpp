@@ -474,11 +474,9 @@ plm_frame_t *PLM::plm_seek_frame(double time, int seek_exact)
 
     // If we want to seek to an exact frame, we have to decode all frames
     // on top of the intra frame we just jumped to.
-    if (seek_exact) {
-        while (frame && frame->time < time) {
+    if (seek_exact)
+        while (frame && frame->time < time)
             frame = Video::plm_video_decode(video_decoder);
-        }
-    }
 
     // Enable writing to the audio buffer again?
     audio_packet_type = previous_audio_packet_type;

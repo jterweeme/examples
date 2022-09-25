@@ -172,14 +172,14 @@ See below for detailed the API documentation.
 
 struct plm_vlc_t
 {
-    int16_t index;
-    int16_t value;
+    int16_t index = 0;
+    int16_t value = 0;
 };
 
 struct plm_vlc_uint_t
 {
-    int16_t index;
-    uint16_t value;
+    int16_t index = 0;
+    uint16_t value = 0;
 };
 
 // Demuxed MPEG PS packet
@@ -189,12 +189,12 @@ struct plm_vlc_uint_t
 
 #define PLM_PACKET_INVALID_TS -1
 
-typedef struct {
-    int type;
-    double pts;
-    size_t length;
-    uint8_t *data;
-} plm_packet_t;
+struct plm_packet_t {
+    int type = 0;
+    double pts = 0;
+    size_t length = 0;
+    uint8_t *data = nullptr;
+};
 
 
 // Decoded Video Plane 
@@ -205,25 +205,26 @@ typedef struct {
 // displayed frame. The sizes of planes are always rounded up to the nearest
 // macroblock (16px).
 
-typedef struct {
+struct plm_plane_t
+{
     unsigned int width;
     unsigned int height;
     uint8_t *data;
-} plm_plane_t;
-
+};
 
 // Decoded Video Frame
 // width and height denote the desired display size of the frame. This may be
 // different from the internal size of the 3 planes.
 
-typedef struct {
+struct plm_frame_t 
+{
     double time;
     unsigned int width;
     unsigned int height;
     plm_plane_t y;
     plm_plane_t cr;
     plm_plane_t cb;
-} plm_frame_t;
+};
 
 
 
@@ -355,7 +356,7 @@ class PLM
 {
 private:
     int _loop = 0;
-    double _time;
+    double _time = 0;
     int _has_ended = 0;
     int _has_decoders = 0;
     int _video_enabled = 0;
@@ -363,10 +364,10 @@ private:
     Demux _demux;
     plm_buffer_t *video_buffer;
     plm_video_t *video_decoder;
-    plm_video_decode_callback video_decode_callback;
-    void *video_decode_callback_user_data;
-    plm_audio_decode_callback audio_decode_callback;
-    void *audio_decode_callback_user_data;
+    plm_video_decode_callback video_decode_callback = nullptr;
+    void *video_decode_callback_user_data = nullptr;
+    plm_audio_decode_callback audio_decode_callback = nullptr;
+    void *audio_decode_callback_user_data = nullptr;
     void plm_create_with_file(FILE *fh, int close_when_done);
     void plm_create_with_memory(uint8_t *bytes, size_t length, int free_when_done);
     void plm_create_with_buffer(plm_buffer_t *buffer, int destroy_when_done);
