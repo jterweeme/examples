@@ -260,56 +260,7 @@ struct plm_video_motion_t
 typedef struct plm_buffer_t plm_buffer_t;
 
 struct plm_video_t {
-    double framerate;
-    double time;
-    int frames_decoded;
-    int width;
-    int height;
-    int mb_width;
-    int mb_height;
-    int mb_size;
 
-    int luma_width;
-    int luma_height;
-
-    int chroma_width;
-    int chroma_height;
-
-    int start_code;
-    int picture_type;
-
-    plm_video_motion_t motion_forward;
-    plm_video_motion_t motion_backward;
-
-    int has_sequence_header;
-
-    int quantizer_scale;
-    int slice_begin;
-    int macroblock_address;
-
-    int mb_row;
-    int mb_col;
-
-    int macroblock_type;
-    int macroblock_intra;
-
-    int dc_predictor[3];
-
-    plm_buffer_t *buffer;
-    int destroy_buffer_when_done;
-
-    plm_frame_t frame_current;
-    plm_frame_t frame_forward;
-    plm_frame_t frame_backward;
-
-    uint8_t *frames_data;
-
-    int block_data[64];
-    uint8_t intra_quant_matrix[64];
-    uint8_t non_intra_quant_matrix[64];
-
-    int has_reference_frame;
-    int assume_no_b_frames;
 };
 
 typedef struct plm_audio_t plm_audio_t;
@@ -410,6 +361,51 @@ class Video
 {
 private:
     plm_video_t *_video;
+    double _framerate = 0;
+    double _time = 0;
+    int _frames_decoded = 0;
+    int _width = 0;
+    int _height = 0;
+    int _mb_width = 0;
+    int _mb_height = 0;
+    int _mb_size = 0;
+    int _luma_width = 0;
+    int _luma_height = 0;
+
+    int _chroma_width = 0;
+    int _chroma_height = 0;
+
+    int _start_code = 0;
+    int _picture_type = 0;
+    int _has_sequence_header = 0;
+
+    int _quantizer_scale = 0;
+    int _slice_begin = 0;
+    int _macroblock_address = 0;
+
+    int _mb_row = 0;
+    int _mb_col = 0;
+
+    int _macroblock_type = 0;
+    int _macroblock_intra = 0;
+    plm_video_motion_t _motion_forward;
+    plm_video_motion_t _motion_backward;
+    int _dc_predictor[3];
+
+    plm_buffer_t *_buffer;
+    int _destroy_buffer_when_done;
+
+    plm_frame_t _frame_current;
+    plm_frame_t _frame_forward;
+    plm_frame_t _frame_backward;
+    uint8_t *_frames_data;
+
+    int _block_data[64];
+    uint8_t _intra_quant_matrix[64];
+    uint8_t _non_intra_quant_matrix[64];
+
+    int _has_reference_frame = 0;
+    int _assume_no_b_frames = 0;
     void plm_video_copy_macroblock(plm_frame_t *s, int motion_h, int motion_v);
     void plm_video_process_macroblock(uint8_t *s, uint8_t *d, int mh, int mb, int bs, int interp);
     void plm_video_interpolate_macroblock(plm_frame_t *s, int motion_h, int motion_v);
