@@ -304,13 +304,10 @@ struct plm_quantizer_spec_t
 
 typedef struct plm_demux_t {
     plm_buffer_t *buffer;
-    int destroy_buffer_when_done;
-    double system_clock_ref;
 
-    size_t last_file_size;
-    double last_decoded_pts;
-    double start_time;
-    double duration;
+
+
+
 } plm_demux_t;
 
 class Demux
@@ -328,6 +325,12 @@ private:
     int _num_video_streams = 0;
     plm_packet_t _current_packet;
     plm_packet_t _next_packet;
+    int _destroy_buffer_when_done;
+    double _system_clock_ref;
+    double _duration = 0;
+    size_t _last_file_size = 0;
+    double _last_decoded_pts = 0;
+    double _start_time = 0;
 public:
     static constexpr int PLM_DEMUX_PACKET_PRIVATE = 0xBD;
     static constexpr int PLM_DEMUX_PACKET_AUDIO_1 = 0xC0;

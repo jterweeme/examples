@@ -901,10 +901,10 @@ void Demux::plm_demux_create(plm_buffer_t *buffer, int destroy_when_done)
     memset(demux, 0, sizeof(plm_demux_t));
 
     demux->buffer = buffer;
-    demux->destroy_buffer_when_done = destroy_when_done;
+    _destroy_buffer_when_done = destroy_when_done;
 
-    demux->start_time = PLM_PACKET_INVALID_TS;
-    demux->duration = PLM_PACKET_INVALID_TS;
+    _start_time = PLM_PACKET_INVALID_TS;
+    _duration = PLM_PACKET_INVALID_TS;
     _start_code = -1;
 
     plm_demux_has_headers();
@@ -913,7 +913,7 @@ void Demux::plm_demux_create(plm_buffer_t *buffer, int destroy_when_done)
 // Destroy a demuxer and free all data.
 void Demux::plm_demux_destroy()
 {
-    if (demux->destroy_buffer_when_done)
+    if (_destroy_buffer_when_done)
         Buffer::plm_buffer_destroy(demux->buffer);
     
     free(demux);
@@ -945,7 +945,7 @@ int Demux::plm_demux_has_headers()
         if (Buffer::plm_buffer_read(demux->buffer, 4) != 0x02)
             return FALSE;
 
-        demux->system_clock_ref = plm_demux_decode_time();
+        _system_clock_ref = plm_demux_decode_time();
         Buffer::plm_buffer_skip(demux->buffer, 1);
         Buffer::plm_buffer_skip(demux->buffer, 22); // mux_rate * 50
         Buffer::plm_buffer_skip(demux->buffer, 1);
@@ -1019,8 +1019,8 @@ void Demux::plm_demux_buffer_seek(size_t pos)
 // if not packet of this packet type can be found.
 double Demux::plm_demux_get_start_time(int type)
 {
-    if (demux->start_time != PLM_PACKET_INVALID_TS)
-        return demux->start_time;
+    if (_start_time != PLM_PACKET_INVALID_TS)
+        return _start_time;
 
     int previous_pos = Buffer::plm_buffer_tell(demux->buffer);
     int previous_start_code = _start_code;
@@ -1033,13 +1033,13 @@ double Demux::plm_demux_get_start_time(int type)
             break;
         }
         if (packet->type == type) {
-            demux->start_time = packet->pts;
+            _start_time = packet->pts;
         }
-    } while (demux->start_time == PLM_PACKET_INVALID_TS);
+    } while (_start_time == PLM_PACKET_INVALID_TS);
 
     plm_demux_buffer_seek(previous_pos);
     _start_code = previous_start_code;
-    return demux->start_time;
+    return _start_time;
 }
 
 // Get the duration for the specified packet type - i.e. the span between the
@@ -1050,10 +1050,10 @@ double Demux::plm_demux_get_duration(int type)
     size_t file_size = Buffer::plm_buffer_get_size(demux->buffer);
 
     if (
-        demux->duration != PLM_PACKET_INVALID_TS &&
-        demux->last_file_size == file_size
+        _duration != PLM_PACKET_INVALID_TS &&
+        _last_file_size == file_size
     ) {
-        return demux->duration;
+        return _duration;
     }
 
     size_t previous_pos = Buffer::plm_buffer_tell(demux->buffer);
@@ -1080,15 +1080,15 @@ double Demux::plm_demux_get_duration(int type)
                 last_pts = packet->pts;
         }
         if (last_pts != PLM_PACKET_INVALID_TS) {
-            demux->duration = last_pts - plm_demux_get_start_time(type);
+            _duration = last_pts - plm_demux_get_start_time(type);
             break;
         }
     }
 
     plm_demux_buffer_seek(previous_pos);
     _start_code = previous_start_code;
-    demux->last_file_size = file_size;
-    return demux->duration;
+    _last_file_size = file_size;
+    return _duration;
 }
 
 // Seek to a packet of the specified type with a PTS just before specified time.
@@ -1121,7 +1121,7 @@ plm_packet_t *Demux::plm_demux_seek(double seek_time, int type, int force_intra)
     long file_size = Buffer::plm_buffer_get_size(demux->buffer);
     long byterate = file_size / duration;
 
-    double cur_time = demux->last_decoded_pts;
+    double cur_time = _last_decoded_pts;
     double scan_span = 1;
 
     if (seek_time > duration) {
@@ -1130,9 +1130,10 @@ plm_packet_t *Demux::plm_demux_seek(double seek_time, int type, int force_intra)
     else if (seek_time < 0) {
         seek_time = 0;
     }
-    seek_time += demux->start_time;
+    seek_time += _start_time;
 
-    for (int retry = 0; retry < 32; retry++) {
+    for (int retry = 0; retry < 32; retry++)
+    {
         int found_packet_with_pts = FALSE;
         int found_packet_in_range = FALSE;
         long last_valid_packet_start = -1;
@@ -1293,7 +1294,8 @@ double Demux::plm_demux_decode_time()
     return (double)clock / 90000.0;
 }
 
-plm_packet_t *Demux::plm_demux_decode_packet(int type) {
+plm_packet_t *Demux::plm_demux_decode_packet(int type) 
+{
     if (!Buffer::plm_buffer_has(demux->buffer, 16 << 3))
         return NULL;
 
@@ -1315,13 +1317,13 @@ plm_packet_t *Demux::plm_demux_decode_packet(int type) {
     if (pts_dts_marker == 0x03)
     {
         _next_packet.pts = plm_demux_decode_time();
-        demux->last_decoded_pts = _next_packet.pts;
+        _last_decoded_pts = _next_packet.pts;
         Buffer::plm_buffer_skip(demux->buffer, 40); // skip dts
         _next_packet.length -= 10;
     }
     else if (pts_dts_marker == 0x02) {
         _next_packet.pts = plm_demux_decode_time();
-        demux->last_decoded_pts = _next_packet.pts;
+        _last_decoded_pts = _next_packet.pts;
         _next_packet.length -= 5;
     }
     else if (pts_dts_marker == 0x00) {
