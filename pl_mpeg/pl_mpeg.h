@@ -251,7 +251,6 @@ struct plm_samples_t {
 
 
 typedef struct plm_buffer_t plm_buffer_t;
-typedef struct plm_demux_t plm_demux_t;
 typedef struct plm_video_t plm_video_t;
 typedef struct plm_audio_t plm_audio_t;
 
@@ -302,21 +301,12 @@ struct plm_quantizer_spec_t
     uint8_t bits;
 };
 
-typedef struct plm_demux_t {
-    plm_buffer_t *buffer;
-
-
-
-
-} plm_demux_t;
-
 class Demux
 {
 private:
     static constexpr int PLM_START_PACK = 0xBA;
     static constexpr int PLM_START_END = 0xB9;
     static constexpr int PLM_START_SYSTEM = 0xBB;
-    plm_demux_t *demux;
     int _start_code = 0;
     int _has_pack_header = 0;
     int _has_system_header = 0;
@@ -331,6 +321,7 @@ private:
     size_t _last_file_size = 0;
     double _last_decoded_pts = 0;
     double _start_time = 0;
+    plm_buffer_t *_buffer;
 public:
     static constexpr int PLM_DEMUX_PACKET_PRIVATE = 0xBD;
     static constexpr int PLM_DEMUX_PACKET_AUDIO_1 = 0xC0;
