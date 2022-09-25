@@ -410,25 +410,19 @@ class Video
 {
 private:
     plm_video_t *_video;
-    void plm_video_copy_macroblock(
-        plm_video_t *self, plm_frame_t *s, int motion_h, int motion_v);
-
-    void plm_video_process_macroblock(
-        plm_video_t *self, uint8_t *s, uint8_t *d, int mh, int mb, int bs, int interp);
-
-    void plm_video_interpolate_macroblock(
-        plm_video_t *self, plm_frame_t *s, int motion_h, int motion_v);
-
-    void plm_video_decode_block(plm_video_t *self, int block);
-    void plm_video_predict_macroblock(plm_video_t *self);
+    void plm_video_copy_macroblock(plm_frame_t *s, int motion_h, int motion_v);
+    void plm_video_process_macroblock(uint8_t *s, uint8_t *d, int mh, int mb, int bs, int interp);
+    void plm_video_interpolate_macroblock(plm_frame_t *s, int motion_h, int motion_v);
+    void plm_video_decode_block(int block);
+    void plm_video_predict_macroblock();
     void plm_video_idct(int *block);
     void plm_video_decode_picture();
-    void plm_video_decode_macroblock(plm_video_t *self);
-    void plm_video_decode_slice(plm_video_t *self, int slice);
-    void plm_video_decode_motion_vectors(plm_video_t *self);
-    void plm_video_init_frame(plm_video_t *self, plm_frame_t *frame, uint8_t *base);
-    int plm_video_decode_sequence_header(plm_video_t *self);
-    int plm_video_decode_motion_vector(plm_video_t *self, int r_size, int motion);
+    void plm_video_decode_macroblock();
+    void plm_video_decode_slice(int slice);
+    void plm_video_decode_motion_vectors();
+    void plm_video_init_frame(plm_frame_t *frame, uint8_t *base);
+    int plm_video_decode_sequence_header();
+    int plm_video_decode_motion_vector(int r_size, int motion);
 public:
     void plm_video_destroy();
     int plm_video_has_header();
