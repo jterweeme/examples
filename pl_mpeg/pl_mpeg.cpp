@@ -82,7 +82,7 @@ int PLM::plm_init_decoders()
         _video.plm_video_create_with_buffer(video_buffer, TRUE);
 
     if (audio_buffer)
-        audio_decoder = _audio.plm_audio_create_with_buffer(audio_buffer, TRUE);
+        _audio.plm_audio_create_with_buffer(audio_buffer, TRUE);
 
     _has_decoders = TRUE;
     return TRUE;
@@ -92,10 +92,7 @@ int PLM::plm_init_decoders()
 void PLM::plm_destroy()
 {
     _video.plm_video_destroy();
-    
-    if (audio_decoder)
-        _audio.plm_audio_destroy(audio_decoder);
-
+    _audio.plm_audio_destroy();
     _demux.plm_demux_destroy();
 }
 
@@ -136,9 +133,8 @@ void PLM::plm_set_audio_enabled(int enabled)
         return;
     }
 
-    audio_packet_type = plm_init_decoders() && audio_decoder
-        ? Demux::PLM_DEMUX_PACKET_AUDIO_1 + audio_stream_index
-        : 0;
+    audio_packet_type = plm_init_decoders() ?
+            Demux::PLM_DEMUX_PACKET_AUDIO_1 + audio_stream_index : 0;
 }
 
 // Set the desired audio stream (0--3). Default 0.
@@ -196,8 +192,7 @@ int PLM::plm_get_num_audio_streams() {
 
 // Get the samplerate of the audio stream in samples per second.
 int PLM::plm_get_samplerate() {
-    return (plm_init_decoders() && audio_decoder)
-        ? _audio.plm_audio_get_samplerate() : 0;
+    return (plm_init_decoders()) ? _audio.plm_audio_get_samplerate() : 0;
 }
 
 // Get or set the audio lead time in seconds - the time in which audio samples

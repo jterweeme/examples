@@ -359,23 +359,23 @@ struct plm_audio_t
 {
 
 
-    plm_buffer_t *buffer;
-    int destroy_buffer_when_done;
 
-    const plm_quantizer_spec_t *allocation[2][32];
-    uint8_t scale_factor_info[2][32];
-    int scale_factor[2][32][3];
-    int sample[2][32][3];
 
-    plm_samples_t samples;
-    float D[1024];
-    float V[2][1024];
-    float U[32];
 };
 
 class Audio
 {
 private:
+    plm_buffer_t *_buffer;
+    int _destroy_buffer_when_done = 0;
+    plm_samples_t _samples;
+    float _D[1024];
+    float _V[2][1024];
+    float _U[32];
+    const plm_quantizer_spec_t *_allocation[2][32];
+    uint8_t _scale_factor_info[2][32];
+    int _scale_factor[2][32][3];
+    int _sample[2][32][3];
     double _time = 0;
     int _samples_decoded = 0;
     int _samplerate_index = 0;
@@ -387,27 +387,22 @@ private:
     int _v_pos = 0;
     int _next_frame_data_size = 0;
     int _has_header = 0;
-    plm_audio_t *_audio;
-    int plm_audio_find_frame_sync(plm_audio_t *self);
+    int plm_audio_find_frame_sync();
     void plm_audio_idct36(int s[32][3], int ss, float *d, int dp);
-
-    const plm_quantizer_spec_t *plm_audio_read_allocation(
-        plm_audio_t *self, int sb, int tab3);
+    const plm_quantizer_spec_t *plm_audio_read_allocation(int sb, int tab3);
 public:
     int plm_audio_has_header();
     double plm_audio_get_time();
-    void plm_audio_destroy(plm_audio_t *self);
+    void plm_audio_destroy();
     void plm_audio_set_time(double time);
     int plm_audio_has_ended();
     plm_samples_t *plm_audio_decode(plm_audio_t *self);
     int plm_audio_get_samplerate();
     void plm_audio_rewind();
-    int plm_audio_decode_header(plm_audio_t *self);
-    void plm_audio_decode_frame(plm_audio_t *self);
-    void plm_audio_read_samples(plm_audio_t *self, int ch, int sb, int part);
-
-    plm_audio_t *plm_audio_create_with_buffer(
-        plm_buffer_t *buffer, int destroy_when_done);
+    int plm_audio_decode_header();
+    void plm_audio_decode_frame();
+    void plm_audio_read_samples(int ch, int sb, int part);
+    void plm_audio_create_with_buffer(plm_buffer_t *buffer, int destroy_when_done);
 };
 
 class Video
