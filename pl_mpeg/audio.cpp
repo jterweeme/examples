@@ -201,163 +201,133 @@ static constexpr plm_quantizer_spec_t PLM_AUDIO_QUANT_TAB[] = {
     { 65535, 0, 16 }   // 17
 };
 
-typedef struct plm_audio_t {
-    double time;
-    int samples_decoded;
-    int samplerate_index;
-    int bitrate_index;
-    int version;
-    int layer;
-    int mode;
-    int bound;
-    int v_pos;
-    int next_frame_data_size;
-    int has_header;
-    
-    plm_buffer_t *buffer;
-    int destroy_buffer_when_done;
-
-    const plm_quantizer_spec_t *allocation[2][32];
-    uint8_t scale_factor_info[2][32];
-    int scale_factor[2][32][3];
-    int sample[2][32][3];
-
-    plm_samples_t samples;
-    float D[1024];
-    float V[2][1024];
-    float U[32];
-} plm_audio_t;
-
 // Create an audio decoder with a plm_buffer as source.
 plm_audio_t *Audio::plm_audio_create_with_buffer(plm_buffer_t *buffer, int destroy_when_done)
 {
-    plm_audio_t *self = (plm_audio_t *)malloc(sizeof(plm_audio_t));
-    memset(self, 0, sizeof(plm_audio_t));
+    _audio = (plm_audio_t *)malloc(sizeof(plm_audio_t));
+    memset(_audio, 0, sizeof(plm_audio_t));
 
-    self->samples.count = PLM_AUDIO_SAMPLES_PER_FRAME;
-    self->buffer = buffer;
-    self->destroy_buffer_when_done = destroy_when_done;
-    self->samplerate_index = 3; // Indicates 0
+    _audio->samples.count = PLM_AUDIO_SAMPLES_PER_FRAME;
+    _audio->buffer = buffer;
+    _audio->destroy_buffer_when_done = destroy_when_done;
+    _samplerate_index = 3; // Indicates 0
 
-    memcpy(self->D, PLM_AUDIO_SYNTHESIS_WINDOW, 512 * sizeof(float));
-    memcpy(self->D + 512, PLM_AUDIO_SYNTHESIS_WINDOW, 512 * sizeof(float));
+    memcpy(_audio->D, PLM_AUDIO_SYNTHESIS_WINDOW, 512 * sizeof(float));
+    memcpy(_audio->D + 512, PLM_AUDIO_SYNTHESIS_WINDOW, 512 * sizeof(float));
 
     // Attempt to decode first header
-    self->next_frame_data_size = plm_audio_decode_header(self);
-
-    return self;
+    _next_frame_data_size = plm_audio_decode_header(_audio);
+    return _audio;
 }
 
 // Destroy an audio decoder and free all data.
-void Audio::plm_audio_destroy(plm_audio_t *self)
+void Audio::plm_audio_destroy(plm_audio_t *)
 {
-    if (self->destroy_buffer_when_done)
-        Buffer::plm_buffer_destroy(self->buffer);
+    if (_audio->destroy_buffer_when_done)
+        Buffer::plm_buffer_destroy(_audio->buffer);
     
-    free(self);
+    free(_audio);
 }
 
 // Get whether a frame header was found and we can accurately report on
 // samplerate.
-int Audio::plm_audio_has_header(plm_audio_t *self)
+int Audio::plm_audio_has_header()
 {
-    if (self->has_header)
+    if (_has_header)
         return TRUE;
     
-    self->next_frame_data_size = plm_audio_decode_header(self);
-    return self->has_header;
+    _next_frame_data_size = plm_audio_decode_header(_audio);
+    return _has_header;
 }
 
 // Get the samplerate in samples per second.
-int Audio::plm_audio_get_samplerate(plm_audio_t *self)
+int Audio::plm_audio_get_samplerate()
 {
-    return plm_audio_has_header(self)
-        ? PLM_AUDIO_SAMPLE_RATE[self->samplerate_index]
-        : 0;
+    return plm_audio_has_header() ? PLM_AUDIO_SAMPLE_RATE[_samplerate_index] : 0;
 }
 
 // Get the current internal time in seconds.
-double Audio::plm_audio_get_time(plm_audio_t *self) {
-    return self->time;
+double Audio::plm_audio_get_time() {
+    return _time;
 }
 
 // Set the current internal time in seconds. This is only useful when you
 // manipulate the underlying video buffer and want to enforce a correct
 // timestamps.
-void Audio::plm_audio_set_time(plm_audio_t *self, double time)
+void Audio::plm_audio_set_time(double time)
 {
-    self->samples_decoded = time * (double)PLM_AUDIO_SAMPLE_RATE[self->samplerate_index];
-    self->time = time;
+    _samples_decoded = time * (double)PLM_AUDIO_SAMPLE_RATE[_samplerate_index];
+    _time = time;
 }
 
 // Rewind the internal buffer. See plm_buffer_rewind().
-void Audio::plm_audio_rewind(plm_audio_t *self)
+void Audio::plm_audio_rewind()
 {
-    Buffer::plm_buffer_rewind(self->buffer);
-    self->time = 0;
-    self->samples_decoded = 0;
-    self->next_frame_data_size = 0;
+    Buffer::plm_buffer_rewind(_audio->buffer);
+    _time = 0;
+    _samples_decoded = 0;
+    _next_frame_data_size = 0;
 }
 
 // Get whether the file has ended. This will be cleared on rewind.
-int Audio::plm_audio_has_ended(plm_audio_t *self) {
-    return Buffer::plm_buffer_has_ended(self->buffer);
+int Audio::plm_audio_has_ended() {
+    return Buffer::plm_buffer_has_ended(_audio->buffer);
 }
 
 // Decode and return one "frame" of audio and advance the internal time by 
 // (PLM_AUDIO_SAMPLES_PER_FRAME/samplerate) seconds. The returned samples_t 
 // is valid until the next call of plm_audio_decode() or until the audio
 // decoder is destroyed.
-plm_samples_t *Audio::plm_audio_decode(plm_audio_t *self)
+plm_samples_t *Audio::plm_audio_decode(plm_audio_t *)
 {
     // Do we have at least enough information to decode the frame header?
-    if (!self->next_frame_data_size) {
-        if (!Buffer::plm_buffer_has(self->buffer, 48)) {
+    if (!_next_frame_data_size) {
+        if (!Buffer::plm_buffer_has(_audio->buffer, 48)) {
             return NULL;
         }
-        self->next_frame_data_size = plm_audio_decode_header(self);
+        _next_frame_data_size = plm_audio_decode_header(_audio);
     }
 
-    if (self->next_frame_data_size == 0 ||
-        !Buffer::plm_buffer_has(self->buffer, self->next_frame_data_size << 3))
+    if (_next_frame_data_size == 0 ||
+        !Buffer::plm_buffer_has(_audio->buffer, _next_frame_data_size << 3))
     {
         return NULL;
     }
 
-    plm_audio_decode_frame(self);
-    self->next_frame_data_size = 0;
+    plm_audio_decode_frame(_audio);
+    _next_frame_data_size = 0;
     
-    self->samples.time = self->time;
+    _audio->samples.time = _time;
 
-    self->samples_decoded += PLM_AUDIO_SAMPLES_PER_FRAME;
-    self->time = (double)self->samples_decoded / 
-        (double)PLM_AUDIO_SAMPLE_RATE[self->samplerate_index];
+    _samples_decoded += PLM_AUDIO_SAMPLES_PER_FRAME;
+    _time = (double)_samples_decoded / 
+        (double)PLM_AUDIO_SAMPLE_RATE[_samplerate_index];
     
-    return &self->samples;
+    return &_audio->samples;
 }
 
-int Audio::plm_audio_find_frame_sync(plm_audio_t *self)
+int Audio::plm_audio_find_frame_sync(plm_audio_t *)
 {
     size_t i;
-    for (i = self->buffer->bit_index >> 3; i < self->buffer->length-1; i++)
+    for (i = _audio->buffer->bit_index >> 3; i < _audio->buffer->length-1; i++)
     {
-        if (self->buffer->bytes[i] == 0xFF && (self->buffer->bytes[i+1] & 0xFE) == 0xFC)
+        if (_audio->buffer->bytes[i] == 0xFF && (_audio->buffer->bytes[i+1] & 0xFE) == 0xFC)
         {
-            self->buffer->bit_index = ((i+1) << 3) + 3;
+            _audio->buffer->bit_index = ((i+1) << 3) + 3;
             return TRUE;
         }
     }
-    self->buffer->bit_index = (i + 1) << 3;
+    _audio->buffer->bit_index = (i + 1) << 3;
     return FALSE;
 }
 
 int Audio::plm_audio_decode_header(plm_audio_t *self)
 {
-    if (!Buffer::plm_buffer_has(self->buffer, 48))
+    if (!Buffer::plm_buffer_has(_audio->buffer, 48))
         return 0;
 
-    Buffer::plm_buffer_skip_bytes(self->buffer, 0x00);
-    int sync = Buffer::plm_buffer_read(self->buffer, 11);
+    Buffer::plm_buffer_skip_bytes(_audio->buffer, 0x00);
+    int sync = Buffer::plm_buffer_read(_audio->buffer, 11);
 
 
     // Attempt to resync if no syncword was found. This sucks balls. The MP2 
@@ -367,26 +337,23 @@ int Audio::plm_audio_decode_header(plm_audio_t *self)
     // (samplerate, bitrate) differs from the one we had before. This all
     // may still lead to garbage data being decoded :/
 
-    if (sync != PLM_AUDIO_FRAME_SYNC && !plm_audio_find_frame_sync(self)) {
-        return 0;
-    }
-
-    self->version = Buffer::plm_buffer_read(self->buffer, 2);
-    self->layer = Buffer::plm_buffer_read(self->buffer, 2);
-    int hasCRC = !Buffer::plm_buffer_read(self->buffer, 1);
-
-    if (self->version != PLM_AUDIO_MPEG_1 || self->layer != PLM_AUDIO_LAYER_II)
+    if (sync != PLM_AUDIO_FRAME_SYNC && !plm_audio_find_frame_sync(_audio))
         return 0;
 
-    int bitrate_index = Buffer::plm_buffer_read(self->buffer, 4) - 1;
-    if (bitrate_index > 13) {
-        return 0;
-    }
+    _version = Buffer::plm_buffer_read(_audio->buffer, 2);
+    _layer = Buffer::plm_buffer_read(_audio->buffer, 2);
+    int hasCRC = !Buffer::plm_buffer_read(_audio->buffer, 1);
 
-    int samplerate_index = Buffer::plm_buffer_read(self->buffer, 2);
-    if (samplerate_index == 3) {
+    if (_version != PLM_AUDIO_MPEG_1 || _layer != PLM_AUDIO_LAYER_II)
         return 0;
-    }
+
+    int bitrate_index = Buffer::plm_buffer_read(_audio->buffer, 4) - 1;
+    if (bitrate_index > 13)
+        return 0;
+
+    int samplerate_index = Buffer::plm_buffer_read(_audio->buffer, 2);
+    if (samplerate_index == 3)
+        return 0;
 
     int padding = Buffer::plm_buffer_read(self->buffer, 1);
     Buffer::plm_buffer_skip(self->buffer, 1); // f_private
@@ -394,26 +361,26 @@ int Audio::plm_audio_decode_header(plm_audio_t *self)
 
     // If we already have a header, make sure the samplerate, bitrate and mode
     // are still the same, otherwise we might have missed sync.
-    if (self->has_header && (self->bitrate_index != bitrate_index ||
-            self->samplerate_index != samplerate_index ||
-            self->mode != mode
+    if (_has_header && (_bitrate_index != bitrate_index ||
+            _samplerate_index != samplerate_index ||
+         _mode != mode
         )
     ) {
         return 0;
     }
 
-    self->bitrate_index = bitrate_index;
-    self->samplerate_index = samplerate_index;
-    self->mode = mode;
-    self->has_header = TRUE;
+    _bitrate_index = bitrate_index;
+    _samplerate_index = samplerate_index;
+    _mode = mode;
+    _has_header = TRUE;
 
     // Parse the mode_extension, set up the stereo bound
     if (mode == PLM_AUDIO_MODE_JOINT_STEREO) {
-        self->bound = (Buffer::plm_buffer_read(self->buffer, 2) + 1) << 2;
+        _bound = (Buffer::plm_buffer_read(self->buffer, 2) + 1) << 2;
     }
     else {
         Buffer::plm_buffer_skip(self->buffer, 2);
-        self->bound = (mode == PLM_AUDIO_MODE_MONO) ? 0 : 32;
+        _bound = (mode == PLM_AUDIO_MODE_MONO) ? 0 : 32;
     }
 
     // Discard the last 4 bits of the header and the CRC value, if present
@@ -424,8 +391,8 @@ int Audio::plm_audio_decode_header(plm_audio_t *self)
 
     // Compute frame size, check if we have enough data to decode the whole
     // frame.
-    int bitrate = PLM_AUDIO_BIT_RATE[self->bitrate_index];
-    int samplerate = PLM_AUDIO_SAMPLE_RATE[self->samplerate_index];
+    int bitrate = PLM_AUDIO_BIT_RATE[_bitrate_index];
+    int samplerate = PLM_AUDIO_SAMPLE_RATE[_samplerate_index];
     int frame_size = (144000 * bitrate / samplerate) + padding;
     return frame_size - (hasCRC ? 6 : 4);
 }
@@ -436,36 +403,36 @@ void Audio::plm_audio_decode_frame(plm_audio_t *self)
     int tab3 = 0;
     int sblimit = 0;
     
-    int tab1 = (self->mode == PLM_AUDIO_MODE_MONO) ? 0 : 1;
-    int tab2 = PLM_AUDIO_QUANT_LUT_STEP_1[tab1][self->bitrate_index];
-    tab3 = QUANT_LUT_STEP_2[tab2][self->samplerate_index];
+    int tab1 = (_mode == PLM_AUDIO_MODE_MONO) ? 0 : 1;
+    int tab2 = PLM_AUDIO_QUANT_LUT_STEP_1[tab1][_bitrate_index];
+    tab3 = QUANT_LUT_STEP_2[tab2][_samplerate_index];
     sblimit = tab3 & 63;
     tab3 >>= 6;
 
-    if (self->bound > sblimit) {
-        self->bound = sblimit;
+    if (_bound > sblimit) {
+        _bound = sblimit;
     }
 
     // Read the allocation information
-    for (int sb = 0; sb < self->bound; sb++) {
+    for (int sb = 0; sb < _bound; sb++) {
         self->allocation[0][sb] = plm_audio_read_allocation(self, sb, tab3);
         self->allocation[1][sb] = plm_audio_read_allocation(self, sb, tab3);
     }
 
-    for (int sb = self->bound; sb < sblimit; sb++) {
+    for (int sb = _bound; sb < sblimit; sb++) {
         self->allocation[0][sb] = self->allocation[1][sb] =
             plm_audio_read_allocation(self, sb, tab3);
     }
 
     // Read scale factor selector information
-    int channels = (self->mode == PLM_AUDIO_MODE_MONO) ? 1 : 2;
+    int channels = (_mode == PLM_AUDIO_MODE_MONO) ? 1 : 2;
     for (int sb = 0; sb < sblimit; sb++) {
         for (int ch = 0; ch < channels; ch++) {
             if (self->allocation[ch][sb]) {
                 self->scale_factor_info[ch][sb] = Buffer::plm_buffer_read(self->buffer, 2);
             }
         }
-        if (self->mode == PLM_AUDIO_MODE_MONO) {
+        if (_mode == PLM_AUDIO_MODE_MONO) {
             self->scale_factor_info[1][sb] = self->scale_factor_info[0][sb];
         }
     }
@@ -499,7 +466,7 @@ void Audio::plm_audio_decode_frame(plm_audio_t *self)
                 }
             }
         }
-        if (self->mode == PLM_AUDIO_MODE_MONO) {
+        if (_mode == PLM_AUDIO_MODE_MONO) {
             self->scale_factor[1][sb][0] = self->scale_factor[0][sb][0];
             self->scale_factor[1][sb][1] = self->scale_factor[0][sb][1];
             self->scale_factor[1][sb][2] = self->scale_factor[0][sb][2];
@@ -512,11 +479,11 @@ void Audio::plm_audio_decode_frame(plm_audio_t *self)
         for (int granule = 0; granule < 4; granule++) {
 
             // Read the samples
-            for (int sb = 0; sb < self->bound; sb++) {
+            for (int sb = 0; sb < _bound; sb++) {
                 plm_audio_read_samples(self, 0, sb, part);
                 plm_audio_read_samples(self, 1, sb, part);
             }
-            for (int sb = self->bound; sb < sblimit; sb++) {
+            for (int sb = _bound; sb < sblimit; sb++) {
                 plm_audio_read_samples(self, 0, sb, part);
                 self->sample[1][sb][0] = self->sample[0][sb][0];
                 self->sample[1][sb][1] = self->sample[0][sb][1];
@@ -534,16 +501,16 @@ void Audio::plm_audio_decode_frame(plm_audio_t *self)
             // Synthesis loop
             for (int p = 0; p < 3; p++) {
                 // Shifting step
-                self->v_pos = (self->v_pos - 64) & 1023;
+                _v_pos = (_v_pos - 64) & 1023;
 
                 for (int ch = 0; ch < 2; ch++) {
-                    plm_audio_idct36(self->sample[ch], p, self->V[ch], self->v_pos);
+                    plm_audio_idct36(self->sample[ch], p, self->V[ch], _v_pos);
 
                     // Build U, windowing, calculate output
                     memset(self->U, 0, sizeof(self->U));
 
-                    int d_index = 512 - (self->v_pos >> 1);
-                    int v_index = (self->v_pos % 128) >> 1;
+                    int d_index = 512 - (_v_pos >> 1);
+                    int v_index = (_v_pos % 128) >> 1;
                     while (v_index < 1024) {
                         for (int i = 0; i < 32; ++i) {
                             self->U[i] += self->D[d_index++] * self->V[ch][v_index++];

@@ -118,7 +118,7 @@ int PLM::plm_has_headers()
         return FALSE;
 
     if ((!_video.plm_video_has_header()) ||
-        (audio_decoder && !_audio.plm_audio_has_header(audio_decoder))
+        (audio_decoder && !_audio.plm_audio_has_header())
     ) {
         return FALSE;
     }
@@ -197,7 +197,7 @@ int PLM::plm_get_num_audio_streams() {
 // Get the samplerate of the audio stream in samples per second.
 int PLM::plm_get_samplerate() {
     return (plm_init_decoders() && audio_decoder)
-        ? _audio.plm_audio_get_samplerate(audio_decoder) : 0;
+        ? _audio.plm_audio_get_samplerate() : 0;
 }
 
 // Get or set the audio lead time in seconds - the time in which audio samples
@@ -226,10 +226,7 @@ double PLM::plm_get_duration() {
 void PLM::plm_rewind()
 {
     _video.plm_video_rewind();
-
-    if (audio_decoder)
-        _audio.plm_audio_rewind(audio_decoder);
-
+    _audio.plm_audio_rewind();
     _demux.plm_demux_rewind();
     _time = 0;
 }
@@ -306,7 +303,7 @@ void PLM::plm_decode(double tick)
             }
         }
 
-        if (decode_audio && _audio.plm_audio_get_time(audio_decoder) < audio_target_time)
+        if (decode_audio && _audio.plm_audio_get_time() < audio_target_time)
         {
             plm_samples_t *samples = _audio.plm_audio_decode(audio_decoder);
             if (samples)
@@ -513,7 +510,7 @@ int PLM::plm_seek(double time, int seek_exact)
     // called to decode enough audio data to satisfy the audio_lead_time.
 
     double start_time = _demux.plm_demux_get_start_time(_video_packet_type);
-    _audio.plm_audio_rewind(audio_decoder);
+    _audio.plm_audio_rewind();
 
     plm_packet_t *packet = NULL;
     while ((packet = _demux.plm_demux_decode()))
@@ -523,7 +520,7 @@ int PLM::plm_seek(double time, int seek_exact)
         }
         else if (packet->type == audio_packet_type && packet->pts - start_time > _time)
         {
-            _audio.plm_audio_set_time(audio_decoder, packet->pts - start_time);
+            _audio.plm_audio_set_time(packet->pts - start_time);
             Buffer::plm_buffer_write(audio_buffer, packet->data, packet->length);
             plm_decode(0);
             break;

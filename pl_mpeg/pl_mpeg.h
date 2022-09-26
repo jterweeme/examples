@@ -355,23 +355,53 @@ struct plm_quantizer_spec_t
     uint8_t bits;
 };
 
+struct plm_audio_t
+{
+
+
+    plm_buffer_t *buffer;
+    int destroy_buffer_when_done;
+
+    const plm_quantizer_spec_t *allocation[2][32];
+    uint8_t scale_factor_info[2][32];
+    int scale_factor[2][32][3];
+    int sample[2][32][3];
+
+    plm_samples_t samples;
+    float D[1024];
+    float V[2][1024];
+    float U[32];
+};
+
 class Audio
 {
 private:
+    double _time = 0;
+    int _samples_decoded = 0;
+    int _samplerate_index = 0;
+    int _bitrate_index = 0;
+    int _version = 0;
+    int _layer = 0;
+    int _mode = 0;
+    int _bound = 0;
+    int _v_pos = 0;
+    int _next_frame_data_size = 0;
+    int _has_header = 0;
+    plm_audio_t *_audio;
     int plm_audio_find_frame_sync(plm_audio_t *self);
     void plm_audio_idct36(int s[32][3], int ss, float *d, int dp);
 
     const plm_quantizer_spec_t *plm_audio_read_allocation(
         plm_audio_t *self, int sb, int tab3);
 public:
-    int plm_audio_has_header(plm_audio_t *self);
-    double plm_audio_get_time(plm_audio_t *self);
+    int plm_audio_has_header();
+    double plm_audio_get_time();
     void plm_audio_destroy(plm_audio_t *self);
-    void plm_audio_set_time(plm_audio_t *self, double time);
-    int plm_audio_has_ended(plm_audio_t *self);
+    void plm_audio_set_time(double time);
+    int plm_audio_has_ended();
     plm_samples_t *plm_audio_decode(plm_audio_t *self);
-    int plm_audio_get_samplerate(plm_audio_t *self);
-    void plm_audio_rewind(plm_audio_t *self);
+    int plm_audio_get_samplerate();
+    void plm_audio_rewind();
     int plm_audio_decode_header(plm_audio_t *self);
     void plm_audio_decode_frame(plm_audio_t *self);
     void plm_audio_read_samples(plm_audio_t *self, int ch, int sb, int part);
