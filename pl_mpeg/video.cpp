@@ -568,11 +568,8 @@ int Video::plm_video_decode_sequence_header()
 }
 
 // Create a video decoder with a plm_buffer as source.
-plm_video_t *Video::plm_video_create_with_buffer(plm_buffer_t *buffer, int destroy_when_done)
+void Video::plm_video_create_with_buffer(plm_buffer_t *buffer, int destroy_when_done)
 {
-    _video = (plm_video_t *)malloc(sizeof(plm_video_t));
-    memset(_video, 0, sizeof(plm_video_t));
-    
     _buffer = buffer;
     _destroy_buffer_when_done = destroy_when_done;
 
@@ -581,8 +578,6 @@ plm_video_t *Video::plm_video_create_with_buffer(plm_buffer_t *buffer, int destr
 
     if (_start_code != -1)
         plm_video_decode_sequence_header();
-    
-    return _video;
 }
 
 
@@ -594,8 +589,6 @@ void Video::plm_video_destroy()
 
     if (_has_sequence_header)
         free(_frames_data);
-
-    free(_video);
 }
 
 // Get the framerate in frames per second.
@@ -984,10 +977,8 @@ void Video::plm_video_predict_macroblock()
     int fw_h = _motion_forward.h;
     int fw_v = _motion_forward.v;
 
-    if (_motion_forward.full_px) {
-        fw_h <<= 1;
-        fw_v <<= 1;
-    }
+    if (_motion_forward.full_px)
+        fw_h <<= 1, fw_v <<= 1;
 
     if (_picture_type == PLM_VIDEO_PICTURE_TYPE_B)
     {
@@ -995,10 +986,7 @@ void Video::plm_video_predict_macroblock()
         int bw_v = _motion_backward.v;
 
         if (_motion_backward.full_px)
-        {
-            bw_h <<= 1;
-            bw_v <<= 1;
-        }
+            bw_h <<= 1, bw_v <<= 1;
 
         if (_motion_forward.is_set)
         {

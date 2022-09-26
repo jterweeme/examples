@@ -259,10 +259,6 @@ struct plm_video_motion_t
 
 typedef struct plm_buffer_t plm_buffer_t;
 
-struct plm_video_t {
-
-};
-
 typedef struct plm_audio_t plm_audio_t;
 
 // Callback function for plm_buffer when it needs more data
@@ -305,12 +301,7 @@ typedef struct plm_buffer_t {
     enum plm_buffer_mode mode;
 } plm_buffer_t;
 
-struct plm_quantizer_spec_t
-{
-    unsigned short levels;
-    uint8_t group;
-    uint8_t bits;
-};
+
 
 class Demux
 {
@@ -357,10 +348,41 @@ public:
     plm_packet_t *plm_demux_decode();
 };
 
+struct plm_quantizer_spec_t
+{
+    uint16_t levels;
+    uint8_t group;
+    uint8_t bits;
+};
+
+class Audio
+{
+private:
+    int plm_audio_find_frame_sync(plm_audio_t *self);
+    void plm_audio_idct36(int s[32][3], int ss, float *d, int dp);
+
+    const plm_quantizer_spec_t *plm_audio_read_allocation(
+        plm_audio_t *self, int sb, int tab3);
+public:
+    int plm_audio_has_header(plm_audio_t *self);
+    double plm_audio_get_time(plm_audio_t *self);
+    void plm_audio_destroy(plm_audio_t *self);
+    void plm_audio_set_time(plm_audio_t *self, double time);
+    int plm_audio_has_ended(plm_audio_t *self);
+    plm_samples_t *plm_audio_decode(plm_audio_t *self);
+    int plm_audio_get_samplerate(plm_audio_t *self);
+    void plm_audio_rewind(plm_audio_t *self);
+    int plm_audio_decode_header(plm_audio_t *self);
+    void plm_audio_decode_frame(plm_audio_t *self);
+    void plm_audio_read_samples(plm_audio_t *self, int ch, int sb, int part);
+
+    plm_audio_t *plm_audio_create_with_buffer(
+        plm_buffer_t *buffer, int destroy_when_done);
+};
+
 class Video
 {
 private:
-    plm_video_t *_video;
     double _framerate = 0;
     double _time = 0;
     int _frames_decoded = 0;
@@ -431,7 +453,7 @@ public:
     void plm_video_rewind();
     int plm_video_has_ended();
     plm_frame_t *plm_video_decode();
-    plm_video_t *plm_video_create_with_buffer(plm_buffer_t *buffer, int destroy_when_done);
+    void plm_video_create_with_buffer(plm_buffer_t *buffer, int destroy_when_done);
 };
 
 class PLM
@@ -445,8 +467,8 @@ private:
     int _video_packet_type = 0;
     Demux _demux;
     plm_buffer_t *video_buffer;
-    plm_video_t *video_decoder;
     Video _video;
+    Audio _audio;
     plm_video_decode_callback video_decode_callback = nullptr;
     void *video_decode_callback_user_data = nullptr;
     plm_audio_decode_callback audio_decode_callback = nullptr;
@@ -545,30 +567,7 @@ public:
 
 
 
-class Audio
-{
-private:
-    static int plm_audio_find_frame_sync(plm_audio_t *self);
-    static void plm_audio_idct36(int s[32][3], int ss, float *d, int dp);
 
-    static const plm_quantizer_spec_t *plm_audio_read_allocation(
-        plm_audio_t *self, int sb, int tab3);
-public:
-    static int plm_audio_has_header(plm_audio_t *self);
-    static double plm_audio_get_time(plm_audio_t *self);
-    static void plm_audio_destroy(plm_audio_t *self);
-    static void plm_audio_set_time(plm_audio_t *self, double time);
-    static int plm_audio_has_ended(plm_audio_t *self);
-    static plm_samples_t *plm_audio_decode(plm_audio_t *self);
-    static int plm_audio_get_samplerate(plm_audio_t *self);
-    static void plm_audio_rewind(plm_audio_t *self);
-    static int plm_audio_decode_header(plm_audio_t *self);
-    static void plm_audio_decode_frame(plm_audio_t *self);
-    static void plm_audio_read_samples(plm_audio_t *self, int ch, int sb, int part);
-
-    static plm_audio_t *plm_audio_create_with_buffer(
-        plm_buffer_t *buffer, int destroy_when_done);
-};
 
 
 #endif

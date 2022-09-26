@@ -79,10 +79,10 @@ int PLM::plm_init_decoders()
     }
 
     if (video_buffer)
-        video_decoder = _video.plm_video_create_with_buffer(video_buffer, TRUE);
+        _video.plm_video_create_with_buffer(video_buffer, TRUE);
 
     if (audio_buffer)
-        audio_decoder = Audio::plm_audio_create_with_buffer(audio_buffer, TRUE);
+        audio_decoder = _audio.plm_audio_create_with_buffer(audio_buffer, TRUE);
 
     _has_decoders = TRUE;
     return TRUE;
@@ -91,11 +91,10 @@ int PLM::plm_init_decoders()
 // Destroy a plmpeg instance and free all data.
 void PLM::plm_destroy()
 {
-    if (video_decoder)
-        _video.plm_video_destroy();
+    _video.plm_video_destroy();
     
     if (audio_decoder)
-        Audio::plm_audio_destroy(audio_decoder);
+        _audio.plm_audio_destroy(audio_decoder);
 
     _demux.plm_demux_destroy();
 }
@@ -118,8 +117,8 @@ int PLM::plm_has_headers()
     if (!plm_init_decoders())
         return FALSE;
 
-    if ((video_decoder && !_video.plm_video_has_header()) ||
-        (audio_decoder && !Audio::plm_audio_has_header(audio_decoder))
+    if ((!_video.plm_video_has_header()) ||
+        (audio_decoder && !_audio.plm_audio_has_header(audio_decoder))
     ) {
         return FALSE;
     }
@@ -168,8 +167,7 @@ void PLM::plm_set_video_enabled(int enabled)
         return;
     }
 
-    _video_packet_type = (plm_init_decoders() && video_decoder)
-        ? Demux::PLM_DEMUX_PACKET_VIDEO_1 : 0;
+    _video_packet_type = plm_init_decoders() ? Demux::PLM_DEMUX_PACKET_VIDEO_1 : 0;
 }
 
 // Get the number of video streams (0--1) reported in the system header.
@@ -179,20 +177,16 @@ int PLM::plm_get_num_video_streams() {
 
 // Get the display width/height of the video stream.
 int PLM::plm_get_width() {
-    return (plm_init_decoders() && video_decoder)
-        ? _video.plm_video_get_width() : 0;
+    return plm_init_decoders() ? _video.plm_video_get_width() : 0;
 }
 
-int PLM::plm_get_height()
-{
-    return (plm_init_decoders() && video_decoder)
-        ? _video.plm_video_get_height() : 0;
+int PLM::plm_get_height() {
+    return plm_init_decoders() ? _video.plm_video_get_height() : 0;
 }
 
 // Get the framerate of the video stream in frames per second.
 double PLM::plm_get_framerate() {
-    return (plm_init_decoders() && video_decoder)
-        ? _video.plm_video_get_framerate() : 0;
+    return plm_init_decoders() ? _video.plm_video_get_framerate() : 0;
 }
 
 // Get the number of audio streams (0--4) reported in the system header.
@@ -203,7 +197,7 @@ int PLM::plm_get_num_audio_streams() {
 // Get the samplerate of the audio stream in samples per second.
 int PLM::plm_get_samplerate() {
     return (plm_init_decoders() && audio_decoder)
-        ? Audio::plm_audio_get_samplerate(audio_decoder) : 0;
+        ? _audio.plm_audio_get_samplerate(audio_decoder) : 0;
 }
 
 // Get or set the audio lead time in seconds - the time in which audio samples
@@ -231,11 +225,10 @@ double PLM::plm_get_duration() {
 // Rewind all buffers back to the beginning.
 void PLM::plm_rewind()
 {
-    if (video_decoder)
-        _video.plm_video_rewind();
+    _video.plm_video_rewind();
 
     if (audio_decoder)
-        Audio::plm_audio_rewind(audio_decoder);
+        _audio.plm_audio_rewind(audio_decoder);
 
     _demux.plm_demux_rewind();
     _time = 0;
@@ -313,9 +306,9 @@ void PLM::plm_decode(double tick)
             }
         }
 
-        if (decode_audio && Audio::plm_audio_get_time(audio_decoder) < audio_target_time)
+        if (decode_audio && _audio.plm_audio_get_time(audio_decoder) < audio_target_time)
         {
-            plm_samples_t *samples = Audio::plm_audio_decode(audio_decoder);
+            plm_samples_t *samples = _audio.plm_audio_decode(audio_decoder);
             if (samples)
             {
                 audio_decode_callback(samples, audio_decode_callback_user_data);
@@ -375,7 +368,7 @@ plm_samples_t *PLM::plm_decode_audio()
     if (!audio_packet_type)
         return NULL;
 
-    plm_samples_t *samples = Audio::plm_audio_decode(audio_decoder);
+    plm_samples_t *samples = _audio.plm_audio_decode(audio_decoder);
     if (samples) {
         _time = samples->time;
     }
@@ -520,7 +513,7 @@ int PLM::plm_seek(double time, int seek_exact)
     // called to decode enough audio data to satisfy the audio_lead_time.
 
     double start_time = _demux.plm_demux_get_start_time(_video_packet_type);
-    Audio::plm_audio_rewind(audio_decoder);
+    _audio.plm_audio_rewind(audio_decoder);
 
     plm_packet_t *packet = NULL;
     while ((packet = _demux.plm_demux_decode()))
@@ -530,7 +523,7 @@ int PLM::plm_seek(double time, int seek_exact)
         }
         else if (packet->type == audio_packet_type && packet->pts - start_time > _time)
         {
-            Audio::plm_audio_set_time(audio_decoder, packet->pts - start_time);
+            _audio.plm_audio_set_time(audio_decoder, packet->pts - start_time);
             Buffer::plm_buffer_write(audio_buffer, packet->data, packet->length);
             plm_decode(0);
             break;

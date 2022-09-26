@@ -453,8 +453,7 @@ void Audio::plm_audio_decode_frame(plm_audio_t *self)
     }
 
     for (int sb = self->bound; sb < sblimit; sb++) {
-        self->allocation[0][sb] =
-            self->allocation[1][sb] =
+        self->allocation[0][sb] = self->allocation[1][sb] =
             plm_audio_read_allocation(self, sb, tab3);
     }
 
