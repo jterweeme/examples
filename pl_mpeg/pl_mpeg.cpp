@@ -114,11 +114,8 @@ int PLM::plm_has_headers()
     if (!plm_init_decoders())
         return FALSE;
 
-    if ((!_video.plm_video_has_header()) ||
-        (audio_decoder && !_audio.plm_audio_has_header())
-    ) {
+    if (!_video.plm_video_has_header() || !_audio.plm_audio_has_header())
         return FALSE;
-    }
 
     return TRUE;
 }
@@ -300,7 +297,7 @@ void PLM::plm_decode(double tick)
 
         if (decode_audio && _audio.plm_audio_get_time() < audio_target_time)
         {
-            plm_samples_t *samples = _audio.plm_audio_decode(audio_decoder);
+            plm_samples_t *samples = _audio.plm_audio_decode();
             if (samples)
             {
                 audio_decode_callback(samples, audio_decode_callback_user_data);
@@ -360,11 +357,11 @@ plm_samples_t *PLM::plm_decode_audio()
     if (!audio_packet_type)
         return NULL;
 
-    plm_samples_t *samples = _audio.plm_audio_decode(audio_decoder);
+    plm_samples_t *samples = _audio.plm_audio_decode();
+
     if (samples) {
         _time = samples->time;
-    }
-    else if (_demux.plm_demux_has_ended()) {
+    } else if (_demux.plm_demux_has_ended()) {
         plm_handle_end();
     }
     return samples;
@@ -373,8 +370,7 @@ plm_samples_t *PLM::plm_decode_audio()
 void PLM::plm_handle_end() {
     if (_loop) {
         plm_rewind();
-    }
-    else {
+    } else {
         _has_ended = TRUE;
     }
 }

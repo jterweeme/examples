@@ -272,7 +272,7 @@ int Audio::plm_audio_has_ended() {
 // (PLM_AUDIO_SAMPLES_PER_FRAME/samplerate) seconds. The returned samples_t 
 // is valid until the next call of plm_audio_decode() or until the audio
 // decoder is destroyed.
-plm_samples_t *Audio::plm_audio_decode(plm_audio_t *)
+plm_samples_t *Audio::plm_audio_decode()
 {
     // Do we have at least enough information to decode the frame header?
     if (!_next_frame_data_size) {

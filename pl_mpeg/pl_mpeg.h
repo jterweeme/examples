@@ -204,7 +204,6 @@ struct plm_packet_t {
 // Also note that the size of the plane does *not* denote the size of the 
 // displayed frame. The sizes of planes are always rounded up to the nearest
 // macroblock (16px).
-
 struct plm_plane_t
 {
     unsigned int width;
@@ -215,7 +214,6 @@ struct plm_plane_t
 // Decoded Video Frame
 // width and height denote the desired display size of the frame. This may be
 // different from the internal size of the 3 planes.
-
 struct plm_frame_t 
 {
     double time;
@@ -225,8 +223,6 @@ struct plm_frame_t
     plm_plane_t cr;
     plm_plane_t cb;
 };
-
-
 
 
 // Decoded Audio Samples
@@ -258,8 +254,6 @@ struct plm_video_motion_t
 };
 
 typedef struct plm_buffer_t plm_buffer_t;
-
-typedef struct plm_audio_t plm_audio_t;
 
 // Callback function for plm_buffer when it needs more data
 typedef void(*plm_buffer_load_callback)(plm_buffer_t *self, void *user);
@@ -300,8 +294,6 @@ typedef struct plm_buffer_t {
     uint8_t *bytes;
     enum plm_buffer_mode mode;
 } plm_buffer_t;
-
-
 
 class Demux
 {
@@ -355,14 +347,6 @@ struct plm_quantizer_spec_t
     uint8_t bits;
 };
 
-struct plm_audio_t
-{
-
-
-
-
-};
-
 class Audio
 {
 private:
@@ -396,7 +380,7 @@ public:
     void plm_audio_destroy();
     void plm_audio_set_time(double time);
     int plm_audio_has_ended();
-    plm_samples_t *plm_audio_decode(plm_audio_t *self);
+    plm_samples_t *plm_audio_decode();
     int plm_audio_get_samplerate();
     void plm_audio_rewind();
     int plm_audio_decode_header();
@@ -506,7 +490,7 @@ private:
     static void plm_read_video_packet(plm_buffer_t *buffer, void *user);
     double audio_lead_time;
     plm_buffer_t *audio_buffer;
-    plm_audio_t *audio_decoder;
+    //plm_audio_t *audio_decoder;
     int audio_enabled = 0;
     int audio_stream_index = 0;
     int audio_packet_type = 0;
