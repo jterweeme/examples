@@ -219,7 +219,7 @@ void Audio::plm_audio_create_with_buffer(Buffer *buffer, int destroy_when_done)
 void Audio::plm_audio_destroy()
 {
     if (_destroy_buffer_when_done)
-        Buffer::plm_buffer_destroy(_buffer->_buf);
+        _buffer->plm_buffer_destroy(_buffer->_buf);
 }
 
 // Get whether a frame header was found and we can accurately report on
@@ -319,7 +319,7 @@ int Audio::plm_audio_decode_header()
     if (!Buffer::plm_buffer_has(_buffer->_buf, 48))
         return 0;
 
-    Buffer::plm_buffer_skip_bytes(_buffer->_buf, 0x00);
+    _buffer->plm_buffer_skip_bytes(_buffer->_buf, 0x00);
     int sync = Buffer::plm_buffer_read(_buffer->_buf, 11);
 
 
@@ -535,7 +535,7 @@ void Audio::plm_audio_decode_frame()
         } // Decoding of the granule finished
     }
 
-    Buffer::plm_buffer_align(_buffer->_buf);
+    _buffer->plm_buffer_align(_buffer->_buf);
 }
 
 void Audio::plm_audio_read_samples(int ch, int sb, int part)
