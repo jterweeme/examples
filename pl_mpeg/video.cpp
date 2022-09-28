@@ -415,7 +415,7 @@ static inline uint8_t plm_clamp(int n) {
     return n;
 }
 
-void Video::plm_video_idct(int *block)
+void Video::_idct(int *block)
 {
     // Transform columns
     for (int i = 0; i < 8; ++i)
@@ -559,7 +559,7 @@ int Video::plm_video_decode_sequence_header()
     size_t chroma_plane_size = _chroma_width * _chroma_height;
     size_t frame_data_size = (luma_plane_size + 2 * chroma_plane_size);
 
-    _frames_data = (uint8_t*)malloc(frame_data_size * 3);
+    _frames_data = new uint8_t[frame_data_size * 3];
     plm_video_init_frame(&_frame_current, _frames_data + frame_data_size * 0);
     plm_video_init_frame(&_frame_forward, _frames_data + frame_data_size * 1);
     plm_video_init_frame(&_frame_backward, _frames_data + frame_data_size * 2);
@@ -588,7 +588,7 @@ void Video::plm_video_destroy()
         Buffer::plm_buffer_destroy(_buffer);
 
     if (_has_sequence_header)
-        free(_frames_data);
+        delete[] _frames_data;
 }
 
 // Get the framerate in frames per second.
@@ -839,7 +839,7 @@ void Video::plm_video_decode_macroblock()
             _mb_row = _macroblock_address / _mb_width;
             _mb_col = _macroblock_address % _mb_width;
 
-            plm_video_predict_macroblock();
+            _predict_macroblock();
             increment--;
         }
         _macroblock_address++;
@@ -875,7 +875,7 @@ void Video::plm_video_decode_macroblock()
         _dc_predictor[2] = 128;
 
         plm_video_decode_motion_vectors();
-        plm_video_predict_macroblock();
+        _predict_macroblock();
     }
 
     // Decode blocks
@@ -886,7 +886,7 @@ void Video::plm_video_decode_macroblock()
     for (int block = 0, mask = 0x20; block < 6; block++)
     {
         if ((cbp & mask) != 0)
-            plm_video_decode_block(block);
+            _decode_block(block);
 
         mask >>= 1;
     }
@@ -972,7 +972,7 @@ int Video::plm_video_decode_motion_vector(int r_size, int motion)
     return motion;
 }
 
-void Video::plm_video_predict_macroblock()
+void Video::_predict_macroblock()
 {
     int fw_h = _motion_forward.h;
     int fw_v = _motion_forward.v;
@@ -990,34 +990,34 @@ void Video::plm_video_predict_macroblock()
 
         if (_motion_forward.is_set)
         {
-            plm_video_copy_macroblock(&_frame_forward, fw_h, fw_v);
+            _copy_macroblock(&_frame_forward, fw_h, fw_v);
 
             if (_motion_backward.is_set)
-                plm_video_interpolate_macroblock(&_frame_backward, bw_h, bw_v);
+                _interpolate_macroblock(&_frame_backward, bw_h, bw_v);
         }
         else {
-            plm_video_copy_macroblock(&_frame_backward, bw_h, bw_v);
+            _copy_macroblock(&_frame_backward, bw_h, bw_v);
         }
     }
     else {
-        plm_video_copy_macroblock(&_frame_forward, fw_h, fw_v);
+        _copy_macroblock(&_frame_forward, fw_h, fw_v);
     }
 }
 
-void Video::plm_video_copy_macroblock(plm_frame_t *s, int motion_h, int motion_v)
+void Video::_copy_macroblock(plm_frame_t *s, int motion_h, int motion_v)
 {
     plm_frame_t *d = &_frame_current;
-    plm_video_process_macroblock(s->y.data, d->y.data, motion_h, motion_v, 16, FALSE);
-    plm_video_process_macroblock(s->cr.data, d->cr.data, motion_h / 2, motion_v / 2, 8, FALSE);
-    plm_video_process_macroblock(s->cb.data, d->cb.data, motion_h / 2, motion_v / 2, 8, FALSE);
+    _process_macroblock(s->y.data, d->y.data, motion_h, motion_v, 16, FALSE);
+    _process_macroblock(s->cr.data, d->cr.data, motion_h / 2, motion_v / 2, 8, FALSE);
+    _process_macroblock(s->cb.data, d->cb.data, motion_h / 2, motion_v / 2, 8, FALSE);
 }
 
-void Video::plm_video_interpolate_macroblock(plm_frame_t *s, int motion_h, int motion_v)
+void Video::_interpolate_macroblock(plm_frame_t *s, int motion_h, int motion_v)
 {
     plm_frame_t *d = &_frame_current;
-    plm_video_process_macroblock(s->y.data, d->y.data, motion_h, motion_v, 16, TRUE);
-    plm_video_process_macroblock(s->cr.data, d->cr.data, motion_h / 2, motion_v / 2, 8, TRUE);
-    plm_video_process_macroblock(s->cb.data, d->cb.data, motion_h / 2, motion_v / 2, 8, TRUE);
+    _process_macroblock(s->y.data, d->y.data, motion_h, motion_v, 16, TRUE);
+    _process_macroblock(s->cr.data, d->cr.data, motion_h / 2, motion_v / 2, 8, TRUE);
+    _process_macroblock(s->cb.data, d->cb.data, motion_h / 2, motion_v / 2, 8, TRUE);
 }
 
 #define PLM_BLOCK_SET(DEST, DEST_INDEX, DEST_WIDTH, SOURCE_INDEX, SOURCE_WIDTH, BLOCK_SIZE, OP) do { \
@@ -1037,7 +1037,7 @@ void Video::plm_video_interpolate_macroblock(plm_frame_t *s, int motion_h, int m
         PLM_BLOCK_SET(d, di, dw, si, dw, block_size, OP); \
         break
 
-void Video::plm_video_process_macroblock(uint8_t *s, uint8_t *d,
+void Video::_process_macroblock(uint8_t *s, uint8_t *d,
     int motion_h, int motion_v, int block_size, int interpolate)
 {
     int dw = _mb_width * block_size;
@@ -1069,7 +1069,7 @@ void Video::plm_video_process_macroblock(uint8_t *s, uint8_t *d,
 }
 #undef PLM_MB_CASE
 
-void Video::plm_video_decode_block(int block)
+void Video::_decode_block(int block)
 {
     int n = 0;
     uint8_t *quant_matrix;
@@ -1204,7 +1204,7 @@ void Video::plm_video_decode_block(int block)
             s[0] = 0;
         }
         else {
-            plm_video_idct(s);
+            _idct(s);
             PLM_BLOCK_SET(d, di, dw, si, 8, 8, plm_clamp(s[si]));
             memset(_block_data, 0, sizeof(_block_data));
         }
@@ -1217,7 +1217,7 @@ void Video::plm_video_decode_block(int block)
             s[0] = 0;
         }
         else {
-            plm_video_idct(s);
+            _idct(s);
             PLM_BLOCK_SET(d, di, dw, si, 8, 8, plm_clamp(d[di] + s[si]));
             memset(_block_data, 0, sizeof(_block_data));
         }

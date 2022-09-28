@@ -10,19 +10,19 @@
 // be opened.
 void PLM::plm_create_with_filename(const char *filename)
 {
-    plm_buffer_t *buffer = Buffer::plm_buffer_create_with_filename(filename);
-    if (!buffer)
+    _file_buffer._buf = Buffer::plm_buffer_create_with_filename(filename);
+    if (!_file_buffer._buf)
         throw "error";
     
-    plm_create_with_buffer(buffer, TRUE);
+    plm_create_with_buffer(&_file_buffer, TRUE);
 }
 
 // Create a plmpeg instance with a file handle. Pass TRUE to close_when_done to
 // let plmpeg call fclose() on the handle when plm_destroy() is called.
 void PLM::plm_create_with_file(FILE *fh, int close_when_done)
 {
-    plm_buffer_t *buffer = Buffer::plm_buffer_create_with_file(fh, close_when_done);
-    plm_create_with_buffer(buffer, TRUE);
+    _file_buffer._buf = Buffer::plm_buffer_create_with_file(fh, close_when_done);
+    plm_create_with_buffer(&_file_buffer, TRUE);
 }
 
 // Create a plmpeg instance with a pointer to memory as source. This assumes the
@@ -40,7 +40,7 @@ void PLM::plm_create_with_memory(uint8_t *bytes, size_t length, int free_when_do
 // Create a plmpeg instance with a plm_buffer as source. Pass TRUE to
 // destroy_when_done to let plmpeg call plm_buffer_destroy() on the buffer when
 // plm_destroy() is called.
-void PLM::plm_create_with_buffer(plm_buffer_t *buffer, int destroy_when_done)
+void PLM::plm_create_with_buffer(Buffer *buffer, int destroy_when_done)
 {
     _demux.plm_demux_create(buffer, destroy_when_done);
     _video_enabled = TRUE;
@@ -61,10 +61,10 @@ int PLM::plm_init_decoders()
         if (_video_enabled)
             _video_packet_type = Demux::PLM_DEMUX_PACKET_VIDEO_1;
         
-        video_buffer = Buffer::plm_buffer_create_with_capacity(PLM_BUFFER_DEFAULT_SIZE);
+        _video_buffer._buf = Buffer::plm_buffer_create_with_capacity(PLM_BUFFER_DEFAULT_SIZE);
 
         Buffer::plm_buffer_set_load_callback(
-            video_buffer, PLM::plm_read_video_packet, this);
+            _video_buffer._buf, PLM::plm_read_video_packet, this);
     }
 
     if (_demux.plm_demux_get_num_audio_streams() > 0)
@@ -72,17 +72,15 @@ int PLM::plm_init_decoders()
         if (audio_enabled)
             audio_packet_type = Demux::PLM_DEMUX_PACKET_AUDIO_1 + audio_stream_index;
         
-        audio_buffer = Buffer::plm_buffer_create_with_capacity(PLM_BUFFER_DEFAULT_SIZE);
-
-        Buffer::plm_buffer_set_load_callback(
-            audio_buffer, plm_read_audio_packet, this);
+        _audio_buffer._buf = Buffer::plm_buffer_create_with_capacity(PLM_BUFFER_DEFAULT_SIZE);
+        Buffer::plm_buffer_set_load_callback(_audio_buffer._buf, plm_read_audio_packet, this);
     }
 
-    if (video_buffer)
-        _video.plm_video_create_with_buffer(video_buffer, TRUE);
+    if (_video_buffer._buf)
+        _video.plm_video_create_with_buffer(_video_buffer._buf, TRUE);
 
-    if (audio_buffer)
-        _audio.plm_audio_create_with_buffer(audio_buffer, TRUE);
+    if (_audio_buffer._buf)
+        _audio.plm_audio_create_with_buffer(_audio_buffer._buf, TRUE);
 
     _has_decoders = TRUE;
     return TRUE;
@@ -394,25 +392,22 @@ void PLM::plm_read_packets(PLM *self, int requested_type)
     plm_packet_t *packet;
     while ((packet = self->_demux.plm_demux_decode()))
     {
-        if (packet->type == self->_video_packet_type) {
-            Buffer::plm_buffer_write(self->video_buffer, packet->data, packet->length);
-        }
-        else if (packet->type == self->audio_packet_type) {
-            Buffer::plm_buffer_write(self->audio_buffer, packet->data, packet->length);
-        }
+        if (packet->type == self->_video_packet_type)
+            Buffer::plm_buffer_write(self->_video_buffer._buf, packet->data, packet->length);
+        else if (packet->type == self->audio_packet_type)
+            Buffer::plm_buffer_write(self->_audio_buffer._buf, packet->data, packet->length);
 
-        if (packet->type == requested_type) {
+        if (packet->type == requested_type)
             return;
-        }
     }
 
     if (self->_demux.plm_demux_has_ended())
     {
-        if (self->video_buffer)
-            Buffer::plm_buffer_signal_end(self->video_buffer);
+        if (self->_video_buffer._buf)
+            Buffer::plm_buffer_signal_end(self->_video_buffer._buf);
         
-        if (self->audio_buffer)
-            Buffer::plm_buffer_signal_end(self->audio_buffer);
+        if (self->_audio_buffer._buf)
+            Buffer::plm_buffer_signal_end(self->_audio_buffer._buf);
     }
 }
 
@@ -451,7 +446,7 @@ plm_frame_t *PLM::plm_seek_frame(double time, int seek_exact)
     // Clear video buffer and decode the found packet
     _video.plm_video_rewind();
     _video.plm_video_set_time(packet->pts - start_time);
-    Buffer::plm_buffer_write(video_buffer, packet->data, packet->length);
+    Buffer::plm_buffer_write(_video_buffer._buf, packet->data, packet->length);
     plm_frame_t *frame = _video.plm_video_decode(); 
 
     // If we want to seek to an exact frame, we have to decode all frames
@@ -507,12 +502,12 @@ int PLM::plm_seek(double time, int seek_exact)
     while ((packet = _demux.plm_demux_decode()))
     {
         if (packet->type == _video_packet_type) {
-            Buffer::plm_buffer_write(video_buffer, packet->data, packet->length);
+            Buffer::plm_buffer_write(_video_buffer._buf, packet->data, packet->length);
         }
         else if (packet->type == audio_packet_type && packet->pts - start_time > _time)
         {
             _audio.plm_audio_set_time(packet->pts - start_time);
-            Buffer::plm_buffer_write(audio_buffer, packet->data, packet->length);
+            Buffer::plm_buffer_write(_audio_buffer._buf, packet->data, packet->length);
             plm_decode(0);
             break;
         }
@@ -640,9 +635,8 @@ size_t Buffer::plm_buffer_write(plm_buffer_t *self, uint8_t *bytes, size_t lengt
         // Seems to be good enough.
 
         plm_buffer_discard_read_bytes(self);
-        if (self->mode == PLM_BUFFER_MODE_RING) {
+        if (self->mode == PLM_BUFFER_MODE_RING)
             self->total_size = 0;
-        }
     }
 
     // Do we have to resize to fit the new data?
@@ -879,10 +873,9 @@ uint16_t Buffer::plm_buffer_read_vlc_uint(plm_buffer_t *self, const plm_vlc_uint
 
 // Create a demuxer with a plm_buffer as source. This will also attempt to read
 // the pack and system headers from the buffer.
-void Demux::plm_demux_create(plm_buffer_t *buffer, int destroy_when_done)
+void Demux::plm_demux_create(Buffer *buffer, int destroy_when_done)
 {
-
-    _buffer = buffer;
+    _buffer = buffer->_buf;
     _destroy_buffer_when_done = destroy_when_done;
 
     _start_time = PLM_PACKET_INVALID_TS;
@@ -1009,12 +1002,11 @@ double Demux::plm_demux_get_start_time(int type)
     plm_demux_rewind();
     do {
         plm_packet_t *packet = plm_demux_decode();
-        if (!packet) {
+        if (!packet)
             break;
-        }
-        if (packet->type == type) {
+        
+        if (packet->type == type)
             _start_time = packet->pts;
-        }
     } while (_start_time == PLM_PACKET_INVALID_TS);
 
     plm_demux_buffer_seek(previous_pos);

@@ -49,7 +49,6 @@ steps combined.
 
 */
 
-#include <stdlib.h>
 #include <stdio.h>
 
 #define TRUE 1
@@ -57,11 +56,15 @@ steps combined.
 
 #include <SDL2/SDL.h>
 #include <GL/glew.h>
+#include <iostream>
 
 #define PL_MPEG_IMPLEMENTATION
 #include "pl_mpeg.h"
 
 #define APP_SHADER_SOURCE(...) #__VA_ARGS__
+
+static unsigned int g_nr = 1;
+static unsigned int g_audio = 1;
 
 const char * const APP_VERTEX_SHADER = APP_SHADER_SOURCE(
 	attribute vec2 vertex;
@@ -108,13 +111,12 @@ private:
     GLuint _texture_y;
     GLuint _texture_cb;
     GLuint _texture_cr;
-    GLuint _texture_rgb;
     uint8_t *_rgb_data;
-    SDL_Window *window;
+    SDL_Window *_window;
     SDL_AudioDeviceID audio_device;
     SDL_GLContext gl;
     GLuint shader_program;
-    double last_time = 0;
+    double _last_time = 0;
     PLM _plm;
 public:
     int wants_to_quit = 0;
@@ -129,6 +131,7 @@ void CApp::app_on_audio(plm_samples_t *samples, void *)
 {
 	int size = sizeof(float) * samples->count * 2;
 	SDL_QueueAudio(_inst->audio_device, samples->interleaved, size);
+    ++g_audio;
 }
 
 void CApp::app_destroy()
@@ -165,12 +168,12 @@ void CApp::app_update()
     // Compute the delta time since the last app_update(), limit max step to 
     // 1/30th of a second
     double current_time = (double)SDL_GetTicks() / 1000.0;
-    double elapsed_time = current_time - last_time;
+    double elapsed_time = current_time - _last_time;
 
     if (elapsed_time > 1.0 / 30.0)
         elapsed_time = 1.0 / 30.0;
 
-    last_time = current_time;
+    _last_time = current_time;
 
 	// Seek using mouse position
     int mouse_x, mouse_y;
@@ -178,7 +181,7 @@ void CApp::app_update()
     if (SDL_GetMouseState(&mouse_x, &mouse_y) & SDL_BUTTON(SDL_BUTTON_LEFT))
     {
         int sx, sy;
-        SDL_GetWindowSize(window, &sx, &sy);
+        SDL_GetWindowSize(_window, &sx, &sy);
         seek_to = _plm.plm_get_duration() * ((float)mouse_x / (float)sx);
     }
 	
@@ -197,7 +200,7 @@ void CApp::app_update()
 	
     glClear(GL_COLOR_BUFFER_BIT);
     glRectf(0.0, 0.0, 1.0, 1.0);
-    SDL_GL_SwapWindow(window);
+    SDL_GL_SwapWindow(_window);
 }
 
 GLuint CApp::app_compile_shader(GLenum type, const char *source)
@@ -245,6 +248,7 @@ void CApp::app_on_video(plm_frame_t *frame, void *)
     app_update_texture(GL_TEXTURE0, _inst->_texture_y, &frame->y);
     app_update_texture(GL_TEXTURE1, _inst->_texture_cb, &frame->cb);
     app_update_texture(GL_TEXTURE2, _inst->_texture_cr, &frame->cr);
+    ++g_nr;
 }
 
 void CApp::app_create(const char *filename)
@@ -291,13 +295,13 @@ void CApp::app_create(const char *filename)
     }
 	
     // Create SDL Window
-    window = SDL_CreateWindow(
+    _window = SDL_CreateWindow(
         "pl_mpeg",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         _plm.plm_get_width(), _plm.plm_get_height(),
         SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 
-    gl = SDL_GL_CreateContext(window);
+    gl = SDL_GL_CreateContext(_window);
 	
 	SDL_GL_SetSwapInterval(1);
 

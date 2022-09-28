@@ -5,7 +5,6 @@
 // http://keyj.emphy.de/kjmp2/
 
 #include "pl_mpeg.h"
-#include <cstdlib>
 #include <cstring>
 
 static constexpr int PLM_AUDIO_FRAME_SYNC = 0x7ff;

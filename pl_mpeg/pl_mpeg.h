@@ -295,6 +295,48 @@ typedef struct plm_buffer_t {
     enum plm_buffer_mode mode;
 } plm_buffer_t;
 
+class Buffer
+{
+public:
+    plm_buffer_t *_buf;
+    static void plm_buffer_seek(plm_buffer_t *self, size_t pos);
+    static size_t plm_buffer_tell(plm_buffer_t *self);
+    static void plm_buffer_load_file_callback(plm_buffer_t *self, void *user);
+    static int plm_buffer_no_start_code(plm_buffer_t *self);
+    static int16_t plm_buffer_read_vlc(plm_buffer_t *self, const plm_vlc_t *table);
+    static uint16_t plm_buffer_read_vlc_uint(plm_buffer_t *self, const plm_vlc_uint_t *table);
+    static plm_buffer_t *plm_buffer_create_with_filename(const char *filename);
+    static plm_buffer_t *plm_buffer_create_with_file(FILE *fh, int close_when_done);
+#if 0
+    static plm_buffer_t *plm_buffer_create_with_memory(
+        uint8_t *bytes, size_t length, int free_when_done);
+#endif
+    static plm_buffer_t *plm_buffer_create_with_capacity(size_t capacity);
+    static plm_buffer_t *plm_buffer_create_for_appending(size_t initial_capacity);
+    static void plm_buffer_destroy(plm_buffer_t *self);
+    static size_t plm_buffer_write(plm_buffer_t *self, uint8_t *bytes, size_t length);
+    static void plm_buffer_signal_end(plm_buffer_t *self);
+
+    static void plm_buffer_set_load_callback(
+        plm_buffer_t *self, plm_buffer_load_callback fp, void *user);
+
+    static void plm_buffer_rewind(plm_buffer_t *self);
+    static size_t plm_buffer_get_size(plm_buffer_t *self);
+    static size_t plm_buffer_get_remaining(plm_buffer_t *self);
+    static int plm_buffer_has_ended(plm_buffer_t *self);
+    static int plm_buffer_skip_bytes(plm_buffer_t *self, uint8_t v);
+    static int plm_buffer_read(plm_buffer_t *self, int count);
+    static void plm_buffer_skip(plm_buffer_t *self, size_t count);
+    static int plm_buffer_has(plm_buffer_t *self, size_t count);
+    static void plm_buffer_align(plm_buffer_t *self);
+
+    static int plm_buffer_find_start_code(plm_buffer_t *self, int code);
+    static int plm_buffer_has_start_code(plm_buffer_t *self, int code);
+    static void plm_buffer_discard_read_bytes(plm_buffer_t *self);
+    static int plm_buffer_next_start_code(plm_buffer_t *self);
+    static int plm_buffer_peek_non_zero(plm_buffer_t *self, int bit_count);
+};
+
 class Demux
 {
 private:
@@ -323,7 +365,7 @@ public:
     static constexpr int PLM_DEMUX_PACKET_AUDIO_3 = 0xC2;
     static constexpr int PLM_DEMUX_PACKET_AUDIO_4 = 0xC2;
     static constexpr int PLM_DEMUX_PACKET_VIDEO_1 = 0xE0;
-    void plm_demux_create(plm_buffer_t *buffer, int destroy_when_done);
+    void plm_demux_create(Buffer *buffer, int destroy_when_done);
     void plm_demux_buffer_seek(size_t pos);
     double plm_demux_decode_time();
     plm_packet_t *plm_demux_decode_packet(int type);
@@ -437,12 +479,12 @@ private:
 
     int _has_reference_frame = 0;
     int _assume_no_b_frames = 0;
-    void plm_video_copy_macroblock(plm_frame_t *s, int motion_h, int motion_v);
-    void plm_video_process_macroblock(uint8_t *s, uint8_t *d, int mh, int mb, int bs, int interp);
-    void plm_video_interpolate_macroblock(plm_frame_t *s, int motion_h, int motion_v);
-    void plm_video_decode_block(int block);
-    void plm_video_predict_macroblock();
-    void plm_video_idct(int *block);
+    void _copy_macroblock(plm_frame_t *s, int motion_h, int motion_v);
+    void _process_macroblock(uint8_t *s, uint8_t *d, int mh, int mb, int bs, int interp);
+    void _interpolate_macroblock(plm_frame_t *s, int motion_h, int motion_v);
+    void _decode_block(int block);
+    void _predict_macroblock();
+    static void _idct(int *block);
     void plm_video_decode_picture();
     void plm_video_decode_macroblock();
     void plm_video_decode_slice(int slice);
@@ -475,7 +517,9 @@ private:
     int _video_enabled = 0;
     int _video_packet_type = 0;
     Demux _demux;
-    plm_buffer_t *video_buffer;
+    Buffer _file_buffer;
+    Buffer _video_buffer;
+    Buffer _audio_buffer;
     Video _video;
     Audio _audio;
     plm_video_decode_callback video_decode_callback = nullptr;
@@ -484,13 +528,11 @@ private:
     void *audio_decode_callback_user_data = nullptr;
     void plm_create_with_file(FILE *fh, int close_when_done);
     void plm_create_with_memory(uint8_t *bytes, size_t length, int free_when_done);
-    void plm_create_with_buffer(plm_buffer_t *buffer, int destroy_when_done);
+    void plm_create_with_buffer(Buffer *buffer, int destroy_when_done);
     static void plm_read_packets(PLM *self, int requested_type);
     static void plm_read_audio_packet(plm_buffer_t *buffer, void *user);
     static void plm_read_video_packet(plm_buffer_t *buffer, void *user);
     double audio_lead_time;
-    plm_buffer_t *audio_buffer;
-    //plm_audio_t *audio_decoder;
     int audio_enabled = 0;
     int audio_stream_index = 0;
     int audio_packet_type = 0;
@@ -519,66 +561,14 @@ public:
     int plm_get_loop();
     void plm_set_loop(int loop);
     int plm_has_ended();
-
-    void plm_set_video_decode_callback(
-        plm_video_decode_callback fp, void *user);
-
-    void plm_set_audio_decode_callback(
-        plm_audio_decode_callback fp, void *user);
-
+    void plm_set_video_decode_callback(plm_video_decode_callback fp, void *user);
+    void plm_set_audio_decode_callback(plm_audio_decode_callback fp, void *user);
     void plm_decode(double seconds);
     plm_frame_t *plm_decode_video();
     plm_samples_t *plm_decode_audio();
     int plm_seek(double time, int seek_exact);
     plm_frame_t *plm_seek_frame(double time, int seek_exact);
 };
-
-class Buffer
-{
-public:
-    static void plm_buffer_seek(plm_buffer_t *self, size_t pos);
-    static size_t plm_buffer_tell(plm_buffer_t *self);
-    static void plm_buffer_load_file_callback(plm_buffer_t *self, void *user);
-    static int plm_buffer_no_start_code(plm_buffer_t *self);
-    static int16_t plm_buffer_read_vlc(plm_buffer_t *self, const plm_vlc_t *table);
-    static uint16_t plm_buffer_read_vlc_uint(plm_buffer_t *self, const plm_vlc_uint_t *table);
-    static plm_buffer_t *plm_buffer_create_with_filename(const char *filename);
-    static plm_buffer_t *plm_buffer_create_with_file(FILE *fh, int close_when_done);
-#if 0
-    static plm_buffer_t *plm_buffer_create_with_memory(
-        uint8_t *bytes, size_t length, int free_when_done);
-#endif
-    static plm_buffer_t *plm_buffer_create_with_capacity(size_t capacity);
-    static plm_buffer_t *plm_buffer_create_for_appending(size_t initial_capacity);
-    static void plm_buffer_destroy(plm_buffer_t *self);
-    static size_t plm_buffer_write(plm_buffer_t *self, uint8_t *bytes, size_t length);
-    static void plm_buffer_signal_end(plm_buffer_t *self);
-
-    static void plm_buffer_set_load_callback(
-        plm_buffer_t *self, plm_buffer_load_callback fp, void *user);
-
-    static void plm_buffer_rewind(plm_buffer_t *self);
-    static size_t plm_buffer_get_size(plm_buffer_t *self);
-    static size_t plm_buffer_get_remaining(plm_buffer_t *self);
-    static int plm_buffer_has_ended(plm_buffer_t *self);
-    static int plm_buffer_skip_bytes(plm_buffer_t *self, uint8_t v);
-    static int plm_buffer_read(plm_buffer_t *self, int count);
-    static void plm_buffer_skip(plm_buffer_t *self, size_t count);
-    static int plm_buffer_has(plm_buffer_t *self, size_t count);
-    static void plm_buffer_align(plm_buffer_t *self);
-
-    static int plm_buffer_find_start_code(plm_buffer_t *self, int code);
-    static int plm_buffer_has_start_code(plm_buffer_t *self, int code);
-    static void plm_buffer_discard_read_bytes(plm_buffer_t *self);
-    static int plm_buffer_next_start_code(plm_buffer_t *self);
-    static int plm_buffer_peek_non_zero(plm_buffer_t *self, int bit_count);
-};
-
-
-
-
-
-
 #endif
 
 
