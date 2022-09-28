@@ -373,14 +373,14 @@ void PLM::plm_handle_end() {
     }
 }
 
-void PLM::plm_read_video_packet(plm_buffer_t *buffer, void *user)
+void PLM::plm_read_video_packet(Buffer *buffer, void *user)
 {
     PLM_UNUSED(buffer);
     PLM *plm = (PLM *)(user);
     plm_read_packets(plm, plm->_video_packet_type);
 }
 
-void PLM::plm_read_audio_packet(plm_buffer_t *buffer, void *user)
+void PLM::plm_read_audio_packet(Buffer *buffer, void *user)
 {
     PLM_UNUSED(buffer);
     PLM *plm = (PLM *)(user);
@@ -720,19 +720,19 @@ void Buffer::plm_buffer_discard_read_bytes(plm_buffer_t *self) {
     }
 }
 
-void Buffer::plm_buffer_load_file_callback(plm_buffer_t *self, void *user)
+void Buffer::plm_buffer_load_file_callback(Buffer *self, void *user)
 {
     PLM_UNUSED(user);
     
-    if (self->discard_read_bytes)
-        plm_buffer_discard_read_bytes(self);
+    if (self->_buf->discard_read_bytes)
+        plm_buffer_discard_read_bytes(self->_buf);
 
-    size_t bytes_available = self->capacity - self->length;
-    size_t bytes_read = fread(self->bytes + self->length, 1, bytes_available, self->fh);
-    self->length += bytes_read;
+    size_t bytes_available = self->_buf->capacity - self->_buf->length;
+    size_t bytes_read = fread(self->_buf->bytes + self->_buf->length, 1, bytes_available, self->_buf->fh);
+    self->_buf->length += bytes_read;
 
     if (bytes_read == 0)
-        self->has_ended = TRUE;
+        self->_buf->has_ended = TRUE;
 }
 
 // Get whether the read position of the buffer is at the end and no more data 
@@ -748,7 +748,7 @@ int Buffer::plm_buffer_has(plm_buffer_t *self, size_t count)
 
     if (self->load_callback)
     {
-        self->load_callback(self, self->load_callback_user_data);
+        self->load_callback(this, self->load_callback_user_data);
         
         if (((self->length << 3) - self->bit_index) >= count)
             return TRUE;
@@ -789,9 +789,8 @@ void Buffer::plm_buffer_align(plm_buffer_t *self) {
 
 void Buffer::plm_buffer_skip(plm_buffer_t *self, size_t count)
 {
-    if (plm_buffer_has(self, count)) {
+    if (plm_buffer_has(self, count))
         self->bit_index += count;
-    }
 }
 
 int Buffer::plm_buffer_skip_bytes(plm_buffer_t *self, uint8_t v)
@@ -935,16 +934,16 @@ int Demux::plm_demux_has_headers()
         }
 
         _start_code = PLM_START_SYSTEM;
-        if (!Buffer::plm_buffer_has(_buffer->_buf, 56)) {
+        if (!_buffer->plm_buffer_has(_buffer->_buf, 56)) {
             return FALSE;
         }
         _start_code = -1;
 
-        Buffer::plm_buffer_skip(_buffer->_buf, 16); // header_length
-        Buffer::plm_buffer_skip(_buffer->_buf, 24); // rate bound
-        _num_audio_streams = Buffer::plm_buffer_read(_buffer->_buf, 6);
-        Buffer::plm_buffer_skip(_buffer->_buf, 5); // misc flags
-        _num_video_streams = Buffer::plm_buffer_read(_buffer->_buf, 5);
+        _buffer->plm_buffer_skip(_buffer->_buf, 16); // header_length
+        _buffer->plm_buffer_skip(_buffer->_buf, 24); // rate bound
+        _num_audio_streams = _buffer->plm_buffer_read(_buffer->_buf, 6);
+        _buffer->plm_buffer_skip(_buffer->_buf, 5); // misc flags
+        _num_video_streams = _buffer->plm_buffer_read(_buffer->_buf, 5);
 
         _has_system_header = TRUE;
     }
@@ -1219,10 +1218,10 @@ plm_packet_t *Demux::plm_demux_decode()
     {
         size_t bits_till_next_packet = _current_packet.length << 3;
 
-        if (!Buffer::plm_buffer_has(_buffer->_buf, bits_till_next_packet))
+        if (!_buffer->plm_buffer_has(_buffer->_buf, bits_till_next_packet))
             return NULL;
         
-        Buffer::plm_buffer_skip(_buffer->_buf, bits_till_next_packet);
+        _buffer->plm_buffer_skip(_buffer->_buf, bits_till_next_packet);
         _current_packet.length = 0;
     }
 
@@ -1252,18 +1251,18 @@ plm_packet_t *Demux::plm_demux_decode()
 
 double Demux::plm_demux_decode_time()
 {
-    int64_t clock = Buffer::plm_buffer_read(_buffer->_buf, 3) << 30;
-    Buffer::plm_buffer_skip(_buffer->_buf, 1);
-    clock |= Buffer::plm_buffer_read(_buffer->_buf, 15) << 15;
-    Buffer::plm_buffer_skip(_buffer->_buf, 1);
-    clock |= Buffer::plm_buffer_read(_buffer->_buf, 15);
-    Buffer::plm_buffer_skip(_buffer->_buf, 1);
+    int64_t clock = _buffer->plm_buffer_read(_buffer->_buf, 3) << 30;
+    _buffer->plm_buffer_skip(_buffer->_buf, 1);
+    clock |= _buffer->plm_buffer_read(_buffer->_buf, 15) << 15;
+    _buffer->plm_buffer_skip(_buffer->_buf, 1);
+    clock |= _buffer->plm_buffer_read(_buffer->_buf, 15);
+    _buffer->plm_buffer_skip(_buffer->_buf, 1);
     return (double)clock / 90000.0;
 }
 
 plm_packet_t *Demux::plm_demux_decode_packet(int type) 
 {
-    if (!Buffer::plm_buffer_has(_buffer->_buf, 16 << 3))
+    if (!_buffer->plm_buffer_has(_buffer->_buf, 16 << 3))
         return NULL;
 
     _start_code = -1;
@@ -1273,19 +1272,19 @@ plm_packet_t *Demux::plm_demux_decode_packet(int type)
     _next_packet.length -= _buffer->plm_buffer_skip_bytes(_buffer->_buf, 0xff); // stuffing
 
     // skip P-STD
-    if (Buffer::plm_buffer_read(_buffer->_buf, 2) == 0x01)
+    if (_buffer->plm_buffer_read(_buffer->_buf, 2) == 0x01)
     {
-        Buffer::plm_buffer_skip(_buffer->_buf, 16);
+        _buffer->plm_buffer_skip(_buffer->_buf, 16);
         _next_packet.length -= 2;
     }
 
-    int pts_dts_marker = Buffer::plm_buffer_read(_buffer->_buf, 2);
+    int pts_dts_marker = _buffer->plm_buffer_read(_buffer->_buf, 2);
 
     if (pts_dts_marker == 0x03)
     {
         _next_packet.pts = plm_demux_decode_time();
         _last_decoded_pts = _next_packet.pts;
-        Buffer::plm_buffer_skip(_buffer->_buf, 40); // skip dts
+        _buffer->plm_buffer_skip(_buffer->_buf, 40); // skip dts
         _next_packet.length -= 10;
     }
     else if (pts_dts_marker == 0x02) {
@@ -1295,7 +1294,7 @@ plm_packet_t *Demux::plm_demux_decode_packet(int type)
     }
     else if (pts_dts_marker == 0x00) {
         _next_packet.pts = PLM_PACKET_INVALID_TS;
-        Buffer::plm_buffer_skip(_buffer->_buf, 4);
+        _buffer->plm_buffer_skip(_buffer->_buf, 4);
         _next_packet.length -= 1;
     }
     else {
@@ -1307,7 +1306,7 @@ plm_packet_t *Demux::plm_demux_decode_packet(int type)
 
 plm_packet_t *Demux::plm_demux_get_packet()
 {
-    if (!Buffer::plm_buffer_has(_buffer->_buf, _next_packet.length << 3))
+    if (!_buffer->plm_buffer_has(_buffer->_buf, _next_packet.length << 3))
         return NULL;
 
     _current_packet.data = _buffer->_buf->bytes + (_buffer->_buf->bit_index >> 3);

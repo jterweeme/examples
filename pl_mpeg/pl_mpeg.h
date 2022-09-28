@@ -253,10 +253,11 @@ struct plm_video_motion_t
     int v;
 };
 
+class Buffer;
 typedef struct plm_buffer_t plm_buffer_t;
 
 // Callback function for plm_buffer when it needs more data
-typedef void(*plm_buffer_load_callback)(plm_buffer_t *self, void *user);
+typedef void(*plm_buffer_load_callback)(Buffer *self, void *user);
 
 
 // Callback function type for decoded video frames used by the high-level
@@ -301,7 +302,7 @@ public:
     plm_buffer_t *_buf;
     static void plm_buffer_seek(plm_buffer_t *self, size_t pos);
     static size_t plm_buffer_tell(plm_buffer_t *self);
-    static void plm_buffer_load_file_callback(plm_buffer_t *self, void *user);
+    static void plm_buffer_load_file_callback(Buffer *self, void *user);
     static int plm_buffer_no_start_code(plm_buffer_t *self);
     int16_t plm_buffer_read_vlc(plm_buffer_t *self, const plm_vlc_t *table);
     uint16_t plm_buffer_read_vlc_uint(plm_buffer_t *self, const plm_vlc_uint_t *table);
@@ -322,16 +323,16 @@ public:
     static size_t plm_buffer_get_remaining(plm_buffer_t *self);
     static int plm_buffer_has_ended(plm_buffer_t *self);
     int plm_buffer_skip_bytes(plm_buffer_t *self, uint8_t v);
-    static int plm_buffer_read(plm_buffer_t *self, int count);
-    static void plm_buffer_skip(plm_buffer_t *self, size_t count);
-    static int plm_buffer_has(plm_buffer_t *self, size_t count);
+    int plm_buffer_read(plm_buffer_t *self, int count);
+    void plm_buffer_skip(plm_buffer_t *self, size_t count);
+    int plm_buffer_has(plm_buffer_t *self, size_t count);
     void plm_buffer_align(plm_buffer_t *self);
 
     int plm_buffer_find_start_code(plm_buffer_t *self, int code);
     int plm_buffer_has_start_code(plm_buffer_t *self, int code);
     static void plm_buffer_discard_read_bytes(plm_buffer_t *self);
     int plm_buffer_next_start_code(plm_buffer_t *self);
-    static int plm_buffer_peek_non_zero(plm_buffer_t *self, int bit_count);
+    int plm_buffer_peek_non_zero(plm_buffer_t *self, int bit_count);
 };
 
 class Demux
@@ -527,8 +528,8 @@ private:
     void plm_create_with_memory(uint8_t *bytes, size_t length, int free_when_done);
     void plm_create_with_buffer(Buffer *buffer, int destroy_when_done);
     static void plm_read_packets(PLM *self, int requested_type);
-    static void plm_read_audio_packet(plm_buffer_t *buffer, void *user);
-    static void plm_read_video_packet(plm_buffer_t *buffer, void *user);
+    static void plm_read_audio_packet(Buffer *buffer, void *user);
+    static void plm_read_video_packet(Buffer *buffer, void *user);
     double audio_lead_time;
     int audio_enabled = 0;
     int audio_stream_index = 0;
