@@ -628,7 +628,7 @@ void Video::plm_video_set_time(double time) {
 // Rewind the internal buffer. See plm_buffer_rewind().
 void Video::plm_video_rewind()
 {
-    Buffer::plm_buffer_rewind(_buffer->_buf);
+    _buffer->plm_buffer_rewind(_buffer->_buf);
     _time = 0;
     _frames_decoded = 0;
     _has_reference_frame = FALSE;
@@ -637,7 +637,7 @@ void Video::plm_video_rewind()
 
 // Get whether the file has ended. This will be cleared on rewind.
 int Video::plm_video_has_ended() {
-    return Buffer::plm_buffer_has_ended(_buffer->_buf);
+    return _buffer->plm_buffer_has_ended(_buffer->_buf);
 }
 
 // Decode and return one frame of video and advance the internal time by 
@@ -660,7 +660,7 @@ plm_frame_t *Video::plm_video_decode()
                 // If we reached the end of the file and the previously decoded
                 // frame was a reference frame, we still have to return it.
                 if (_has_reference_frame && !_assume_no_b_frames &&
-                    Buffer::plm_buffer_has_ended(_buffer->_buf) && (
+                    _buffer->plm_buffer_has_ended(_buffer->_buf) && (
                         _picture_type == PLM_VIDEO_PICTURE_TYPE_INTRA ||
                         _picture_type == PLM_VIDEO_PICTURE_TYPE_PREDICTIVE))
                 {

@@ -725,7 +725,7 @@ void Buffer::plm_buffer_load_file_callback(Buffer *self, void *user)
     PLM_UNUSED(user);
     
     if (self->_buf->discard_read_bytes)
-        plm_buffer_discard_read_bytes(self->_buf);
+        self->plm_buffer_discard_read_bytes(self->_buf);
 
     size_t bytes_available = self->_buf->capacity - self->_buf->length;
     size_t bytes_read = fread(self->_buf->bytes + self->_buf->length, 1, bytes_available, self->_buf->fh);
@@ -967,7 +967,7 @@ int Demux::plm_demux_get_num_audio_streams() {
 // Rewind the internal buffer. See plm_buffer_rewind().
 void Demux::plm_demux_rewind()
 {
-    Buffer::plm_buffer_rewind(_buffer->_buf);
+    _buffer->plm_buffer_rewind(_buffer->_buf);
     _current_packet.length = 0;
     _next_packet.length = 0;
     _start_code = -1;
@@ -975,12 +975,12 @@ void Demux::plm_demux_rewind()
 
 // Get whether the file has ended. This will be cleared on seeking or rewind.
 int Demux::plm_demux_has_ended() {
-    return Buffer::plm_buffer_has_ended(_buffer->_buf);
+    return _buffer->plm_buffer_has_ended(_buffer->_buf);
 }
 
 void Demux::plm_demux_buffer_seek(size_t pos)
 {
-    Buffer::plm_buffer_seek(_buffer->_buf, pos);
+    _buffer->plm_buffer_seek(_buffer->_buf, pos);
     _current_packet.length = 0;
     _next_packet.length = 0;
     _start_code = -1;
@@ -993,7 +993,7 @@ double Demux::plm_demux_get_start_time(int type)
     if (_start_time != PLM_PACKET_INVALID_TS)
         return _start_time;
 
-    int previous_pos = Buffer::plm_buffer_tell(_buffer->_buf);
+    int previous_pos = _buffer->plm_buffer_tell(_buffer->_buf);
     int previous_start_code = _start_code;
     
     // Find first video PTS
@@ -1017,12 +1017,12 @@ double Demux::plm_demux_get_start_time(int type)
 // the underlying data source is a file or fixed memory.
 double Demux::plm_demux_get_duration(int type)
 {
-    size_t file_size = Buffer::plm_buffer_get_size(_buffer->_buf);
+    size_t file_size = _buffer->plm_buffer_get_size(_buffer->_buf);
 
     if (_duration != PLM_PACKET_INVALID_TS && _last_file_size == file_size)
         return _duration;
 
-    size_t previous_pos = Buffer::plm_buffer_tell(_buffer->_buf);
+    size_t previous_pos = _buffer->plm_buffer_tell(_buffer->_buf);
     int previous_start_code = _start_code;
     
     // Find last video PTS. Start searching 64kb from the end and go further 
@@ -1084,7 +1084,7 @@ plm_packet_t *Demux::plm_demux_seek(double seek_time, int type, int force_intra)
     // infinite loop. 32 retries should be enough for anybody.
 
     double duration = plm_demux_get_duration(type);
-    long file_size = Buffer::plm_buffer_get_size(_buffer->_buf);
+    long file_size = _buffer->plm_buffer_get_size(_buffer->_buf);
     long byterate = file_size / duration;
 
     double cur_time = _last_decoded_pts;
@@ -1105,7 +1105,7 @@ plm_packet_t *Demux::plm_demux_seek(double seek_time, int type, int force_intra)
         long last_valid_packet_start = -1;
         double first_packet_time = PLM_PACKET_INVALID_TS;
 
-        long cur_pos = Buffer::plm_buffer_tell(_buffer->_buf);
+        long cur_pos = _buffer->plm_buffer_tell(_buffer->_buf);
 
         // Estimate byte offset and jump to it.
         long offset = (seek_time - cur_time - scan_span) * byterate;
@@ -1123,7 +1123,7 @@ plm_packet_t *Demux::plm_demux_seek(double seek_time, int type, int force_intra)
         // containing an intra frame.
         while (_buffer->plm_buffer_find_start_code(_buffer->_buf, type) != -1)
         {
-            long packet_start = Buffer::plm_buffer_tell(_buffer->_buf);
+            long packet_start = _buffer->plm_buffer_tell(_buffer->_buf);
             plm_packet_t *packet = plm_demux_decode_packet(type);
 
             // Skip packet if it has no PTS

@@ -256,7 +256,7 @@ void Audio::plm_audio_set_time(double time)
 // Rewind the internal buffer. See plm_buffer_rewind().
 void Audio::plm_audio_rewind()
 {
-    Buffer::plm_buffer_rewind(_buffer->_buf);
+    _buffer->plm_buffer_rewind(_buffer->_buf);
     _time = 0;
     _samples_decoded = 0;
     _next_frame_data_size = 0;
@@ -264,7 +264,7 @@ void Audio::plm_audio_rewind()
 
 // Get whether the file has ended. This will be cleared on rewind.
 int Audio::plm_audio_has_ended() {
-    return Buffer::plm_buffer_has_ended(_buffer->_buf);
+    return _buffer->plm_buffer_has_ended(_buffer->_buf);
 }
 
 // Decode and return one "frame" of audio and advance the internal time by 
