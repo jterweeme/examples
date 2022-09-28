@@ -357,7 +357,7 @@ private:
     size_t _last_file_size = 0;
     double _last_decoded_pts = 0;
     double _start_time = 0;
-    plm_buffer_t *_buffer;
+    Buffer *_buffer;
 public:
     static constexpr int PLM_DEMUX_PACKET_PRIVATE = 0xBD;
     static constexpr int PLM_DEMUX_PACKET_AUDIO_1 = 0xC0;
@@ -392,7 +392,7 @@ struct plm_quantizer_spec_t
 class Audio
 {
 private:
-    plm_buffer_t *_buffer;
+    Buffer *_buffer;
     int _destroy_buffer_when_done = 0;
     plm_samples_t _samples;
     float _D[1024];
@@ -428,7 +428,7 @@ public:
     int plm_audio_decode_header();
     void plm_audio_decode_frame();
     void plm_audio_read_samples(int ch, int sb, int part);
-    void plm_audio_create_with_buffer(plm_buffer_t *buffer, int destroy_when_done);
+    void plm_audio_create_with_buffer(Buffer *buffer, int destroy_when_done);
 };
 
 class Video
@@ -465,7 +465,7 @@ private:
     plm_video_motion_t _motion_backward;
     int _dc_predictor[3];
 
-    plm_buffer_t *_buffer;
+    Buffer *_buffer;
     int _destroy_buffer_when_done;
 
     plm_frame_t _frame_current;
@@ -504,7 +504,7 @@ public:
     void plm_video_rewind();
     int plm_video_has_ended();
     plm_frame_t *plm_video_decode();
-    void plm_video_create_with_buffer(plm_buffer_t *buffer, int destroy_when_done);
+    void plm_video_create_with_buffer(Buffer *buffer, int destroy_when_done);
 };
 
 class PLM
