@@ -256,7 +256,7 @@ void Audio::plm_audio_set_time(double time)
 // Rewind the internal buffer. See plm_buffer_rewind().
 void Audio::plm_audio_rewind()
 {
-    _buffer->plm_buffer_rewind(_buffer->_buf);
+    _buffer->plm_buffer_rewind();
     _time = 0;
     _samples_decoded = 0;
     _next_frame_data_size = 0;
@@ -275,14 +275,14 @@ plm_samples_t *Audio::plm_audio_decode()
 {
     // Do we have at least enough information to decode the frame header?
     if (!_next_frame_data_size) {
-        if (!_buffer->plm_buffer_has(_buffer->_buf, 48))
+        if (!_buffer->plm_buffer_has(48))
             return NULL;
         
         _next_frame_data_size = plm_audio_decode_header();
     }
 
     if (_next_frame_data_size == 0 ||
-        !_buffer->plm_buffer_has(_buffer->_buf, _next_frame_data_size << 3))
+        !_buffer->plm_buffer_has(_next_frame_data_size << 3))
     {
         return NULL;
     }
@@ -293,9 +293,7 @@ plm_samples_t *Audio::plm_audio_decode()
     _samples.time = _time;
 
     _samples_decoded += PLM_AUDIO_SAMPLES_PER_FRAME;
-    _time = (double)_samples_decoded / 
-        (double)PLM_AUDIO_SAMPLE_RATE[_samplerate_index];
-    
+    _time = (double)_samples_decoded / (double)PLM_AUDIO_SAMPLE_RATE[_samplerate_index];
     return &_samples;
 }
 
@@ -316,11 +314,11 @@ int Audio::plm_audio_find_frame_sync()
 
 int Audio::plm_audio_decode_header()
 {
-    if (!_buffer->plm_buffer_has(_buffer->_buf, 48))
+    if (!_buffer->plm_buffer_has(48))
         return 0;
 
-    _buffer->plm_buffer_skip_bytes(_buffer->_buf, 0x00);
-    int sync = _buffer->plm_buffer_read(_buffer->_buf, 11);
+    _buffer->plm_buffer_skip_bytes(0x00);
+    int sync = _buffer->plm_buffer_read(11);
 
 
     // Attempt to resync if no syncword was found. This sucks balls. The MP2 
@@ -333,24 +331,24 @@ int Audio::plm_audio_decode_header()
     if (sync != PLM_AUDIO_FRAME_SYNC && !plm_audio_find_frame_sync())
         return 0;
 
-    _version = _buffer->plm_buffer_read(_buffer->_buf, 2);
-    _layer = _buffer->plm_buffer_read(_buffer->_buf, 2);
-    int hasCRC = !_buffer->plm_buffer_read(_buffer->_buf, 1);
+    _version = _buffer->plm_buffer_read(2);
+    _layer = _buffer->plm_buffer_read(2);
+    int hasCRC = !_buffer->plm_buffer_read(1);
 
     if (_version != PLM_AUDIO_MPEG_1 || _layer != PLM_AUDIO_LAYER_II)
         return 0;
 
-    int bitrate_index = _buffer->plm_buffer_read(_buffer->_buf, 4) - 1;
+    int bitrate_index = _buffer->plm_buffer_read(4) - 1;
     if (bitrate_index > 13)
         return 0;
 
-    int samplerate_index = _buffer->plm_buffer_read(_buffer->_buf, 2);
+    int samplerate_index = _buffer->plm_buffer_read(2);
     if (samplerate_index == 3)
         return 0;
 
-    int padding = _buffer->plm_buffer_read(_buffer->_buf, 1);
-    _buffer->plm_buffer_skip(_buffer->_buf, 1); // f_private
-    int mode = _buffer->plm_buffer_read(_buffer->_buf, 2);
+    int padding = _buffer->plm_buffer_read(1);
+    _buffer->plm_buffer_skip(1); // f_private
+    int mode = _buffer->plm_buffer_read(2);
 
     // If we already have a header, make sure the samplerate, bitrate and mode
     // are still the same, otherwise we might have missed sync.
@@ -367,18 +365,18 @@ int Audio::plm_audio_decode_header()
 
     // Parse the mode_extension, set up the stereo bound
     if (mode == PLM_AUDIO_MODE_JOINT_STEREO) {
-        _bound = (_buffer->plm_buffer_read(_buffer->_buf, 2) + 1) << 2;
+        _bound = (_buffer->plm_buffer_read(2) + 1) << 2;
     }
     else {
-        _buffer->plm_buffer_skip(_buffer->_buf, 2);
+        _buffer->plm_buffer_skip(2);
         _bound = mode == PLM_AUDIO_MODE_MONO ? 0 : 32;
     }
 
     // Discard the last 4 bits of the header and the CRC value, if present
-    _buffer->plm_buffer_skip(_buffer->_buf, 4); // copyright(1), original(1), emphasis(2)
+    _buffer->plm_buffer_skip(4); // copyright(1), original(1), emphasis(2)
 
     if (hasCRC)
-        _buffer->plm_buffer_skip(_buffer->_buf, 16);
+        _buffer->plm_buffer_skip(16);
 
     // Compute frame size, check if we have enough data to decode the whole
     // frame.
@@ -418,7 +416,7 @@ void Audio::plm_audio_decode_frame()
     {
         for (int ch = 0; ch < channels; ch++)
             if (_allocation[ch][sb])
-                _scale_factor_info[ch][sb] = _buffer->plm_buffer_read(_buffer->_buf, 2);
+                _scale_factor_info[ch][sb] = _buffer->plm_buffer_read(2);
         
         if (_mode == PLM_AUDIO_MODE_MONO)
             _scale_factor_info[1][sb] = _scale_factor_info[0][sb];
@@ -431,24 +429,24 @@ void Audio::plm_audio_decode_frame()
                 int *sf = _scale_factor[ch][sb];
                 switch (_scale_factor_info[ch][sb]) {
                     case 0:
-                        sf[0] = _buffer->plm_buffer_read(_buffer->_buf, 6);
-                        sf[1] = _buffer->plm_buffer_read(_buffer->_buf, 6);
-                        sf[2] = _buffer->plm_buffer_read(_buffer->_buf, 6);
+                        sf[0] = _buffer->plm_buffer_read(6);
+                        sf[1] = _buffer->plm_buffer_read(6);
+                        sf[2] = _buffer->plm_buffer_read(6);
                         break;
                     case 1:
                         sf[0] = 
-                        sf[1] = _buffer->plm_buffer_read(_buffer->_buf, 6);
-                        sf[2] = _buffer->plm_buffer_read(_buffer->_buf, 6);
+                        sf[1] = _buffer->plm_buffer_read(6);
+                        sf[2] = _buffer->plm_buffer_read(6);
                         break;
                     case 2:
                         sf[0] = 
                         sf[1] = 
-                        sf[2] = _buffer->plm_buffer_read(_buffer->_buf, 6);
+                        sf[2] = _buffer->plm_buffer_read(6);
                         break;
                     case 3:
-                        sf[0] = _buffer->plm_buffer_read(_buffer->_buf, 6);
+                        sf[0] = _buffer->plm_buffer_read(6);
                         sf[1] = 
-                        sf[2] = _buffer->plm_buffer_read(_buffer->_buf, 6);
+                        sf[2] = _buffer->plm_buffer_read(6);
                         break;
                 }
             }
@@ -535,7 +533,7 @@ void Audio::plm_audio_decode_frame()
         } // Decoding of the granule finished
     }
 
-    _buffer->plm_buffer_align(_buffer->_buf);
+    _buffer->plm_buffer_align();
 }
 
 void Audio::plm_audio_read_samples(int ch, int sb, int part)
@@ -564,7 +562,7 @@ void Audio::plm_audio_read_samples(int ch, int sb, int part)
     int adj = q->levels;
     if (q->group) {
         // Decode grouped samples
-        val = _buffer->plm_buffer_read(_buffer->_buf, q->bits);
+        val = _buffer->plm_buffer_read(q->bits);
         sample[0] = val % adj;
         val /= adj;
         sample[1] = val % adj;
@@ -572,9 +570,9 @@ void Audio::plm_audio_read_samples(int ch, int sb, int part)
     }
     else {
         // Decode direct samples
-        sample[0] = _buffer->plm_buffer_read(_buffer->_buf, q->bits);
-        sample[1] = _buffer->plm_buffer_read(_buffer->_buf, q->bits);
-        sample[2] = _buffer->plm_buffer_read(_buffer->_buf, q->bits);
+        sample[0] = _buffer->plm_buffer_read(q->bits);
+        sample[1] = _buffer->plm_buffer_read(q->bits);
+        sample[2] = _buffer->plm_buffer_read(q->bits);
     }
 
     // Postmultiply samples
@@ -773,7 +771,7 @@ void Audio::plm_audio_idct36(int s[32][3], int ss, float *d, int dp)
 const plm_quantizer_spec_t *Audio::plm_audio_read_allocation(int sb, int tab3)
 {
     int tab4 = PLM_AUDIO_QUANT_LUT_STEP_3[tab3][sb];
-    int qtab = PLM_AUDIO_QUANT_LUT_STEP_4[tab4 & 15][_buffer->plm_buffer_read(_buffer->_buf, tab4 >> 4)];
+    int qtab = PLM_AUDIO_QUANT_LUT_STEP_4[tab4 & 15][_buffer->plm_buffer_read(tab4 >> 4)];
     return qtab ? (&PLM_AUDIO_QUANT_TAB[qtab - 1]) : 0;
 }
 
