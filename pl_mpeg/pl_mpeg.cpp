@@ -525,15 +525,20 @@ void Buffer::plm_buffer_create_with_filename(const char *filename)
     plm_buffer_create_with_file(fh, TRUE);
 }
 
+size_t Buffer::bit_index() const
+{
+    return _buf->bit_index;
+}
+
 // Create a buffer instance with a file handle. Pass TRUE to close_when_done
 // to let plmpeg call fclose() on the handle when plm_destroy() is called.
 void Buffer::plm_buffer_create_with_file(FILE *fh, int close_when_done)
 {
     _buf = plm_buffer_create_with_capacity(PLM_BUFFER_DEFAULT_SIZE);
     _buf->fh = fh;
-    _buf->close_when_done = close_when_done;
+    _close_when_done = close_when_done;
     _buf->mode = PLM_BUFFER_MODE_FILE;
-    _buf->discard_read_bytes = TRUE;
+    _discard_read_bytes = TRUE;
     
     fseek(_buf->fh, 0, SEEK_END);
     _buf->total_size = ftell(_buf->fh);
@@ -570,10 +575,10 @@ plm_buffer_t *Buffer::plm_buffer_create_with_capacity(size_t capacity)
     plm_buffer_t *self = (plm_buffer_t *)malloc(sizeof(plm_buffer_t));
     memset(self, 0, sizeof(plm_buffer_t));
     self->capacity = capacity;
-    self->free_when_done = TRUE;
+    _free_when_done = TRUE;
     self->bytes = (uint8_t *)malloc(capacity);
     self->mode = PLM_BUFFER_MODE_RING;
-    self->discard_read_bytes = TRUE;
+    _discard_read_bytes = TRUE;
     return self;
 }
 
@@ -594,10 +599,10 @@ plm_buffer_t *Buffer::plm_buffer_create_for_appending(size_t initial_capacity)
 // Destroy a buffer instance and free all data
 void Buffer::plm_buffer_destroy()
 {
-    if (_buf->fh && _buf->close_when_done)
+    if (_buf->fh && _close_when_done)
         fclose(_buf->fh);
     
-    if (_buf->free_when_done)
+    if (_free_when_done)
         free(_buf->bytes);
     
     free(_buf);
@@ -625,7 +630,7 @@ size_t Buffer::plm_buffer_write(uint8_t *bytes, size_t length)
     if (_buf->mode == PLM_BUFFER_MODE_FIXED_MEM)
         return 0;
 
-    if (_buf->discard_read_bytes) {
+    if (_discard_read_bytes) {
         // This should be a ring buffer, but instead it just shifts all unread 
         // data to the beginning of the buffer and appends new data at the end. 
         // Seems to be good enough.
@@ -648,7 +653,7 @@ size_t Buffer::plm_buffer_write(uint8_t *bytes, size_t length)
 
     memcpy(_buf->bytes + _buf->length, bytes, length);
     _buf->length += length;
-    _buf->has_ended = FALSE;
+    _has_ended = FALSE;
     return length;
 }
 
@@ -663,8 +668,8 @@ void Buffer::plm_buffer_signal_end() {
 // Set a callback that is called whenever the buffer needs more data
 void Buffer::plm_buffer_set_load_callback(plm_buffer_load_callback fp, void *user)
 {
-    _buf->load_callback = fp;
-    _buf->load_callback_user_data = user;
+    _load_callback = fp;
+    _load_callback_user_data = user;
 }
 
 // Rewind the buffer back to the beginning. When loading from a file handle,
@@ -675,7 +680,7 @@ void Buffer::plm_buffer_rewind() {
 
 void Buffer::plm_buffer_seek(size_t pos)
 {
-    _buf->has_ended = FALSE;
+    _has_ended = FALSE;
 
     if (_buf->mode == PLM_BUFFER_MODE_FILE)
     {
@@ -721,7 +726,7 @@ void Buffer::plm_buffer_load_file_callback(Buffer *self, void *user)
 {
     PLM_UNUSED(user);
     
-    if (self->_buf->discard_read_bytes)
+    if (self->_discard_read_bytes)
         self->plm_buffer_discard_read_bytes();
 
     size_t bytes_available = self->_buf->capacity - self->_buf->length;
@@ -729,13 +734,13 @@ void Buffer::plm_buffer_load_file_callback(Buffer *self, void *user)
     self->_buf->length += bytes_read;
 
     if (bytes_read == 0)
-        self->_buf->has_ended = TRUE;
+        self->_has_ended = TRUE;
 }
 
 // Get whether the read position of the buffer is at the end and no more data 
 // is expected.
 int Buffer::plm_buffer_has_ended() {
-    return _buf->has_ended;
+    return _has_ended;
 }
 
 int Buffer::plm_buffer_has(size_t count)
@@ -743,16 +748,16 @@ int Buffer::plm_buffer_has(size_t count)
     if (((_buf->length << 3) - _buf->bit_index) >= count)
         return TRUE;
 
-    if (_buf->load_callback)
+    if (_load_callback)
     {
-        _buf->load_callback(this, _buf->load_callback_user_data);
+        _load_callback(this, _load_callback_user_data);
         
         if (((_buf->length << 3) - _buf->bit_index) >= count)
             return TRUE;
     }   
     
     if (_buf->total_size != 0 && _buf->length == _buf->total_size)
-        _buf->has_ended = TRUE;
+        _has_ended = TRUE;
     
     return FALSE;
 }
@@ -833,13 +838,13 @@ int Buffer::plm_buffer_find_start_code(int code) {
 
 int Buffer::plm_buffer_has_start_code(int code) {
     size_t previous_bit_index = _buf->bit_index;
-    int previous_discard_read_bytes = _buf->discard_read_bytes;
+    int previous_discard_read_bytes = _discard_read_bytes;
     
-    _buf->discard_read_bytes = FALSE;
+    _discard_read_bytes = FALSE;
     int current = plm_buffer_find_start_code(code);
 
     _buf->bit_index = previous_bit_index;
-    _buf->discard_read_bytes = previous_discard_read_bytes;
+    _discard_read_bytes = previous_discard_read_bytes;
     return current;
 }
 
@@ -1306,7 +1311,7 @@ plm_packet_t *Demux::plm_demux_get_packet()
     if (!_buffer->plm_buffer_has(_next_packet.length << 3))
         return NULL;
 
-    _current_packet.data = _buffer->_buf->bytes + (_buffer->_buf->bit_index >> 3);
+    _current_packet.data = _buffer->_buf->bytes + (_buffer->bit_index() >> 3);
     _current_packet.length = _next_packet.length;
     _current_packet.type = _next_packet.type;
     _current_packet.pts = _next_packet.pts;

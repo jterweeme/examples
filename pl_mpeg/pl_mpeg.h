@@ -285,13 +285,8 @@ typedef struct plm_buffer_t {
     size_t capacity;
     size_t length;
     size_t total_size;
-    int discard_read_bytes;
-    int has_ended;
-    int free_when_done;
-    int close_when_done;
+
     FILE *fh;
-    plm_buffer_load_callback load_callback;
-    void *load_callback_user_data;
     uint8_t *bytes;
     enum plm_buffer_mode mode;
 } plm_buffer_t;
@@ -299,7 +294,12 @@ typedef struct plm_buffer_t {
 class Buffer
 {
 private:
-
+    plm_buffer_load_callback _load_callback;
+    void *_load_callback_user_data;
+    int _discard_read_bytes = 0;
+    int _has_ended = 0;
+    int _free_when_done = 0;
+    int _close_when_done = 0;
 public:
     plm_buffer_t *_buf;
     void plm_buffer_seek(size_t pos);
@@ -309,6 +309,7 @@ public:
     uint16_t plm_buffer_read_vlc_uint(const plm_vlc_uint_t *table);
     void plm_buffer_create_with_filename(const char *filename);
     void plm_buffer_create_with_file(FILE *fh, int close_when_done);
+    size_t bit_index() const;
 #if 0
     plm_buffer_t *plm_buffer_create_for_appending(size_t initial_capacity);
 
