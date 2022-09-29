@@ -390,9 +390,9 @@ void PLM::plm_read_packets(PLM *self, int requested_type)
     while ((packet = self->_demux.plm_demux_decode()))
     {
         if (packet->type == self->_video_packet_type)
-            self->_video_buffer.plm_buffer_write(self->_video_buffer._buf, packet->data, packet->length);
+            self->_video_buffer.plm_buffer_write(packet->data, packet->length);
         else if (packet->type == self->audio_packet_type)
-            self->_audio_buffer.plm_buffer_write(self->_audio_buffer._buf, packet->data, packet->length);
+            self->_audio_buffer.plm_buffer_write(packet->data, packet->length);
 
         if (packet->type == requested_type)
             return;
@@ -401,10 +401,10 @@ void PLM::plm_read_packets(PLM *self, int requested_type)
     if (self->_demux.plm_demux_has_ended())
     {
         if (self->_video_buffer._buf)
-            self->_video_buffer.plm_buffer_signal_end(self->_video_buffer._buf);
+            self->_video_buffer.plm_buffer_signal_end();
         
         if (self->_audio_buffer._buf)
-            self->_audio_buffer.plm_buffer_signal_end(self->_audio_buffer._buf);
+            self->_audio_buffer.plm_buffer_signal_end();
     }
 }
 
@@ -443,7 +443,7 @@ plm_frame_t *PLM::plm_seek_frame(double time, int seek_exact)
     // Clear video buffer and decode the found packet
     _video.plm_video_rewind();
     _video.plm_video_set_time(packet->pts - start_time);
-    _video_buffer.plm_buffer_write(_video_buffer._buf, packet->data, packet->length);
+    _video_buffer.plm_buffer_write(packet->data, packet->length);
     plm_frame_t *frame = _video.plm_video_decode(); 
 
     // If we want to seek to an exact frame, we have to decode all frames
@@ -499,12 +499,12 @@ int PLM::plm_seek(double time, int seek_exact)
     while ((packet = _demux.plm_demux_decode()))
     {
         if (packet->type == _video_packet_type) {
-            _video_buffer.plm_buffer_write(_video_buffer._buf, packet->data, packet->length);
+            _video_buffer.plm_buffer_write(packet->data, packet->length);
         }
         else if (packet->type == audio_packet_type && packet->pts - start_time > _time)
         {
             _audio.plm_audio_set_time(packet->pts - start_time);
-            _audio_buffer.plm_buffer_write(_audio_buffer._buf, packet->data, packet->length);
+            _audio_buffer.plm_buffer_write(packet->data, packet->length);
             plm_decode(0);
             break;
         }
@@ -592,26 +592,26 @@ plm_buffer_t *Buffer::plm_buffer_create_for_appending(size_t initial_capacity)
 #endif
 
 // Destroy a buffer instance and free all data
-void Buffer::plm_buffer_destroy(plm_buffer_t *self)
+void Buffer::plm_buffer_destroy()
 {
-    if (self->fh && self->close_when_done)
-        fclose(self->fh);
+    if (_buf->fh && _buf->close_when_done)
+        fclose(_buf->fh);
     
-    if (self->free_when_done)
-        free(self->bytes);
+    if (_buf->free_when_done)
+        free(_buf->bytes);
     
-    free(self);
+    free(_buf);
 }
 
 // Get the total size. For files, this returns the file size. For all other 
 // types it returns the number of bytes currently in the buffer.
-size_t Buffer::plm_buffer_get_size(plm_buffer_t *) {
+size_t Buffer::plm_buffer_get_size() {
     return _buf->mode == PLM_BUFFER_MODE_FILE ? _buf->total_size : _buf->length;
 }
 
 // Get the number of remaining (yet unread) bytes in the buffer. This can be
 // useful to throttle writing.
-size_t Buffer::plm_buffer_get_remaining(plm_buffer_t *) {
+size_t Buffer::plm_buffer_get_remaining() {
     return _buf->length - (_buf->bit_index >> 3);
 }
 
@@ -620,35 +620,35 @@ size_t Buffer::plm_buffer_get_remaining(plm_buffer_t *) {
 // Returns the number of bytes written. This will always be the same as the
 // passed in length, except when the buffer was created _with_memory() for
 // which _write() is forbidden.
-size_t Buffer::plm_buffer_write(plm_buffer_t *self, uint8_t *bytes, size_t length)
+size_t Buffer::plm_buffer_write(uint8_t *bytes, size_t length)
 {
-    if (self->mode == PLM_BUFFER_MODE_FIXED_MEM)
+    if (_buf->mode == PLM_BUFFER_MODE_FIXED_MEM)
         return 0;
 
-    if (self->discard_read_bytes) {
+    if (_buf->discard_read_bytes) {
         // This should be a ring buffer, but instead it just shifts all unread 
         // data to the beginning of the buffer and appends new data at the end. 
         // Seems to be good enough.
 
-        plm_buffer_discard_read_bytes(self);
-        if (self->mode == PLM_BUFFER_MODE_RING)
-            self->total_size = 0;
+        plm_buffer_discard_read_bytes();
+        if (_buf->mode == PLM_BUFFER_MODE_RING)
+            _buf->total_size = 0;
     }
 
     // Do we have to resize to fit the new data?
-    size_t bytes_available = self->capacity - self->length;
+    size_t bytes_available = _buf->capacity - _buf->length;
     if (bytes_available < length) {
-        size_t new_size = self->capacity;
+        size_t new_size = _buf->capacity;
         do {
             new_size *= 2;
-        } while (new_size - self->length < length);
-        self->bytes = (uint8_t *)realloc(self->bytes, new_size);
-        self->capacity = new_size;
+        } while (new_size - _buf->length < length);
+        _buf->bytes = (uint8_t *)realloc(_buf->bytes, new_size);
+        _buf->capacity = new_size;
     }
 
-    memcpy(self->bytes + self->length, bytes, length);
-    self->length += length;
-    self->has_ended = FALSE;
+    memcpy(_buf->bytes + _buf->length, bytes, length);
+    _buf->length += length;
+    _buf->has_ended = FALSE;
     return length;
 }
 
@@ -656,7 +656,7 @@ size_t Buffer::plm_buffer_write(plm_buffer_t *self, uint8_t *bytes, size_t lengt
 // more data is expected to be written to it. This function should be called
 // just after the last plm_buffer_write().
 // For _with_capacity buffers, this is cleared on a plm_buffer_rewind().
-void Buffer::plm_buffer_signal_end(plm_buffer_t *) {
+void Buffer::plm_buffer_signal_end() {
     _buf->total_size = _buf->length;
 }
 
@@ -670,50 +670,50 @@ void Buffer::plm_buffer_set_load_callback(plm_buffer_load_callback fp, void *use
 // Rewind the buffer back to the beginning. When loading from a file handle,
 // this also seeks to the beginning of the file.
 void Buffer::plm_buffer_rewind() {
-    plm_buffer_seek(_buf, 0);
+    plm_buffer_seek(0);
 }
 
-void Buffer::plm_buffer_seek(plm_buffer_t *self, size_t pos)
+void Buffer::plm_buffer_seek(size_t pos)
 {
-    self->has_ended = FALSE;
+    _buf->has_ended = FALSE;
 
-    if (self->mode == PLM_BUFFER_MODE_FILE)
+    if (_buf->mode == PLM_BUFFER_MODE_FILE)
     {
-        fseek(self->fh, pos, SEEK_SET);
-        self->bit_index = 0;
-        self->length = 0;
+        fseek(_buf->fh, pos, SEEK_SET);
+        _buf->bit_index = 0;
+        _buf->length = 0;
     }
-    else if (self->mode == PLM_BUFFER_MODE_RING)
+    else if (_buf->mode == PLM_BUFFER_MODE_RING)
     {
         if (pos != 0) {
             // Seeking to non-0 is forbidden for dynamic-mem buffers
             return; 
         }
-        self->bit_index = 0;
-        self->length = 0;
-        self->total_size = 0;
+        _buf->bit_index = 0;
+        _buf->length = 0;
+        _buf->total_size = 0;
     }
-    else if (pos < self->length) {
-        self->bit_index = pos << 3;
+    else if (pos < _buf->length) {
+        _buf->bit_index = pos << 3;
     }
 }
 
-size_t Buffer::plm_buffer_tell(plm_buffer_t *self) {
-    return self->mode == PLM_BUFFER_MODE_FILE
-        ? ftell(self->fh) + (self->bit_index >> 3) - self->length
-        : self->bit_index >> 3;
+size_t Buffer::plm_buffer_tell() {
+    return _buf->mode == PLM_BUFFER_MODE_FILE
+        ? ftell(_buf->fh) + (_buf->bit_index >> 3) - _buf->length
+        : _buf->bit_index >> 3;
 }
 
-void Buffer::plm_buffer_discard_read_bytes(plm_buffer_t *self) {
-    size_t byte_pos = self->bit_index >> 3;
-    if (byte_pos == self->length) {
-        self->bit_index = 0;
-        self->length = 0;
+void Buffer::plm_buffer_discard_read_bytes() {
+    size_t byte_pos = _buf->bit_index >> 3;
+    if (byte_pos == _buf->length) {
+        _buf->bit_index = 0;
+        _buf->length = 0;
     }
     else if (byte_pos > 0) {
-        memmove(self->bytes, self->bytes + byte_pos, self->length - byte_pos);
-        self->bit_index -= byte_pos << 3;
-        self->length -= byte_pos;
+        memmove(_buf->bytes, _buf->bytes + byte_pos, _buf->length - byte_pos);
+        _buf->bit_index -= byte_pos << 3;
+        _buf->length -= byte_pos;
     }
 }
 
@@ -722,7 +722,7 @@ void Buffer::plm_buffer_load_file_callback(Buffer *self, void *user)
     PLM_UNUSED(user);
     
     if (self->_buf->discard_read_bytes)
-        self->plm_buffer_discard_read_bytes(self->_buf);
+        self->plm_buffer_discard_read_bytes();
 
     size_t bytes_available = self->_buf->capacity - self->_buf->length;
     size_t bytes_read = fread(self->_buf->bytes + self->_buf->length, 1, bytes_available, self->_buf->fh);
@@ -734,8 +734,8 @@ void Buffer::plm_buffer_load_file_callback(Buffer *self, void *user)
 
 // Get whether the read position of the buffer is at the end and no more data 
 // is expected.
-int Buffer::plm_buffer_has_ended(plm_buffer_t *self) {
-    return self->has_ended;
+int Buffer::plm_buffer_has_ended() {
+    return _buf->has_ended;
 }
 
 int Buffer::plm_buffer_has(size_t count)
@@ -853,7 +853,7 @@ int Buffer::plm_buffer_peek_non_zero(int bit_count)
     return val != 0;
 }
 
-int16_t Buffer::plm_buffer_read_vlc(plm_buffer_t *, const plm_vlc_t *table)
+int16_t Buffer::plm_buffer_read_vlc(const plm_vlc_t *table)
 {
     plm_vlc_t state = {0, 0};
     do {
@@ -862,8 +862,8 @@ int16_t Buffer::plm_buffer_read_vlc(plm_buffer_t *, const plm_vlc_t *table)
     return state.value;
 }
 
-uint16_t Buffer::plm_buffer_read_vlc_uint(plm_buffer_t *, const plm_vlc_uint_t *table) {
-    return (uint16_t)plm_buffer_read_vlc(_buf, (const plm_vlc_t *)table);
+uint16_t Buffer::plm_buffer_read_vlc_uint(const plm_vlc_uint_t *table) {
+    return (uint16_t)plm_buffer_read_vlc((const plm_vlc_t *)(table));
 }
 
 // Create a demuxer with a plm_buffer as source. This will also attempt to read
@@ -884,7 +884,7 @@ void Demux::plm_demux_create(Buffer *buffer, int destroy_when_done)
 void Demux::plm_demux_destroy()
 {
     if (_destroy_buffer_when_done)
-        _buffer->plm_buffer_destroy(_buffer->_buf);
+        _buffer->plm_buffer_destroy();
 }
 
 // Returns TRUE/FALSE whether pack and system headers have been found. This will
@@ -972,12 +972,12 @@ void Demux::plm_demux_rewind()
 
 // Get whether the file has ended. This will be cleared on seeking or rewind.
 int Demux::plm_demux_has_ended() {
-    return _buffer->plm_buffer_has_ended(_buffer->_buf);
+    return _buffer->plm_buffer_has_ended();
 }
 
 void Demux::plm_demux_buffer_seek(size_t pos)
 {
-    _buffer->plm_buffer_seek(_buffer->_buf, pos);
+    _buffer->plm_buffer_seek(pos);
     _current_packet.length = 0;
     _next_packet.length = 0;
     _start_code = -1;
@@ -990,7 +990,7 @@ double Demux::plm_demux_get_start_time(int type)
     if (_start_time != PLM_PACKET_INVALID_TS)
         return _start_time;
 
-    int previous_pos = _buffer->plm_buffer_tell(_buffer->_buf);
+    int previous_pos = _buffer->plm_buffer_tell();
     int previous_start_code = _start_code;
     
     // Find first video PTS
@@ -1014,12 +1014,12 @@ double Demux::plm_demux_get_start_time(int type)
 // the underlying data source is a file or fixed memory.
 double Demux::plm_demux_get_duration(int type)
 {
-    size_t file_size = _buffer->plm_buffer_get_size(_buffer->_buf);
+    size_t file_size = _buffer->plm_buffer_get_size();
 
     if (_duration != PLM_PACKET_INVALID_TS && _last_file_size == file_size)
         return _duration;
 
-    size_t previous_pos = _buffer->plm_buffer_tell(_buffer->_buf);
+    size_t previous_pos = _buffer->plm_buffer_tell();
     int previous_start_code = _start_code;
     
     // Find last video PTS. Start searching 64kb from the end and go further 
@@ -1081,7 +1081,7 @@ plm_packet_t *Demux::plm_demux_seek(double seek_time, int type, int force_intra)
     // infinite loop. 32 retries should be enough for anybody.
 
     double duration = plm_demux_get_duration(type);
-    long file_size = _buffer->plm_buffer_get_size(_buffer->_buf);
+    long file_size = _buffer->plm_buffer_get_size();
     long byterate = file_size / duration;
 
     double cur_time = _last_decoded_pts;
@@ -1102,7 +1102,7 @@ plm_packet_t *Demux::plm_demux_seek(double seek_time, int type, int force_intra)
         long last_valid_packet_start = -1;
         double first_packet_time = PLM_PACKET_INVALID_TS;
 
-        long cur_pos = _buffer->plm_buffer_tell(_buffer->_buf);
+        long cur_pos = _buffer->plm_buffer_tell();
 
         // Estimate byte offset and jump to it.
         long offset = (seek_time - cur_time - scan_span) * byterate;
@@ -1120,7 +1120,7 @@ plm_packet_t *Demux::plm_demux_seek(double seek_time, int type, int force_intra)
         // containing an intra frame.
         while (_buffer->plm_buffer_find_start_code(type) != -1)
         {
-            long packet_start = _buffer->plm_buffer_tell(_buffer->_buf);
+            long packet_start = _buffer->plm_buffer_tell();
             plm_packet_t *packet = plm_demux_decode_packet(type);
 
             // Skip packet if it has no PTS

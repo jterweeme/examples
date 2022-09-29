@@ -302,12 +302,11 @@ private:
 
 public:
     plm_buffer_t *_buf;
-    void plm_buffer_seek(plm_buffer_t *self, size_t pos);
-    size_t plm_buffer_tell(plm_buffer_t *self);
+    void plm_buffer_seek(size_t pos);
+    size_t plm_buffer_tell();
     static void plm_buffer_load_file_callback(Buffer *self, void *user);
-    int plm_buffer_no_start_code(plm_buffer_t *self);
-    int16_t plm_buffer_read_vlc(plm_buffer_t *self, const plm_vlc_t *table);
-    uint16_t plm_buffer_read_vlc_uint(plm_buffer_t *self, const plm_vlc_uint_t *table);
+    int16_t plm_buffer_read_vlc(const plm_vlc_t *table);
+    uint16_t plm_buffer_read_vlc_uint(const plm_vlc_uint_t *table);
     void plm_buffer_create_with_filename(const char *filename);
     void plm_buffer_create_with_file(FILE *fh, int close_when_done);
 #if 0
@@ -317,14 +316,14 @@ public:
         uint8_t *bytes, size_t length, int free_when_done);
 #endif
     plm_buffer_t *plm_buffer_create_with_capacity(size_t capacity);
-    void plm_buffer_destroy(plm_buffer_t *self);
-    size_t plm_buffer_write(plm_buffer_t *self, uint8_t *bytes, size_t length);
-    void plm_buffer_signal_end(plm_buffer_t *self);
+    void plm_buffer_destroy();
+    size_t plm_buffer_write(uint8_t *bytes, size_t length);
+    void plm_buffer_signal_end();
     void plm_buffer_set_load_callback(plm_buffer_load_callback fp, void *user);
     void plm_buffer_rewind();
-    size_t plm_buffer_get_size(plm_buffer_t *self);
-    size_t plm_buffer_get_remaining(plm_buffer_t *self);
-    int plm_buffer_has_ended(plm_buffer_t *self);
+    size_t plm_buffer_get_size();
+    size_t plm_buffer_get_remaining();
+    int plm_buffer_has_ended();
     int plm_buffer_skip_bytes(uint8_t v);
     int plm_buffer_read(int count);
     void plm_buffer_skip(size_t count);
@@ -332,7 +331,7 @@ public:
     void plm_buffer_align();
     int plm_buffer_find_start_code(int code);
     int plm_buffer_has_start_code(int code);
-    void plm_buffer_discard_read_bytes(plm_buffer_t *self);
+    void plm_buffer_discard_read_bytes();
     int plm_buffer_next_start_code();
     int plm_buffer_peek_non_zero(int bit_count);
 };

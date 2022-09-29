@@ -219,7 +219,7 @@ void Audio::plm_audio_create_with_buffer(Buffer *buffer, int destroy_when_done)
 void Audio::plm_audio_destroy()
 {
     if (_destroy_buffer_when_done)
-        _buffer->plm_buffer_destroy(_buffer->_buf);
+        _buffer->plm_buffer_destroy();
 }
 
 // Get whether a frame header was found and we can accurately report on
@@ -264,7 +264,7 @@ void Audio::plm_audio_rewind()
 
 // Get whether the file has ended. This will be cleared on rewind.
 int Audio::plm_audio_has_ended() {
-    return _buffer->plm_buffer_has_ended(_buffer->_buf);
+    return _buffer->plm_buffer_has_ended();
 }
 
 // Decode and return one "frame" of audio and advance the internal time by 

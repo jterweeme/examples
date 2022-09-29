@@ -585,7 +585,7 @@ void Video::plm_video_create_with_buffer(Buffer *buffer, int destroy_when_done)
 void Video::plm_video_destroy()
 {
     if (_destroy_buffer_when_done)
-        _buffer->plm_buffer_destroy(_buffer->_buf);
+        _buffer->plm_buffer_destroy();
 
     if (_has_sequence_header)
         delete[] _frames_data;
@@ -637,7 +637,7 @@ void Video::plm_video_rewind()
 
 // Get whether the file has ended. This will be cleared on rewind.
 int Video::plm_video_has_ended() {
-    return _buffer->plm_buffer_has_ended(_buffer->_buf);
+    return _buffer->plm_buffer_has_ended();
 }
 
 // Decode and return one frame of video and advance the internal time by 
@@ -660,7 +660,7 @@ plm_frame_t *Video::plm_video_decode()
                 // If we reached the end of the file and the previously decoded
                 // frame was a reference frame, we still have to return it.
                 if (_has_reference_frame && !_assume_no_b_frames &&
-                    _buffer->plm_buffer_has_ended(_buffer->_buf) && (
+                    _buffer->plm_buffer_has_ended() && (
                         _picture_type == PLM_VIDEO_PICTURE_TYPE_INTRA ||
                         _picture_type == PLM_VIDEO_PICTURE_TYPE_PREDICTIVE))
                 {
@@ -679,11 +679,11 @@ plm_frame_t *Video::plm_video_decode()
         // next picture, but the source has ended, we assume that this last
         // picture is in the buffer.
         if (_buffer->plm_buffer_has_start_code(PLM_START_PICTURE) == -1 &&
-            !_buffer->plm_buffer_has_ended(_buffer->_buf))
+            !_buffer->plm_buffer_has_ended())
         {
             return NULL;
         }
-        _buffer->plm_buffer_discard_read_bytes(_buffer->_buf);
+        _buffer->plm_buffer_discard_read_bytes();
         
         plm_video_decode_picture();
 
@@ -795,16 +795,16 @@ void Video::plm_video_decode_macroblock()
 {
     // Decode increment
     int increment = 0;
-    int t = _buffer->plm_buffer_read_vlc(_buffer->_buf, PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT);
+    int t = _buffer->plm_buffer_read_vlc(PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT);
 
     while (t == 34) {
         // macroblock_stuffing
-        t = _buffer->plm_buffer_read_vlc(_buffer->_buf, PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT);
+        t = _buffer->plm_buffer_read_vlc(PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT);
     }
     while (t == 35) {
         // macroblock_escape
         increment += 33;
-        t = _buffer->plm_buffer_read_vlc(_buffer->_buf, PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT);
+        t = _buffer->plm_buffer_read_vlc(PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT);
     }
     increment += t;
 
@@ -853,7 +853,7 @@ void Video::plm_video_decode_macroblock()
 
     // Process the current macroblock
     const plm_vlc_t *table = PLM_VIDEO_MACROBLOCK_TYPE[_picture_type];
-    _macroblock_type = _buffer->plm_buffer_read_vlc(_buffer->_buf, table);
+    _macroblock_type = _buffer->plm_buffer_read_vlc(table);
 
     _macroblock_intra = _macroblock_type & 0x01;
     _motion_forward.is_set = _macroblock_type & 0x08;
@@ -880,7 +880,7 @@ void Video::plm_video_decode_macroblock()
 
     // Decode blocks
     int cbp = ((_macroblock_type & 0x02) != 0)
-        ? _buffer->plm_buffer_read_vlc(_buffer->_buf, PLM_VIDEO_CODE_BLOCK_PATTERN)
+        ? _buffer->plm_buffer_read_vlc(PLM_VIDEO_CODE_BLOCK_PATTERN)
         : (_macroblock_intra ? 0x3f : 0);
 
     for (int block = 0, mask = 0x20; block < 6; block++)
@@ -945,7 +945,7 @@ void Video::plm_video_decode_motion_vectors()
 int Video::plm_video_decode_motion_vector(int r_size, int motion)
 {
     int fscale = 1 << r_size;
-    int m_code = _buffer->plm_buffer_read_vlc(_buffer->_buf, PLM_VIDEO_MOTION);
+    int m_code = _buffer->plm_buffer_read_vlc(PLM_VIDEO_MOTION);
     int r = 0;
     int d;
 
@@ -1080,7 +1080,7 @@ void Video::_decode_block(int block)
         // DC prediction
         int plane_index = block > 3 ? block - 3 : 0;
         int predictor = _dc_predictor[plane_index];
-        int dct_size = _buffer->plm_buffer_read_vlc(_buffer->_buf, PLM_VIDEO_DCT_SIZE[plane_index]);
+        int dct_size = _buffer->plm_buffer_read_vlc(PLM_VIDEO_DCT_SIZE[plane_index]);
 
         // Read DC coeff
         if (dct_size > 0) {
@@ -1114,7 +1114,7 @@ void Video::_decode_block(int block)
     while (TRUE)
     {
         int run = 0;
-        uint16_t coeff = _buffer->plm_buffer_read_vlc_uint(_buffer->_buf, PLM_VIDEO_DCT_COEFF);
+        uint16_t coeff = _buffer->plm_buffer_read_vlc_uint(PLM_VIDEO_DCT_COEFF);
 
         if ((coeff == 0x0001) && (n > 0) && (_buffer->plm_buffer_read(1) == 0))
         {
