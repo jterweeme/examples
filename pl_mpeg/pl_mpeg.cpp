@@ -58,10 +58,8 @@ int PLM::plm_init_decoders()
         if (_video_enabled)
             _video_packet_type = Demux::PLM_DEMUX_PACKET_VIDEO_1;
         
-        _video_buffer._buf = _video_buffer.plm_buffer_create_with_capacity(PLM_BUFFER_DEFAULT_SIZE);
-
-        _video_buffer.plm_buffer_set_load_callback(
-            plm_read_video_packet, this);
+        _video_buffer.plm_buffer_create_with_capacity(PLM_BUFFER_DEFAULT_SIZE);
+        _video_buffer.plm_buffer_set_load_callback(plm_read_video_packet, this);
     }
 
     if (_demux.plm_demux_get_num_audio_streams() > 0)
@@ -69,7 +67,7 @@ int PLM::plm_init_decoders()
         if (audio_enabled)
             audio_packet_type = Demux::PLM_DEMUX_PACKET_AUDIO_1 + audio_stream_index;
         
-        _audio_buffer._buf = _video_buffer.plm_buffer_create_with_capacity(PLM_BUFFER_DEFAULT_SIZE);
+        _audio_buffer.plm_buffer_create_with_capacity(PLM_BUFFER_DEFAULT_SIZE);
         _audio_buffer.plm_buffer_set_load_callback(plm_read_audio_packet, this);
     }
 
@@ -534,7 +532,7 @@ size_t Buffer::bit_index() const
 // to let plmpeg call fclose() on the handle when plm_destroy() is called.
 void Buffer::plm_buffer_create_with_file(FILE *fh, int close_when_done)
 {
-    _buf = plm_buffer_create_with_capacity(PLM_BUFFER_DEFAULT_SIZE);
+    plm_buffer_create_with_capacity(PLM_BUFFER_DEFAULT_SIZE);
     _buf->fh = fh;
     _close_when_done = close_when_done;
     _buf->mode = PLM_BUFFER_MODE_FILE;
@@ -570,16 +568,15 @@ plm_buffer_t *Buffer::plm_buffer_create_with_memory(
 
 // Create an empty buffer with an initial capacity. The buffer will grow
 // as needed. Data that has already been read, will be discarded.
-plm_buffer_t *Buffer::plm_buffer_create_with_capacity(size_t capacity)
+void Buffer::plm_buffer_create_with_capacity(size_t capacity)
 {
-    plm_buffer_t *self = (plm_buffer_t *)malloc(sizeof(plm_buffer_t));
-    memset(self, 0, sizeof(plm_buffer_t));
-    self->capacity = capacity;
+    _buf = (plm_buffer_t *)malloc(sizeof(plm_buffer_t));
+    memset(_buf, 0, sizeof(plm_buffer_t));
+    _buf->capacity = capacity;
     _free_when_done = TRUE;
-    self->bytes = (uint8_t *)malloc(capacity);
-    self->mode = PLM_BUFFER_MODE_RING;
+    _buf->bytes = (uint8_t *)malloc(capacity);
+    _buf->mode = PLM_BUFFER_MODE_RING;
     _discard_read_bytes = TRUE;
-    return self;
 }
 
 // Create an empty buffer with an initial capacity. The buffer will grow

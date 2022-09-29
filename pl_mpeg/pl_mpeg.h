@@ -316,7 +316,7 @@ public:
     plm_buffer_t *plm_buffer_create_with_memory(
         uint8_t *bytes, size_t length, int free_when_done);
 #endif
-    plm_buffer_t *plm_buffer_create_with_capacity(size_t capacity);
+    void plm_buffer_create_with_capacity(size_t capacity);
     void plm_buffer_destroy();
     size_t plm_buffer_write(uint8_t *bytes, size_t length);
     void plm_buffer_signal_end();
