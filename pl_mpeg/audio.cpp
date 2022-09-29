@@ -300,15 +300,15 @@ plm_samples_t *Audio::plm_audio_decode()
 int Audio::plm_audio_find_frame_sync()
 {
     size_t i;
-    for (i = _buffer->bit_index() >> 3; i < _buffer->_buf->length-1; i++)
+    for (i = _buffer->bit_index() >> 3; i < _buffer->_length-1; i++)
     {
         if (_buffer->_buf->bytes[i] == 0xFF && (_buffer->_buf->bytes[i+1] & 0xFE) == 0xFC)
         {
-            _buffer->_buf->bit_index = ((i+1) << 3) + 3;
+            _buffer->_bit_index = ((i+1) << 3) + 3;
             return TRUE;
         }
     }
-    _buffer->_buf->bit_index = (i + 1) << 3;
+    _buffer->_bit_index = (i + 1) << 3;
     return FALSE;
 }
 

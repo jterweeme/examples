@@ -525,7 +525,7 @@ void Buffer::plm_buffer_create_with_filename(const char *filename)
 
 size_t Buffer::bit_index() const
 {
-    return _buf->bit_index;
+    return _bit_index;
 }
 
 // Create a buffer instance with a file handle. Pass TRUE to close_when_done
@@ -539,7 +539,7 @@ void Buffer::plm_buffer_create_with_file(FILE *fh, int close_when_done)
     _discard_read_bytes = TRUE;
     
     fseek(_buf->fh, 0, SEEK_END);
-    _buf->total_size = ftell(_buf->fh);
+    _total_size = ftell(_buf->fh);
     fseek(_buf->fh, 0, SEEK_SET);
 
     plm_buffer_set_load_callback(plm_buffer_load_file_callback, NULL);
@@ -572,7 +572,7 @@ void Buffer::plm_buffer_create_with_capacity(size_t capacity)
 {
     _buf = (plm_buffer_t *)malloc(sizeof(plm_buffer_t));
     memset(_buf, 0, sizeof(plm_buffer_t));
-    _buf->capacity = capacity;
+    _capacity = capacity;
     _free_when_done = TRUE;
     _buf->bytes = (uint8_t *)malloc(capacity);
     _buf->mode = PLM_BUFFER_MODE_RING;
@@ -608,13 +608,13 @@ void Buffer::plm_buffer_destroy()
 // Get the total size. For files, this returns the file size. For all other 
 // types it returns the number of bytes currently in the buffer.
 size_t Buffer::plm_buffer_get_size() {
-    return _buf->mode == PLM_BUFFER_MODE_FILE ? _buf->total_size : _buf->length;
+    return _buf->mode == PLM_BUFFER_MODE_FILE ? _total_size : _length;
 }
 
 // Get the number of remaining (yet unread) bytes in the buffer. This can be
 // useful to throttle writing.
 size_t Buffer::plm_buffer_get_remaining() {
-    return _buf->length - (_buf->bit_index >> 3);
+    return _length - (_bit_index >> 3);
 }
 
 // Copy data into the buffer. If the data to be written is larger than the 
@@ -634,22 +634,22 @@ size_t Buffer::plm_buffer_write(uint8_t *bytes, size_t length)
 
         plm_buffer_discard_read_bytes();
         if (_buf->mode == PLM_BUFFER_MODE_RING)
-            _buf->total_size = 0;
+            _total_size = 0;
     }
 
     // Do we have to resize to fit the new data?
-    size_t bytes_available = _buf->capacity - _buf->length;
+    size_t bytes_available = _capacity - _length;
     if (bytes_available < length) {
-        size_t new_size = _buf->capacity;
+        size_t new_size = _capacity;
         do {
             new_size *= 2;
-        } while (new_size - _buf->length < length);
+        } while (new_size - _length < length);
         _buf->bytes = (uint8_t *)realloc(_buf->bytes, new_size);
-        _buf->capacity = new_size;
+        _capacity = new_size;
     }
 
-    memcpy(_buf->bytes + _buf->length, bytes, length);
-    _buf->length += length;
+    memcpy(_buf->bytes + _length, bytes, length);
+    _length += length;
     _has_ended = FALSE;
     return length;
 }
@@ -659,7 +659,7 @@ size_t Buffer::plm_buffer_write(uint8_t *bytes, size_t length)
 // just after the last plm_buffer_write().
 // For _with_capacity buffers, this is cleared on a plm_buffer_rewind().
 void Buffer::plm_buffer_signal_end() {
-    _buf->total_size = _buf->length;
+    _total_size = _length;
 }
 
 // Set a callback that is called whenever the buffer needs more data
@@ -682,8 +682,8 @@ void Buffer::plm_buffer_seek(size_t pos)
     if (_buf->mode == PLM_BUFFER_MODE_FILE)
     {
         fseek(_buf->fh, pos, SEEK_SET);
-        _buf->bit_index = 0;
-        _buf->length = 0;
+        _bit_index = 0;
+        _length = 0;
     }
     else if (_buf->mode == PLM_BUFFER_MODE_RING)
     {
@@ -691,31 +691,31 @@ void Buffer::plm_buffer_seek(size_t pos)
             // Seeking to non-0 is forbidden for dynamic-mem buffers
             return; 
         }
-        _buf->bit_index = 0;
-        _buf->length = 0;
-        _buf->total_size = 0;
+        _bit_index = 0;
+        _length = 0;
+        _total_size = 0;
     }
-    else if (pos < _buf->length) {
-        _buf->bit_index = pos << 3;
+    else if (pos < _length) {
+        _bit_index = pos << 3;
     }
 }
 
 size_t Buffer::plm_buffer_tell() {
     return _buf->mode == PLM_BUFFER_MODE_FILE
-        ? ftell(_buf->fh) + (_buf->bit_index >> 3) - _buf->length
-        : _buf->bit_index >> 3;
+        ? ftell(_buf->fh) + (_bit_index >> 3) - _length
+        : _bit_index >> 3;
 }
 
 void Buffer::plm_buffer_discard_read_bytes() {
-    size_t byte_pos = _buf->bit_index >> 3;
-    if (byte_pos == _buf->length) {
-        _buf->bit_index = 0;
-        _buf->length = 0;
+    size_t byte_pos = _bit_index >> 3;
+    if (byte_pos == _length) {
+        _bit_index = 0;
+        _length = 0;
     }
     else if (byte_pos > 0) {
-        memmove(_buf->bytes, _buf->bytes + byte_pos, _buf->length - byte_pos);
-        _buf->bit_index -= byte_pos << 3;
-        _buf->length -= byte_pos;
+        memmove(_buf->bytes, _buf->bytes + byte_pos, _length - byte_pos);
+        _bit_index -= byte_pos << 3;
+        _length -= byte_pos;
     }
 }
 
@@ -726,9 +726,9 @@ void Buffer::plm_buffer_load_file_callback(Buffer *self, void *user)
     if (self->_discard_read_bytes)
         self->plm_buffer_discard_read_bytes();
 
-    size_t bytes_available = self->_buf->capacity - self->_buf->length;
-    size_t bytes_read = fread(self->_buf->bytes + self->_buf->length, 1, bytes_available, self->_buf->fh);
-    self->_buf->length += bytes_read;
+    size_t bytes_available = self->_capacity - self->_length;
+    size_t bytes_read = fread(self->_buf->bytes + self->_length, 1, bytes_available, self->_buf->fh);
+    self->_length += bytes_read;
 
     if (bytes_read == 0)
         self->_has_ended = TRUE;
@@ -742,18 +742,18 @@ int Buffer::plm_buffer_has_ended() {
 
 int Buffer::plm_buffer_has(size_t count)
 {
-    if (((_buf->length << 3) - _buf->bit_index) >= count)
+    if (((_length << 3) - _bit_index) >= count)
         return TRUE;
 
     if (_load_callback)
     {
         _load_callback(this, _load_callback_user_data);
         
-        if (((_buf->length << 3) - _buf->bit_index) >= count)
+        if (((_length << 3) - _bit_index) >= count)
             return TRUE;
     }   
     
-    if (_buf->total_size != 0 && _buf->length == _buf->total_size)
+    if (_total_size != 0 && _length == _total_size)
         _has_ended = TRUE;
     
     return FALSE;
@@ -766,16 +766,16 @@ int Buffer::plm_buffer_read(int count)
 
     int value = 0;
     while (count) {
-        int current_byte = _buf->bytes[_buf->bit_index >> 3];
+        int current_byte = _buf->bytes[_bit_index >> 3];
 
-        int remaining = 8 - (_buf->bit_index & 7); // Remaining bits in byte
+        int remaining = 8 - (_bit_index & 7); // Remaining bits in byte
         int read = remaining < count ? remaining : count; // Bits in self run
         int shift = remaining - read;
         int mask = (0xff >> (8 - read));
 
         value = (value << read) | ((current_byte & (mask << shift)) >> shift);
 
-        _buf->bit_index += read;
+        _bit_index += read;
         count -= read;
     }
 
@@ -783,21 +783,21 @@ int Buffer::plm_buffer_read(int count)
 }
 
 void Buffer::plm_buffer_align() {
-    _buf->bit_index = ((_buf->bit_index + 7) >> 3) << 3; // Align to next byte
+    _bit_index = ((_bit_index + 7) >> 3) << 3; // Align to next byte
 }
 
 void Buffer::plm_buffer_skip(size_t count)
 {
     if (plm_buffer_has(count))
-        _buf->bit_index += count;
+        _bit_index += count;
 }
 
 int Buffer::plm_buffer_skip_bytes(uint8_t v)
 {
     plm_buffer_align();
     int skipped = 0;
-    while (plm_buffer_has(8) && _buf->bytes[_buf->bit_index >> 3] == v) {
-        _buf->bit_index += 8;
+    while (plm_buffer_has(8) && _buf->bytes[_bit_index >> 3] == v) {
+        _bit_index += 8;
         skipped++;
     }
     return skipped;
@@ -808,16 +808,16 @@ int Buffer::plm_buffer_next_start_code()
     plm_buffer_align();
 
     while (plm_buffer_has(5 << 3)) {
-        size_t byte_index = (_buf->bit_index) >> 3;
+        size_t byte_index = (_bit_index) >> 3;
         if (
             _buf->bytes[byte_index] == 0x00 &&
             _buf->bytes[byte_index + 1] == 0x00 &&
             _buf->bytes[byte_index + 2] == 0x01
         ) {
-            _buf->bit_index = (byte_index + 4) << 3;
+            _bit_index = (byte_index + 4) << 3;
             return _buf->bytes[byte_index + 3];
         }
-        _buf->bit_index += 8;
+        _bit_index += 8;
     }
     return -1;
 }
@@ -834,13 +834,13 @@ int Buffer::plm_buffer_find_start_code(int code) {
 }
 
 int Buffer::plm_buffer_has_start_code(int code) {
-    size_t previous_bit_index = _buf->bit_index;
+    size_t previous_bit_index = _bit_index;
     int previous_discard_read_bytes = _discard_read_bytes;
     
     _discard_read_bytes = FALSE;
     int current = plm_buffer_find_start_code(code);
 
-    _buf->bit_index = previous_bit_index;
+    _bit_index = previous_bit_index;
     _discard_read_bytes = previous_discard_read_bytes;
     return current;
 }
@@ -851,7 +851,7 @@ int Buffer::plm_buffer_peek_non_zero(int bit_count)
         return FALSE;
 
     int val = plm_buffer_read(bit_count);
-    _buf->bit_index -= bit_count;
+    _bit_index -= bit_count;
     return val != 0;
 }
 

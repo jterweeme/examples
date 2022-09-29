@@ -281,10 +281,6 @@ enum plm_buffer_mode {
 };
 
 typedef struct plm_buffer_t {
-    size_t bit_index;
-    size_t capacity;
-    size_t length;
-    size_t total_size;
 
     FILE *fh;
     uint8_t *bytes;
@@ -300,8 +296,12 @@ private:
     int _has_ended = 0;
     int _free_when_done = 0;
     int _close_when_done = 0;
+    size_t _capacity = 0;
+    size_t _total_size = 0;
 public:
     plm_buffer_t *_buf;
+    size_t _length = 0;
+    size_t _bit_index = 0;
     void plm_buffer_seek(size_t pos);
     size_t plm_buffer_tell();
     static void plm_buffer_load_file_callback(Buffer *self, void *user);
