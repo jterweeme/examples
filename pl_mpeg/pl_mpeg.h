@@ -254,7 +254,6 @@ struct plm_video_motion_t
 };
 
 class Buffer;
-typedef struct plm_buffer_t plm_buffer_t;
 
 // Callback function for plm_buffer when it needs more data
 typedef void(*plm_buffer_load_callback)(Buffer *self, void *user);
@@ -280,13 +279,6 @@ enum plm_buffer_mode {
     PLM_BUFFER_MODE_APPEND
 };
 
-typedef struct plm_buffer_t {
-
-    FILE *fh;
-    uint8_t *bytes;
-    enum plm_buffer_mode mode;
-} plm_buffer_t;
-
 class Buffer
 {
 private:
@@ -298,8 +290,10 @@ private:
     int _close_when_done = 0;
     size_t _capacity = 0;
     size_t _total_size = 0;
+    FILE *_fh = nullptr;
+    enum plm_buffer_mode _mode;
 public:
-    plm_buffer_t *_buf;
+    uint8_t *_bytes;
     size_t _length = 0;
     size_t _bit_index = 0;
     void plm_buffer_seek(size_t pos);
