@@ -206,7 +206,7 @@ private:
 public:
     int kjmp2_get_sample_rate(const uint8_t *frame);
     void kjmp2_init();
-    uint32_t kjmp2_decode_frame(const uint8_t *frame, int16_t *pcm);
+    uint32_t kjmp2_decode_frame(BitBuffer &b, int16_t *pcm);
 };
 
 class Toolbox
@@ -358,7 +358,7 @@ int main(int argc, char **argv)
 int CMain::run(FILE *fin, FILE *fout)
 {
     uint8_t buffer[MAX_BUFSIZE];
-    signed short samples[KJMP2_SAMPLES_PER_FRAME * 2];
+
     int bufsize = (int) fread((void*) buffer, 1, MAX_BUFSIZE, fin);
     Decoder d;
     int rate = bufsize > 4 ? d.kjmp2_get_sample_rate(buffer) : 0;
@@ -384,24 +384,20 @@ int CMain::run(FILE *fin, FILE *fout)
 
     //printf("Decoding %s into %s ...\n", infn, outname);
     int out_bytes = 0;
-    int desync = 0;
     int bufpos = 0;
     int eof = 0;
     int in_offset = 0;
+
     d.kjmp2_init();
 
     while (!eof || (bufsize > 4))
     {
-        int bytes;
-
         if (!eof && (bufsize < int(KJMP2_MAX_FRAME_SIZE)))
         {
-            //std::cerr << bufsize << "\r\n";
-            //std::cerr.flush();
             memcpy(buffer, buffer + bufpos, bufsize);
             bufpos = 0;
             in_offset += bufsize;
-            bytes = (int) fread(buffer + bufsize, 1, MAX_BUFSIZE - bufsize, fin);
+            int bytes = (int) fread(buffer + bufsize, 1, MAX_BUFSIZE - bufsize, fin);
 
             if (bytes > 0) {
                 bufsize += bytes;
@@ -411,23 +407,11 @@ int CMain::run(FILE *fin, FILE *fout)
         }
         else
         {
-            bytes = d.kjmp2_decode_frame(&buffer[bufpos], samples);
-
-            if ((bytes < 4) || (bytes > int(KJMP2_MAX_FRAME_SIZE)) || (bytes > bufsize))
-            {
-                if (!desync)
-                {
-                    fprintf(stderr, "Stream error detected at file offset %d.\n", in_offset + bufpos);
-                }
-
-                desync = bytes = 1;
-            }
-            else
-            {
-                out_bytes += (int) fwrite((const void*) samples, 1, KJMP2_SAMPLES_PER_FRAME * 4, fout);
-                desync = 0;
-            }
-
+            BitBuffer b;
+            b.init(&buffer[bufpos]);
+            int16_t samples[KJMP2_SAMPLES_PER_FRAME * 2];
+            int bytes = d.kjmp2_decode_frame(b, samples);
+            out_bytes += (int) fwrite((const void*)samples, 1, KJMP2_SAMPLES_PER_FRAME * 4, fout);
             bufsize -= bytes;
             bufpos += bytes;
         }
@@ -598,19 +582,14 @@ void Decoder::read_samples(const Quantizer_spec *q, int scalefactor, int *sample
 // Note: pcm may be NULL. In this case, kjmp2_decode_frame() will return the
 //       size of the frame without actually decoding it.
 uint32_t
-Decoder::kjmp2_decode_frame(const uint8_t *frame, int16_t *pcm)
+Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm)
 {
-    BitBuffer b;
-    b.init(frame);
     uint8_t frame0 = b.get_bits(8);
     uint8_t frame1 = b.get_bits(8);
 
     // check for valid header: syncword OK, MPEG-Audio Layer 2
     if ((frame0 != 0xFF) || ((frame1 & 0xF6) != 0xF4))
         return 0;
-
-    // set up the bitstream reader
-
 
     // read the rest of the header
     unsigned bit_rate_index_minus1 = b.get_bits(4) - 1;
