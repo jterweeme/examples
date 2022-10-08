@@ -26,6 +26,14 @@ public:
     void set(unsigned x, unsigned y, T value) {
         *(_buf + x * _y + y) = value;
     }
+
+    void resize(unsigned x, unsigned y) {
+        delete[] _buf;
+        _buf = new T[x * y], _x = x, _y = y;
+    }
+
+    unsigned x() const { return _x; }
+    unsigned y() const { return _y; }
 };
 
 class Toolbox
@@ -62,16 +70,10 @@ private:
     void _decodeResiduals(BitInputStream &in, int warmup, int ch);
     void _restoreLinearPrediction(int ch, const int *coefs, uint8_t shift, int length);
 public:
-    FlacFrame(int numChannels, int sampleDepth);
-    ~FlacFrame();
+    FlacFrame(Matrix<int64_t> *mat, int numChannels, int sampleDepth);
     void decode(BitInputStream &in);
     void write(std::ostream &os);
 };
-
-FlacFrame::~FlacFrame()
-{
-    delete _samples;
-}
 
 void FlacFrame::_decodeResiduals(BitInputStream &in, int warmup, int ch)
 {
@@ -249,7 +251,9 @@ void FlacFrame::decode(BitInputStream &in)
         in.readUint(16);
 
     in.readUint(8);
-    _samples = new Matrix<int64_t>(_numChannels, _blockSize);
+
+    if (_numChannels > _samples->x() || _blockSize > _samples->y())
+        _samples->resize(_numChannels, _blockSize);
 
     if (0 <= chanAsgn && chanAsgn <= 7)
     {
@@ -317,10 +321,12 @@ void FlacFrame::write(std::ostream &os)
     }   
 }
 
-FlacFrame::FlacFrame(int numChannels, int sampleDepth)
+FlacFrame::FlacFrame(Matrix<int64_t> *mat, int numChannels, int sampleDepth)
+  :
+    _samples(mat),
+    _numChannels(numChannels),
+    _sampleDepth(sampleDepth)
 {
-    _numChannels = numChannels;
-    _sampleDepth = sampleDepth;
 }
 
 static void decodeFile(BitInputStream &in, std::ostream &os)
@@ -382,10 +388,11 @@ static void decodeFile(BitInputStream &in, std::ostream &os)
     Toolbox::writeWLE(os, sampleDepth);
     os << "data";
     Toolbox::writeDwLE(os, sampleDataLen);
+    Matrix<int64_t> mat(numChannels, 1);
 
     while (in.peek())
     {
-        FlacFrame frame(numChannels, sampleDepth);
+        FlacFrame frame(&mat, numChannels, sampleDepth);
         frame.decode(in);
         frame.write(os);
     }

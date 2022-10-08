@@ -244,14 +244,7 @@ struct plm_samples_t {
 #endif
 };
 
-struct plm_video_motion_t
-{
-    int full_px;
-    int is_set;
-    int r_size;
-    int h;
-    int v;
-};
+
 
 class Buffer;
 
@@ -296,39 +289,33 @@ public:
     uint8_t *_bytes;
     size_t _length = 0;
     size_t _bit_index = 0;
-    void plm_buffer_seek(size_t pos);
-    size_t plm_buffer_tell();
-    static void plm_buffer_load_file_callback(Buffer *self, void *user);
-    int16_t plm_buffer_read_vlc(const plm_vlc_t *table);
-    uint16_t plm_buffer_read_vlc_uint(const plm_vlc_uint_t *table);
-    void plm_buffer_create_with_filename(const char *filename);
-    void plm_buffer_create_with_file(FILE *fh, int close_when_done);
+    void seek(size_t pos);
+    size_t tell();
+    static void load_file_callback(Buffer *self, void *user);
+    int16_t read_vlc(const plm_vlc_t *table);
+    uint16_t read_vlc_uint(const plm_vlc_uint_t *table);
+    void create_with_filename(const char *filename);
+    void create_with_file(FILE *fh, int close_when_done);
     size_t bit_index() const;
-#if 0
-    plm_buffer_t *plm_buffer_create_for_appending(size_t initial_capacity);
-
-    plm_buffer_t *plm_buffer_create_with_memory(
-        uint8_t *bytes, size_t length, int free_when_done);
-#endif
-    void plm_buffer_create_with_capacity(size_t capacity);
-    void plm_buffer_destroy();
-    size_t plm_buffer_write(uint8_t *bytes, size_t length);
-    void plm_buffer_signal_end();
-    void plm_buffer_set_load_callback(plm_buffer_load_callback fp, void *user);
-    void plm_buffer_rewind();
-    size_t plm_buffer_get_size();
-    size_t plm_buffer_get_remaining();
-    int plm_buffer_has_ended();
-    int plm_buffer_skip_bytes(uint8_t v);
-    int plm_buffer_read(int count);
-    void plm_buffer_skip(size_t count);
-    int plm_buffer_has(size_t count);
-    void plm_buffer_align();
-    int plm_buffer_find_start_code(int code);
-    int plm_buffer_has_start_code(int code);
-    void plm_buffer_discard_read_bytes();
-    int plm_buffer_next_start_code();
-    int plm_buffer_peek_non_zero(int bit_count);
+    void create_with_capacity(size_t capacity);
+    void destroy();
+    size_t write(uint8_t *bytes, size_t length);
+    void signal_end();
+    void set_load_callback(plm_buffer_load_callback fp, void *user);
+    void rewind();
+    size_t get_size();
+    size_t get_remaining();
+    int has_ended();
+    int skip_bytes(uint8_t v);
+    int read(int count);
+    void skip(size_t count);
+    int has(size_t count);
+    void align();
+    int find_start_code(int code);
+    int has_start_code(int code);
+    void discard_read_bytes();
+    int next_start_code();
+    int peek_non_zero(int bit_count);
 };
 
 class Demux
@@ -353,27 +340,27 @@ private:
     double _start_time = 0;
     Buffer *_buffer;
 public:
-    static constexpr int PLM_DEMUX_PACKET_PRIVATE = 0xBD;
-    static constexpr int PLM_DEMUX_PACKET_AUDIO_1 = 0xC0;
-    static constexpr int PLM_DEMUX_PACKET_AUDIO_2 = 0xC1;
-    static constexpr int PLM_DEMUX_PACKET_AUDIO_3 = 0xC2;
-    static constexpr int PLM_DEMUX_PACKET_AUDIO_4 = 0xC2;
-    static constexpr int PLM_DEMUX_PACKET_VIDEO_1 = 0xE0;
-    void plm_demux_create(Buffer *buffer, int destroy_when_done);
-    void plm_demux_buffer_seek(size_t pos);
-    double plm_demux_decode_time();
-    plm_packet_t *plm_demux_decode_packet(int type);
-    plm_packet_t *plm_demux_get_packet();
-    void plm_demux_destroy();
-    int plm_demux_has_headers();
-    int plm_demux_get_num_video_streams();
-    int plm_demux_get_num_audio_streams();
-    void plm_demux_rewind();
-    int plm_demux_has_ended();
-    plm_packet_t *plm_demux_seek(double time, int type, int force_intra);
-    double plm_demux_get_start_time(int type);
-    double plm_demux_get_duration(int type);
-    plm_packet_t *plm_demux_decode();
+    static constexpr int PACKET_PRIVATE = 0xBD;
+    static constexpr int PACKET_AUDIO_1 = 0xC0;
+    static constexpr int PACKET_AUDIO_2 = 0xC1;
+    static constexpr int PACKET_AUDIO_3 = 0xC2;
+    static constexpr int PACKET_AUDIO_4 = 0xC2;
+    static constexpr int PACKET_VIDEO_1 = 0xE0;
+    void create(Buffer *buffer, int destroy_when_done);
+    void buffer_seek(size_t pos);
+    double decode_time();
+    plm_packet_t *decode_packet(int type);
+    plm_packet_t *get_packet();
+    void destroy();
+    int has_headers();
+    int get_num_video_streams();
+    int get_num_audio_streams();
+    void rewind();
+    int has_ended();
+    plm_packet_t *seek(double time, int type, int force_intra);
+    double get_start_time(int type);
+    double get_duration(int type);
+    plm_packet_t *decode();
 };
 
 struct plm_quantizer_spec_t
@@ -407,22 +394,31 @@ private:
     int _v_pos = 0;
     int _next_frame_data_size = 0;
     int _has_header = 0;
-    int plm_audio_find_frame_sync();
-    void plm_audio_idct36(int s[32][3], int ss, float *d, int dp);
-    const plm_quantizer_spec_t *plm_audio_read_allocation(int sb, int tab3);
+    int _find_frame_sync();
+    void _idct36(int s[32][3], int ss, float *d, int dp);
+    const plm_quantizer_spec_t *_read_allocation(int sb, int tab3);
+    void _decode_frame();
+    void _read_samples(int ch, int sb, int part);
 public:
-    int plm_audio_has_header();
-    double plm_audio_get_time();
-    void plm_audio_destroy();
-    void plm_audio_set_time(double time);
-    int plm_audio_has_ended();
-    plm_samples_t *plm_audio_decode();
-    int plm_audio_get_samplerate();
-    void plm_audio_rewind();
-    int plm_audio_decode_header();
-    void plm_audio_decode_frame();
-    void plm_audio_read_samples(int ch, int sb, int part);
-    void plm_audio_create_with_buffer(Buffer *buffer, int destroy_when_done);
+    int has_header();
+    double get_time();
+    void destroy();
+    void set_time(double time);
+    int has_ended();
+    plm_samples_t *decode();
+    int get_samplerate();
+    void rewind();
+    int decode_header();
+    void create(Buffer *buffer, int destroy_when_done);
+};
+
+struct plm_video_motion_t
+{
+    int full_px;
+    int is_set;
+    int r_size;
+    int h;
+    int v;
 };
 
 class Video
@@ -479,26 +475,26 @@ private:
     void _decode_block(int block);
     void _predict_macroblock();
     static void _idct(int *block);
-    void plm_video_decode_picture();
-    void plm_video_decode_macroblock();
-    void plm_video_decode_slice(int slice);
-    void plm_video_decode_motion_vectors();
-    void plm_video_init_frame(plm_frame_t *frame, uint8_t *base);
-    int plm_video_decode_sequence_header();
-    int plm_video_decode_motion_vector(int r_size, int motion);
+    void _decode_picture();
+    void _decode_macroblock();
+    void _decode_slice(int slice);
+    void _decode_motion_vectors();
+    void _init_frame(plm_frame_t *frame, uint8_t *base);
+    int _decode_sequence_header();
+    int _decode_motion_vector(int r_size, int motion);
 public:
-    void plm_video_destroy();
-    int plm_video_has_header();
-    double plm_video_get_framerate();
-    int plm_video_get_width();
-    int plm_video_get_height();
-    void plm_video_set_no_delay(int no_delay);
+    void destroy();
+    int has_header();
+    double get_framerate();
+    int get_width();
+    int get_height();
+    void set_no_delay(int no_delay);
     double plm_video_get_time();
-    void plm_video_set_time(double time);
-    void plm_video_rewind();
-    int plm_video_has_ended();
-    plm_frame_t *plm_video_decode();
-    void plm_video_create_with_buffer(Buffer *buffer, int destroy_when_done);
+    void set_time(double time);
+    void rewind();
+    int has_ended();
+    plm_frame_t *decode();
+    void create(Buffer *buffer, int destroy_when_done);
 };
 
 class PLM
