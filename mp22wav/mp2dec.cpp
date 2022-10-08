@@ -470,9 +470,9 @@ int Decoder::kjmp2_get_sample_rate(const uint8_t *frame)
 
 void BitBuffer::init(const uint8_t *frame)
 {
-    _bit_window = frame[2] << 16;
+    _bit_window = frame[0] << 16;
     bits_in_window = 8;
-    frame_pos = &frame[3];
+    frame_pos = &frame[1];
 }
 
 int BitBuffer::show_bits(int bit_count)
@@ -602,9 +602,11 @@ Decoder::kjmp2_decode_frame(const uint8_t *frame, int16_t *pcm)
 {
     BitBuffer b;
     b.init(frame);
+    uint8_t frame0 = b.get_bits(8);
+    uint8_t frame1 = b.get_bits(8);
 
     // check for valid header: syncword OK, MPEG-Audio Layer 2
-    if ((frame[0] != 0xFF) || ((frame[1] & 0xF6) != 0xF4))
+    if ((frame0 != 0xFF) || ((frame1 & 0xF6) != 0xF4))
         return 0;
 
     // set up the bitstream reader
@@ -621,7 +623,7 @@ Decoder::kjmp2_decode_frame(const uint8_t *frame, int16_t *pcm)
     if (sampling_frequency == 3)
         return 0;
 
-    if ((frame[1] & 0x08) == 0) {  // MPEG-2
+    if ((frame1 & 0x08) == 0) {  // MPEG-2
         sampling_frequency += 4;
         bit_rate_index_minus1 += 14;
     }
@@ -644,7 +646,7 @@ Decoder::kjmp2_decode_frame(const uint8_t *frame, int16_t *pcm)
     // discard the last 4 bits of the header and the CRC value, if present
     b.get_bits(4);
 
-    if ((frame[1] & 1) == 0)
+    if ((frame1 & 1) == 0)
         b.get_bits(16);
 
     // compute the frame size
