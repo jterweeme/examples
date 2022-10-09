@@ -7,7 +7,6 @@
 #include <fcntl.h>
 #include <string>
 #include <iostream>
-#include <vector>
 #include <math.h>
 
 struct Quantizer_spec
@@ -29,9 +28,6 @@ static constexpr short bitrates[28] = {
 
 // scale factor base values (24-bit fixed-point)
 static constexpr int scf_base[3] = { 0x02000000, 0x01965FEA, 0x01428A30 };
-
-
-///////////// Table 3-B.2: Possible quantization per subband ///////////////////
 
 // quantizer lookup, step 1: bitrate classes
 static constexpr char quant_lut_step1[2][16] = {
@@ -184,11 +180,12 @@ class BitBuffer
 private:
     int _bit_window;
     int bits_in_window;
-    const uint8_t *frame_pos;
     int show_bits(int bit_count);
     uint64_t _counter2 = 0;
+    FILE *_fin;
 public:
-    void init(const uint8_t *frame);
+    BitBuffer(FILE *fin);
+    bool peek();
     int get_bits(int bit_count);
     uint64_t counter2() const { return _counter2; }
     void reset_counter() { _counter2 = 0; }
@@ -208,9 +205,8 @@ private:
     int initialized = 0;
     void read_samples(const Quantizer_spec *q, int scalefactor, int *sample, BitBuffer &b);
 public:
-    int kjmp2_get_sample_rate(const uint8_t *frame);
     void kjmp2_init();
-    uint32_t kjmp2_decode_frame(BitBuffer &b, int16_t *pcm);
+    uint32_t kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate);
 };
 
 class Toolbox
@@ -392,30 +388,7 @@ int main(int argc, char **argv)
 
 int CMain::run(FILE *fin, FILE *fout)
 {
-    std::vector<uint8_t> buf;
-    uint8_t buffer[MAX_BUFSIZE];
-
-    while (true)
-    {
-        int bufsize = (int) fread((void*) buffer, 1, MAX_BUFSIZE, fin);
-
-        for (int i = 0; i < bufsize; ++i)
-            buf.push_back(buffer[i]);
-
-        if (bufsize < MAX_BUFSIZE)
-            break;
-    }
-
     Decoder d;
-    fseek(fin, 0, SEEK_SET);
-    int rate = d.kjmp2_get_sample_rate(buf.data());
-
-    if (!rate)
-    {
-        fprintf(stderr, "Input is not a valid MP2 audio file, exiting.\n");
-        fclose(fin);
-        return 1;
-    }
 #ifdef _WIN32
     setmode(fileno(stdout), O_BINARY);
 #endif
@@ -426,20 +399,27 @@ int CMain::run(FILE *fin, FILE *fout)
     }
 
     CWavHeader h;
-    h.rate(rate);
-    h.write(fout);
 
     int out_bytes = 0;
     int bufpos = 0;
 
     d.kjmp2_init();
-    BitBuffer b;
-    b.init(buf.data());
+    BitBuffer b(fin);
+    //b.init(buf.data());
+    int samplerate = 0;
 
-    while (bufpos < buf.size())
+    while (b.peek())
+    //for (int i = 0; i < 9000; ++i)
     {
         int16_t samples[KJMP2_SAMPLES_PER_FRAME * 2];
-        int bytes = d.kjmp2_decode_frame(b, samples);
+        int bytes = d.kjmp2_decode_frame(b, samples, samplerate);
+
+        if (out_bytes == 0)
+        {
+            h.rate(samplerate);
+            h.write(fout);
+        }
+
         out_bytes += (int) fwrite((const void*)samples, 1, KJMP2_SAMPLES_PER_FRAME * 4, fout);
         bufpos += bytes;
     }
@@ -460,28 +440,15 @@ int CMain::run(FILE *fin, FILE *fout)
     return 0;
 }
 
-// kjmp2_get_sample_rate: Returns the sample rate of a MP2 stream.
-// frame: Points to at least the first three bytes of a frame from the
-//        stream.
-// return value: The sample rate of the stream in Hz, or zero if the stream
-//               isn't valid.
-int Decoder::kjmp2_get_sample_rate(const uint8_t *frame)
+BitBuffer::BitBuffer(FILE *fin) : _fin(fin)
 {
-    if (( frame[0]         != 0xFF)   // no valid syncword?
-    ||  ((frame[1] & 0xF6) != 0xF4)   // no MPEG-1/2 Audio Layer II?
-    ||  ((frame[2] - 0x10) >= 0xE0))  // invalid bitrate?
-        throw "cannot get samplerate";
-
-    return sample_rates[(((frame[1] & 0x08) >> 1) ^ 4)  // MPEG-1/2 switch
-                      + ((frame[2] >> 2) & 3)];         // actual rate
+    _bit_window = fgetc(fin) << 16;
+    bits_in_window = 8;
 }
 
-void BitBuffer::init(const uint8_t *frame)
+bool BitBuffer::peek()
 {
-    std::cerr << "BitBuffer::init\r\n";
-    _bit_window = frame[0] << 16;
-    bits_in_window = 8;
-    frame_pos = &frame[1];
+    return bits_in_window > 0;
 }
 
 int BitBuffer::show_bits(int bit_count)
@@ -498,7 +465,7 @@ int BitBuffer::get_bits(int bit_count)
 
     while (bits_in_window < 16)
     {
-        _bit_window |= (*frame_pos++) << (16 - bits_in_window);
+        _bit_window |= fgetc(_fin) << (16 - bits_in_window);
         bits_in_window += 8;
     }
 
@@ -608,7 +575,7 @@ void Decoder::read_samples(const Quantizer_spec *q, int scalefactor, int *sample
 // Note: pcm may be NULL. In this case, kjmp2_decode_frame() will return the
 //       size of the frame without actually decoding it.
 uint32_t
-Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm)
+Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
 {
     b.reset_counter();
     uint8_t frame0 = b.get_bits(8);
@@ -616,7 +583,11 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm)
 
     // check for valid header: syncword OK, MPEG-Audio Layer 2
     if ((frame0 != 0xFF) || ((frame1 & 0xF6) != 0xF4))
-        return 0;
+        throw "invalid magic";
+
+    //samplerate[(((frame[1] & 0x08) >> 1) ^ 4)  // MPEG-1/2 switch
+    //                  + ((frame[2] >> 2) & 3)];         // actual rate
+    samplerate = 44100;
 
     // read the rest of the header
     unsigned bit_rate_index_minus1 = b.get_bits(4) - 1;
@@ -636,7 +607,7 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm)
     unsigned padding_bit = b.get_bits(1);
     b.get_bits(1);  // discard private_bit
     unsigned mode = b.get_bits(2);
-    int bound, sblimit;
+    int bound, sblimit, table_idx;
 
     // parse the mode_extension, set up the stereo bound
     if (mode == JOINT_STEREO)
@@ -661,8 +632,6 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm)
 
     if (!pcm)
         return frame_size;  // no decoding
-
-    int table_idx;
 
     // prepare the quantizer table lookups
     if (sampling_frequency & 4)
