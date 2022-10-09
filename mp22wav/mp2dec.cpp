@@ -186,11 +186,11 @@ private:
     int bits_in_window;
     const uint8_t *frame_pos;
     int show_bits(int bit_count);
-    uint32_t _counter = 0;
+    uint64_t _counter = 9999999;
 public:
     void init(const uint8_t *frame);
     int get_bits(int bit_count);
-    uint32_t counter() const { return _counter; }
+    uint64_t counter() const { return _counter; }
 };
 
 class Decoder
@@ -215,6 +215,8 @@ public:
 class Toolbox
 {
 public:
+    static char hex4(uint8_t n);
+    static std::string hex8(uint8_t b);
     static void writeWLE(char *buf, uint16_t w);
     static void writeDwLE(char *buf, uint32_t dw);
 };
@@ -287,6 +289,19 @@ void CWavHeader::write(FILE *fp) const
 
     //write wav header to file
     fwrite((const void*) header, 44, 1, fp);
+}
+
+char Toolbox::hex4(uint8_t n)
+{
+    return n <= 9 ? '0' + char(n) : 'A' + char(n - 10);
+}
+
+std::string Toolbox::hex8(uint8_t b)
+{
+    std::string ret;
+    ret += hex4(b >> 4 & 0xf);
+    ret += hex4(b >> 0 & 0xf);
+    return ret;
 }
 
 void Toolbox::writeWLE(char *buf, uint16_t w)
@@ -418,14 +433,16 @@ int CMain::run(FILE *fin, FILE *fout)
 
     d.kjmp2_init();
     BitBuffer b;
+    b.init(buf.data());
 
     while (bufpos < buf.size())
     {
-        b.init(buf.data() + bufpos);
         int16_t samples[KJMP2_SAMPLES_PER_FRAME * 2];
         int bytes = d.kjmp2_decode_frame(b, samples);
         out_bytes += (int) fwrite((const void*)samples, 1, KJMP2_SAMPLES_PER_FRAME * 4, fout);
         bufpos += bytes;
+        uint32_t rest = bufpos * 8 - b.counter();
+        b.get_bits(rest);
     }
 
     if (fout != stdout)
@@ -462,6 +479,7 @@ int Decoder::kjmp2_get_sample_rate(const uint8_t *frame)
 
 void BitBuffer::init(const uint8_t *frame)
 {
+    std::cerr << "BitBuffer::init\r\n";
     _bit_window = frame[0] << 16;
     bits_in_window = 8;
     frame_pos = &frame[1];
@@ -475,6 +493,7 @@ int BitBuffer::show_bits(int bit_count)
 
 int BitBuffer::get_bits(int bit_count)
 {
+    //std::cerr << "bit_count: " << bit_count << "\r\n";
     _counter += bit_count;
     int result = show_bits(bit_count);
     _bit_window = (_bit_window << bit_count) & 0xFFFFFF;
@@ -804,8 +823,6 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm)
 
         } // decoding of the granule finished
     }
-
-    b.get_bits(frame_size * 8 - b.counter());
     return frame_size;
 }
 
