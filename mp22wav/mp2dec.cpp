@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <string>
 #include <iostream>
+#include <vector>
 #include <math.h>
 
 struct Quantizer_spec
@@ -185,9 +186,11 @@ private:
     int bits_in_window;
     const uint8_t *frame_pos;
     int show_bits(int bit_count);
+    uint32_t _counter = 0;
 public:
     void init(const uint8_t *frame);
     int get_bits(int bit_count);
+    uint32_t counter() const { return _counter; }
 };
 
 class Decoder
@@ -228,6 +231,7 @@ public:
     bool stdinput() const;
     bool stdoutput() const;
     std::string ifn() const;
+    std::string ofn() const;
 };
 
 class CWavHeader
@@ -333,12 +337,17 @@ std::string COptions::ifn() const
     return _ifn;
 }
 
+std::string COptions::ofn() const
+{
+    return _ofn;
+}
+
 int main(int argc, char **argv)
 {
     COptions opts;
     opts.parse(argc, argv);
     CMain inst;
-    FILE *fin;
+    FILE *fin, *fout;
 
     if (opts.stdinput())
     {
@@ -351,17 +360,39 @@ int main(int argc, char **argv)
     {
         fin = fopen(opts.ifn().c_str(), "rb");
     }
-    int ret = inst.run(fin, stdout);
+
+    if (opts.stdoutput())
+    {
+        fout = stdout;
+    }
+    else
+    {
+        fout = fopen(opts.ofn().c_str(), "wb");
+    }
+
+    int ret = inst.run(fin, fout);
     return ret;
 }
 
 int CMain::run(FILE *fin, FILE *fout)
 {
+    std::vector<uint8_t> buf;
     uint8_t buffer[MAX_BUFSIZE];
 
-    int bufsize = (int) fread((void*) buffer, 1, MAX_BUFSIZE, fin);
+    while (true)
+    {
+        int bufsize = (int) fread((void*) buffer, 1, MAX_BUFSIZE, fin);
+
+        for (int i = 0; i < bufsize; ++i)
+            buf.push_back(buffer[i]);
+
+        if (bufsize < MAX_BUFSIZE)
+            break;
+    }
+
     Decoder d;
-    int rate = bufsize > 4 ? d.kjmp2_get_sample_rate(buffer) : 0;
+    fseek(fin, 0, SEEK_SET);
+    int rate = d.kjmp2_get_sample_rate(buf.data());
 
     if (!rate)
     {
@@ -382,39 +413,19 @@ int CMain::run(FILE *fin, FILE *fout)
     h.rate(rate);
     h.write(fout);
 
-    //printf("Decoding %s into %s ...\n", infn, outname);
     int out_bytes = 0;
     int bufpos = 0;
-    int eof = 0;
-    int in_offset = 0;
 
     d.kjmp2_init();
+    BitBuffer b;
 
-    while (!eof || (bufsize > 4))
+    while (bufpos < buf.size())
     {
-        if (!eof && (bufsize < int(KJMP2_MAX_FRAME_SIZE)))
-        {
-            memcpy(buffer, buffer + bufpos, bufsize);
-            bufpos = 0;
-            in_offset += bufsize;
-            int bytes = (int) fread(buffer + bufsize, 1, MAX_BUFSIZE - bufsize, fin);
-
-            if (bytes > 0) {
-                bufsize += bytes;
-            } else {
-                eof = 1;
-            }
-        }
-        else
-        {
-            BitBuffer b;
-            b.init(&buffer[bufpos]);
-            int16_t samples[KJMP2_SAMPLES_PER_FRAME * 2];
-            int bytes = d.kjmp2_decode_frame(b, samples);
-            out_bytes += (int) fwrite((const void*)samples, 1, KJMP2_SAMPLES_PER_FRAME * 4, fout);
-            bufsize -= bytes;
-            bufpos += bytes;
-        }
+        b.init(buf.data() + bufpos);
+        int16_t samples[KJMP2_SAMPLES_PER_FRAME * 2];
+        int bytes = d.kjmp2_decode_frame(b, samples);
+        out_bytes += (int) fwrite((const void*)samples, 1, KJMP2_SAMPLES_PER_FRAME * 4, fout);
+        bufpos += bytes;
     }
 
     if (fout != stdout)
@@ -440,13 +451,10 @@ int CMain::run(FILE *fin, FILE *fout)
 //               isn't valid.
 int Decoder::kjmp2_get_sample_rate(const uint8_t *frame)
 {
-    if (!frame)
-        return 0;
-
     if (( frame[0]         != 0xFF)   // no valid syncword?
     ||  ((frame[1] & 0xF6) != 0xF4)   // no MPEG-1/2 Audio Layer II?
     ||  ((frame[2] - 0x10) >= 0xE0))  // invalid bitrate?
-        return 0;
+        throw "cannot get samplerate";
 
     return sample_rates[(((frame[1] & 0x08) >> 1) ^ 4)  // MPEG-1/2 switch
                       + ((frame[2] >> 2) & 3)];         // actual rate
@@ -457,6 +465,7 @@ void BitBuffer::init(const uint8_t *frame)
     _bit_window = frame[0] << 16;
     bits_in_window = 8;
     frame_pos = &frame[1];
+    _counter = 0;
 }
 
 int BitBuffer::show_bits(int bit_count)
@@ -466,6 +475,7 @@ int BitBuffer::show_bits(int bit_count)
 
 int BitBuffer::get_bits(int bit_count)
 {
+    _counter += bit_count;
     int result = show_bits(bit_count);
     _bit_window = (_bit_window << bit_count) & 0xFFFFFF;
     bits_in_window -= bit_count;
@@ -794,6 +804,8 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm)
 
         } // decoding of the granule finished
     }
+
+    b.get_bits(frame_size * 8 - b.counter());
     return frame_size;
 }
 
