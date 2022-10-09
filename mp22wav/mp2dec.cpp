@@ -186,11 +186,12 @@ private:
     int bits_in_window;
     const uint8_t *frame_pos;
     int show_bits(int bit_count);
-    uint64_t _counter = 9999999;
+    uint64_t _counter2 = 0;
 public:
     void init(const uint8_t *frame);
     int get_bits(int bit_count);
-    uint64_t counter() const { return _counter; }
+    uint64_t counter2() const { return _counter2; }
+    void reset_counter() { _counter2 = 0; }
 };
 
 class Decoder
@@ -441,8 +442,6 @@ int CMain::run(FILE *fin, FILE *fout)
         int bytes = d.kjmp2_decode_frame(b, samples);
         out_bytes += (int) fwrite((const void*)samples, 1, KJMP2_SAMPLES_PER_FRAME * 4, fout);
         bufpos += bytes;
-        uint32_t rest = bufpos * 8 - b.counter();
-        b.get_bits(rest);
     }
 
     if (fout != stdout)
@@ -483,7 +482,6 @@ void BitBuffer::init(const uint8_t *frame)
     _bit_window = frame[0] << 16;
     bits_in_window = 8;
     frame_pos = &frame[1];
-    _counter = 0;
 }
 
 int BitBuffer::show_bits(int bit_count)
@@ -493,8 +491,7 @@ int BitBuffer::show_bits(int bit_count)
 
 int BitBuffer::get_bits(int bit_count)
 {
-    //std::cerr << "bit_count: " << bit_count << "\r\n";
-    _counter += bit_count;
+    _counter2 += bit_count;
     int result = show_bits(bit_count);
     _bit_window = (_bit_window << bit_count) & 0xFFFFFF;
     bits_in_window -= bit_count;
@@ -613,6 +610,7 @@ void Decoder::read_samples(const Quantizer_spec *q, int scalefactor, int *sample
 uint32_t
 Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm)
 {
+    b.reset_counter();
     uint8_t frame0 = b.get_bits(8);
     uint8_t frame1 = b.get_bits(8);
 
@@ -823,6 +821,7 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm)
 
         } // decoding of the granule finished
     }
+    b.get_bits(frame_size * 8 - b.counter2());
     return frame_size;
 }
 
