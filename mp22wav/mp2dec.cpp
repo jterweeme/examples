@@ -5,7 +5,6 @@
 #include <cstring>
 #include <cstdint>
 #include <fcntl.h>
-#include <string>
 #include <iostream>
 #include <math.h>
 
@@ -104,70 +103,45 @@ static constexpr struct Quantizer_spec quantizer_table[17] = {
 
 // synthesis window
 static constexpr int D[512] = {
-     0x00000, 0x00000, 0x00000, 0x00000, 0x00000, 0x00000, 0x00000,-0x00001,
-    -0x00001,-0x00001,-0x00001,-0x00002,-0x00002,-0x00003,-0x00003,-0x00004,
-    -0x00004,-0x00005,-0x00006,-0x00006,-0x00007,-0x00008,-0x00009,-0x0000A,
-    -0x0000C,-0x0000D,-0x0000F,-0x00010,-0x00012,-0x00014,-0x00017,-0x00019,
-    -0x0001C,-0x0001E,-0x00022,-0x00025,-0x00028,-0x0002C,-0x00030,-0x00034,
-    -0x00039,-0x0003E,-0x00043,-0x00048,-0x0004E,-0x00054,-0x0005A,-0x00060,
-    -0x00067,-0x0006E,-0x00074,-0x0007C,-0x00083,-0x0008A,-0x00092,-0x00099,
-    -0x000A0,-0x000A8,-0x000AF,-0x000B6,-0x000BD,-0x000C3,-0x000C9,-0x000CF,
-     0x000D5, 0x000DA, 0x000DE, 0x000E1, 0x000E3, 0x000E4, 0x000E4, 0x000E3,
-     0x000E0, 0x000DD, 0x000D7, 0x000D0, 0x000C8, 0x000BD, 0x000B1, 0x000A3,
-     0x00092, 0x0007F, 0x0006A, 0x00053, 0x00039, 0x0001D,-0x00001,-0x00023,
-    -0x00047,-0x0006E,-0x00098,-0x000C4,-0x000F3,-0x00125,-0x0015A,-0x00190,
-    -0x001CA,-0x00206,-0x00244,-0x00284,-0x002C6,-0x0030A,-0x0034F,-0x00396,
-    -0x003DE,-0x00427,-0x00470,-0x004B9,-0x00502,-0x0054B,-0x00593,-0x005D9,
-    -0x0061E,-0x00661,-0x006A1,-0x006DE,-0x00718,-0x0074D,-0x0077E,-0x007A9,
-    -0x007D0,-0x007EF,-0x00808,-0x0081A,-0x00824,-0x00826,-0x0081F,-0x0080E,
-     0x007F5, 0x007D0, 0x007A0, 0x00765, 0x0071E, 0x006CB, 0x0066C, 0x005FF,
-     0x00586, 0x00500, 0x0046B, 0x003CA, 0x0031A, 0x0025D, 0x00192, 0x000B9,
-    -0x0002C,-0x0011F,-0x00220,-0x0032D,-0x00446,-0x0056B,-0x0069B,-0x007D5,
-    -0x00919,-0x00A66,-0x00BBB,-0x00D16,-0x00E78,-0x00FDE,-0x01148,-0x012B3,
-    -0x01420,-0x0158C,-0x016F6,-0x0185C,-0x019BC,-0x01B16,-0x01C66,-0x01DAC,
-    -0x01EE5,-0x02010,-0x0212A,-0x02232,-0x02325,-0x02402,-0x024C7,-0x02570,
-    -0x025FE,-0x0266D,-0x026BB,-0x026E6,-0x026ED,-0x026CE,-0x02686,-0x02615,
-    -0x02577,-0x024AC,-0x023B2,-0x02287,-0x0212B,-0x01F9B,-0x01DD7,-0x01BDD,
-     0x019AE, 0x01747, 0x014A8, 0x011D1, 0x00EC0, 0x00B77, 0x007F5, 0x0043A,
-     0x00046,-0x003E5,-0x00849,-0x00CE3,-0x011B4,-0x016B9,-0x01BF1,-0x0215B,
-    -0x026F6,-0x02CBE,-0x032B3,-0x038D3,-0x03F1A,-0x04586,-0x04C15,-0x052C4,
-    -0x05990,-0x06075,-0x06771,-0x06E80,-0x0759F,-0x07CCA,-0x083FE,-0x08B37,
-    -0x09270,-0x099A7,-0x0A0D7,-0x0A7FD,-0x0AF14,-0x0B618,-0x0BD05,-0x0C3D8,
-    -0x0CA8C,-0x0D11D,-0x0D789,-0x0DDC9,-0x0E3DC,-0x0E9BD,-0x0EF68,-0x0F4DB,
-    -0x0FA12,-0x0FF09,-0x103BD,-0x1082C,-0x10C53,-0x1102E,-0x113BD,-0x116FB,
-    -0x119E8,-0x11C82,-0x11EC6,-0x120B3,-0x12248,-0x12385,-0x12467,-0x124EF,
-     0x1251E, 0x124F0, 0x12468, 0x12386, 0x12249, 0x120B4, 0x11EC7, 0x11C83,
-     0x119E9, 0x116FC, 0x113BE, 0x1102F, 0x10C54, 0x1082D, 0x103BE, 0x0FF0A,
-     0x0FA13, 0x0F4DC, 0x0EF69, 0x0E9BE, 0x0E3DD, 0x0DDCA, 0x0D78A, 0x0D11E,
-     0x0CA8D, 0x0C3D9, 0x0BD06, 0x0B619, 0x0AF15, 0x0A7FE, 0x0A0D8, 0x099A8,
-     0x09271, 0x08B38, 0x083FF, 0x07CCB, 0x075A0, 0x06E81, 0x06772, 0x06076,
-     0x05991, 0x052C5, 0x04C16, 0x04587, 0x03F1B, 0x038D4, 0x032B4, 0x02CBF,
-     0x026F7, 0x0215C, 0x01BF2, 0x016BA, 0x011B5, 0x00CE4, 0x0084A, 0x003E6,
-    -0x00045,-0x00439,-0x007F4,-0x00B76,-0x00EBF,-0x011D0,-0x014A7,-0x01746,
-     0x019AE, 0x01BDE, 0x01DD8, 0x01F9C, 0x0212C, 0x02288, 0x023B3, 0x024AD,
-     0x02578, 0x02616, 0x02687, 0x026CF, 0x026EE, 0x026E7, 0x026BC, 0x0266E,
-     0x025FF, 0x02571, 0x024C8, 0x02403, 0x02326, 0x02233, 0x0212B, 0x02011,
-     0x01EE6, 0x01DAD, 0x01C67, 0x01B17, 0x019BD, 0x0185D, 0x016F7, 0x0158D,
-     0x01421, 0x012B4, 0x01149, 0x00FDF, 0x00E79, 0x00D17, 0x00BBC, 0x00A67,
-     0x0091A, 0x007D6, 0x0069C, 0x0056C, 0x00447, 0x0032E, 0x00221, 0x00120,
-     0x0002D,-0x000B8,-0x00191,-0x0025C,-0x00319,-0x003C9,-0x0046A,-0x004FF,
-    -0x00585,-0x005FE,-0x0066B,-0x006CA,-0x0071D,-0x00764,-0x0079F,-0x007CF,
-     0x007F5, 0x0080F, 0x00820, 0x00827, 0x00825, 0x0081B, 0x00809, 0x007F0,
-     0x007D1, 0x007AA, 0x0077F, 0x0074E, 0x00719, 0x006DF, 0x006A2, 0x00662,
-     0x0061F, 0x005DA, 0x00594, 0x0054C, 0x00503, 0x004BA, 0x00471, 0x00428,
-     0x003DF, 0x00397, 0x00350, 0x0030B, 0x002C7, 0x00285, 0x00245, 0x00207,
-     0x001CB, 0x00191, 0x0015B, 0x00126, 0x000F4, 0x000C5, 0x00099, 0x0006F,
-     0x00048, 0x00024, 0x00002,-0x0001C,-0x00038,-0x00052,-0x00069,-0x0007E,
-    -0x00091,-0x000A2,-0x000B0,-0x000BC,-0x000C7,-0x000CF,-0x000D6,-0x000DC,
-    -0x000DF,-0x000E2,-0x000E3,-0x000E3,-0x000E2,-0x000E0,-0x000DD,-0x000D9,
-     0x000D5, 0x000D0, 0x000CA, 0x000C4, 0x000BE, 0x000B7, 0x000B0, 0x000A9,
-     0x000A1, 0x0009A, 0x00093, 0x0008B, 0x00084, 0x0007D, 0x00075, 0x0006F,
-     0x00068, 0x00061, 0x0005B, 0x00055, 0x0004F, 0x00049, 0x00044, 0x0003F,
-     0x0003A, 0x00035, 0x00031, 0x0002D, 0x00029, 0x00026, 0x00023, 0x0001F,
-     0x0001D, 0x0001A, 0x00018, 0x00015, 0x00013, 0x00011, 0x00010, 0x0000E,
-     0x0000D, 0x0000B, 0x0000A, 0x00009, 0x00008, 0x00007, 0x00007, 0x00006,
-     0x00005, 0x00005, 0x00004, 0x00004, 0x00003, 0x00003, 0x00002, 0x00002,
-     0x00002, 0x00002, 0x00001, 0x00001, 0x00001, 0x00001, 0x00001, 0x00001
+0, 0, 0, 0, 0, 0, 0, -1, -1, -1, -1, -2, -2, -3, -3, -4, -4, -5, -6, -6, -7,
+-8, -9, -10, -12, -13, -15, -16, -18, -20, -23, -25, -28, -30, -34, -37, -40,
+-44, -48, -52, -57, -62, -67, -72, -78, -84, -90, -96, -103, -110, -116,
+-124, -131, -138, -146, -153, -160, -168, -175, -182, -189, -195, -201,
+-207, 213, 218, 222, 225, 227, 228, 228, 227, 224, 221, 215, 208, 200, 189,
+177, 163, 146, 127, 106, 83, 57, 29, -1, -35, -71, -110, -152, -196, -243,
+-293, -346, -400, -458, -518, -580, -644, -710, -778, -847, -918, -990,
+-1063, -1136, -1209, -1282, -1355, -1427, -1497, -1566, -1633, -1697, -1758,
+-1816, -1869, -1918, -1961, -2000, -2031, -2056, -2074, -2084, -2086, -2079,
+-2062, 2037, 2000, 1952, 1893, 1822, 1739, 1644, 1535, 1414, 1280, 1131, 970,
+794, 605, 402, 185, -44, -287, -544, -813, -1094, -1387, -1691, -2005, -2329,
+-2662, -3003, -3350, -3704, -4062, -4424, -4787, -5152, -5516, -5878, -6236,
+-6588, -6934, -7270, -7596, -7909, -8208, -8490, -8754, -8997, -9218, -9415,
+-9584, -9726, -9837, -9915, -9958, -9965, -9934, -9862, -9749, -9591, -9388,
+-9138, -8839, -8491, -8091, -7639, -7133, 6574, 5959, 5288, 4561, 3776, 2935,
+2037, 1082, 70, -997, -2121, -3299, -4532, -5817, -7153, -8539, -9974, -11454,
+-12979, -14547, -16154, -17798, -19477, -21188, -22928, -24693, -26481, -28288,
+-30111, -31946, -33790, -35639, -37488, -39335, -41175, -43005, -44820, -46616,
+-48389, -50136, -51852, -53533, -55177, -56777, -58332, -59837, -61288, -62683,
+-64018, -65289, -66493, -67628, -68691, -69678, -70589, -71419, -72168, -72834,
+-73414, -73907, -74312, -74629, -74855, -74991, 75038, 74992, 74856, 74630,
+74313, 73908, 73415, 72835, 72169, 71420, 70590, 69679, 68692, 67629, 66494,
+65290, 64019, 62684, 61289, 59838, 58333, 56778, 55178, 53534, 51853, 50137,
+48390, 46617, 44821, 43006, 41176, 39336, 37489, 35640, 33791, 31947, 30112,
+28289, 26482, 24694, 22929, 21189, 19478, 17799, 16155, 14548, 12980, 11455,
+9975, 8540, 7154, 5818, 4533, 3300, 2122, 998, -69, -1081, -2036, -2934,
+-3775, -4560, -5287, -5958, 6574, 7134, 7640, 8092, 8492, 8840, 9139, 9389,
+9592, 9750, 9863, 9935, 9966, 9959, 9916, 9838, 9727, 9585, 9416, 9219, 8998,
+8755, 8491, 8209, 7910, 7597, 7271, 6935, 6589, 6237, 5879, 5517, 5153, 4788,
+4425, 4063, 3705, 3351, 3004, 2663, 2330, 2006, 1692, 1388, 1095, 814, 545, 288,
+45, -184, -401, -604, -793, -969, -1130, -1279, -1413, -1534, -1643, -1738, -1821,
+-1892, -1951, -1999, 2037, 2063, 2080, 2087, 2085, 2075, 2057, 2032, 2001, 1962,
+1919, 1870, 1817, 1759, 1698, 1634, 1567, 1498, 1428, 1356, 1283, 1210, 1137,
+1064, 991, 919, 848, 779, 711, 645, 581, 519, 459, 401, 347, 294, 244, 197,
+153, 111, 72, 36, 2, -28, -56, -82, -105, -126, -145, -162, -176, -188, -199,
+-207, -214, -220, -223, -226, -227, -227, -226, -224, -221, -217, 213, 208, 202,
+196, 190, 183, 176, 169, 161, 154, 147, 139, 132, 125, 117, 111, 104, 97, 91,
+85, 79, 73, 68, 63, 58, 53, 49, 45, 41, 38, 35, 31, 29, 26, 24, 21, 19, 17, 16,
+14, 13, 11, 10, 9, 8, 7, 7, 6, 5, 5, 4, 4, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1
 };
 
 static constexpr uint16_t sample_rates[8] = {
@@ -180,12 +154,12 @@ class BitBuffer
 private:
     int _bit_window;
     int bits_in_window;
-    int show_bits(int bit_count);
+    int show_bits(int bit_count) { return _bit_window >> 24 - bit_count; }
     uint64_t _counter2 = 0;
     FILE *_fin;
 public:
     BitBuffer(FILE *fin);
-    bool peek();
+    bool peek() { return bits_in_window > 0; }
     int get_bits(int bit_count);
     uint64_t counter2() const { return _counter2; }
     void reset_counter() { _counter2 = 0; }
@@ -201,9 +175,9 @@ private:
     int Voffs;
     int N[64][32];  // N[i][j] as 8-bit fixed-point
     int _V[2][1024];
-    int _U[512];
     int initialized = 0;
     void read_samples(const Quantizer_spec *q, int scalefactor, int *sample, BitBuffer &b);
+    static const Quantizer_spec *read_allocation(int sb, int b2_table, BitBuffer &b);
 public:
     void kjmp2_init();
     uint32_t kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate);
@@ -227,10 +201,10 @@ private:
     std::string _ofn;
 public:
     void parse(int argc, char **argv);
-    bool stdinput() const;
-    bool stdoutput() const;
-    std::string ifn() const;
-    std::string ofn() const;
+    bool stdinput() const { return _stdinput; }
+    bool stdoutput() const { return _stdoutput; }
+    std::string ifn() const { return _ifn; }
+    std::string ofn() const { return _ofn; }
 };
 
 class CWavHeader
@@ -239,8 +213,8 @@ private:
     int _rate;
     uint32_t _filesize = 0;
 public:
-    void rate(int val);
-    void filesize(uint32_t val);
+    void rate(int val) { _rate = val; }
+    void filesize(uint32_t val) { _filesize = val; }
     void write(FILE *fp) const;
 };
 
@@ -248,27 +222,13 @@ class CMain
 {
 private:
     static constexpr uint32_t KJMP2_SAMPLES_PER_FRAME = 1152;
-    static constexpr uint32_t KJMP2_MAX_FRAME_SIZE = 1440;
-    static constexpr uint32_t MAX_BUFSIZE = 1000 * KJMP2_MAX_FRAME_SIZE;
 public:
     int run(FILE *fin, FILE *outfile);
 };
 
-void CWavHeader::rate(int val)
-{
-    _rate = val;
-}
-
-void CWavHeader::filesize(uint32_t val)
-{
-    _filesize = val;
-}
-
 void CWavHeader::write(FILE *fp) const
 {
     Toolbox t;
-
-
     uint8_t header[44];
     strncpy((char *)header + 0, "RIFF", 4);
     t.writeDwLE((char *)(header + 4), _filesize - 36);
@@ -334,26 +294,6 @@ void COptions::parse(int argc, char **argv)
     }
 }
 
-bool COptions::stdinput() const
-{
-    return _stdinput;
-}
-
-bool COptions::stdoutput() const
-{
-    return _stdoutput;
-}
-
-std::string COptions::ifn() const
-{
-    return _ifn;
-}
-
-std::string COptions::ofn() const
-{
-    return _ofn;
-}
-
 int main(int argc, char **argv)
 {
     COptions opts;
@@ -401,19 +341,17 @@ int CMain::run(FILE *fin, FILE *fout)
     CWavHeader h;
 
     int out_bytes = 0;
-    int bufpos = 0;
 
     d.kjmp2_init();
     BitBuffer b(fin);
-    //b.init(buf.data());
     int samplerate = 0;
 
     while (b.peek())
-    //for (int i = 0; i < 9000; ++i)
     {
         int16_t samples[KJMP2_SAMPLES_PER_FRAME * 2];
         int bytes = d.kjmp2_decode_frame(b, samples, samplerate);
 
+        //schrijf wav header voor eerste frame
         if (out_bytes == 0)
         {
             h.rate(samplerate);
@@ -421,7 +359,6 @@ int CMain::run(FILE *fin, FILE *fout)
         }
 
         out_bytes += (int) fwrite((const void*)samples, 1, KJMP2_SAMPLES_PER_FRAME * 4, fout);
-        bufpos += bytes;
     }
 
     if (fout != stdout)
@@ -444,16 +381,6 @@ BitBuffer::BitBuffer(FILE *fin) : _fin(fin)
 {
     _bit_window = fgetc(fin) << 16;
     bits_in_window = 8;
-}
-
-bool BitBuffer::peek()
-{
-    return bits_in_window > 0;
-}
-
-int BitBuffer::show_bits(int bit_count)
-{
-    return _bit_window >> 24 - bit_count;
 }
 
 int BitBuffer::get_bits(int bit_count)
@@ -497,8 +424,7 @@ void Decoder::kjmp2_init()
     Voffs = 0;
 }
 
-// DECODE HELPER FUNCTIONS
-static const Quantizer_spec *read_allocation(int sb, int b2_table, BitBuffer &b)
+const Quantizer_spec *Decoder::read_allocation(int sb, int b2_table, BitBuffer &b)
 {
     int table_idx = quant_lut_step3[b2_table][sb];
     table_idx = quant_lut_step4[table_idx & 15][b.get_bits(table_idx >> 4)];
@@ -563,8 +489,6 @@ void Decoder::read_samples(const Quantizer_spec *q, int scalefactor, int *sample
 // kjmp2_decode_frame: Decode one frame of audio.
 // mp2: A pointer to a context record that has been initialized with
 //      kjmp2_init before.
-// frame: A pointer to the frame to decode. It *must* be a complete frame,
-//        because no error checking is done!
 // pcm: A pointer to the output PCM data. kjmp2_decode_frame() will always
 //      return 1152 (=KJMP2_SAMPLES_PER_FRAME) interleaved stereo samples
 //      in a native-endian 16-bit signed format. Even for mono streams,
@@ -607,18 +531,11 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
     unsigned padding_bit = b.get_bits(1);
     b.get_bits(1);  // discard private_bit
     unsigned mode = b.get_bits(2);
-    int bound, sblimit, table_idx;
+    int sblimit, table_idx;
+    int bound = b.get_bits(2) + 1 << 2;
 
-    // parse the mode_extension, set up the stereo bound
-    if (mode == JOINT_STEREO)
-    {
-        bound = b.get_bits(2) + 1 << 2;
-    }
-    else
-    {
-        b.get_bits(2);
+    if (mode != JOINT_STEREO)
         bound = mode == MONO ? 0 : 32;
-    }
 
     // discard the last 4 bits of the header and the CRC value, if present
     b.get_bits(4);
@@ -755,19 +672,21 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
                         _V[ch][table_idx + i] = sum + 8192 >> 14;
                     }
 
+                    int U[512];
+
                     // construction of U
                     for (int i = 0;  i < 8;  ++i)
                     {
                         for (int j = 0;  j < 32;  ++j)
                         {
-                            _U[(i<<6) + j]      = _V[ch][(table_idx + (i<<7) + j     ) & 1023];
-                            _U[(i<<6) + j + 32] = _V[ch][(table_idx + (i<<7) + j + 96) & 1023];
+                            U[(i<<6) + j]      = _V[ch][(table_idx + (i<<7) + j     ) & 1023];
+                            U[(i<<6) + j + 32] = _V[ch][(table_idx + (i<<7) + j + 96) & 1023];
                         }
                     }
 
                     // apply window
                     for (int i = 0;  i < 512;  ++i)
-                        _U[i] = _U[i] * D[i] + 32 >> 6;
+                        U[i] = U[i] * D[i] + 32 >> 6;
 
                     // output samples
                     for (int j = 0; j < 32; ++j)
@@ -775,7 +694,7 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
                         int sum = 0;
 
                         for (int i = 0;  i < 16;  ++i)
-                            sum -= _U[(i << 5) + j];
+                            sum -= U[(i << 5) + j];
 
                         sum = (sum + 8) >> 4;
                         sum = std::max(sum, -32768);

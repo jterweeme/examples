@@ -135,10 +135,10 @@ static constexpr uint8_t PLM_AUDIO_QUANT_LUT_STEP_1[2][16] = {
 };
 
 // Quantizer lookup, step 2: bitrate class, sample rate -> B2 table idx, sblimit
-static constexpr uint8_t PLM_AUDIO_QUANT_TAB_A = (27 | 64);   // Table 3-B.2a: high-rate, sblimit = 27
-static constexpr uint8_t PLM_AUDIO_QUANT_TAB_B = (30 | 64);   // Table 3-B.2b: high-rate, sblimit = 30
-static constexpr uint8_t PLM_AUDIO_QUANT_TAB_C = 8;           // Table 3-B.2c:  low-rate, sblimit =  8
-static constexpr uint8_t PLM_AUDIO_QUANT_TAB_D = 12;          // Table 3-B.2d:  low-rate, sblimit = 12
+static constexpr uint8_t PLM_AUDIO_QUANT_TAB_A = 27 | 64; //Table 3-B.2a: high-rate, sblimit = 27
+static constexpr uint8_t PLM_AUDIO_QUANT_TAB_B = 30 | 64; //Table 3-B.2b: high-rate, sblimit = 30
+static constexpr uint8_t PLM_AUDIO_QUANT_TAB_C = 8;       //Table 3-B.2c: low-rate, sblimit =  8
+static constexpr uint8_t PLM_AUDIO_QUANT_TAB_D = 12;      //Table 3-B.2d: low-rate, sblimit = 12
 
 static constexpr uint8_t QUANT_LUT_STEP_2[3][3] = {
     //44.1 kHz,              48 kHz,                32 kHz
