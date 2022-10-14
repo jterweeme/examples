@@ -45,6 +45,24 @@ double mycos(double x)
     return ret * sign;
 }
 
+double cosinus(double x)
+{
+    x = fabs(x);
+    x = doublemod(x, 2*PI);
+    char sign = 1;
+
+    if (x > PI)
+        x -= PI, sign = -1;
+
+    int p = 0;
+    double s = 1.0, t = 1.0;
+
+    while(fabs(t/s) > 0.0001)
+        s += (t = (-t * x * x) / ((2 * ++p - 1) * (2 * p)));
+    
+    return s * sign;
+}
+
 double mysine(double x)
 {
     return 0.0;
@@ -52,7 +70,9 @@ double mysine(double x)
 
 void myfunction(double x)
 {
-    std::cout << x << "\r\n" << cos(x) << "\r\n" << mycos(x) << "\r\n\r\n";
+    std::cout << x << "\r\n"
+              << cos(x) << "\r\n"
+              << mycos(x) << "\r\n" << cosinus(x) << "\r\n\r\n";
 }
 
 int main()
