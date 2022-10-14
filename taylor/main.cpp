@@ -5,41 +5,6 @@
 
 static constexpr double PI = 3.1415926535;
 
-template <class T> static T powi(T base, uint64_t e)
-{
-    T ret = base;
-
-    for (uint64_t i = 1; i < e; ++i)
-        ret *= base;
-
-    return e > 0 ? ret : 1;
-}
-
-static double powdi(double base, uint64_t e) {
-    return powi<double>(base, e);
-}
-
-//2) 4 - 16 - 64 - 256 - 1024
-
-double cos_taylor_literal_6terms_naive(double x, uint32_t n)
-{
-    double ret = 1;
-    uint64_t fact = 2;
-    uint64_t j = 3;
-
-    for (uint32_t i = 0; i < n; ++i)
-    {
-        ret -= powdi(x, 2 + i * 4) / fact;
-        fact *= j++;
-        fact *= j++;
-        ret += powdi(x, 4 + i * 4) / fact;
-        fact *= j++;
-        fact *= j++;
-    }
-
-    return ret;
-}
-
 double doublemod(double a, double b)
 {
     return a - b * int(a / b);
@@ -50,15 +15,34 @@ double mycos(double x)
     if (x < 0)
         x *= -1;
 
-    double ret = doublemod(x, 2*PI);
+    x = doublemod(x, 2*PI);
     char sign = 1;
 
-    if (ret > PI)
+    if (x > PI)
     {
-        ret -= PI;
+        x -= PI;
         sign = -1;
     }
-    return sign * cos_taylor_literal_6terms_naive(ret, 3);
+
+    double ret = 1;
+    uint64_t fact = 2;
+    uint64_t j = 3;
+    double base = x;
+
+    for (uint32_t i = 0; i < 4; ++i)
+    {
+        base *= x;
+        ret -= base / fact;
+        fact *= j++;
+        fact *= j++;
+        base *= x * x;
+        ret += base / fact;
+        base *= x;
+        fact *= j++;
+        fact *= j++;
+    }
+
+    return ret * sign;
 }
 
 double mysine(double x)
