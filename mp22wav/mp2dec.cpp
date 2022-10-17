@@ -569,7 +569,6 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
 
     bound = std::min(bound, sblimit);
 
-
     // read the allocation information
     for (int sb = 0;  sb < bound;  ++sb)
         for (int ch = 0;  ch < 2;  ++ch)

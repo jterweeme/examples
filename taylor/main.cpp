@@ -5,50 +5,10 @@
 
 static constexpr double PI = 3.1415926535;
 
-double doublemod(double a, double b)
-{
-    return a - b * int(a / b);
-}
-
-double mycos(double x)
-{
-    if (x < 0)
-        x *= -1;
-
-    x = doublemod(x, 2*PI);
-    char sign = 1;
-
-    if (x > PI)
-    {
-        x -= PI;
-        sign = -1;
-    }
-
-    double ret = 1;
-    uint64_t fact = 2;
-    uint64_t j = 3;
-    double base = x;
-
-    for (uint32_t i = 0; i < 4; ++i)
-    {
-        base *= x;
-        ret -= base / fact;
-        fact *= j++;
-        fact *= j++;
-        base *= x * x;
-        ret += base / fact;
-        base *= x;
-        fact *= j++;
-        fact *= j++;
-    }
-
-    return ret * sign;
-}
-
 double cosinus(double x)
 {
     x = fabs(x);
-    x = doublemod(x, 2*PI);
+    x = fmod(x, 2*PI);
     char sign = 1;
 
     if (x > PI)
@@ -63,16 +23,31 @@ double cosinus(double x)
     return s * sign;
 }
 
-double mysine(double x)
+double sine(double x)
 {
-    return 0.0;
+    x = fmod(x, 2*PI);
+
+    double res=0, pow=x, fact=1;
+
+    for (int i=0; i<20; ++i)
+    {
+        res+=pow/fact;
+        pow*=-1*x*x;
+        fact*=(2*(i+1))*(2*(i+1)+1);
+    }
+
+    return res;
 }
 
 void myfunction(double x)
 {
     std::cout << x << "\r\n"
               << cos(x) << "\r\n"
-              << mycos(x) << "\r\n" << cosinus(x) << "\r\n\r\n";
+              << cosinus(x) << "\r\n\r\n";
+
+    std::cout << x << "\r\n"
+              << sin(x) << "\r\n"
+              << sine(x) << "\r\n\r\n";
 }
 
 int main()
