@@ -21,6 +21,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "a52.h"
+
 typedef struct ao_instance_s ao_instance_t;
 
 struct ao_instance_s {
