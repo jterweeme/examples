@@ -21,19 +21,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#define HAVE_STDINT_H 1
-#define HAVE_STDLIB_H 1
-#define HAVE_STRINGS_H 1
-#define HAVE_STRING_H 1
-#define HAVE_SYS_STAT_H 1
-#define HAVE_SYS_TIMEB_H 1
-#define HAVE_SYS_TIME_H 1
-#define HAVE_UNISTD_H 1
 #define LIBAO_OSS 
 #define PACKAGE "a52dec"
-#define PACKAGE_BUGREPORT ""
 #define PACKAGE_NAME ""
-#define PACKAGE_STRING ""
 #define PACKAGE_VERSION ""
 #define STDC_HEADERS 1
 #define VERSION "0.7.4"
@@ -59,11 +49,9 @@ typedef double sample_t;
 
 typedef struct a52_state_s a52_state_t;
 
-#define A52_MONO 1
 #define A52_STEREO 2
 #define A52_DOLBY 10
 
-#define A52_LFE 16
 #define A52_ADJUST_LEVEL 32
 
 extern "C" {
@@ -79,50 +67,7 @@ int a52_block (a52_state_t * state);
 void a52_free (a52_state_t * state);
 }
 
-typedef struct ao_instance_s ao_instance_t;
 
-struct ao_instance_s {
-    int (* setup) (ao_instance_t * instance, int sample_rate, int * flags,
-           sample_t * level, sample_t * bias);
-    int (* play) (ao_instance_t * instance, int flags, sample_t * samples);
-    void (* close) (ao_instance_t * instance);
-};
-
-typedef ao_instance_t * ao_open_t (void);
-
-typedef struct ao_driver_s {
-    char * name;
-    ao_open_t * open;
-} ao_driver_t;
-
-static inline ao_instance_t * ao_open (ao_open_t * open)
-{
-    return open ();
-}
-
-static inline int ao_setup (ao_instance_t * instance, int sample_rate,
-                int * flags, sample_t * level, sample_t * bias)
-{
-    return instance->setup (instance, sample_rate, flags, level, bias);
-}
-
-static inline int ao_play (ao_instance_t * instance, int flags,
-               sample_t * samples)
-{
-    return instance->play (instance, flags, samples);
-}
-
-static inline void ao_close (ao_instance_t * instance)
-{
-    if (instance->close)
-    instance->close (instance);
-}
-
-
-void float2s16_2 (float * f, int16_t * s16);
-int channels_multi (int flags);
-void float2s16_multi (float * f, int16_t * s16, int flags);
-void s16_swap (int16_t * s16, int channels);
 
 #ifdef WORDS_BIGENDIAN
 #define s16_LE(s16,channels) s16_swap (s16, channels)
@@ -153,17 +98,15 @@ static inline int16_t convert (int32_t i)
 
 void float2s16_2 (float * _f, int16_t * s16)
 {
-    int i;
     int32_t * f = (int32_t *) _f;
 
-    for (i = 0; i < 256; i++) {
-    s16[2*i] = convert (f[i]);
-    s16[2*i+1] = convert (f[i+256]);
+    for (int i = 0; i < 256; i++) {
+        s16[2*i] = convert (f[i]);
+        s16[2*i+1] = convert (f[i+256]);
     }
 }
 
 typedef struct wav_instance_s {
-    ao_instance_t ao;
     int sample_rate;
     int set_params;
     int flags;
@@ -177,22 +120,30 @@ static uint8_t wav_header[] = {
     'd', 'a', 't', 'a', 0xd8, 0xff, 0xff, 0xff
 };
 
+struct ao_instance_t {
+};
+
+typedef ao_instance_t * ao_open_t (void);
+
+static inline ao_instance_t * ao_open (ao_open_t * open)
+{
+    return open ();
+}
+
 static int wav_setup (ao_instance_t * _instance, int sample_rate, int * flags,
               sample_t * level, sample_t * bias)
 {
     wav_instance_t * instance = (wav_instance_t *) _instance;
 
     if ((instance->set_params == 0) && (instance->sample_rate != sample_rate))
-    return 1;
-    instance->sample_rate = sample_rate;
+        return 1;
 
+    instance->sample_rate = sample_rate;
     *flags = instance->flags;
     *level = 1;
     *bias = 384;
-
     return 0;
 }
-
 
 static void store (uint8_t * buf, int value)
 {
@@ -209,27 +160,24 @@ static int wav_play (ao_instance_t * _instance, int flags, sample_t * _samples)
 
 #ifdef LIBA52_DOUBLE
     float samples[256 * 2];
-    int i;
 
-    for (i = 0; i < 256 * 2; i++)
-    samples[i] = _samples[i];
+    for (int i = 0; i < 256 * 2; i++)
+        samples[i] = _samples[i];
 #else
     float * samples = _samples;
 #endif
 
     if (instance->set_params) {
-    instance->set_params = 0;
-    store (wav_header + 24, instance->sample_rate);
-    store (wav_header + 28, instance->sample_rate * 4);
-    fwrite (wav_header, sizeof (wav_header), 1, stdout);
+        instance->set_params = 0;
+        store (wav_header + 24, instance->sample_rate);
+        store (wav_header + 28, instance->sample_rate * 4);
+        fwrite (wav_header, sizeof (wav_header), 1, stdout);
     }
 
     float2s16_2 (samples, int16_samples);
     s16_LE (int16_samples, 2);
     fwrite (int16_samples, 256 * sizeof (int16_t) * 2, 1, stdout);
-
     instance->size += 256 * sizeof (int16_t) * 2;
-
     return 0;
 }
 
@@ -239,7 +187,7 @@ static void wav_close (ao_instance_t * _instance)
     wav_instance_t * instance = (wav_instance_t *) _instance;
 
     if (fseek (stdout, 0, SEEK_SET) < 0)
-    return;
+        return;
 
     store (wav_header + 4, instance->size + 36);
     store (wav_header + 40, instance->size);
@@ -249,20 +197,13 @@ static void wav_close (ao_instance_t * _instance)
 static ao_instance_t * wav_open (int flags)
 {
     wav_instance_t * instance;
-
     instance = (wav_instance_t *)malloc (sizeof (wav_instance_t));
     if (instance == NULL)
-    return NULL;
-
-    instance->ao.setup = wav_setup;
-    instance->ao.play = wav_play;
-    instance->ao.close = wav_close;
-
+        return NULL;
     instance->sample_rate = 0;
     instance->set_params = 1;
     instance->flags = flags;
     instance->size = 0;
-
     return (ao_instance_t *) instance;
 }
 
@@ -301,7 +242,6 @@ static void handle_args (int argc, char ** argv)
             break;
         }
 
-    /* -o not specified, use a default driver */
     output_open = ao_wav_open;
 
     if (optind < argc)
@@ -326,12 +266,6 @@ void a52_decode_data (uint8_t * start, uint8_t * end)
     static uint8_t * bufptr = buf;
     static uint8_t * bufpos = buf + 7;
 
-    /*
-     * sample_rate and flags are static because this routine could
-     * exit between the a52_syncinfo() and the ao_setup(), and we want
-     * to have the same values when we get back !
-     */
-
     static int sample_rate;
     static int flags;
     int bit_rate;
@@ -349,51 +283,45 @@ void a52_decode_data (uint8_t * start, uint8_t * end)
         bufptr += len;
         start += len;
 
-        if (bufptr == bufpos)
+        if (bufptr != bufpos)
+            continue;
+
+        if (bufpos == buf + 7)
         {
-            if (bufpos == buf + 7)
+            int length = a52_syncinfo (buf, &flags, &sample_rate, &bit_rate);
+
+            if (!length)
             {
-                int length = a52_syncinfo (buf, &flags, &sample_rate, &bit_rate);
-
-                if (!length)
-                {
-                    fprintf (stderr, "skip\n");
-                    for (bufptr = buf; bufptr < buf + 6; bufptr++)
-                        bufptr[0] = bufptr[1];
-                    continue;
-                }
-                bufpos = buf + length;
-            }
-            else
-            {
-                sample_t level, bias;
-                int i;
-
-                if (ao_setup (output, sample_rate, &flags, &level, &bias))
-                    goto error;
-                if (!disable_adjust)
-                    flags |= A52_ADJUST_LEVEL;
-                level *= gain;
-                if (a52_frame (state, buf, &flags, &level, bias))
-                    goto error;
-                if (disable_dynrng)
-                    a52_dynrng (state, NULL, NULL);
-                for (i = 0; i < 6; i++)
-                {
-                    if (a52_block (state))
-                        goto error;
-
-                    if (ao_play (output, flags, a52_samples(state)))
-                        goto error;
-                }
-                bufptr = buf;
-                bufpos = buf + 7;
+                fprintf (stderr, "skip\n");
+                for (bufptr = buf; bufptr < buf + 6; bufptr++)
+                    bufptr[0] = bufptr[1];
                 continue;
-error:
-                fprintf (stderr, "error\n");
-                bufptr = buf;
-                bufpos = buf + 7;
             }
+            bufpos = buf + length;
+        }
+        else
+        {
+            sample_t level, bias;
+
+            if (wav_setup(output, sample_rate, &flags, &level, &bias))
+                throw "error";
+            if (!disable_adjust)
+                flags |= A52_ADJUST_LEVEL;
+            level *= gain;
+            if (a52_frame (state, buf, &flags, &level, bias))
+                throw "error";
+            if (disable_dynrng)
+                a52_dynrng (state, NULL, NULL);
+            for (int i = 0; i < 6; i++)
+            {
+                if (a52_block (state))
+                    throw "error";
+
+                if (wav_play(output, flags, a52_samples(state)))
+                    throw "error";
+            }
+            bufptr = buf;
+            bufpos = buf + 7;
         }
     }
 }
@@ -426,6 +354,6 @@ int main (int argc, char ** argv)
         a52_decode_data(buffer, buffer + size);
     } while (size == BUFFER_SIZE);
     a52_free(state);
-    ao_close(output);
+    wav_close(output);
     return 0;
 }
