@@ -29,7 +29,6 @@
 #include <errno.h>
 #include <getopt.h>
 #include <math.h>
-#include <signal.h>
 #ifdef HAVE_IO_H
 #include <fcntl.h>
 #include <io.h>
@@ -51,103 +50,6 @@ static ao_open_t * output_open = NULL;
 static ao_instance_t * output;
 static a52_state_t * state;
 
-static uint32_t frame_counter = 0;
-static struct timeval tv_beg, tv_start;
-static int total_elapsed;
-static int last_count = 0;
-
-#ifdef HAVE_GETTIMEOFDAY
-
-static void print_fps (int final);
-
-static RETSIGTYPE signal_handler (int sig)
-{
-    print_fps (1);
-    signal (sig, SIG_DFL);
-    raise (sig);
-}
-
-static void print_fps (int final)
-{
-    struct timeval tv_end;
-    float fps, tfps;
-    int frames, elapsed;
-
-    gettimeofday (&tv_end, NULL);
-
-    if (!frame_counter) {
-        tv_start = tv_beg = tv_end;
-        signal (SIGINT, signal_handler);
-    }
-
-    elapsed = (tv_end.tv_sec - tv_beg.tv_sec) * 100 +
-        (tv_end.tv_usec - tv_beg.tv_usec) / 10000;
-
-    total_elapsed = (tv_end.tv_sec - tv_start.tv_sec) * 100 +
-        (tv_end.tv_usec - tv_start.tv_usec) / 10000;
-
-    if (final) {
-	if (total_elapsed)
-	    tfps = frame_counter * 100.0 / total_elapsed;
-	else
-	    tfps = 0;
-
-	fprintf (stderr,"\n%d frames decoded in %.2f seconds (%.2f fps)\n",
-		 frame_counter, total_elapsed / 100.0, tfps);
-
-	return;
-    }
-
-    frame_counter++;
-
-    /* only display every 0.50 seconds */
-    if (elapsed < 50)	
-        return;
-
-    tv_beg = tv_end;
-    frames = frame_counter - last_count;
-
-    fps = frames * 100.0 / elapsed;
-    tfps = frame_counter * 100.0 / total_elapsed;
-
-    fprintf (stderr, "%d frames in %.2f sec (%.2f fps), "
-	     "%d last %.2f sec (%.2f fps)\033[K\r", frame_counter,
-	     total_elapsed / 100.0, tfps, frames, elapsed / 100.0, fps);
-
-    last_count = frame_counter;
-}
-
-#else /* !HAVE_GETTIMEOFDAY */
-
-static void print_fps (int final)
-{
-}
-
-#endif
-
-static void print_usage (char ** argv)
-{
-    int i;
-    ao_driver_t * drivers;
-
-    fprintf (stderr, "usage: "
-	     "%s [-o <mode>] [-s [<track>]] [-t <pid>] [-c] [-r] [-a] \\\n"
-	     "\t\t[-g <gain>] <file>\n"
-	     "\t-s\tuse program stream demultiplexer, track 0-7 or 0x80-0x87\n"
-	     "\t-t\tuse transport stream demultiplexer, pid 0x10-0x1ffe\n"
-	     "\t-c\tuse c implementation, disables all accelerations\n"
-	     "\t-r\tdisable dynamic range compression\n"
-	     "\t-a\tdisable level adjustment based on output mode\n"
-	     "\t-g\tadd specified gain in decibels, -96.0 to +96.0\n"
-	     "\t-o\taudio output mode\n", argv[0]);
-
-    drivers = ao_drivers ();
-    for (i = 0; drivers[i].name; i++)
-	fprintf (stderr, "\t\t\t%s\n", drivers[i].name);
-
-    exit (1);
-}
-
 static void handle_args (int argc, char ** argv)
 {
     int c;
@@ -164,10 +66,7 @@ static void handle_args (int argc, char ** argv)
 		            output_open = drivers[i].open;
 
             if (output_open == NULL)
-            {
                 fprintf (stderr, "Invalid video driver: %s\n", optarg);
-                print_usage (argv);
-	        }
 	        break;
 	case 'c':
 	    disable_accel = 1;
@@ -178,31 +77,26 @@ static void handle_args (int argc, char ** argv)
 	case 'a':
 	    disable_adjust = 1;
 	    break;
-	case 'g':
-	    gain = strtod (optarg, &s);
-	    if ((gain < -96) || (gain > 96) || (*s)) {
-		fprintf (stderr, "Invalid gain: %s\n", optarg);
-		print_usage (argv);
-	    }
-	    gain = pow (2, gain / 6);
-	    break;
-	default:
-	    print_usage (argv);
 	}
 
     /* -o not specified, use a default driver */
     if (output_open == NULL)
-	output_open = drivers[0].open;
+        output_open = drivers[0].open;
 
-    if (optind < argc) {
-	in_file = fopen (argv[optind], "rb");
-	if (!in_file) {
-	    fprintf (stderr, "%s - could not open file %s\n", strerror (errno),
-		     argv[optind]);
-	    exit (1);
-	}
-    } else
-	in_file = stdin;
+    if (optind < argc)
+    {
+	    in_file = fopen (argv[optind], "rb");
+	    if (!in_file)
+        {
+            fprintf (stderr, "%s - could not open file %s\n", strerror (errno),
+            argv[optind]);
+            exit (1);
+	    }
+    }
+    else
+    {
+        in_file = stdin;
+    }
 }
 
 void a52_decode_data (uint8_t * start, uint8_t * end)
@@ -226,45 +120,52 @@ void a52_decode_data (uint8_t * start, uint8_t * end)
         int len = end - start;
         if (!len)
             break;
+
         if (len > bufpos - bufptr)
-	    len = bufpos - bufptr;
+	        len = bufpos - bufptr;
+
         memcpy (bufptr, start, len);
         bufptr += len;
         start += len;
-        if (bufptr == bufpos) {
-	    if (bufpos == buf + 7) {
-		int length;
 
-		length = a52_syncinfo (buf, &flags, &sample_rate, &bit_rate);
-		if (!length) {
-		    fprintf (stderr, "skip\n");
-		    for (bufptr = buf; bufptr < buf + 6; bufptr++)
-			bufptr[0] = bufptr[1];
-		    continue;
-		}
-		bufpos = buf + length;
-	    } else {
-		sample_t level, bias;
-		int i;
+        if (bufptr == bufpos)
+        {
+            if (bufpos == buf + 7)
+            {
+                int length = a52_syncinfo (buf, &flags, &sample_rate, &bit_rate);
 
-		if (ao_setup (output, sample_rate, &flags, &level, &bias))
-		    goto error;
-		if (!disable_adjust)
-		    flags |= A52_ADJUST_LEVEL;
-		level *= gain;
-		if (a52_frame (state, buf, &flags, &level, bias))
-		    goto error;
-		if (disable_dynrng)
-		    a52_dynrng (state, NULL, NULL);
-		for (i = 0; i < 6; i++) {
-		    if (a52_block (state))
-			goto error;
-		    if (ao_play (output, flags, a52_samples (state)))
-			goto error;
+                if (!length)
+                {
+                    fprintf (stderr, "skip\n");
+                    for (bufptr = buf; bufptr < buf + 6; bufptr++)
+                        bufptr[0] = bufptr[1];
+                    continue;
+                }
+                bufpos = buf + length;
+            }
+            else
+            {
+                sample_t level, bias;
+                int i;
+
+                if (ao_setup (output, sample_rate, &flags, &level, &bias))
+                    goto error;
+                if (!disable_adjust)
+                    flags |= A52_ADJUST_LEVEL;
+                level *= gain;
+                if (a52_frame (state, buf, &flags, &level, bias))
+                    goto error;
+                if (disable_dynrng)
+                    a52_dynrng (state, NULL, NULL);
+                for (i = 0; i < 6; i++)
+                {
+                    if (a52_block (state))
+                        goto error;
+                    if (ao_play (output, flags, a52_samples (state)))
+                        goto error;
                 }
                 bufptr = buf;
                 bufpos = buf + 7;
-        		print_fps (0);
                 continue;
 error:
                 fprintf (stderr, "error\n");
@@ -273,15 +174,6 @@ error:
             }
         }
     }
-}
-
-static void es_loop (void)
-{
-    int size;
-    do {
-        size = fread(buffer, 1, BUFFER_SIZE, in_file);
-        a52_decode_data(buffer, buffer + size);
-    } while (size == BUFFER_SIZE);
 }
 
 int main (int argc, char ** argv)
@@ -306,9 +198,12 @@ int main (int argc, char ** argv)
         return 1;
     }
 
-    es_loop();
+    int size;
+    do {
+        size = fread(buffer, 1, BUFFER_SIZE, in_file);
+        a52_decode_data(buffer, buffer + size);
+    } while (size == BUFFER_SIZE);
     a52_free(state);
-    print_fps(1);
     ao_close(output);
     return 0;
 }
