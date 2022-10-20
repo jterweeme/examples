@@ -106,12 +106,12 @@ void float2s16_2 (float * _f, int16_t * s16)
     }
 }
 
-typedef struct wav_instance_s {
+struct wav_instance_t {
     int sample_rate;
     int set_params;
     int flags;
     int size;
-} wav_instance_t;
+};
 
 static uint8_t wav_header[] = {
     'R', 'I', 'F', 'F', 0xfc, 0xff, 0xff, 0xff, 'W', 'A', 'V', 'E',
@@ -120,20 +120,17 @@ static uint8_t wav_header[] = {
     'd', 'a', 't', 'a', 0xd8, 0xff, 0xff, 0xff
 };
 
-struct ao_instance_t {
-};
+typedef wav_instance_t * ao_open_t (void);
 
-typedef ao_instance_t * ao_open_t (void);
-
-static inline ao_instance_t * ao_open (ao_open_t * open)
+static inline wav_instance_t * ao_open (ao_open_t * open)
 {
     return open ();
 }
 
-static int wav_setup (ao_instance_t * _instance, int sample_rate, int * flags,
+static int wav_setup (wav_instance_t * instance, int sample_rate, int * flags,
               sample_t * level, sample_t * bias)
 {
-    wav_instance_t * instance = (wav_instance_t *) _instance;
+    //wav_instance_t * instance = (wav_instance_t *) _instance;
 
     if ((instance->set_params == 0) && (instance->sample_rate != sample_rate))
         return 1;
@@ -153,9 +150,9 @@ static void store (uint8_t * buf, int value)
     buf[3] = value >> 24;
 }
 
-static int wav_play (ao_instance_t * _instance, int flags, sample_t * _samples)
+static int wav_play (wav_instance_t * instance, int flags, sample_t * _samples)
 {
-    wav_instance_t * instance = (wav_instance_t *) _instance;
+    //wav_instance_t * instance = (wav_instance_t *) _instance;
     int16_t int16_samples[256*2];
 
 #ifdef LIBA52_DOUBLE
@@ -182,7 +179,7 @@ static int wav_play (ao_instance_t * _instance, int flags, sample_t * _samples)
 }
 
 
-static void wav_close (ao_instance_t * _instance)
+static void wav_close (wav_instance_t * _instance)
 {
     wav_instance_t * instance = (wav_instance_t *) _instance;
 
@@ -194,7 +191,7 @@ static void wav_close (ao_instance_t * _instance)
     fwrite (wav_header, sizeof (wav_header), 1, stdout);
 }
 
-static ao_instance_t * wav_open (int flags)
+static wav_instance_t * wav_open (int flags)
 {
     wav_instance_t * instance;
     instance = (wav_instance_t *)malloc (sizeof (wav_instance_t));
@@ -204,10 +201,10 @@ static ao_instance_t * wav_open (int flags)
     instance->set_params = 1;
     instance->flags = flags;
     instance->size = 0;
-    return (ao_instance_t *) instance;
+    return instance;
 }
 
-ao_instance_t * ao_wav_open (void)
+wav_instance_t * ao_wav_open (void)
 {
     return wav_open (A52_STEREO);
 }
@@ -220,7 +217,7 @@ static int disable_dynrng = 0;
 static int disable_adjust = 0;
 static sample_t gain = 1;
 static ao_open_t * output_open = NULL;
-static ao_instance_t * output;
+static wav_instance_t * output;
 static a52_state_t * state;
 
 static void handle_args (int argc, char ** argv)
