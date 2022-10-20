@@ -54,7 +54,6 @@ typedef struct a52_state_s a52_state_t;
 
 #define A52_ADJUST_LEVEL 32
 
-extern "C" {
 a52_state_t * a52_init (uint32_t mm_accel);
 sample_t * a52_samples (a52_state_t * state);
 int a52_syncinfo (uint8_t * buf, int * flags,
@@ -65,8 +64,6 @@ void a52_dynrng (a52_state_t * state,
          sample_t (* call) (sample_t, void *), void * data);
 int a52_block (a52_state_t * state);
 void a52_free (a52_state_t * state);
-}
-
 
 
 #ifdef WORDS_BIGENDIAN
@@ -209,7 +206,6 @@ static void handle_args (int argc, char ** argv)
 {
     int c;
 
-    //ao_driver_t *drivers = audio_out_drivers;
     while ((c = getopt (argc, argv, "s::t:crag:o:")) != -1)
     {
         switch (c)
