@@ -22,13 +22,10 @@
  */
 
 #include "config.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <inttypes.h>
-
-//#include "a52.h"
 #include "audio_out.h"
 #include "audio_out_internal.h"
 

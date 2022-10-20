@@ -22,11 +22,8 @@
  */
 
 #include "config.h"
-
 #include <stdlib.h>
 #include <inttypes.h>
-
-#include "a52.h"
 #include "audio_out.h"
 
 extern ao_open_t ao_oss_open;

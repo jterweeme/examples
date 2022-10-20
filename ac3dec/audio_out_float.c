@@ -25,8 +25,6 @@
 
 #include <stdio.h>
 #include <inttypes.h>
-
-#include "a52.h"
 #include "audio_out.h"
 
 static int float_setup (ao_instance_t * instance, int sample_rate, int * flags,

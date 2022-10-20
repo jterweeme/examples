@@ -22,10 +22,7 @@
  */
 
 #include "config.h"
-
 #include <inttypes.h>
-
-#include "a52.h"
 #include "audio_out.h"
 
 typedef struct null_instance_s {
@@ -59,20 +56,19 @@ static null_instance_t instance = {{null_setup, null_play, null_close}, 0};
 ao_instance_t * ao_null_open (void)
 {
     instance.channels = A52_STEREO;
-
     return (ao_instance_t *) &instance;
 }
 
 ao_instance_t * ao_null4_open (void)
 {
     instance.channels = A52_2F2R;
-
     return (ao_instance_t *) &instance;
 }
 
 ao_instance_t * ao_null6_open (void)
 {
     instance.channels = A52_3F2R | A52_LFE;
-
     return (ao_instance_t *) &instance;
 }
+
+

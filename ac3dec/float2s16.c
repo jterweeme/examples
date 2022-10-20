@@ -22,10 +22,7 @@
  */
 
 #include "config.h"
-
 #include <inttypes.h>
-
-#include "a52.h"
 #include "audio_out.h"
 
 static inline int16_t convert (int32_t i)

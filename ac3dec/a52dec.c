@@ -36,16 +36,13 @@
 #endif
 #include <inttypes.h>
 
-#include <a52dec/a52.h>
 #include "audio_out.h"
 #include "mm_accel.h"
-#include "gettimeofday.h"
+#include <sys/time.h>
 
 #define BUFFER_SIZE 4096
 static uint8_t buffer[BUFFER_SIZE];
 static FILE * in_file;
-static int demux_track = 0;
-static int demux_pid = 0;
 static int disable_accel = 0;
 static int disable_dynrng = 0;
 static int disable_adjust = 0;
@@ -53,6 +50,11 @@ static sample_t gain = 1;
 static ao_open_t * output_open = NULL;
 static ao_instance_t * output;
 static a52_state_t * state;
+
+static uint32_t frame_counter = 0;
+static struct timeval tv_beg, tv_start;
+static int total_elapsed;
+static int last_count = 0;
 
 #ifdef HAVE_GETTIMEOFDAY
 
@@ -67,10 +69,6 @@ static RETSIGTYPE signal_handler (int sig)
 
 static void print_fps (int final)
 {
-    static uint32_t frame_counter = 0;
-    static struct timeval tv_beg, tv_start;
-    static int total_elapsed;
-    static int last_count = 0;
     struct timeval tv_end;
     float fps, tfps;
     int frames, elapsed;
@@ -78,14 +76,15 @@ static void print_fps (int final)
     gettimeofday (&tv_end, NULL);
 
     if (!frame_counter) {
-	tv_start = tv_beg = tv_end;
-	signal (SIGINT, signal_handler);
+        tv_start = tv_beg = tv_end;
+        signal (SIGINT, signal_handler);
     }
 
     elapsed = (tv_end.tv_sec - tv_beg.tv_sec) * 100 +
-	(tv_end.tv_usec - tv_beg.tv_usec) / 10000;
+        (tv_end.tv_usec - tv_beg.tv_usec) / 10000;
+
     total_elapsed = (tv_end.tv_sec - tv_start.tv_sec) * 100 +
-	(tv_end.tv_usec - tv_start.tv_usec) / 10000;
+        (tv_end.tv_usec - tv_start.tv_usec) / 10000;
 
     if (final) {
 	if (total_elapsed)
@@ -152,56 +151,33 @@ static void print_usage (char ** argv)
 static void handle_args (int argc, char ** argv)
 {
     int c;
-    ao_driver_t * drivers;
     int i;
     char * s;
 
-    drivers = ao_drivers ();
+    ao_driver_t *drivers = ao_drivers ();
     while ((c = getopt (argc, argv, "s::t:crag:o:")) != -1)
-	switch (c) {
-	case 'o':
-	    for (i = 0; drivers[i].name != NULL; i++)
-		if (strcmp (drivers[i].name, optarg) == 0)
-		    output_open = drivers[i].open;
-	    if (output_open == NULL) {
-		fprintf (stderr, "Invalid video driver: %s\n", optarg);
-		print_usage (argv);
-	    }
-	    break;
+        switch (c)
+        {
+        case 'o':
+	        for (i = 0; drivers[i].name != NULL; i++)
+                if (strcmp (drivers[i].name, optarg) == 0)
+		            output_open = drivers[i].open;
 
-	case 's':
-	    demux_track = 0x80;
-	    if (optarg != NULL) {
-		demux_track = strtol (optarg, &s, 16);
-		if (demux_track < 0x80)
-		    demux_track += 0x80;
-		if ((demux_track < 0x80) || (demux_track > 0x87) || (*s)) {
-		    fprintf (stderr, "Invalid track number: %s\n", optarg);
-		    print_usage (argv);
-		}
-	    }
-	    break;
-
-	case 't':
-	    demux_pid = strtol (optarg, &s, 16);
-	    if ((demux_pid < 0x10) || (demux_pid > 0x1ffe) || (*s)) {
-		fprintf (stderr, "Invalid pid: %s\n", optarg);
-		print_usage (argv);
-	    }
-	    break;
-
+            if (output_open == NULL)
+            {
+                fprintf (stderr, "Invalid video driver: %s\n", optarg);
+                print_usage (argv);
+	        }
+	        break;
 	case 'c':
 	    disable_accel = 1;
 	    break;
-
 	case 'r':
 	    disable_dynrng = 1;
 	    break;
-
 	case 'a':
 	    disable_adjust = 1;
 	    break;
-
 	case 'g':
 	    gain = strtod (optarg, &s);
 	    if ((gain < -96) || (gain > 96) || (*s)) {
@@ -210,7 +186,6 @@ static void handle_args (int argc, char ** argv)
 	    }
 	    gain = pow (2, gain / 6);
 	    break;
-
 	default:
 	    print_usage (argv);
 	}
@@ -245,18 +220,18 @@ void a52_decode_data (uint8_t * start, uint8_t * end)
     static int sample_rate;
     static int flags;
     int bit_rate;
-    int len;
 
-    while (1) {
-	len = end - start;
-	if (!len)
-	    break;
-	if (len > bufpos - bufptr)
+    while (1)
+    {
+        int len = end - start;
+        if (!len)
+            break;
+        if (len > bufpos - bufptr)
 	    len = bufpos - bufptr;
-	memcpy (bufptr, start, len);
-	bufptr += len;
-	start += len;
-	if (bufptr == bufpos) {
+        memcpy (bufptr, start, len);
+        bufptr += len;
+        start += len;
+        if (bufptr == bufpos) {
 	    if (bufpos == buf + 7) {
 		int length;
 
@@ -286,27 +261,26 @@ void a52_decode_data (uint8_t * start, uint8_t * end)
 			goto error;
 		    if (ao_play (output, flags, a52_samples (state)))
 			goto error;
-		}
-		bufptr = buf;
-		bufpos = buf + 7;
-		print_fps (0);
-		continue;
-	    error:
-		fprintf (stderr, "error\n");
-		bufptr = buf;
-		bufpos = buf + 7;
-	    }
-	}
+                }
+                bufptr = buf;
+                bufpos = buf + 7;
+        		print_fps (0);
+                continue;
+error:
+                fprintf (stderr, "error\n");
+                bufptr = buf;
+                bufpos = buf + 7;
+            }
+        }
     }
 }
 
 static void es_loop (void)
 {
     int size;
-		
     do {
-	size = fread (buffer, 1, BUFFER_SIZE, in_file);
-	a52_decode_data (buffer, buffer + size);
+        size = fread(buffer, 1, BUFFER_SIZE, in_file);
+        a52_decode_data(buffer, buffer + size);
     } while (size == BUFFER_SIZE);
 }
 
