@@ -120,13 +120,6 @@ static uint8_t wav_header[] = {
     'd', 'a', 't', 'a', 0xd8, 0xff, 0xff, 0xff
 };
 
-typedef wav_instance_t * ao_open_t (void);
-
-static inline wav_instance_t * ao_open (ao_open_t * open)
-{
-    return open ();
-}
-
 static int wav_setup (wav_instance_t * instance, int sample_rate, int * flags,
               sample_t * level, sample_t * bias)
 {
@@ -152,9 +145,7 @@ static void store (uint8_t * buf, int value)
 
 static int wav_play (wav_instance_t * instance, int flags, sample_t * _samples)
 {
-    //wav_instance_t * instance = (wav_instance_t *) _instance;
     int16_t int16_samples[256*2];
-
 #ifdef LIBA52_DOUBLE
     float samples[256 * 2];
 
@@ -204,11 +195,6 @@ static wav_instance_t * wav_open (int flags)
     return instance;
 }
 
-wav_instance_t * ao_wav_open (void)
-{
-    return wav_open (A52_STEREO);
-}
-
 #define BUFFER_SIZE 4096
 static uint8_t buffer[BUFFER_SIZE];
 static FILE * in_file;
@@ -216,7 +202,6 @@ static int disable_accel = 0;
 static int disable_dynrng = 0;
 static int disable_adjust = 0;
 static sample_t gain = 1;
-static ao_open_t * output_open = NULL;
 static wav_instance_t * output;
 static a52_state_t * state;
 
@@ -226,6 +211,7 @@ static void handle_args (int argc, char ** argv)
 
     //ao_driver_t *drivers = audio_out_drivers;
     while ((c = getopt (argc, argv, "s::t:crag:o:")) != -1)
+    {
         switch (c)
         {
         case 'c':
@@ -238,8 +224,7 @@ static void handle_args (int argc, char ** argv)
             disable_adjust = 1;
             break;
         }
-
-    output_open = ao_wav_open;
+    }
 
     if (optind < argc)
     {
@@ -333,7 +318,7 @@ int main (int argc, char ** argv)
 
     handle_args (argc, argv);
     uint32_t accel = disable_accel ? 0 : MM_ACCEL_DJBFFT;
-    output = ao_open (output_open);
+    output = wav_open(A52_STEREO);
     if (output == NULL) {
         fprintf (stderr, "Can not open output\n");
         return 1;
