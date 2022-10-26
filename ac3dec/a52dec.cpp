@@ -40,31 +40,7 @@
 #include <io.h>
 #endif
 #include <inttypes.h>
-
-#ifndef LIBA52_DOUBLE
-typedef float sample_t;
-#else
-typedef double sample_t;
-#endif
-
-typedef struct a52_state_s a52_state_t;
-
-#define A52_STEREO 2
-#define A52_DOLBY 10
-
-#define A52_ADJUST_LEVEL 32
-
-a52_state_t * a52_init (uint32_t mm_accel);
-sample_t * a52_samples (a52_state_t * state);
-int a52_syncinfo (uint8_t * buf, int * flags,
-          int * sample_rate, int * bit_rate);
-int a52_frame (a52_state_t * state, uint8_t * buf, int * flags,
-           sample_t * level, sample_t bias);
-void a52_dynrng (a52_state_t * state,
-         sample_t (* call) (sample_t, void *), void * data);
-int a52_block (a52_state_t * state);
-void a52_free (a52_state_t * state);
-
+#include "a52.h"
 
 #ifdef WORDS_BIGENDIAN
 #define s16_LE(s16,channels) s16_swap (s16, channels)
@@ -120,8 +96,6 @@ static uint8_t wav_header[] = {
 static int wav_setup (wav_instance_t * instance, int sample_rate, int * flags,
               sample_t * level, sample_t * bias)
 {
-    //wav_instance_t * instance = (wav_instance_t *) _instance;
-
     if ((instance->set_params == 0) && (instance->sample_rate != sample_rate))
         return 1;
 
@@ -166,7 +140,6 @@ static int wav_play (wav_instance_t * instance, int flags, sample_t * _samples)
     return 0;
 }
 
-
 static void wav_close (wav_instance_t * _instance)
 {
     wav_instance_t * instance = (wav_instance_t *) _instance;
@@ -177,19 +150,6 @@ static void wav_close (wav_instance_t * _instance)
     store (wav_header + 4, instance->size + 36);
     store (wav_header + 40, instance->size);
     fwrite (wav_header, sizeof (wav_header), 1, stdout);
-}
-
-static wav_instance_t * wav_open (int flags)
-{
-    wav_instance_t * instance;
-    instance = (wav_instance_t *)malloc (sizeof (wav_instance_t));
-    if (instance == NULL)
-        return NULL;
-    instance->sample_rate = 0;
-    instance->set_params = 1;
-    instance->flags = flags;
-    instance->size = 0;
-    return instance;
 }
 
 #define BUFFER_SIZE 4096
@@ -314,11 +274,12 @@ int main (int argc, char ** argv)
 
     handle_args (argc, argv);
     uint32_t accel = disable_accel ? 0 : MM_ACCEL_DJBFFT;
-    output = wav_open(A52_STEREO);
-    if (output == NULL) {
-        fprintf (stderr, "Can not open output\n");
-        return 1;
-    }
+    output = (wav_instance_t *)malloc (sizeof (wav_instance_t));
+    wav_instance_t *instance = output;
+    instance->sample_rate = 0;
+    instance->set_params = 1;
+    instance->flags = A52_STEREO;
+    instance->size = 0;
 
     state = a52_init (accel);
     if (state == NULL) {
@@ -335,3 +296,5 @@ int main (int argc, char ** argv)
     wav_close(output);
     return 0;
 }
+
+

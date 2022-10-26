@@ -73,7 +73,7 @@ static int bndtab[30] = {21, 22,  23,  24,  25,  26,  27,  28,  31,  34,
 			 37, 40,  43,  46,  49,  55,  61,  67,  73,  79,
 			 85, 97, 109, 121, 133, 157, 181, 205, 229, 253};
 
-static int8_t latab[256] = {
+static constexpr int8_t latab[256] = {
     -64, -63, -62, -61, -60, -59, -58, -57, -56, -55, -54, -53,
     -52, -52, -51, -50, -49, -48, -47, -47, -46, -45, -44, -44,
     -43, -42, -41, -41, -40, -39, -38, -38, -37, -36, -36, -35,
@@ -119,46 +119,39 @@ do {						\
     mask -= floor;				\
 } while (0)
 
+static constexpr int slowgain[4] = {0x540, 0x4d8, 0x478, 0x410};
+static constexpr int dbpbtab[4]  = {0xc00, 0x500, 0x300, 0x100};
+static constexpr int floortab[8] = {0x910, 0x950, 0x990, 0x9d0, 0xa10, 0xa90, 0xb10, 0x1400};
+
 void a52_bit_allocate (a52_state_t * state, ba_t * ba, int bndstart,
 		       int start, int end, int fastleak, int slowleak,
 		       expbap_t * expbap)
 {
-    static int slowgain[4] = {0x540, 0x4d8, 0x478, 0x410};
-    static int dbpbtab[4]  = {0xc00, 0x500, 0x300, 0x100};
-    static int floortab[8] = {0x910, 0x950, 0x990, 0x9d0,
-			      0xa10, 0xa90, 0xb10, 0x1400};
-
-    int i, j;
-    uint8_t * exp;
-    int8_t * bap;
-    int fdecay, fgain, sdecay, sgain, dbknee, floor, snroffset;
     int psd, mask;
-    int8_t * deltba;
-    int * hth;
-    int halfrate;
 
-    halfrate = state->halfrate;
-    fdecay = (63 + 20 * ((state->bai >> 7) & 3)) >> halfrate;	/* fdcycod */
-    fgain = 128 + 128 * (ba->bai & 7);				/* fgaincod */
-    sdecay = (15 + 2 * (state->bai >> 9)) >> halfrate;		/* sdcycod */
-    sgain = slowgain[(state->bai >> 5) & 3];			/* sgaincod */
-    dbknee = dbpbtab[(state->bai >> 3) & 3];			/* dbpbcod */
-    hth = hthtab[state->fscod];
+    int halfrate = state->halfrate;
+    int fdecay = (63 + 20 * ((state->bai >> 7) & 3)) >> halfrate;	/* fdcycod */
+    int fgain = 128 + 128 * (ba->bai & 7);				/* fgaincod */
+    int sdecay = (15 + 2 * (state->bai >> 9)) >> halfrate;		/* sdcycod */
+    int sgain = slowgain[(state->bai >> 5) & 3];			/* sgaincod */
+    int dbknee = dbpbtab[(state->bai >> 3) & 3];			/* dbpbcod */
+    int *hth = hthtab[state->fscod];
     /*
      * if there is no delta bit allocation, make deltba point to an area
      * known to contain zeroes. baptab+156 here.
      */
-    deltba = (ba->deltbae == DELTA_BIT_NONE) ? baptab + 156 : ba->deltba;
-    floor = floortab[state->bai & 7];				/* floorcod */
-    snroffset = 960 - 64 * state->csnroffst - 4 * (ba->bai >> 3) + floor;
+    int8_t *deltba = (ba->deltbae == DELTA_BIT_NONE) ? baptab + 156 : ba->deltba;
+    int floor = floortab[state->bai & 7];				/* floorcod */
+    int snroffset = 960 - 64 * state->csnroffst - 4 * (ba->bai >> 3) + floor;
     floor >>= 5;
 
-    exp = expbap->exp;
-    bap = expbap->bap;
+    uint8_t *exp = expbap->exp;
+    int8_t *bap = expbap->bap;
 
-    i = bndstart;
-    j = start;
-    if (start == 0) {	/* not the coupling channel */
+    int i = bndstart;
+    int j = start;
+    if (start == 0)
+    {	/* not the coupling channel */
 	int lowcomp;
 
 	lowcomp = 0;
@@ -226,38 +219,37 @@ void a52_bit_allocate (a52_state_t * state, ba_t * ba, int bndstart,
     }
 
     do {
-	int startband, endband;
-
-	startband = j;
-	endband = ((bndtab-20)[i] < end) ? (bndtab-20)[i] : end;
-	psd = 128 * exp[j++];
-	while (j < endband) {
-	    int next, delta;
-
-	    next = 128 * exp[j++];
-	    delta = next - psd;
-	    switch (delta >> 9) {
-	    case -6: case -5: case -4: case -3: case -2:
-		psd = next;
-		break;
-	    case -1:
-		psd = next + latab[(-delta) >> 1];
-		break;
-	    case 0:
-		psd += latab[delta >> 1];
-		break;
-	    }
-	}
-	/* minpsd = -289 */
-	UPDATE_LEAK ();
-	mask = (fastleak < slowleak) ? fastleak : slowleak;
-	COMPUTE_MASK ();
-	i++;
-	j = startband;
-	do {
-	    /* max(mask+4*exp)=147=-(minpsd+fgain-deltba-snroffset)>>5+4*exp */
-	    /* min(mask+4*exp)=-156=-(sgain-deltba-snroffset)>>5 */
-	    bap[j] = (baptab+156)[mask + 4 * exp[j]];
-	} while (++j < endband);
+        int startband = j;
+        int endband = ((bndtab-20)[i] < end) ? (bndtab-20)[i] : end;
+        psd = 128 * exp[j++];
+        while (j < endband)
+        {
+            int next = 128 * exp[j++];
+            int delta = next - psd;
+            switch (delta >> 9) {
+            case -6: case -5: case -4: case -3: case -2:
+            psd = next;
+            break;
+            case -1:
+            psd = next + latab[(-delta) >> 1];
+            break;
+            case 0:
+            psd += latab[delta >> 1];
+            break;
+            }
+        }
+        /* minpsd = -289 */
+        UPDATE_LEAK ();
+        mask = (fastleak < slowleak) ? fastleak : slowleak;
+        COMPUTE_MASK ();
+        i++;
+        j = startband;
+        do {
+            /* max(mask+4*exp)=147=-(minpsd+fgain-deltba-snroffset)>>5+4*exp */
+            /* min(mask+4*exp)=-156=-(sgain-deltba-snroffset)>>5 */
+            bap[j] = (baptab+156)[mask + 4 * exp[j]];
+        } while (++j < endband);
     } while (j < end);
 }
+
+

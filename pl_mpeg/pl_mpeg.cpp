@@ -1211,15 +1211,11 @@ plm_packet_t *Demux::decode_packet(int type)
         _last_decoded_pts = _next_packet.pts;
         _buffer->skip(40); // skip dts
         _next_packet.length -= 10;
-        std::cerr << _next_packet.pts << "\r\n";
-        std::cerr.flush();
     }
     else if (pts_dts_marker == 0x02) {
         _next_packet.pts = decode_time();
         _last_decoded_pts = _next_packet.pts;
         _next_packet.length -= 5;
-        std::cerr << _next_packet.pts << "\r\n";
-        std::cerr.flush();
     }
     else if (pts_dts_marker == 0x00) {
         _next_packet.pts = PLM_PACKET_INVALID_TS;

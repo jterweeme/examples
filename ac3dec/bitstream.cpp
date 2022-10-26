@@ -31,9 +31,7 @@
 
 void a52_bitstream_set_ptr (a52_state_t * state, uint8_t * buf)
 {
-    int align;
-
-    align = (long)buf & 3;
+    int align = (long)buf & 3;
     state->buffer_start = (uint32_t *) (buf - align);
     state->bits_left = 0;
     bitstream_get (state, align * 8);
@@ -41,9 +39,7 @@ void a52_bitstream_set_ptr (a52_state_t * state, uint8_t * buf)
 
 static inline void bitstream_fill_current (a52_state_t * state)
 {
-    uint32_t tmp;
-
-    tmp = *(state->buffer_start++);
+    uint32_t tmp = *(state->buffer_start++);
     state->current_word = swab32 (tmp);
 }
 
@@ -56,38 +52,32 @@ static inline void bitstream_fill_current (a52_state_t * state)
  * -ah
  */
 
-uint32_t a52_bitstream_get_bh (a52_state_t * state, uint32_t num_bits)
+uint32_t a52_bitstream_get_bh(a52_state_t *state, uint32_t num_bits)
 {
-    uint32_t result;
-
     num_bits -= state->bits_left;
-    result = ((state->current_word << (32 - state->bits_left)) >>
-	      (32 - state->bits_left));
-
-    bitstream_fill_current (state);
+    uint32_t result = (state->current_word << 32 - state->bits_left) >> 32 - state->bits_left;
+    bitstream_fill_current(state);
 
     if (num_bits != 0)
-	result = (result << num_bits) | (state->current_word >> (32 - num_bits));
+        result = result << num_bits | state->current_word >> 32 - num_bits;
 
     state->bits_left = 32 - num_bits;
-
     return result;
 }
 
 int32_t a52_bitstream_get_bh_2 (a52_state_t * state, uint32_t num_bits)
 {
-    int32_t result;
-
     num_bits -= state->bits_left;
-    result = ((((int32_t)state->current_word) << (32 - state->bits_left)) >>
-	      (32 - state->bits_left));
+    int32_t result = ((((int32_t)state->current_word) << (32 - state->bits_left)) >>
+            32 - state->bits_left);
 
     bitstream_fill_current(state);
 
     if (num_bits != 0)
-	result = (result << num_bits) | (state->current_word >> (32 - num_bits));
+        result = result << num_bits | state->current_word >> 32 - num_bits;
 	
     state->bits_left = 32 - num_bits;
-
     return result;
 }
+
+

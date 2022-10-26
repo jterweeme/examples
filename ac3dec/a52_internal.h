@@ -113,6 +113,7 @@ int a52_downmix_coeff (sample_t * coeff, int acmod, int output, sample_t level,
 		       sample_t clev, sample_t slev);
 void a52_downmix (sample_t * samples, int acmod, int output, sample_t bias,
 		  sample_t clev, sample_t slev);
+
 void a52_upmix (sample_t * samples, int acmod, int output);
 
 void a52_imdct_init (uint32_t mm_accel);
