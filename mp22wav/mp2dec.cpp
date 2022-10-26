@@ -5,6 +5,7 @@
 #include <cstring>
 #include <cstdint>
 #include <fcntl.h>
+#include <fstream>
 #include <iostream>
 #include <math.h>
 
@@ -153,13 +154,13 @@ class BitBuffer
 {
 private:
     int _bit_window;
-    int bits_in_window;
-    int show_bits(int bit_count) { return _bit_window >> 24 - bit_count; }
+    int _bits_in_window;
     uint64_t _counter2 = 0;
-    FILE *_fin;
+    std::istream *_is;
+    void fill();
 public:
-    BitBuffer(FILE *fin);
-    bool peek() { return bits_in_window > 0; }
+    BitBuffer(std::istream *is);
+    bool peek() { return _bits_in_window > 0; }
     int get_bits(int bit_count);
     uint64_t counter2() const { return _counter2; }
     void reset_counter() { _counter2 = 0; }
@@ -168,10 +169,9 @@ public:
 class Decoder
 {
 private:
-    int Voffs;
-    int N[64][32];  // N[i][j] as 8-bit fixed-point
+    int _Voffs;
+    int _N[64][32];
     int _V[2][1024];
-    int initialized = 0;
     void read_samples(const Quantizer_spec *q, int scalefactor, int *sample, BitBuffer &b);
     static const Quantizer_spec *read_allocation(int sb, int b2_table, BitBuffer &b);
 public:
@@ -219,7 +219,7 @@ class CMain
 private:
     static constexpr uint32_t KJMP2_SAMPLES_PER_FRAME = 1152;
 public:
-    int run(FILE *fin, FILE *outfile);
+    int run(std::istream *is, FILE *outfile);
 };
 
 void CWavHeader::write(FILE *fp) const
@@ -295,18 +295,21 @@ int main(int argc, char **argv)
     COptions opts;
     opts.parse(argc, argv);
     CMain inst;
-    FILE *fin, *fout;
+    FILE *fout;
+    std::ifstream ifs;
+    std::istream *fin;
 
     if (opts.stdinput())
     {
-        fin = stdin;
+        fin = &std::cin;
 #ifdef _WIN32
         setmode(fileno(stdin), O_BINARY);
 #endif
     }
     else
     {
-        fin = fopen(opts.ifn().c_str(), "rb");
+        ifs.open(opts.ifn());
+        fin = &ifs;
     }
 
     if (opts.stdoutput())
@@ -331,7 +334,7 @@ int main(int argc, char **argv)
     return ret;
 }
 
-int CMain::run(FILE *fin, FILE *fout)
+int CMain::run(std::istream *is, FILE *fout)
 {
     Decoder d;
 #ifdef _WIN32
@@ -346,14 +349,13 @@ int CMain::run(FILE *fin, FILE *fout)
     CWavHeader h;
     int out_bytes = 0;
     d.kjmp2_init();
-    BitBuffer b(fin);
+    BitBuffer b(is);
     int samplerate = 0;
 
     while (b.peek())
     {
         int16_t samples[KJMP2_SAMPLES_PER_FRAME * 2];
         int bytes = d.kjmp2_decode_frame(b, samples, samplerate);
-        //std::cerr << bytes << "\r\n";
 
         //schrijf wav header voor eerste frame
         if (out_bytes == 0)
@@ -376,38 +378,39 @@ int CMain::run(FILE *fin, FILE *fout)
 
     fflush(fout);
     fclose(fout);
-    fclose(fin);
     fprintf(stderr, "Done.\n");
     return 0;
 }
 
-BitBuffer::BitBuffer(FILE *fin) : _fin(fin)
+void BitBuffer::fill()
 {
-    _bit_window = fgetc(fin) << 16;
-    bits_in_window = 8;
-}
-
-int BitBuffer::get_bits(int bit_count)
-{
-    if (bit_count > bits_in_window)
-        throw "bit count too large";
-
-    _counter2 += bit_count;
-    int result = show_bits(bit_count);
-    _bit_window = (_bit_window << bit_count) & 0xFFFFFF;
-    bits_in_window -= bit_count;
-
-    while (bits_in_window < 16)
+    while (_bits_in_window < 16)
     {
-        int read = fgetc(_fin);
+        int read = _is->get();
 
         if (read < 0)
             break;
 
-        _bit_window |= read << (16 - bits_in_window);
-        bits_in_window += 8;
+        _bit_window |= read << (16 - _bits_in_window);
+        _bits_in_window += 8;
     }
+}
 
+BitBuffer::BitBuffer(std::istream *fin) : _is(fin), _bit_window(0), _bits_in_window(0)
+{
+    fill();
+}
+
+int BitBuffer::get_bits(int bit_count)
+{
+    if (bit_count > _bits_in_window)
+        throw "bit count too large";
+
+    _counter2 += bit_count;
+    int result = _bit_window >> 24 - bit_count;
+    _bit_window = (_bit_window << bit_count) & 0xFFFFFF;
+    _bits_in_window -= bit_count;
+    fill();
     return result;
 }
 
@@ -415,23 +418,17 @@ int BitBuffer::get_bits(int bit_count)
 // decoder instance.
 void Decoder::kjmp2_init()
 {
-    // check if global initialization is required
-    if (!initialized)
-    {
-        for (int i = 0;  i < 64;  ++i)
-            for (int j = 0;  j < 32;  ++j)
-                N[i][j] = int(256.0 * cos(((16 + i) * ((j << 1) + 1)) * 0.0490873852123405));
+    for (int i = 0;  i < 64;  ++i)
+        for (int j = 0;  j < 32;  ++j)
+            _N[i][j] = int(256.0 * cos(((16 + i) * ((j << 1) + 1)) * 0.0490873852123405));
 
-        initialized = 1;
-    }
 
     // perform local initialization: clean the context and put the magic in it
-#if 1
     for (int i = 0;  i < 2;  ++i)
         for (int j = 1023;  j >= 0;  --j)
             _V[i][j] = 0;
-#endif
-    Voffs = 0;
+
+    _Voffs = 0;
 }
 
 const Quantizer_spec *Decoder::read_allocation(int sb, int b2_table, BitBuffer &b)
@@ -671,7 +668,7 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
             for (int idx = 0;  idx < 3;  ++idx)
             {
                 // shifting step
-                Voffs = table_idx = (Voffs - 64) & 1023;
+                _Voffs = table_idx = _Voffs - 64 & 1023;
 
                 for (int ch = 0;  ch < 2;  ++ch)
                 {
@@ -681,7 +678,7 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
                         int sum = 0;
 
                         for (int j = 0;  j < 32;  ++j)
-                            sum += N[i][j] * sample[ch][j][idx];  // 8b*15b=23b
+                            sum += _N[i][j] * sample[ch][j][idx];  // 8b*15b=23b
 
                         // intermediate value is 28 bit (23 + 5), clamp to 14b
                         _V[ch][table_idx + i] = sum + 8192 >> 14;
