@@ -318,7 +318,16 @@ int main(int argc, char **argv)
         fout = fopen(opts.ofn().c_str(), "wb");
     }
 
-    int ret = inst.run(fin, fout);
+    int ret = -1;
+    try
+    {
+        ret = inst.run(fin, fout);
+    }
+    catch (const char *e)
+    {
+        std::cerr << e << "\r\n";
+        std::cerr.flush();
+    }
     return ret;
 }
 
@@ -380,6 +389,9 @@ BitBuffer::BitBuffer(FILE *fin) : _fin(fin)
 
 int BitBuffer::get_bits(int bit_count)
 {
+    if (bit_count > bits_in_window)
+        throw "bit count too large";
+
     _counter2 += bit_count;
     int result = show_bits(bit_count);
     _bit_window = (_bit_window << bit_count) & 0xFFFFFF;
@@ -387,7 +399,12 @@ int BitBuffer::get_bits(int bit_count)
 
     while (bits_in_window < 16)
     {
-        _bit_window |= fgetc(_fin) << (16 - bits_in_window);
+        int read = fgetc(_fin);
+
+        if (read < 0)
+            break;
+
+        _bit_window |= read << (16 - bits_in_window);
         bits_in_window += 8;
     }
 

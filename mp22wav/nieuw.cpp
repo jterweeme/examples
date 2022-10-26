@@ -211,6 +211,9 @@ Buffer::Buffer()
 void Buffer::read(uint16_t offset, std::istream &is, uint16_t n)
 {
     is.read(_buf + offset, n);
+    
+    if (is.gcount() != n)
+        throw "cannot read";
 }
 
 //buffer moet minstens [size] grootte worden
@@ -346,12 +349,25 @@ void Frame::read(std::istream &is)
 
 const Quantizer_spec *Frame::_read_allocation(int sb, int b2_table, unsigned &offset)
 {
-    //std::cerr << b2_table << " " << sb << " " << offset << "\r\n";
+    //std::cerr << sb << " " << b2_table << " " << offset << "\r\n";
     int table_idx = quant_lut_step3[b2_table][sb];
     unsigned bits = table_idx >> 4;
     table_idx = quant_lut_step4[table_idx & 15][_buf.get_bits(offset, bits)];
     offset += bits;
     return table_idx ? (&quantizer_table[table_idx - 1]) : 0;
+}
+
+static void printsf(int sf[2][32][3])
+{
+    for (int i = 0; i < 32; ++i)
+    {
+        std::cerr << sf[0][i][0] << " " <<
+                     sf[0][i][1] << " " <<
+                     sf[0][i][2] << " " <<
+                     sf[1][i][0] << " " <<
+                     sf[1][i][1] << " " <<
+                     sf[1][i][2] << "\r\n";
+    }
 }
 
 void Frame::decode()
@@ -367,7 +383,7 @@ void Frame::decode()
     int sblimit = table_idx & 63;
     table_idx >>= 6;
     bound = std::min(bound, sblimit);
-    unsigned offset = 26;
+    unsigned offset = 32;
 
     // read the allocation information
     for (int sb = 0; sb < bound; ++sb)
@@ -434,12 +450,9 @@ void Frame::decode()
                 }
             }
         }
-
-        if (mode == MONO)
-            for (int part = 0; part < 3; ++part)
-                sf[1][sb][part] = sf[0][sb][part];
     }
 
+    //printsf(sf);
     int sample[2][32][3];
     int16_t *pcm = _samples;
 

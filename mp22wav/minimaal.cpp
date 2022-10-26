@@ -161,7 +161,7 @@ public:
 class Decoder
 {
 private:
-    int sample[2][32][3];
+
     int Voffs;
     int N[64][32];  // N[i][j] as 8-bit fixed-point
     int _V[2][1024];
@@ -327,23 +327,17 @@ int CMain::run(FILE *fin, FILE *fout)
         fprintf(stderr, "Could not open output file %s!\n", "out.wav");
         return 1;
     }
-
     CWavHeader h;
     int out_bytes = 0;
     d.kjmp2_init();
     BitBuffer b(fin);
     int samplerate = 0;
-
     while (b.peek())
     {
         int16_t samples[KJMP2_SAMPLES_PER_FRAME * 2];
         int bytes = d.kjmp2_decode_frame(b, samples, samplerate);
-        std::cerr << bytes << "\r\n";
-
-        //schrijf wav header voor eerste frame
         if (out_bytes == 0)
-        {
-            h.rate(samplerate);
+        {   h.rate(samplerate);
             h.write(fout);
         }
 
@@ -402,6 +396,7 @@ void Decoder::kjmp2_init()
 
 const Quantizer_spec *Decoder::read_allocation(int sb, int b2_table, BitBuffer &b)
 {
+    std::cerr << sb << " " << b2_table << "\r\n";
     int table_idx = quant_lut_step3[b2_table][sb];
     table_idx = quant_lut_step4[table_idx & 15][b.get_bits(table_idx >> 4)];
     return table_idx ? (&quantizer_table[table_idx - 1]) : 0;
@@ -412,7 +407,6 @@ void Decoder::read_samples(const Quantizer_spec *q, int scalefactor, int *sample
 {
     if (!q)
     {
-        // no bits allocated for this subband
         sample[0] = sample[1] = sample[2] = 0;
         return;
     }
@@ -456,26 +450,34 @@ void Decoder::read_samples(const Quantizer_spec *q, int scalefactor, int *sample
     }
 }
 
+void printsf(int sf[2][32][3])
+{
+    for (int i = 0; i < 32; ++i)
+    {
+        std::cerr << sf[0][i][0] << " " <<
+                     sf[0][i][1] << " " <<
+                     sf[0][i][2] << " " <<
+                     sf[1][i][0] << " " <<
+                     sf[1][i][1] << " " <<
+                     sf[1][i][2] << "\r\n";
+    }
+}
+
 uint32_t
 Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
-{
-    b.reset_counter();
+{   b.reset_counter();
     uint8_t frame0 = b.get_bits(8);
     uint8_t frame1 = b.get_bits(8);
-
     if ((frame0 != 0xFF) || ((frame1 & 0xF6) != 0xF4))
         throw "invalid magic";
-
     samplerate = 44100;
     unsigned bit_rate_index_minus1 = b.get_bits(4) - 1;
-
     if (bit_rate_index_minus1 > 13)
         return 0;  // invalid bit rate or 'free format'
-
     unsigned freq = b.get_bits(2);
     if (freq == 3)
         return 0;
-    unsigned padding_bit = b.get_bits(1);
+    unsigned padding = b.get_bits(1);
     b.get_bits(1);  // discard private_bit
     unsigned mode = b.get_bits(2);
     int bound = b.get_bits(2) + 1 << 2;
@@ -483,9 +485,13 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
         bound = mode == MONO ? 0 : 32;
     b.get_bits(4);
     if ((frame1 & 1) == 0)
+    {
+        std::cerr << "CRC" << "\r\n";
+        std::cerr.flush();
         b.get_bits(16);
+    }
     uint32_t frame_size = 144000 * bitrates[bit_rate_index_minus1]
-               / sample_rates[freq] + padding_bit;
+               / sample_rates[freq] + padding;
     int table_idx = (mode == MONO) ? 0 : 1;
     table_idx = quant_lut_step1[table_idx][bit_rate_index_minus1];
     table_idx = quant_lut_step2[table_idx][freq];
@@ -498,21 +504,15 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
             alloc[ch][sb] = read_allocation(sb, table_idx, b);
     for (int sb = bound;  sb < sblimit;  ++sb)
         alloc[0][sb] = alloc[1][sb] = read_allocation(sb, table_idx, b);
-    int nch = (mode == MONO) ? 1 : 2;
     int scfsi[2][32];
     for (int sb = 0;  sb < sblimit;  ++sb)
-    {   for (int ch = 0;  ch < nch;  ++ch)
+        for (int ch = 0;  ch < 2;  ++ch)
             if (alloc[ch][sb])
                 scfsi[ch][sb] = b.get_bits(2);
-        if (mode == MONO)
-            scfsi[1][sb] = scfsi[0][sb];
-    }
     int sf[2][32][3];
     for (int sb = 0;  sb < sblimit;  ++sb)
-    {
-        for (int ch = 0;  ch < nch;  ++ch)
-        {
-            if (alloc[ch][sb])
+    {   for (int ch = 0;  ch < 2;  ++ch)
+        {   if (alloc[ch][sb])
             {
                 switch (scfsi[ch][sb])
                 {
@@ -539,29 +539,19 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
                 }
             }
         }
-
-        if (mode == MONO)
-            for (int part = 0;  part < 3;  ++part)
-                sf[1][sb][part] = sf[0][sb][part];
     }
-
+    //printsf(sf);
+    int sample[2][32][3] = {0};
     for (int part = 0;  part < 3;  ++part)
-    {
-        for (int gr = 0;  gr < 4;  ++gr)
-        {
-            for (int sb = 0;  sb < bound;  ++sb)
+    {   for (int gr = 0;  gr < 4;  ++gr)
+        {   for (int sb = 0;  sb < bound;  ++sb)
                 for (int ch = 0;  ch < 2;  ++ch)
                     read_samples(alloc[ch][sb], sf[ch][sb][part], &sample[ch][sb][0], b);
             for (int sb = bound;  sb < sblimit;  ++sb)
-            {
-                read_samples(alloc[0][sb], sf[0][sb][part], &sample[0][sb][0], b);
+            {   read_samples(alloc[0][sb], sf[0][sb][part], &sample[0][sb][0], b);
                 for (int idx = 0;  idx < 3;  ++idx)
                     sample[1][sb][idx] = sample[0][sb][idx];
             }
-            for (int ch = 0;  ch < 2;  ++ch)
-               for (int sb = sblimit;  sb < 32;  ++sb)
-                    for (int idx = 0;  idx < 3;  ++idx)
-                        sample[ch][sb][idx] = 0;
             for (int idx = 0;  idx < 3;  ++idx)
             {   Voffs = table_idx = (Voffs - 64) & 1023;
                 for (int ch = 0;  ch < 2;  ++ch)
@@ -581,8 +571,7 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
                     for (int i = 0;  i < 512;  ++i)
                         U[i] = U[i] * D[i] + 32 >> 6;
                     for (int j = 0; j < 32; ++j)
-                    {
-                        int sum = 0;
+                    {   int sum = 0;
                         for (int i = 0;  i < 16;  ++i)
                             sum -= U[(i << 5) + j];
                         sum = (sum + 8) >> 4;
@@ -590,11 +579,10 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
                         sum = std::min(sum, 32767);
                         pcm[idx << 6 | j << 1 | ch] = int16_t(sum);
                     }
-                } // end of synthesis channel loop
-            } // end of synthesis sub-block loop
-
+                }
+            }
             pcm += 192;
-        } // decoding of the granule finished
+        }
     }
     b.get_bits(frame_size * 8 - b.counter2());
     return frame_size;

@@ -1,14 +1,14 @@
 bits
-16      magic
- 4      bitrate idx
- 2      sampling freq
- 1      padding
- 1      onzin
- 2      mode
- 2      bound
- 4      onzin
+0   16      magic
+16   4      bitrate idx
+20   2      sampling freq
+22   1      padding
+23   1      onzin
+24   2      mode
+26   2      bound
+28   4      onzin
 
-16?     crc
+    16?     crc
 
 
 
