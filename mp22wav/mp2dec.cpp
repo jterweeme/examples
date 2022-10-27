@@ -150,33 +150,30 @@ static constexpr uint16_t sample_rates[8] = {
     22050, 24000, 16000, 0   // MPEG-2
 };
 
-class BitBuffer
+class Buffer
 {
-private:
-    int _bit_window;
-    int _bits_in_window;
-    uint64_t _counter2 = 0;
-    std::istream *_is;
-    void fill();
+    char *_buf;
+    uint16_t _size;
 public:
-    BitBuffer(std::istream *is);
-    bool peek() { return _bits_in_window > 0; }
-    int get_bits(int bit_count);
-    uint64_t counter2() const { return _counter2; }
-    void reset_counter() { _counter2 = 0; }
+    Buffer();
+    void read(uint16_t offset, std::istream &is, uint16_t n);
+    void reserve(uint16_t size);
+    unsigned get_bit(uint16_t offset);
+    unsigned get_bits(uint16_t offset, uint16_t n);
 };
 
 class Decoder
 {
 private:
+    Buffer _buf;
     int _Voffs;
     int _N[64][32];
     int _V[2][1024];
-    void read_samples(const Quantizer_spec *q, int scalefactor, int *sample, BitBuffer &b);
-    static const Quantizer_spec *read_allocation(int sb, int b2_table, BitBuffer &b);
+    void read_samples(const Quantizer_spec *q, int scalefactor, int *sample, unsigned &offset);
+    const Quantizer_spec *read_allocation(int sb, int b2_table, unsigned &offset);
 public:
     void kjmp2_init();
-    uint32_t kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate);
+    uint32_t kjmp2_decode_frame(std::istream &is, int16_t *pcm, int &samplerate);
 };
 
 class Toolbox
@@ -221,6 +218,49 @@ private:
 public:
     int run(std::istream *is, FILE *outfile);
 };
+
+Buffer::Buffer()
+{
+    _buf = new char[1000];
+    _size = 1000;
+}
+
+void Buffer::read(uint16_t offset, std::istream &is, uint16_t n)
+{
+    is.read(_buf + offset, n);
+
+    if (is.gcount() != n)
+        throw "cannot read";
+}
+
+//buffer moet minstens [size] grootte worden
+void Buffer::reserve(uint16_t size)
+{
+    //buffer is al groot genoeg
+    if (size <= _size)
+        return;
+
+    throw "not implemented";
+}
+
+unsigned Buffer::get_bit(uint16_t offset)
+{
+    unsigned mask = 7 - offset % 8;
+    return (_buf[offset / 8] & 1 << mask) >> mask;
+}
+
+unsigned Buffer::get_bits(uint16_t offset, uint16_t n)
+{
+    unsigned ret = 0;
+
+    for (uint16_t i = 0; i < n; ++i)
+    {
+        ret <<= 1;
+        ret |= get_bit(i + offset);
+    }
+
+    return ret;
+}
 
 void CWavHeader::write(FILE *fp) const
 {
@@ -349,13 +389,12 @@ int CMain::run(std::istream *is, FILE *fout)
     CWavHeader h;
     int out_bytes = 0;
     d.kjmp2_init();
-    BitBuffer b(is);
     int samplerate = 0;
 
-    while (b.peek())
+    while (*is)
     {
         int16_t samples[KJMP2_SAMPLES_PER_FRAME * 2];
-        int bytes = d.kjmp2_decode_frame(b, samples, samplerate);
+        int bytes = d.kjmp2_decode_frame(*is, samples, samplerate);
 
         //schrijf wav header voor eerste frame
         if (out_bytes == 0)
@@ -382,48 +421,12 @@ int CMain::run(std::istream *is, FILE *fout)
     return 0;
 }
 
-void BitBuffer::fill()
-{
-    while (_bits_in_window < 16)
-    {
-        int read = _is->get();
-
-        if (read < 0)
-            break;
-
-        _bit_window |= read << (16 - _bits_in_window);
-        _bits_in_window += 8;
-    }
-}
-
-BitBuffer::BitBuffer(std::istream *fin) : _is(fin), _bit_window(0), _bits_in_window(0)
-{
-    fill();
-}
-
-int BitBuffer::get_bits(int bit_count)
-{
-    if (bit_count > _bits_in_window)
-        throw "bit count too large";
-
-    _counter2 += bit_count;
-    int result = _bit_window >> 24 - bit_count;
-    _bit_window = (_bit_window << bit_count) & 0xFFFFFF;
-    _bits_in_window -= bit_count;
-    fill();
-    return result;
-}
-
-// kjmp2_init: This function must be called once to initialize each kjmp2
-// decoder instance.
 void Decoder::kjmp2_init()
 {
     for (int i = 0;  i < 64;  ++i)
         for (int j = 0;  j < 32;  ++j)
             _N[i][j] = int(256.0 * cos(((16 + i) * ((j << 1) + 1)) * 0.0490873852123405));
 
-
-    // perform local initialization: clean the context and put the magic in it
     for (int i = 0;  i < 2;  ++i)
         for (int j = 1023;  j >= 0;  --j)
             _V[i][j] = 0;
@@ -431,15 +434,16 @@ void Decoder::kjmp2_init()
     _Voffs = 0;
 }
 
-const Quantizer_spec *Decoder::read_allocation(int sb, int b2_table, BitBuffer &b)
+const Quantizer_spec *Decoder::read_allocation(int sb, int b2_table, unsigned &offset)
 {
     int table_idx = quant_lut_step3[b2_table][sb];
-    table_idx = quant_lut_step4[table_idx & 15][b.get_bits(table_idx >> 4)];
+    unsigned n = table_idx >> 4;
+    table_idx = quant_lut_step4[table_idx & 15][_buf.get_bits(offset, n)];
+    offset += n;
     return table_idx ? (&quantizer_table[table_idx - 1]) : 0;
 }
 
-
-void Decoder::read_samples(const Quantizer_spec *q, int scalefactor, int *sample, BitBuffer &b)
+void Decoder::read_samples(const Quantizer_spec *q, int scalefactor, int *sample, unsigned &offset)
 {
     if (!q)
     {
@@ -465,7 +469,8 @@ void Decoder::read_samples(const Quantizer_spec *q, int scalefactor, int *sample
     if (q->grouping)
     {
         // decode grouped samples
-        int val = b.get_bits(q->cw_bits);
+        int val = _buf.get_bits(offset, q->cw_bits);
+        offset += q->cw_bits;
         sample[0] = val % adj;
         val /= adj;
         sample[1] = val % adj;
@@ -475,7 +480,10 @@ void Decoder::read_samples(const Quantizer_spec *q, int scalefactor, int *sample
     {
         // decode direct samples
         for (int idx = 0;  idx < 3;  ++idx)
-            sample[idx] = b.get_bits(q->cw_bits);
+        {
+            sample[idx] = _buf.get_bits(offset, q->cw_bits);
+            offset += q->cw_bits;
+        }
     }
 
     // postmultiply samples
@@ -493,66 +501,60 @@ void Decoder::read_samples(const Quantizer_spec *q, int scalefactor, int *sample
     }
 }
 
-// kjmp2_decode_frame: Decode one frame of audio.
-// mp2: A pointer to a context record that has been initialized with
-//      kjmp2_init before.
-// pcm: A pointer to the output PCM data. kjmp2_decode_frame() will always
-//      return 1152 (=KJMP2_SAMPLES_PER_FRAME) interleaved stereo samples
-//      in a native-endian 16-bit signed format. Even for mono streams,
-//      stereo output will be produced.
-// return value: The number of bytes in the current frame. In a valid stream,
-//               frame + kjmp2_decode_frame(..., frame, ...) will point to
-//               the next frame, if frames are consecutive in memory.
-// Note: pcm may be NULL. In this case, kjmp2_decode_frame() will return the
-//       size of the frame without actually decoding it.
 uint32_t
-Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
+Decoder::kjmp2_decode_frame(std::istream &is, int16_t *pcm, int &samplerate)
 {
-    b.reset_counter();
-    uint8_t frame0 = b.get_bits(8);
-    uint8_t frame1 = b.get_bits(8);
-
+    _buf.read(0, is, 10);
+    uint8_t frame0 = _buf.get_bits(0, 8);
+    uint8_t frame1 = _buf.get_bits(8, 8);
+#if 0
     // check for valid header: syncword OK, MPEG-Audio Layer 2
     if ((frame0 != 0xFF) || ((frame1 & 0xF6) != 0xF4))
         throw "invalid magic";
-
+#endif
     //samplerate[(((frame[1] & 0x08) >> 1) ^ 4)  // MPEG-1/2 switch
     //                  + ((frame[2] >> 2) & 3)];         // actual rate
     samplerate = 44100;
 
     // read the rest of the header
-    unsigned bit_rate_index_minus1 = b.get_bits(4) - 1;
+    unsigned bit_rate_index_minus1 = _buf.get_bits(16, 4) - 1;
 
     if (bit_rate_index_minus1 > 13)
         return 0;  // invalid bit rate or 'free format'
 
-    unsigned freq = b.get_bits(2);
+    unsigned freq = _buf.get_bits(20, 2);
 
     if (freq == 3)
         return 0;
-
+#if 0
     if ((frame1 & 0x08) == 0) {  // MPEG-2
         freq += 4;
         bit_rate_index_minus1 += 14;
     }
-    unsigned padding_bit = b.get_bits(1);
-    b.get_bits(1);  // discard private_bit
-    unsigned mode = b.get_bits(2);
+#endif
+    unsigned padding_bit = _buf.get_bits(22, 1);
+    //b.get_bits(1);  // discard private_bit
+    unsigned mode = _buf.get_bits(24, 2);
     int sblimit, table_idx;
-    int bound = b.get_bits(2) + 1 << 2;
+    int bound = _buf.get_bits(26, 2) + 1 << 2;
 
     if (mode != JOINT_STEREO)
         bound = mode == MONO ? 0 : 32;
 
-    // discard the last 4 bits of the header and the CRC value, if present
-    b.get_bits(4);
+    _buf.get_bits(28, 4);
+    unsigned offset = 32;
 
     if ((frame1 & 1) == 0)
-        b.get_bits(16);
+    {
+        _buf.get_bits(offset, 16);
+        offset += 16;
+    }
 
     // compute the frame size
     uint32_t frame_size = 144000 * bitrates[bit_rate_index_minus1]
                / sample_rates[freq] + padding_bit;
+
+    _buf.read(10, is, frame_size - 10);
 
     if (!pcm)
         return frame_size;  // no decoding
@@ -580,10 +582,10 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
     // read the allocation information
     for (int sb = 0;  sb < bound;  ++sb)
         for (int ch = 0;  ch < 2;  ++ch)
-            alloc[ch][sb] = read_allocation(sb, table_idx, b);
+            alloc[ch][sb] = read_allocation(sb, table_idx, offset);
 
     for (int sb = bound;  sb < sblimit;  ++sb)
-        alloc[0][sb] = alloc[1][sb] = read_allocation(sb, table_idx, b);
+        alloc[0][sb] = alloc[1][sb] = read_allocation(sb, table_idx, offset);
 
     // read scale factor selector information
     int nch = (mode == MONO) ? 1 : 2;
@@ -593,7 +595,10 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
     {
         for (int ch = 0;  ch < nch;  ++ch)
             if (alloc[ch][sb])
-                scfsi[ch][sb] = b.get_bits(2);
+            {
+                scfsi[ch][sb] = _buf.get_bits(offset, 2);
+                offset += 2;
+            }
 
         if (mode == MONO)
             scfsi[1][sb] = scfsi[0][sb];
@@ -611,24 +616,28 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
                 switch (scfsi[ch][sb])
                 {
                 case 0:
-                    sf[ch][sb][0] = b.get_bits(6);
-                    sf[ch][sb][1] = b.get_bits(6);
-                    sf[ch][sb][2] = b.get_bits(6);
+                    sf[ch][sb][0] = _buf.get_bits(offset, 6);
+                    sf[ch][sb][1] = _buf.get_bits(offset + 6, 6);
+                    sf[ch][sb][2] = _buf.get_bits(offset + 12, 6);
+                    offset += 18;
                     break;
                 case 1:
                     sf[ch][sb][0] =
-                    sf[ch][sb][1] = b.get_bits(6);
-                    sf[ch][sb][2] = b.get_bits(6);
+                    sf[ch][sb][1] = _buf.get_bits(offset, 6);
+                    sf[ch][sb][2] = _buf.get_bits(offset + 6, 6);
+                    offset += 12;
                     break;
                 case 2:
                     sf[ch][sb][0] =
                     sf[ch][sb][1] =
-                    sf[ch][sb][2] = b.get_bits(6);
+                    sf[ch][sb][2] = _buf.get_bits(offset, 6);
+                    offset += 6;
                     break;
                 case 3:
-                    sf[ch][sb][0] = b.get_bits(6);
+                    sf[ch][sb][0] = _buf.get_bits(offset, 6);
                     sf[ch][sb][1] =
-                    sf[ch][sb][2] = b.get_bits(6);
+                    sf[ch][sb][2] = _buf.get_bits(offset + 6, 6);
+                    offset += 12;
                     break;
                 }
             }
@@ -649,11 +658,11 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
             // read the samples
             for (int sb = 0;  sb < bound;  ++sb)
                 for (int ch = 0;  ch < 2;  ++ch)
-                    read_samples(alloc[ch][sb], sf[ch][sb][part], sample[ch][sb], b);
+                    read_samples(alloc[ch][sb], sf[ch][sb][part], sample[ch][sb], offset);
 
             for (int sb = bound;  sb < sblimit;  ++sb)
             {
-                read_samples(alloc[0][sb], sf[0][sb][part], sample[0][sb], b);
+                read_samples(alloc[0][sb], sf[0][sb][part], sample[0][sb], offset);
 
                 for (int idx = 0;  idx < 3;  ++idx)
                     sample[1][sb][idx] = sample[0][sb][idx];
@@ -721,7 +730,6 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
 
         } // decoding of the granule finished
     }
-    b.get_bits(frame_size * 8 - b.counter2());
     return frame_size;
 }
 
