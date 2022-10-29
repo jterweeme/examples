@@ -16,11 +16,6 @@ struct Quantizer_spec
     uint8_t cw_bits;
 };
 
-//static constexpr uint8_t STEREO = 0;
-static constexpr uint8_t JOINT_STEREO = 1;
-//static constexpr uint8_t DUAL_CHANNEL = 2;
-static constexpr uint8_t MONO = 3;
-
 static constexpr short bitrates[28] = {
     32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384,  // MPEG-1
      8, 16, 24, 32, 40, 48,  56,  64,  80,  96, 112, 128, 144, 160   // MPEG-2
@@ -156,7 +151,7 @@ class Buffer
     uint16_t _size;
 public:
     Buffer();
-    void read(uint16_t offset, std::istream &is, uint16_t n);
+    std::streamsize read(uint16_t offset, std::istream &is, uint16_t n);
     void reserve(uint16_t size);
     unsigned get_bit(uint16_t offset);
     unsigned get_bits(uint16_t offset, uint16_t n);
@@ -165,10 +160,15 @@ public:
 class Decoder
 {
 private:
+    //static constexpr uint8_t STEREO = 0;
+    static constexpr uint8_t JOINT_STEREO = 1;
+    //static constexpr uint8_t DUAL_CHANNEL = 2;
+    static constexpr uint8_t MONO = 3;
     Buffer _buf;
     int _Voffs;
     int _N[64][32];
     int _V[2][1024];
+    int16_t _samples[1152 * 2];
     void read_samples(const Quantizer_spec *q, int scalefactor, int *sample, unsigned &offset);
     const Quantizer_spec *read_allocation(int sb, int b2_table, unsigned &offset);
 public:
@@ -211,26 +211,16 @@ public:
     void write(FILE *fp) const;
 };
 
-class CMain
-{
-private:
-    static constexpr uint32_t KJMP2_SAMPLES_PER_FRAME = 1152;
-public:
-    int run(std::istream *is, FILE *outfile);
-};
-
 Buffer::Buffer()
 {
     _buf = new char[1000];
     _size = 1000;
 }
 
-void Buffer::read(uint16_t offset, std::istream &is, uint16_t n)
+std::streamsize Buffer::read(uint16_t offset, std::istream &is, uint16_t n)
 {
     is.read(_buf + offset, n);
-
-    if (is.gcount() != n)
-        throw "cannot read";
+    return is.gcount();
 }
 
 //buffer moet minstens [size] grootte worden
@@ -330,97 +320,6 @@ void COptions::parse(int argc, char **argv)
     }
 }
 
-int main(int argc, char **argv)
-{
-    COptions opts;
-    opts.parse(argc, argv);
-    CMain inst;
-    FILE *fout;
-    std::ifstream ifs;
-    std::istream *fin;
-
-    if (opts.stdinput())
-    {
-        fin = &std::cin;
-#ifdef _WIN32
-        setmode(fileno(stdin), O_BINARY);
-#endif
-    }
-    else
-    {
-        ifs.open(opts.ifn());
-        fin = &ifs;
-    }
-
-    if (opts.stdoutput())
-    {
-        fout = stdout;
-    }
-    else
-    {
-        fout = fopen(opts.ofn().c_str(), "wb");
-    }
-
-    int ret = -1;
-    try
-    {
-        ret = inst.run(fin, fout);
-    }
-    catch (const char *e)
-    {
-        std::cerr << e << "\r\n";
-        std::cerr.flush();
-    }
-    return ret;
-}
-
-int CMain::run(std::istream *is, FILE *fout)
-{
-    Decoder d;
-#ifdef _WIN32
-    setmode(fileno(stdout), O_BINARY);
-#endif
-    if (!fout)
-    {
-        fprintf(stderr, "Could not open output file %s!\n", "out.wav");
-        return 1;
-    }
-
-    CWavHeader h;
-    int out_bytes = 0;
-    d.kjmp2_init();
-    int samplerate = 0;
-
-    while (*is)
-    {
-        int16_t samples[KJMP2_SAMPLES_PER_FRAME * 2];
-        int bytes = d.kjmp2_decode_frame(*is, samples, samplerate);
-
-        //schrijf wav header voor eerste frame
-        if (out_bytes == 0)
-        {
-            h.rate(samplerate);
-            h.write(fout);
-        }
-
-        out_bytes += (int) fwrite((const void*)samples, 1, KJMP2_SAMPLES_PER_FRAME * 4, fout);
-    }
-
-    if (fout != stdout)
-    {
-        h.filesize(out_bytes + 36);
-
-        //rewrite WAV header
-        fseek(fout, 0, SEEK_SET);
-        h.write(fout);
-    }
-
-    fflush(fout);
-    fclose(fout);
-    fprintf(stderr, "Done.\n");
-    return 0;
-}
-
 void Decoder::kjmp2_init()
 {
     for (int i = 0;  i < 64;  ++i)
@@ -504,16 +403,22 @@ void Decoder::read_samples(const Quantizer_spec *q, int scalefactor, int *sample
 uint32_t
 Decoder::kjmp2_decode_frame(std::istream &is, int16_t *pcm, int &samplerate)
 {
-    _buf.read(0, is, 10);
+    std::streamsize ret = _buf.read(0, is, 10);
+    
+    if (ret != 10)
+        return 0;
+
     uint8_t frame0 = _buf.get_bits(0, 8);
     uint8_t frame1 = _buf.get_bits(8, 8);
+    uint8_t frame2 = _buf.get_bits(16, 8);
 #if 0
     // check for valid header: syncword OK, MPEG-Audio Layer 2
     if ((frame0 != 0xFF) || ((frame1 & 0xF6) != 0xF4))
         throw "invalid magic";
+
+    samplerate[(((frame[1] & 0x08) >> 1) ^ 4)  // MPEG-1/2 switch
+                      + ((frame[2] >> 2) & 3)];         // actual rate
 #endif
-    //samplerate[(((frame[1] & 0x08) >> 1) ^ 4)  // MPEG-1/2 switch
-    //                  + ((frame[2] >> 2) & 3)];         // actual rate
     samplerate = 44100;
 
     // read the rest of the header
@@ -526,14 +431,13 @@ Decoder::kjmp2_decode_frame(std::istream &is, int16_t *pcm, int &samplerate)
 
     if (freq == 3)
         return 0;
-#if 0
+
     if ((frame1 & 0x08) == 0) {  // MPEG-2
         freq += 4;
         bit_rate_index_minus1 += 14;
     }
-#endif
+
     unsigned padding_bit = _buf.get_bits(22, 1);
-    //b.get_bits(1);  // discard private_bit
     unsigned mode = _buf.get_bits(24, 2);
     int sblimit, table_idx;
     int bound = _buf.get_bits(26, 2) + 1 << 2;
@@ -730,7 +634,88 @@ Decoder::kjmp2_decode_frame(std::istream &is, int16_t *pcm, int &samplerate)
 
         } // decoding of the granule finished
     }
-    return frame_size;
+    return 1;
+}
+
+int main(int argc, char **argv)
+{
+    COptions opts;
+    opts.parse(argc, argv);
+    FILE *fout;
+    std::ifstream ifs;
+    std::istream *is;
+
+    if (opts.stdinput())
+    {
+        is = &std::cin;
+#ifdef _WIN32
+        setmode(fileno(stdin), O_BINARY);
+#endif
+    }
+    else
+    {
+        ifs.open(opts.ifn());
+        is = &ifs;
+    }
+
+    if (opts.stdoutput())
+    {
+        fout = stdout;
+#ifdef _WIN32
+        setmode(fileno(stdout), O_BINARY);
+#endif
+    }
+    else
+    {
+        fout = fopen(opts.ofn().c_str(), "wb");
+    }
+
+    int ret = -1;
+    try
+    {
+        Decoder d;
+        CWavHeader h;
+        int out_bytes = 0;
+        d.kjmp2_init();
+    
+        while (true)
+        {
+            int samplerate;
+            int16_t samples[1152 * 2];
+    
+            if (d.kjmp2_decode_frame(*is, samples, samplerate) == 0)
+                break;
+    
+            //schrijf wav header voor eerste frame
+            if (out_bytes == 0)
+            {
+                h.rate(samplerate);
+                h.write(fout);
+            }
+    
+            out_bytes += (int) fwrite((const void*)samples, 1, 1152 * 4, fout);
+        }
+    
+        if (fout != stdout)
+        {
+            h.filesize(out_bytes + 36);
+    
+            //rewrite WAV header
+            fseek(fout, 0, SEEK_SET);
+            h.write(fout);
+        }
+    
+        fflush(fout);
+        fclose(fout);
+        fprintf(stderr, "Done.\n");
+        ret = 0;
+    }
+    catch (const char *e)
+    {
+        std::cerr << e << "\r\n";
+        std::cerr.flush();
+    }
+    return ret;
 }
 
 
