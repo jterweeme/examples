@@ -81,7 +81,7 @@ static inline int copy_chunk (mpeg2dec_t * mpeg2dec, int bytes)
     uint8_t byte;
 
     if (!bytes)
-	return 0;
+        return 0;
 
     current = mpeg2dec->buf_start;
     shift = mpeg2dec->shift;

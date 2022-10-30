@@ -109,14 +109,14 @@ static inline void idct_row (int16_t * const block)
     b1 = ((t0 + t1) >> 8) * 181;
     b2 = ((t0 - t1) >> 8) * 181;
 
-    block[0] = (a0 + b0) >> 12;
-    block[1] = (a1 + b1) >> 12;
-    block[2] = (a2 + b2) >> 12;
-    block[3] = (a3 + b3) >> 12;
-    block[4] = (a3 - b3) >> 12;
-    block[5] = (a2 - b2) >> 12;
-    block[6] = (a1 - b1) >> 12;
-    block[7] = (a0 - b0) >> 12;
+    block[0] = a0 + b0 >> 12;
+    block[1] = a1 + b1 >> 12;
+    block[2] = a2 + b2 >> 12;
+    block[3] = a3 + b3 >> 12;
+    block[4] = a3 - b3 >> 12;
+    block[5] = a2 - b2 >> 12;
+    block[6] = a1 - b1 >> 12;
+    block[7] = a0 - b0 >> 12;
 }
 
 static inline void idct_col (int16_t * const block)
@@ -192,34 +192,36 @@ static void mpeg2_idct_add_c (const int last, int16_t * block,
 {
     int i;
 
-    if (last != 129 || (block[0] & (7 << 4)) == (4 << 4)) {
-	for (i = 0; i < 8; i++)
-	    idct_row (block + 8 * i);
-	for (i = 0; i < 8; i++)
-	    idct_col (block + i);
-	do {
-	    dest[0] = CLIP (block[0] + dest[0]);
-	    dest[1] = CLIP (block[1] + dest[1]);
-	    dest[2] = CLIP (block[2] + dest[2]);
-	    dest[3] = CLIP (block[3] + dest[3]);
-	    dest[4] = CLIP (block[4] + dest[4]);
-	    dest[5] = CLIP (block[5] + dest[5]);
-	    dest[6] = CLIP (block[6] + dest[6]);
-	    dest[7] = CLIP (block[7] + dest[7]);
+    if (last != 129 || (block[0] & (7 << 4)) == (4 << 4))
+    {
+        for (i = 0; i < 8; i++)
+	        idct_row (block + 8 * i);
+        for (i = 0; i < 8; i++)
+    	    idct_col (block + i);
+        do {
+            dest[0] = CLIP (block[0] + dest[0]);
+            dest[1] = CLIP (block[1] + dest[1]);
+            dest[2] = CLIP (block[2] + dest[2]);
+            dest[3] = CLIP (block[3] + dest[3]);
+            dest[4] = CLIP (block[4] + dest[4]);
+            dest[5] = CLIP (block[5] + dest[5]);
+            dest[6] = CLIP (block[6] + dest[6]);
+            dest[7] = CLIP (block[7] + dest[7]);
 
-	    ((int32_t *)block)[0] = 0;	((int32_t *)block)[1] = 0;
-	    ((int32_t *)block)[2] = 0;	((int32_t *)block)[3] = 0;
+            ((int32_t *)block)[0] = 0;
+            ((int32_t *)block)[1] = 0;
+            ((int32_t *)block)[2] = 0;
+            ((int32_t *)block)[3] = 0;
 
-	    dest += stride;
-	    block += 8;
-	} while (--i);
-    } else {
-	int DC;
-
-	DC = (block[0] + 64) >> 7;
-	block[0] = block[63] = 0;
-	i = 8;
-	do {
+            dest += stride;
+            block += 8;
+        } while (--i);
+    } else
+    {
+        int DC = block[0] + 64 >> 7;
+        block[0] = block[63] = 0;
+        i = 8;
+        do {
 	    dest[0] = CLIP (DC + dest[0]);
 	    dest[1] = CLIP (DC + dest[1]);
 	    dest[2] = CLIP (DC + dest[2]);
@@ -229,24 +231,24 @@ static void mpeg2_idct_add_c (const int last, int16_t * block,
 	    dest[6] = CLIP (DC + dest[6]);
 	    dest[7] = CLIP (DC + dest[7]);
 	    dest += stride;
-	} while (--i);
+        } while (--i);
     }
 }
 
 void mpeg2_idct_init (uint32_t accel)
 {
-    {
-	int i, j;
-
 	mpeg2_idct_copy = mpeg2_idct_copy_c;
 	mpeg2_idct_add = mpeg2_idct_add_c;
-	for (i = -3840; i < 3840 + 256; i++)
+	for (int i = -3840; i < 3840 + 256; i++)
 	    CLIP(i) = (i < 0) ? 0 : ((i > 255) ? 255 : i);
-	for (i = 0; i < 64; i++) {
+
+	for (int i = 0; i < 64; i++) {
+        int j;
 	    j = mpeg2_scan_norm[i];
-	    mpeg2_scan_norm[i] = ((j & 0x36) >> 1) | ((j & 0x09) << 2);
+	    mpeg2_scan_norm[i] = (j & 0x36) >> 1 | (j & 0x09) << 2;
 	    j = mpeg2_scan_alt[i];
 	    mpeg2_scan_alt[i] = ((j & 0x36) >> 1) | ((j & 0x09) << 2);
 	}
-    }
 }
+
+

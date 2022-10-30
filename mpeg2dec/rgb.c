@@ -580,3 +580,4 @@ mpeg2_convert_t * mpeg2convert_rgb (mpeg2convert_rgb_order_t order,
     }
     return (mpeg2_convert_t *) 0;
 }
+
