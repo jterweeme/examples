@@ -40,7 +40,32 @@
 
 #include "mpeg2.h"
 #include "video_out.h"
-#include "gettimeofday.h"
+
+#if defined(HAVE_STRUCT_TIMEVAL) && defined(HAVE_GETTIMEOFDAY)
+#if defined(TIME_WITH_SYS_TIME)
+#include <sys/time.h>
+#include <time.h>
+#elif defined(HAVE_SYS_TIME_H)
+#include <sys/time.h>
+#else
+#include <time.h>
+#endif
+#elif defined(HAVE_SYS_TIMEB_H) && defined(HAVE_FTIME)
+
+#define HAVE_GETTIMEOFDAY 1
+#define CUSTOM_GETTIMEOFDAY 1
+
+struct timeval {
+    long tv_sec;
+    long tv_usec;
+};
+
+void gettimeofday (struct timeval * tp, void * dummy);
+
+#else
+#undef HAVE_GETTIMEOFDAY
+#endif
+
 
 static int buffer_size = 4096;
 static FILE * in_file;
@@ -53,9 +78,6 @@ static vo_instance_t * output;
 static int sigint = 0;
 static int total_offset = 0;
 static int verbose = 0;
-
-void dump_state (FILE * f, mpeg2_state_t state, const mpeg2_info_t * info,
-		 int offset, int verbose);
 
 #ifdef HAVE_GETTIMEOFDAY
 
@@ -183,7 +205,7 @@ static void handle_args (int argc, char ** argv)
 		if (demux_track < 0xe0 || demux_track > 0xef || *s) {
 		    fprintf (stderr, "Invalid track number: %s\n", optarg);
 		    print_usage (argv);
-		}
+        }
 	    }
 	    break;
 
@@ -277,9 +299,6 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
     info = mpeg2_info (mpeg2dec);
     while (1) {
 	state = mpeg2_parse (mpeg2dec);
-	if (verbose)
-	    dump_state (stderr, state, info,
-			total_offset - mpeg2_getpos (mpeg2dec), verbose);
 	switch (state) {
 	case STATE_BUFFER:
 	    return;
@@ -289,10 +308,11 @@ static void decode_mpeg2 (uint8_t * current, uint8_t * end)
 	    if (output->setup (output, info->sequence->width,
 			       info->sequence->height,
 			       info->sequence->chroma_width,
-			       info->sequence->chroma_height, &setup_result)) {
-		fprintf (stderr, "display setup failed\n");
-		exit (1);
-	    }
+                   info->sequence->chroma_height, &setup_result))
+        {
+            fprintf (stderr, "display setup failed\n");
+            exit (1);
+        }
 	    if (setup_result.convert &&
 		mpeg2_convert (mpeg2dec, setup_result.convert, NULL)) {
 		fprintf (stderr, "color conversion setup failed\n");
@@ -639,13 +659,15 @@ static int pva_demux (uint8_t * buf, uint8_t * end)
         break;
     }
 
-    while (1) {
-    payload_start:
-	header = buf;
-	bytes = end - buf;
-    continue_header:
-	NEEDBYTES (2);
-	if (header[0] != 0x41 || header[1] != 0x56) {
+    while (1)
+    {
+payload_start:
+        header = buf;
+        bytes = end - buf;
+continue_header:
+        NEEDBYTES (2);
+        if (header[0] != 0x41 || header[1] != 0x56)
+        {
 	    if (header != head_buf) {
 		buf++;
 		goto payload_start;
@@ -654,9 +676,9 @@ static int pva_demux (uint8_t * buf, uint8_t * end)
 		bytes = 1;
 		goto continue_header;
 	    }
-	}
-	NEEDBYTES (8);
-	if (header[2] != 1) {
+        }
+        NEEDBYTES (8);
+        if (header[2] != 1) {
 	    DONEBYTES (8);
 	    bytes = (header[6] << 8) + header[7];
 	    if (bytes > end - buf) {
@@ -665,7 +687,7 @@ static int pva_demux (uint8_t * buf, uint8_t * end)
 		return 0;
 	    } 
 	    buf += bytes; 
-	} else {
+        } else {
 	    len = 8;
 	    if (header[5] & 0x10) {
 		len = 12 + (header[5] & 3);

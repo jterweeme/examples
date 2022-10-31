@@ -379,8 +379,8 @@ void mpeg2_tag_picture (mpeg2dec_t * mpeg2dec, uint32_t tag, uint32_t tag2)
 uint32_t mpeg2_accel (uint32_t accel)
 {
     if (!mpeg2_accels) {
-	mpeg2_accels = mpeg2_detect_accel (accel) | MPEG2_ACCEL_DETECT;
-	mpeg2_cpu_state_init (mpeg2_accels);
+	//mpeg2_accels = mpeg2_detect_accel (accel) | MPEG2_ACCEL_DETECT;
+    mpeg2_accels = accel | MPEG2_ACCEL_DETECT;
 	mpeg2_idct_init (mpeg2_accels);
 	mpeg2_mc_init (mpeg2_accels);
     }
@@ -411,13 +411,13 @@ void mpeg2_reset (mpeg2dec_t * mpeg2dec, int full_reset)
 mpeg2dec_t * mpeg2_init (void)
 {
     mpeg2dec_t * mpeg2dec;
-
     mpeg2_accel (MPEG2_ACCEL_DETECT);
 
     mpeg2dec = (mpeg2dec_t *) mpeg2_malloc (sizeof (mpeg2dec_t),
 					    MPEG2_ALLOC_MPEG2DEC);
+
     if (mpeg2dec == NULL)
-	return NULL;
+        return NULL;
 
     memset (mpeg2dec->decoder.DCTblock, 0, 64 * sizeof (int16_t));
     memset (mpeg2dec->quantizer_matrix, 0, 4 * 64 * sizeof (uint8_t));
@@ -427,7 +427,6 @@ mpeg2dec_t * mpeg2_init (void)
 
     mpeg2dec->sequence.width = (unsigned)-1;
     mpeg2_reset (mpeg2dec, 1);
-
     return mpeg2dec;
 }
 

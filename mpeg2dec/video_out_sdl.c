@@ -26,8 +26,6 @@
 
 #include "config.h"
 
-#ifdef LIBVO_SDL
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,7 +33,19 @@
 #include <inttypes.h>
 
 #include "video_out.h"
-#include "vo_internal.h"
+
+extern vo_open_t vo_sdl_open;
+
+static vo_driver_t video_out_drivers[] = {
+    {"sdl", vo_sdl_open},
+    {NULL, NULL}
+};
+
+vo_driver_t const * vo_drivers (void)
+{
+    return video_out_drivers;
+}
+
 
 typedef struct {
     vo_instance_t vo;
@@ -104,9 +114,9 @@ static void sdl_close (vo_instance_t * _instance)
 }
 #endif
 
-static int sdl_setup (vo_instance_t * _instance, unsigned int width,
-		      unsigned int height, unsigned int chroma_width,
-		      unsigned int chroma_height, vo_setup_result_t * result)
+static int sdl_setup (vo_instance_t *_instance, unsigned width,
+                unsigned height, unsigned chroma_width,
+                unsigned chroma_height, vo_setup_result_t *result)
 {
     sdl_instance_t * instance;
 
@@ -153,20 +163,24 @@ vo_instance_t * vo_sdl_open (void)
     }
 
     vidInfo = SDL_GetVideoInfo ();
-    if (!SDL_ListModes (vidInfo->vfmt, SDL_HWSURFACE | SDL_RESIZABLE)) {
-	instance->sdlflags = SDL_RESIZABLE;
-	if (!SDL_ListModes (vidInfo->vfmt, SDL_RESIZABLE)) {
-	    fprintf (stderr, "sdl couldn't get any acceptable video mode\n");
-	    return NULL;
-	}
+    if (!SDL_ListModes (vidInfo->vfmt, SDL_HWSURFACE | SDL_RESIZABLE))
+    {
+        instance->sdlflags = SDL_RESIZABLE;
+        if (!SDL_ListModes (vidInfo->vfmt, SDL_RESIZABLE))
+        {
+            fprintf (stderr, "sdl couldn't get any acceptable video mode\n");
+            return NULL;
+	    }
     }
     instance->bpp = vidInfo->vfmt->BitsPerPixel;
-    if (instance->bpp < 16) {
-	fprintf(stderr, "sdl has to emulate a 16 bit surfaces, "
-		"that will slow things down.\n");
-	instance->bpp = 16;
+    if (instance->bpp < 16)
+    {
+        fprintf(stderr, "sdl has to emulate a 16 bit surfaces, "
+            "that will slow things down.\n");
+        instance->bpp = 16;
     }
 
     return (vo_instance_t *) instance;
 }
-#endif
+
+
