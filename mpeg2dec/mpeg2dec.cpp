@@ -28,7 +28,6 @@
 #include <string.h>
 #include <errno.h>
 #include <signal.h>
-#include <getopt.h>
 #ifdef HAVE_IO_H
 #include <fcntl.h>
 #include <io.h>
