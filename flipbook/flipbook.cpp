@@ -157,17 +157,17 @@ void CApp::app_create(const char *filename)
     
     // Initialize plmpeg, load the video file, install decode callbacks
     _plm.plm_create_with_filename(filename);
-    int samplerate = _plm.plm_get_samplerate();
+    //int samplerate = _plm.plm_get_samplerate();
 
     SDL_Log(
-        "Opened %s - framerate: %f, samplerate: %d, duration: %f",
+        "Opened %s - framerate: %f, duration: %f",
         filename, 
         _plm.plm_get_framerate(),
-        _plm.plm_get_samplerate(),
+        //_plm.plm_get_samplerate(),
         _plm.plm_get_duration());
 	
     _plm.plm_set_loop(FALSE);
-    _plm.plm_set_audio_enabled(FALSE);
+    //_plm.plm_set_audio_enabled(FALSE);
 
     _window = SDL_CreateWindow(
         "pl_mpeg",
@@ -176,17 +176,9 @@ void CApp::app_create(const char *filename)
         SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 
     gl = SDL_GL_CreateContext(_window);
-	
 	SDL_GL_SetSwapInterval(0);
-
-#if defined(__APPLE__) && defined(__MACH__)
-    // OSX
-    // (nothing to do here)
-#else
-    // Windows, Linux
     glewExperimental = GL_TRUE;
     glewInit();
-#endif
     const char *fsh = APP_FRAGMENT_SHADER_YCRCB;
     GLuint fragment_shader = app_compile_shader(GL_FRAGMENT_SHADER, fsh);
     GLuint vertex_shader = app_compile_shader(GL_VERTEX_SHADER, APP_VERTEX_SHADER);

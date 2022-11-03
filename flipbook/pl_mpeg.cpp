@@ -22,7 +22,6 @@ void PLM::plm_create_with_buffer(Buffer *buffer, int destroy_when_done)
 {
     _demux.plm_demux_create(buffer, destroy_when_done);
     _video_enabled = TRUE;
-    audio_enabled = TRUE;
     plm_init_decoders();
 }
 
@@ -43,17 +42,8 @@ int PLM::plm_init_decoders()
         _video_buffer.plm_buffer_set_load_callback(plm_read_video_packet, this);
     }
 
-    if (_demux.plm_demux_get_num_audio_streams() > 0)
-    {
-        if (audio_enabled)
-            audio_packet_type = Demux::PLM_DEMUX_PACKET_AUDIO_1 + audio_stream_index;
-        
-        _audio_buffer.create_with_capacity(PLM_BUFFER_DEFAULT_SIZE);
-        _audio_buffer.plm_buffer_set_load_callback(plm_read_audio_packet, this);
-    }
-
     _video.plm_video_create_with_buffer(&_video_buffer, TRUE);
-    _audio.plm_audio_create_with_buffer(&_audio_buffer, TRUE);
+    //_audio.plm_audio_create_with_buffer(&_audio_buffer, TRUE);
     _has_decoders = TRUE;
     return TRUE;
 }
@@ -61,12 +51,7 @@ int PLM::plm_init_decoders()
 void PLM::plm_destroy()
 {
     _video.plm_video_destroy();
-    _audio.plm_audio_destroy();
     _demux.plm_demux_destroy();
-}
-
-int PLM::plm_get_audio_enabled() {
-    return audio_enabled;
 }
 
 int PLM::plm_has_headers()
@@ -77,24 +62,10 @@ int PLM::plm_has_headers()
     if (!plm_init_decoders())
         return FALSE;
 
-    if (!_video.plm_video_has_header() || !_audio.plm_audio_has_header())
+    if (!_video.plm_video_has_header())
         return FALSE;
 
     return TRUE;
-}
-
-void PLM::plm_set_audio_enabled(int enabled)
-{
-    audio_enabled = enabled;
-
-    if (!enabled)
-    {
-        audio_packet_type = 0;
-        return;
-    }
-
-    audio_packet_type = plm_init_decoders() ?
-            Demux::PLM_DEMUX_PACKET_AUDIO_1 + audio_stream_index : 0;
 }
 
 int PLM::plm_get_video_enabled() {
@@ -130,16 +101,6 @@ int PLM::plm_get_height() {
 // Get the framerate of the video stream in frames per second.
 double PLM::plm_get_framerate() {
     return plm_init_decoders() ? _video.plm_video_get_framerate() : 0;
-}
-
-// Get the number of audio streams (0--4) reported in the system header.
-int PLM::plm_get_num_audio_streams() {
-    return _demux.plm_demux_get_num_audio_streams();
-}
-
-// Get the samplerate of the audio stream in samples per second.
-int PLM::plm_get_samplerate() {
-    return (plm_init_decoders()) ? _audio.plm_audio_get_samplerate() : 0;
 }
 
 double PLM::plm_get_time() {
@@ -190,13 +151,6 @@ void PLM::plm_read_video_packet(Buffer *buffer, void *user)
     plm_read_packets(plm, plm->_video_packet_type);
 }
 
-void PLM::plm_read_audio_packet(Buffer *buffer, void *user)
-{
-    PLM_UNUSED(buffer);
-    PLM *plm = (PLM *)(user);
-    plm_read_packets(plm, plm->audio_packet_type);
-}
-
 void PLM::plm_read_packets(PLM *self, int requested_type)
 {
     plm_packet_t *packet;
@@ -204,9 +158,6 @@ void PLM::plm_read_packets(PLM *self, int requested_type)
     {
         if (packet->type == self->_video_packet_type)
             self->_video_buffer.plm_buffer_write(packet->data, packet->length);
-        else if (packet->type == self->audio_packet_type)
-            self->_audio_buffer.plm_buffer_write(packet->data, packet->length);
-
         if (packet->type == requested_type)
             return;
     }
@@ -214,7 +165,6 @@ void PLM::plm_read_packets(PLM *self, int requested_type)
     if (self->_demux.plm_demux_has_ended())
     {
         self->_video_buffer.plm_buffer_signal_end();
-        self->_audio_buffer.plm_buffer_signal_end();
     }
 }
 
@@ -621,9 +571,11 @@ int Demux::plm_demux_get_num_video_streams() {
 
 // Returns the number of audio streams found in the system header. This will
 // attempt to read the system header if non is present yet.
+#if 0
 int Demux::plm_demux_get_num_audio_streams() {
     return plm_demux_has_headers() ? _num_audio_streams : 0;
 }
+#endif
 
 // Rewind the internal buffer. See plm_buffer_rewind().
 void Demux::plm_demux_rewind()

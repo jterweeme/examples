@@ -36,17 +36,6 @@
 
 extern vo_open_t vo_sdl_open;
 
-static vo_driver_t video_out_drivers[] = {
-    {"sdl", vo_sdl_open},
-    {NULL, NULL}
-};
-
-vo_driver_t const * vo_drivers (void)
-{
-    return video_out_drivers;
-}
-
-
 typedef struct {
     vo_instance_t vo;
     int width;
@@ -132,7 +121,6 @@ static int sdl_setup (vo_instance_t *_instance, unsigned width,
     }
 
     result->convert = NULL;
-    //SDL_GL_SetSwapInterval(0);
     return 0;
 }
 

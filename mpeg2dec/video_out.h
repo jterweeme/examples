@@ -26,6 +26,7 @@
 
 struct mpeg2_sequence_s;
 struct mpeg2_convert_init_s;
+
 typedef struct {
     int (* convert) (int stage, void * id,
 		     const struct mpeg2_sequence_s * sequence,
@@ -55,9 +56,9 @@ typedef struct {
     vo_open_t * open;
 } vo_driver_t;
 
-void vo_accel (uint32_t accel);
 
 /* return NULL terminated array of all drivers */
-vo_driver_t const * vo_drivers (void);
+vo_driver_t const * vo_drivers ();
+vo_instance_t * vo_sdl_open ();
 
 #endif /* LIBMPEG2_VIDEO_OUT_H */

@@ -52,7 +52,6 @@ static vo_open_t * output_open = NULL;
 static vo_instance_t * output;
 static int sigint = 0;
 static int total_offset = 0;
-static int verbose = 0;
 
 class Options
 {
@@ -92,10 +91,6 @@ static void print_fps (int final)
     struct timeval tv_end;
     double fps, tfps;
     int frames, elapsed;
-
-    if (verbose)
-	return;
-
     gettimeofday (&tv_end, NULL);
 
     if (!frame_counter) {
@@ -498,11 +493,7 @@ int main (int argc, char ** argv)
 
     demux_track = 0xe0;
 	in_file = stdin;
-    vo_driver_t const * drivers;
-    drivers = vo_drivers ();
-    output_open = drivers[0].open;
-
-    output = output_open ();
+    output = vo_sdl_open();
     if (output == NULL) {
 	fprintf (stderr, "Can not open output\n");
 	return 1;

@@ -29,20 +29,6 @@
 #define MPEG2_VERSION(a,b,c) (((a)<<16)|((b)<<8)|(c))
 #define MPEG2_RELEASE MPEG2_VERSION (0, 5, 1)	/* 0.5.1 */
 
-#define SEQ_FLAG_MPEG2 1
-#define SEQ_FLAG_CONSTRAINED_PARAMETERS 2
-#define SEQ_FLAG_PROGRESSIVE_SEQUENCE 4
-#define SEQ_FLAG_LOW_DELAY 8
-#define SEQ_FLAG_COLOUR_DESCRIPTION 16
-
-#define SEQ_MASK_VIDEO_FORMAT 0xe0
-#define SEQ_VIDEO_FORMAT_COMPONENT 0
-#define SEQ_VIDEO_FORMAT_PAL 0x20
-#define SEQ_VIDEO_FORMAT_NTSC 0x40
-#define SEQ_VIDEO_FORMAT_SECAM 0x60
-#define SEQ_VIDEO_FORMAT_MAC 0x80
-#define SEQ_VIDEO_FORMAT_UNSPECIFIED 0xa0
-
 typedef struct mpeg2_sequence_s {
     unsigned int width, height;
     unsigned int chroma_width, chroma_height;
@@ -65,27 +51,13 @@ typedef struct mpeg2_sequence_s {
 #define GOP_FLAG_BROKEN_LINK 2
 #define GOP_FLAG_CLOSED_GOP 4
 
-typedef struct mpeg2_gop_s {
+struct mpeg2_gop_t {
     uint8_t hours;
     uint8_t minutes;
     uint8_t seconds;
     uint8_t pictures;
     uint32_t flags;
-} mpeg2_gop_t;
-
-#define PIC_MASK_CODING_TYPE 7
-#define PIC_FLAG_CODING_TYPE_I 1
-#define PIC_FLAG_CODING_TYPE_P 2
-#define PIC_FLAG_CODING_TYPE_B 3
-#define PIC_FLAG_CODING_TYPE_D 4
-
-#define PIC_FLAG_TOP_FIELD_FIRST 8
-#define PIC_FLAG_PROGRESSIVE_FRAME 16
-#define PIC_FLAG_COMPOSITE_DISPLAY 32
-#define PIC_FLAG_SKIP 64
-#define PIC_FLAG_TAGS 128
-#define PIC_FLAG_REPEAT_FIRST_FIELD 256
-#define PIC_MASK_COMPOSITE_DISPLAY 0xfffff000
+};
 
 typedef struct mpeg2_picture_s {
     unsigned int temporal_reference;
@@ -117,7 +89,6 @@ typedef struct mpeg2_info_s {
 } mpeg2_info_t;
 
 typedef struct mpeg2dec_s mpeg2dec_t;
-//typedef struct mpeg2_decoder_s mpeg2_decoder_t;
 
 typedef enum {
     STATE_BUFFER = 0,
@@ -155,17 +126,6 @@ int mpeg2_stride (mpeg2dec_t * mpeg2dec, int stride);
 void mpeg2_set_buf (mpeg2dec_t * mpeg2dec, uint8_t * buf[3], void * id);
 void mpeg2_custom_fbuf (mpeg2dec_t * mpeg2dec, int custom_fbuf);
 
-#define MPEG2_ACCEL_X86_MMX 1
-#define MPEG2_ACCEL_X86_3DNOW 2
-#define MPEG2_ACCEL_X86_MMXEXT 4
-#define MPEG2_ACCEL_X86_SSE2 8
-#define MPEG2_ACCEL_X86_SSE3 16
-#define MPEG2_ACCEL_PPC_ALTIVEC 1
-#define MPEG2_ACCEL_ALPHA 1
-#define MPEG2_ACCEL_ALPHA_MVI 2
-#define MPEG2_ACCEL_SPARC_VIS 1
-#define MPEG2_ACCEL_SPARC_VIS2 2
-#define MPEG2_ACCEL_ARM 1
 #define MPEG2_ACCEL_DETECT 0x80000000
 
 uint32_t mpeg2_accel (uint32_t accel);
@@ -216,17 +176,6 @@ void mpeg2_malloc_hooks (void * malloc (unsigned, mpeg2_alloc_t), int free (void
 #endif
     
 #define STATE_INTERNAL_NORETURN ((mpeg2_state_t)-1)
-
-static constexpr uint8_t MACROBLOCK_INTRA = 1;
-static constexpr uint8_t MACROBLOCK_PATTERN = 2;
-static constexpr uint8_t MACROBLOCK_MOTION_BACKWARD = 4;
-static constexpr uint8_t MACROBLOCK_MOTION_FORWARD = 8;
-static constexpr uint8_t MACROBLOCK_QUANT = 16;
-static constexpr uint8_t DCT_TYPE_INTERLACED = 32;
-static constexpr uint8_t MOTION_TYPE_SHIFT = 6;
-static constexpr uint8_t  MC_FIELD = 1, MC_FRAME = 2, MC_16X8 = 2, MC_DMV = 3;
-static constexpr uint8_t TOP_FIELD = 1, BOTTOM_FIELD = 2, FRAME_PICTURE = 3;
-static constexpr uint8_t I_TYPE = 1, P_TYPE = 2, B_TYPE = 3, D_TYPE = 4;
 
 typedef void mpeg2_mc_fct (uint8_t *, const uint8_t *, int, int);
 
@@ -339,7 +288,6 @@ public:
 
 void mpeg2_init_fbuf (mpeg2_decoder_t * decoder, uint8_t * current_fbuf[3],
 		      uint8_t * forward_fbuf[3], uint8_t * backward_fbuf[3]);
-void mpeg2_slice (mpeg2_decoder_t * decoder, int code, const uint8_t * buffer);
 
 #endif
 

@@ -514,13 +514,17 @@ private:
     void plm_create_with_memory(uint8_t *bytes, size_t length, int free_when_done);
     void plm_create_with_buffer(Buffer *buffer, int destroy_when_done);
     static void plm_read_packets(PLM *self, int requested_type);
-    static void plm_read_audio_packet(Buffer *buffer, void *user);
+    //static void plm_read_audio_packet(Buffer *buffer, void *user);
     static void plm_read_video_packet(Buffer *buffer, void *user);
+#if 0
     int audio_enabled = 0;
     int audio_stream_index = 0;
     int audio_packet_type = 0;
     int plm_get_audio_enabled();
     int plm_get_num_audio_streams();
+    void plm_set_audio_enabled(int enabled);
+    int plm_get_samplerate();
+#endif
 public:
     void plm_create_with_filename(const char *filename);
     int plm_init_decoders();
@@ -533,8 +537,6 @@ public:
     int plm_get_width();
     int plm_get_height();
     double plm_get_framerate();
-    void plm_set_audio_enabled(int enabled);
-    int plm_get_samplerate();
     double plm_get_time();
     double plm_get_duration();
     void plm_set_loop(int loop);
