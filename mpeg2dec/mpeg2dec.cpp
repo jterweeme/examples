@@ -494,8 +494,7 @@ int main (int argc, char ** argv)
     setmode (fileno (stdout), O_BINARY);
 #endif
 
-    fprintf (stderr, PACKAGE"-"VERSION
-	     " - by Michel Lespinasse <walken@zoy.org> and Aaron Holtzman\n");
+    fprintf (stderr, " - by Michel Lespinasse <walken@zoy.org> and Aaron Holtzman\n");
 
     demux_track = 0xe0;
 	in_file = stdin;

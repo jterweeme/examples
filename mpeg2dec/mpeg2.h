@@ -24,6 +24,8 @@
 #ifndef LIBMPEG2_MPEG2_H
 #define LIBMPEG2_MPEG2_H
 
+#include <stddef.h>
+
 #define MPEG2_VERSION(a,b,c) (((a)<<16)|((b)<<8)|(c))
 #define MPEG2_RELEASE MPEG2_VERSION (0, 5, 1)	/* 0.5.1 */
 
@@ -115,7 +117,7 @@ typedef struct mpeg2_info_s {
 } mpeg2_info_t;
 
 typedef struct mpeg2dec_s mpeg2dec_t;
-typedef struct mpeg2_decoder_s mpeg2_decoder_t;
+//typedef struct mpeg2_decoder_s mpeg2_decoder_t;
 
 typedef enum {
     STATE_BUFFER = 0,
@@ -181,9 +183,7 @@ void mpeg2_slice_region (mpeg2dec_t * mpeg2dec, int start, int end);
 
 void mpeg2_tag_picture (mpeg2dec_t * mpeg2dec, uint32_t tag, uint32_t tag2);
 
-void mpeg2_init_fbuf (mpeg2_decoder_t * decoder, uint8_t * current_fbuf[3],
-		      uint8_t * forward_fbuf[3], uint8_t * backward_fbuf[3]);
-void mpeg2_slice (mpeg2_decoder_t * decoder, int code, const uint8_t * buffer);
+
 int mpeg2_guess_aspect (const mpeg2_sequence_t * sequence,
 			unsigned int * pixel_width,
 			unsigned int * pixel_height);
@@ -198,7 +198,150 @@ typedef enum {
 
 void * mpeg2_malloc (unsigned size, mpeg2_alloc_t reason);
 void mpeg2_free (void * buf);
-void mpeg2_malloc_hooks (void * malloc (unsigned, mpeg2_alloc_t),
-			 int free (void *));
+void mpeg2_malloc_hooks (void * malloc (unsigned, mpeg2_alloc_t), int free (void *));
 
-#endif /* LIBMPEG2_MPEG2_H */
+/* use gcc attribs to align critical data structures */
+#ifdef ATTRIBUTE_ALIGNED_MAX
+#define ATTR_ALIGN(align) __attribute__ ((__aligned__ ((ATTRIBUTE_ALIGNED_MAX < align) ? ATTRIBUTE_ALIGNED_MAX : align)))
+#else
+#define ATTR_ALIGN(align)
+#endif
+    
+#ifdef HAVE_BUILTIN_EXPECT
+#define likely(x) __builtin_expect ((x) != 0, 1)
+#define unlikely(x) __builtin_expect ((x) != 0, 0)
+#else
+#define likely(x) (x)
+#define unlikely(x) (x)
+#endif
+    
+#define STATE_INTERNAL_NORETURN ((mpeg2_state_t)-1)
+
+static constexpr uint8_t MACROBLOCK_INTRA = 1;
+static constexpr uint8_t MACROBLOCK_PATTERN = 2;
+static constexpr uint8_t MACROBLOCK_MOTION_BACKWARD = 4;
+static constexpr uint8_t MACROBLOCK_MOTION_FORWARD = 8;
+static constexpr uint8_t MACROBLOCK_QUANT = 16;
+static constexpr uint8_t DCT_TYPE_INTERLACED = 32;
+static constexpr uint8_t MOTION_TYPE_SHIFT = 6;
+static constexpr uint8_t  MC_FIELD = 1, MC_FRAME = 2, MC_16X8 = 2, MC_DMV = 3;
+static constexpr uint8_t TOP_FIELD = 1, BOTTOM_FIELD = 2, FRAME_PICTURE = 3;
+static constexpr uint8_t I_TYPE = 1, P_TYPE = 2, B_TYPE = 3, D_TYPE = 4;
+
+typedef void mpeg2_mc_fct (uint8_t *, const uint8_t *, int, int);
+
+typedef struct {
+    uint8_t * ref[2][3];
+    uint8_t ** ref2[2];
+    int pmv[2][2];
+    int f_code[2];
+} motion_t;
+    
+struct mpeg2_decoder_t;
+
+typedef void motion_parser_t (mpeg2_decoder_t * decoder,
+                  motion_t * motion,
+                  mpeg2_mc_fct * const * table);
+
+class mpeg2_decoder_t
+{
+public:
+    /* first, state that carries information from one macroblock to the */
+    /* next inside a slice, and is never used outside of mpeg2_slice() */
+    
+    /* bit parsing stuff */
+    uint32_t bitstream_buf;     /* current 32 bit working set */
+    int bitstream_bits;         /* used bits in working set */
+    const uint8_t * bitstream_ptr;  /* buffer with stream data */
+
+    uint8_t * dest[3];
+
+    int offset;
+    int stride;
+    int uv_stride;
+    int slice_stride;
+    int slice_uv_stride;
+    int stride_frame;
+    unsigned limit_x;
+    unsigned limit_y_16;
+    unsigned limit_y_8;
+    unsigned limit_y;
+
+    /* Motion vectors */
+    /* The f_ and b_ correspond to the forward and backward motion */
+    /* predictors */
+    motion_t b_motion;
+    motion_t f_motion;
+    motion_parser_t * motion_parser[5];
+
+    /* predictor for DC coefficients in intra blocks */
+    int16_t dc_dct_pred[3];
+
+    /* DCT coefficients */
+    int16_t DCTblock[64] ATTR_ALIGN(64);
+
+    uint8_t * picture_dest[3];
+    void (* convert) (void * convert_id, uint8_t * const * src,
+              unsigned int v_offset);
+    void * convert_id;
+
+    int dmv_offset;
+    unsigned int v_offset;
+    /* now non-slice-specific information */
+
+    /* sequence header stuff */
+    uint16_t * quantizer_matrix[4];
+    uint16_t (* chroma_quantizer[2])[64];
+    uint16_t quantizer_prescale[4][32][64];
+
+    /* The width and height of the picture snapped to macroblock units */
+    int width;
+    int height;
+    int vertical_position_extension;
+    int chroma_format;
+
+    /* picture header stuff */
+
+    /* what type of picture this is (I, P, B, D) */
+    int coding_type;
+
+    /* picture coding extension stuff */
+
+    /* quantization factor for intra dc coefficients */
+    int intra_dc_precision;
+    /* top/bottom/both fields */
+    int picture_structure;
+    /* bool to indicate all predictions are frame based */
+    int frame_pred_frame_dct;
+    /* bool to indicate whether intra blocks have motion vectors */
+    /* (for concealment) */
+    int concealment_motion_vectors;
+    /* bool to use different vlc tables */
+    int intra_vlc_format;
+    /* used for DMV MC */
+    int top_field_first;
+
+    /* stuff derived from bitstream */
+
+    /* pointer to the zigzag scan we're supposed to be using */
+    const uint8_t * scan;
+
+    int second_field;
+
+    int mpeg1;
+    /* XXX: stuff due to xine shit */
+    int8_t q_scale_type;
+    uint32_t ubits(size_t n) { return bitstream_buf >> 32 - n; }
+    void dumpbits(size_t n) { bitstream_buf <<= n, bitstream_bits += n; }
+};
+
+
+
+void mpeg2_init_fbuf (mpeg2_decoder_t * decoder, uint8_t * current_fbuf[3],
+		      uint8_t * forward_fbuf[3], uint8_t * backward_fbuf[3]);
+void mpeg2_slice (mpeg2_decoder_t * decoder, int code, const uint8_t * buffer);
+
+#endif
+
+
+

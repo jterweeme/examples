@@ -28,149 +28,6 @@
 #include <string.h> /* memcmp/memset, try to remove */
 #include <stdlib.h>
 
-/* use gcc attribs to align critical data structures */
-#ifdef ATTRIBUTE_ALIGNED_MAX
-#define ATTR_ALIGN(align) __attribute__ ((__aligned__ ((ATTRIBUTE_ALIGNED_MAX < align) ? ATTRIBUTE_ALIGNED_MAX : align)))
-#else
-#define ATTR_ALIGN(align)
-#endif
-
-#ifdef HAVE_BUILTIN_EXPECT
-#define likely(x) __builtin_expect ((x) != 0, 1)
-#define unlikely(x) __builtin_expect ((x) != 0, 0)
-#else
-#define likely(x) (x)
-#define unlikely(x) (x)
-#endif
-
-#define STATE_INTERNAL_NORETURN ((mpeg2_state_t)-1)
-    
-/* macroblock modes */
-#define MACROBLOCK_INTRA 1
-#define MACROBLOCK_PATTERN 2
-#define MACROBLOCK_MOTION_BACKWARD 4
-#define MACROBLOCK_MOTION_FORWARD 8
-#define MACROBLOCK_QUANT 16
-#define DCT_TYPE_INTERLACED 32
-/* motion_type */
-#define MOTION_TYPE_SHIFT 6
-#define MC_FIELD 1
-#define MC_FRAME 2
-#define MC_16X8 2
-#define MC_DMV 3
-    
-/* picture structure */
-#define TOP_FIELD 1
-#define BOTTOM_FIELD 2
-#define FRAME_PICTURE 3
-    
-/* picture coding type */
-#define I_TYPE 1
-#define P_TYPE 2
-#define B_TYPE 3
-#define D_TYPE 4
-
-typedef void mpeg2_mc_fct (uint8_t *, const uint8_t *, int, int);
-
-typedef struct {
-    uint8_t * ref[2][3];
-    uint8_t ** ref2[2];
-    int pmv[2][2];
-    int f_code[2];
-} motion_t;
-
-typedef void motion_parser_t (mpeg2_decoder_t * decoder,
-                  motion_t * motion,
-                  mpeg2_mc_fct * const * table);
-
-struct mpeg2_decoder_s {
-    /* first, state that carries information from one macroblock to the */
-    /* next inside a slice, and is never used outside of mpeg2_slice() */
-
-    /* bit parsing stuff */
-    uint32_t bitstream_buf;     /* current 32 bit working set */
-    int bitstream_bits;         /* used bits in working set */
-    const uint8_t * bitstream_ptr;  /* buffer with stream data */
-
-    uint8_t * dest[3];
-
-    int offset;
-    int stride;
-    int uv_stride;
-    int slice_stride;
-    int slice_uv_stride;
-    int stride_frame;
-    unsigned int limit_x;
-    unsigned int limit_y_16;
-    unsigned int limit_y_8;
-    unsigned int limit_y;
-
-    /* Motion vectors */
-    /* The f_ and b_ correspond to the forward and backward motion */
-    /* predictors */
-    motion_t b_motion;
-    motion_t f_motion;
-    motion_parser_t * motion_parser[5];
-
-    /* predictor for DC coefficients in intra blocks */
-    int16_t dc_dct_pred[3];
-
-    /* DCT coefficients */
-    int16_t DCTblock[64] ATTR_ALIGN(64);
-
-    uint8_t * picture_dest[3];
-    void (* convert) (void * convert_id, uint8_t * const * src,
-              unsigned int v_offset);
-    void * convert_id;
-
-    int dmv_offset;
-    unsigned int v_offset;
-    /* now non-slice-specific information */
-
-    /* sequence header stuff */
-    uint16_t * quantizer_matrix[4];
-    uint16_t (* chroma_quantizer[2])[64];
-    uint16_t quantizer_prescale[4][32][64];
-
-    /* The width and height of the picture snapped to macroblock units */
-    int width;
-    int height;
-    int vertical_position_extension;
-    int chroma_format;
-
-    /* picture header stuff */
-
-    /* what type of picture this is (I, P, B, D) */
-    int coding_type;
-
-    /* picture coding extension stuff */
-
-    /* quantization factor for intra dc coefficients */
-    int intra_dc_precision;
-    /* top/bottom/both fields */
-    int picture_structure;
-    /* bool to indicate all predictions are frame based */
-    int frame_pred_frame_dct;
-    /* bool to indicate whether intra blocks have motion vectors */
-    /* (for concealment) */
-    int concealment_motion_vectors;
-    /* bool to use different vlc tables */
-    int intra_vlc_format;
-    /* used for DMV MC */
-    int top_field_first;
-
-    /* stuff derived from bitstream */
-
-    /* pointer to the zigzag scan we're supposed to be using */
-    const uint8_t * scan;
-
-    int second_field;
-
-    int mpeg1;
-    /* XXX: stuff due to xine shit */
-    int8_t q_scale_type;
-};
-
 typedef struct {
     mpeg2_fbuf_t fbuf;
 } fbuf_alloc_t;
@@ -242,15 +99,51 @@ struct mpeg2dec_s {
 };
 
 typedef struct {
-#ifdef ARCH_PPC
-    uint8_t regv[12*16];
-#endif
     int dummy;
 } cpu_state_t;
 
-uint32_t mpeg2_detect_accel (uint32_t accel);
-void mpeg2_cpu_state_init (uint32_t accel);
-mpeg2_state_t mpeg2_seek_header (mpeg2dec_t * mpeg2dec);
+static constexpr uint8_t SEQ_EXT = 2;
+static constexpr uint8_t SEQ_DISPLAY_EXT = 4;
+static constexpr uint8_t QUANT_MATRIX_EXT = 8;
+static constexpr uint16_t COPYRIGHT_EXT = 0x10;
+static constexpr uint16_t PIC_DISPLAY_EXT = 0x80;
+static constexpr uint16_t PIC_CODING_EXT = 0x100;
+
+/* default intra quant matrix, in zig-zag order */
+static const uint8_t default_intra_quantizer_matrix[64] ATTR_ALIGN(16) = {
+    8,
+    16, 16,
+    19, 16, 19,
+    22, 22, 22, 22,
+    22, 22, 26, 24, 26,
+    27, 27, 27, 26, 26, 26,
+    26, 27, 27, 27, 29, 29, 29,
+    34, 34, 34, 29, 29, 29, 27, 27,
+    29, 29, 32, 32, 34, 34, 37,
+    38, 37, 35, 35, 34, 35,
+    38, 38, 40, 40, 40,
+    48, 48, 46, 46,
+    56, 56, 58,
+    69, 69,
+    83
+};
+
+uint8_t mpeg2_scan_norm[64] ATTR_ALIGN(16) = {
+    /* Zig-Zag scan pattern */
+     0,  1,  8, 16,  9,  2,  3, 10, 17, 24, 32, 25, 18, 11,  4,  5,
+    12, 19, 26, 33, 40, 48, 41, 34, 27, 20, 13,  6,  7, 14, 21, 28,
+    35, 42, 49, 56, 57, 50, 43, 36, 29, 22, 15, 23, 30, 37, 44, 51,
+    58, 59, 52, 45, 38, 31, 39, 46, 53, 60, 61, 54, 47, 55, 62, 63
+};
+
+uint8_t mpeg2_scan_alt[64] ATTR_ALIGN(16) = {
+    /* Alternate scan pattern */
+     0, 8,  16, 24,  1,  9,  2, 10, 17, 25, 32, 40, 48, 56, 57, 49,
+    41, 33, 26, 18,  3, 11,  4, 12, 19, 27, 34, 42, 50, 58, 35, 43,
+    51, 59, 20, 28,  5, 13,  6, 14, 21, 29, 36, 44, 52, 60, 37, 45,
+    53, 61, 22, 30,  7, 15, 23, 31, 38, 46, 54, 62, 39, 47, 55, 63
+};
+
 mpeg2_state_t mpeg2_parse_header (mpeg2dec_t * mpeg2dec);
 void mpeg2_header_state_init (mpeg2dec_t * mpeg2dec);
 void mpeg2_reset_info (mpeg2_info_t * info);
@@ -266,20 +159,11 @@ void mpeg2_header_picture_finalize (mpeg2dec_t * mpeg2dec, uint32_t accels);
 mpeg2_state_t mpeg2_header_slice_start (mpeg2dec_t * mpeg2dec);
 mpeg2_state_t mpeg2_header_end (mpeg2dec_t * mpeg2dec);
 void mpeg2_set_fbuf (mpeg2dec_t * mpeg2dec, int b_type);
-extern uint8_t mpeg2_scan_norm[64];
-extern uint8_t mpeg2_scan_alt[64];
 void mpeg2_mc_init (uint32_t accel);
 
-typedef struct {
-    mpeg2_mc_fct * put [8];
-    mpeg2_mc_fct * avg [8];
-} mpeg2_mc_t;
-
-#define MPEG2_MC_EXTERN(x) mpeg2_mc_t mpeg2_mc_##x = {            \
-    {MC_put_o_16_##x, MC_put_x_16_##x, MC_put_y_16_##x, MC_put_xy_16_##x, \
-     MC_put_o_8_##x,  MC_put_x_8_##x,  MC_put_y_8_##x,  MC_put_xy_8_##x}, \
-    {MC_avg_o_16_##x, MC_avg_x_16_##x, MC_avg_y_16_##x, MC_avg_xy_16_##x, \
-     MC_avg_o_8_##x,  MC_avg_x_8_##x,  MC_avg_y_8_##x,  MC_avg_xy_8_##x}  \
+struct mpeg2_mc_t {
+    mpeg2_mc_fct *put[8];
+    mpeg2_mc_fct *avg[8];
 };
 
 extern mpeg2_mc_t mpeg2_mc_c;
@@ -305,13 +189,14 @@ static inline void bitstream_init(mpeg2_decoder_t *decoder, const uint8_t *start
 } 
 
 /* make sure that there are at least 16 valid bits in bit_buf */
-#define NEEDBITS(bit_buf,bits,bit_ptr)      \
-do {                        \
-    if (unlikely (bits > 0)) {          \
-    GETWORD (bit_buf, bits, bit_ptr);   \
-    bits -= 16;             \
-    }                       \
-} while (0) 
+static void NEEDBITS(uint32_t &bit_buf, int &bits, const uint8_t *&bit_ptr)
+{
+    if (unlikely(bits > 0))
+    {
+        GETWORD(bit_buf, bits, bit_ptr);
+        bits -= 16;
+    }
+}
 
 static void dumpbits(uint32_t &bit_buf, int &bits, size_t num)
 {
@@ -320,8 +205,10 @@ static void dumpbits(uint32_t &bit_buf, int &bits, size_t num)
 }
 
 /* take num bits from the high part of bit_buf and zero extend them */
-#define UBITS(bit_buf,num) (((uint32_t)(bit_buf)) >> (32 - (num)))
-
+static uint32_t UBITS(uint32_t bit_buf, size_t n)
+{
+    return bit_buf >> 32 - n;
+}
 
 typedef struct {
     uint8_t modes;
@@ -692,67 +579,66 @@ static const MBAtab MBA_11 [] = {
 
 static inline int get_macroblock_modes (mpeg2_decoder_t * const decoder)
 {
-#define bit_buf (decoder->bitstream_buf)
 #define bits (decoder->bitstream_bits)
 #define bit_ptr (decoder->bitstream_ptr)
+
+    uint32_t *bit_buf = &decoder->bitstream_buf;
     int macroblock_modes;
     const MBtab * tab;
 
-    switch (decoder->coding_type) {
+    switch (decoder->coding_type)
+    {
     case I_TYPE:
+        tab = MB_I + decoder->ubits(1);
+        decoder->dumpbits(tab->len);
+        macroblock_modes = tab->modes;
 
-	tab = MB_I + UBITS (bit_buf, 1);
-	dumpbits (bit_buf, bits, tab->len);
-	macroblock_modes = tab->modes;
+        if ((! (decoder->frame_pred_frame_dct)) &&
+            (decoder->picture_structure == FRAME_PICTURE))
+        {
+            macroblock_modes |= decoder->ubits(1) * DCT_TYPE_INTERLACED;
+            decoder->dumpbits(1);
+        }
 
-	if ((! (decoder->frame_pred_frame_dct)) &&
-	    (decoder->picture_structure == FRAME_PICTURE)) {
-	    macroblock_modes |= UBITS (bit_buf, 1) * DCT_TYPE_INTERLACED;
-	    dumpbits (bit_buf, bits, 1);
-	}
-
-	return macroblock_modes;
-
+        return macroblock_modes;
     case P_TYPE:
-
-	tab = MB_P + UBITS (bit_buf, 5);
-	dumpbits (bit_buf, bits, tab->len);
-	macroblock_modes = tab->modes;
-
-	if (decoder->picture_structure != FRAME_PICTURE) {
-	    if (macroblock_modes & MACROBLOCK_MOTION_FORWARD) {
-		macroblock_modes |= UBITS (bit_buf, 2) << MOTION_TYPE_SHIFT;
-		dumpbits (bit_buf, bits, 2);
-	    }
-	    return macroblock_modes | MACROBLOCK_MOTION_FORWARD;
-	} else if (decoder->frame_pred_frame_dct) {
-	    if (macroblock_modes & MACROBLOCK_MOTION_FORWARD)
-		macroblock_modes |= MC_FRAME << MOTION_TYPE_SHIFT;
-	    return macroblock_modes | MACROBLOCK_MOTION_FORWARD;
-	} else {
-	    if (macroblock_modes & MACROBLOCK_MOTION_FORWARD) {
-		macroblock_modes |= UBITS (bit_buf, 2) << MOTION_TYPE_SHIFT;
-		dumpbits (bit_buf, bits, 2);
-	    }
-	    if (macroblock_modes & (MACROBLOCK_INTRA | MACROBLOCK_PATTERN)) {
-		macroblock_modes |= UBITS (bit_buf, 1) * DCT_TYPE_INTERLACED;
-		dumpbits (bit_buf, bits, 1);
-	    }
-	    return macroblock_modes | MACROBLOCK_MOTION_FORWARD;
-	}
-
-    case B_TYPE:
-
-        tab = MB_B + UBITS (bit_buf, 6);
-        dumpbits (bit_buf, bits, tab->len);
+        tab = MB_P + decoder->ubits(5);
+        dumpbits (*bit_buf, bits, tab->len);
         macroblock_modes = tab->modes;
 
         if (decoder->picture_structure != FRAME_PICTURE) {
-	    if (! (macroblock_modes & MACROBLOCK_INTRA)) {
-		macroblock_modes |= UBITS (bit_buf, 2) << MOTION_TYPE_SHIFT;
-		dumpbits (bit_buf, bits, 2);
+	    if (macroblock_modes & MACROBLOCK_MOTION_FORWARD) {
+		macroblock_modes |= UBITS (*bit_buf, 2) << MOTION_TYPE_SHIFT;
+		dumpbits (*bit_buf, bits, 2);
 	    }
-        return macroblock_modes;
+	    return macroblock_modes | MACROBLOCK_MOTION_FORWARD;
+        } else if (decoder->frame_pred_frame_dct) {
+	    if (macroblock_modes & MACROBLOCK_MOTION_FORWARD)
+		macroblock_modes |= MC_FRAME << MOTION_TYPE_SHIFT;
+	    return macroblock_modes | MACROBLOCK_MOTION_FORWARD;
+        } else {
+	    if (macroblock_modes & MACROBLOCK_MOTION_FORWARD) {
+		macroblock_modes |= UBITS (*bit_buf, 2) << MOTION_TYPE_SHIFT;
+		dumpbits (*bit_buf, bits, 2);
+	    }
+	    if (macroblock_modes & (MACROBLOCK_INTRA | MACROBLOCK_PATTERN)) {
+		macroblock_modes |= UBITS (*bit_buf, 1) * DCT_TYPE_INTERLACED;
+		dumpbits (*bit_buf, bits, 1);
+	    }
+	    return macroblock_modes | MACROBLOCK_MOTION_FORWARD;
+        }
+    case B_TYPE:
+        tab = MB_B + decoder->ubits(6);
+        dumpbits (*bit_buf, bits, tab->len);
+        macroblock_modes = tab->modes;
+
+        if (decoder->picture_structure != FRAME_PICTURE) {
+            if (! (macroblock_modes & MACROBLOCK_INTRA))
+            {
+                macroblock_modes |= UBITS (*bit_buf, 2) << MOTION_TYPE_SHIFT;
+                dumpbits (*bit_buf, bits, 2);
+            }
+            return macroblock_modes;
         } else if (decoder->frame_pred_frame_dct) {
 	    /* if (! (macroblock_modes & MACROBLOCK_INTRA)) */
 	    macroblock_modes |= MC_FRAME << MOTION_TYPE_SHIFT;
@@ -761,44 +647,35 @@ static inline int get_macroblock_modes (mpeg2_decoder_t * const decoder)
         {
 	    if (macroblock_modes & MACROBLOCK_INTRA)
             goto intra;
-        macroblock_modes |= UBITS (bit_buf, 2) << MOTION_TYPE_SHIFT;
-        dumpbits (bit_buf, bits, 2);
+        macroblock_modes |= UBITS (*bit_buf, 2) << MOTION_TYPE_SHIFT;
+        dumpbits(*bit_buf, bits, 2);
 
 	    if (macroblock_modes & (MACROBLOCK_INTRA | MACROBLOCK_PATTERN))
         {
 intra:
-            macroblock_modes |= UBITS (bit_buf, 1) * DCT_TYPE_INTERLACED;
-            dumpbits (bit_buf, bits, 1);
+            macroblock_modes |= UBITS (*bit_buf, 1) * DCT_TYPE_INTERLACED;
+            dumpbits(*bit_buf, bits, 1);
 	    }
 	    return macroblock_modes;
         }
     case D_TYPE:
-
-	dumpbits (bit_buf, bits, 1);
-	return MACROBLOCK_INTRA;
-
+        dumpbits(*bit_buf, bits, 1);
+        return MACROBLOCK_INTRA;
     default:
-	return 0;
+        return 0;
     }
-#undef bit_buf
 #undef bits
 #undef bit_ptr
 }
 
-static inline void get_quantizer_scale (mpeg2_decoder_t * const decoder)
+static inline void get_quantizer_scale(mpeg2_decoder_t * const decoder)
 {
-#define bit_buf (decoder->bitstream_buf)
-#define bits (decoder->bitstream_bits)
-#define bit_ptr (decoder->bitstream_ptr)
-    int quantizer_scale_code = UBITS (bit_buf, 5);
-    dumpbits (bit_buf, bits, 5);
+    int quantizer_scale_code = decoder->ubits(5);
+    decoder->dumpbits(5);
     decoder->quantizer_matrix[0] = decoder->quantizer_prescale[0][quantizer_scale_code];
     decoder->quantizer_matrix[1] = decoder->quantizer_prescale[1][quantizer_scale_code];
     decoder->quantizer_matrix[2] = decoder->chroma_quantizer[0][quantizer_scale_code];
     decoder->quantizer_matrix[3] = decoder->chroma_quantizer[1][quantizer_scale_code];
-#undef bit_buf
-#undef bits
-#undef bit_ptr
 }
 
 /* take num bits from the high part of bit_buf and sign extend them */
@@ -817,25 +694,26 @@ static inline int get_motion_delta (mpeg2_decoder_t * const decoder,
     const MVtab * tab;
 
     if (bit_buf & 0x80000000) {
-	dumpbits (bit_buf, bits, 1);
-	return 0;
-    } else if (bit_buf >= 0x0c000000) {
+        decoder->dumpbits(1);
+        return 0;
+    }
 
-	tab = MV_4 + UBITS (bit_buf, 4);
-	delta = (tab->delta << f_code) + 1;
-	bits += tab->len + f_code + 1;
-	bit_buf <<= tab->len;
+    if (bit_buf >= 0x0c000000)
+    {
+        tab = MV_4 + UBITS (bit_buf, 4);
+        delta = (tab->delta << f_code) + 1;
+        bits += tab->len + f_code + 1;
+        bit_buf <<= tab->len;
+        sign = SBITS (bit_buf, 1);
+        bit_buf <<= 1;
 
-	sign = SBITS (bit_buf, 1);
-	bit_buf <<= 1;
+        if (f_code)
+            delta += decoder->ubits(f_code);
 
-	if (f_code)
-	    delta += UBITS (bit_buf, f_code);
-	bit_buf <<= f_code;
+        bit_buf <<= f_code;
+        return (delta ^ sign) - sign;
 
-	return (delta ^ sign) - sign;
-
-    } else {
+    }
 
 	tab = MV_10 + UBITS (bit_buf, 10);
 	delta = (tab->delta << f_code) + 1;
@@ -851,9 +729,7 @@ static inline int get_motion_delta (mpeg2_decoder_t * const decoder,
 	    dumpbits (bit_buf, bits, f_code);
 	}
 
-	return (delta ^ sign) - sign;
-
-    }
+    return (delta ^ sign) - sign;
 #undef bit_buf
 #undef bits
 #undef bit_ptr
@@ -861,23 +737,14 @@ static inline int get_motion_delta (mpeg2_decoder_t * const decoder,
 
 static inline int bound_motion_vector (const int vector, const int f_code)
 {
-    return ((int32_t)vector << (27 - f_code)) >> (27 - f_code);
+    return ((int32_t)vector << 27 - f_code) >> 27 - f_code;
 }
 
 static inline int get_dmv (mpeg2_decoder_t * const decoder)
 {
-#define bit_buf (decoder->bitstream_buf)
-#define bits (decoder->bitstream_bits)
-#define bit_ptr (decoder->bitstream_ptr)
-
-    const DMVtab * tab;
-
-    tab = DMV_2 + UBITS (bit_buf, 2);
-    dumpbits (bit_buf, bits, tab->len);
+    const DMVtab *tab = DMV_2 + decoder->ubits(2);
+    decoder->dumpbits(tab->len);
     return tab->dmv;
-#undef bit_buf
-#undef bits
-#undef bit_ptr
 }
 
 static inline int get_coded_block_pattern (mpeg2_decoder_t * const decoder)
@@ -892,17 +759,15 @@ static inline int get_coded_block_pattern (mpeg2_decoder_t * const decoder)
 
     if (bit_buf >= 0x20000000) {
 
-	tab = CBP_7 + (UBITS (bit_buf, 7) - 16);
-	dumpbits (bit_buf, bits, tab->len);
-	return tab->cbp;
+        tab = CBP_7 + (decoder->ubits(7) - 16);
+        decoder->dumpbits(tab->len);
+        return tab->cbp;
 
-    } else {
-
-	tab = CBP_9 + UBITS (bit_buf, 9);
-	dumpbits (bit_buf, bits, tab->len);
-	return tab->cbp;
     }
 
+    tab = CBP_9 + decoder->ubits(9);
+    decoder->dumpbits(tab->len);
+	return tab->cbp;
 #undef bit_buf
 #undef bits
 #undef bit_ptr
@@ -917,29 +782,27 @@ static inline int get_luma_dc_dct_diff (mpeg2_decoder_t * const decoder)
     int size;
     int dc_diff;
 
-    if (bit_buf < 0xf8000000) {
-	tab = DC_lum_5 + UBITS (bit_buf, 5);
-	size = tab->size;
-	if (size) {
-	    bits += tab->len + size;
-	    bit_buf <<= tab->len;
-	    dc_diff =
-		UBITS (bit_buf, size) - UBITS (SBITS (~bit_buf, 1), size);
-	    bit_buf <<= size;
-	    return dc_diff << decoder->intra_dc_precision;
-	} else {
-	    dumpbits (bit_buf, bits, 3);
-	    return 0;
-	}
-    } else {
-	tab = DC_long + (UBITS (bit_buf, 9) - 0x1e0);
-	size = tab->size;
-	dumpbits (bit_buf, bits, tab->len);
-	NEEDBITS (bit_buf, bits, bit_ptr);
-	dc_diff = UBITS (bit_buf, size) - UBITS (SBITS (~bit_buf, 1), size);
-	dumpbits (bit_buf, bits, size);
-	return dc_diff << decoder->intra_dc_precision;
+    if (bit_buf < 0xf8000000)
+    {
+        tab = DC_lum_5 + UBITS (bit_buf, 5);
+        size = tab->size;
+        if (size) {
+            bits += tab->len + size;
+            bit_buf <<= tab->len;
+            dc_diff = decoder->ubits(size) - UBITS (SBITS (~bit_buf, 1), size);
+            bit_buf <<= size;
+            return dc_diff << decoder->intra_dc_precision;
+        }
+        dumpbits (bit_buf, bits, 3);
+        return 0;
     }
+    tab = DC_long + (UBITS (bit_buf, 9) - 0x1e0);
+    size = tab->size;
+    dumpbits (bit_buf, bits, tab->len);
+    NEEDBITS (bit_buf, bits, bit_ptr);
+    dc_diff = UBITS (bit_buf, size) - UBITS (SBITS (~bit_buf, 1), size);
+    dumpbits (bit_buf, bits, size);
+    return dc_diff << decoder->intra_dc_precision;
 #undef bit_buf
 #undef bits
 #undef bit_ptr
@@ -966,22 +829,17 @@ static inline int get_chroma_dc_dct_diff(mpeg2_decoder_t * const decoder)
             bit_buf <<= size;
             return dc_diff << decoder->intra_dc_precision;
         }
-        else
-        {
-            dumpbits (bit_buf, bits, 2);
-            return 0;
-        }
+        dumpbits (bit_buf, bits, 2);
+        return 0;
     }
-    else
-    {
-        tab = DC_long + (UBITS (bit_buf, 10) - 0x3e0);
-        size = tab->size;
-        dumpbits (bit_buf, bits, tab->len + 1);
-        NEEDBITS (bit_buf, bits, bit_ptr);
-        dc_diff = UBITS (bit_buf, size) - UBITS (SBITS (~bit_buf, 1), size);
-        dumpbits (bit_buf, bits, size);
-        return dc_diff << decoder->intra_dc_precision;
-    }
+    tab = DC_long + (UBITS (bit_buf, 10) - 0x3e0);
+    size = tab->size;
+    dumpbits (bit_buf, bits, tab->len + 1);
+    NEEDBITS (bit_buf, bits, bit_ptr);
+    dc_diff = UBITS (bit_buf, size) - UBITS (SBITS (~bit_buf, 1), size);
+    dumpbits (bit_buf, bits, size);
+    return dc_diff << decoder->intra_dc_precision;
+   
 #undef bit_buf
 #undef bits
 #undef bit_ptr
@@ -997,19 +855,17 @@ do {						\
 static void get_intra_block_B14 (mpeg2_decoder_t * const decoder,
 				 const uint16_t * const quant_matrix)
 {
-    int i;
     int j;
     int val;
     const uint8_t * const scan = decoder->scan;
-    int mismatch;
     const DCTtab * tab;
     uint32_t bit_buf;
     int bits;
     const uint8_t * bit_ptr;
     int16_t * const dest = decoder->DCTblock;
 
-    i = 0;
-    mismatch = ~dest[0];
+    int i = 0;
+    int mismatch = ~dest[0];
 
     bit_buf = decoder->bitstream_buf;
     bits = decoder->bitstream_bits;
@@ -1048,8 +904,8 @@ normal_code:
 	    tab = DCT_B14_8 + (UBITS (bit_buf, 8) - 4);
 
 	    i += tab->run;
-	    if (i < 64)
-		goto normal_code;
+        if (i < 64)
+            goto normal_code;
 
 	    /* escape code */
 
@@ -1598,9 +1454,9 @@ static inline void slice_intra_DCT (mpeg2_decoder_t * const decoder,
 	if (decoder->coding_type != D_TYPE)
 	    get_mpeg1_intra_block (decoder);
     } else if (decoder->intra_vlc_format)
-	get_intra_block_B15 (decoder, decoder->quantizer_matrix[cc ? 2 : 0]);
+        get_intra_block_B15 (decoder, decoder->quantizer_matrix[cc ? 2 : 0]);
     else
-	get_intra_block_B14 (decoder, decoder->quantizer_matrix[cc ? 2 : 0]);
+        get_intra_block_B14 (decoder, decoder->quantizer_matrix[cc ? 2 : 0]);
     mpeg2_idct_copy (decoder->DCTblock, dest, stride);
 #undef bit_buf
 #undef bits
@@ -3353,47 +3209,7 @@ void mpeg2_close (mpeg2dec_t * mpeg2dec)
     mpeg2_free (mpeg2dec);
 }
 
-#define SEQ_EXT 2
-#define SEQ_DISPLAY_EXT 4
-#define QUANT_MATRIX_EXT 8
-#define COPYRIGHT_EXT 0x10
-#define PIC_DISPLAY_EXT 0x80
-#define PIC_CODING_EXT 0x100
 
-/* default intra quant matrix, in zig-zag order */
-static const uint8_t default_intra_quantizer_matrix[64] ATTR_ALIGN(16) = {
-    8,
-    16, 16,
-    19, 16, 19,
-    22, 22, 22, 22,
-    22, 22, 26, 24, 26,
-    27, 27, 27, 26, 26, 26,
-    26, 27, 27, 27, 29, 29, 29,
-    34, 34, 34, 29, 29, 29, 27, 27,
-    29, 29, 32, 32, 34, 34, 37,
-    38, 37, 35, 35, 34, 35,
-    38, 38, 40, 40, 40,
-    48, 48, 46, 46,
-    56, 56, 58,
-    69, 69,
-    83
-};
-
-uint8_t mpeg2_scan_norm[64] ATTR_ALIGN(16) = {
-    /* Zig-Zag scan pattern */
-     0,  1,  8, 16,  9,  2,  3, 10, 17, 24, 32, 25, 18, 11,  4,  5,
-    12, 19, 26, 33, 40, 48, 41, 34, 27, 20, 13,  6,  7, 14, 21, 28,
-    35, 42, 49, 56, 57, 50, 43, 36, 29, 22, 15, 23, 30, 37, 44, 51,
-    58, 59, 52, 45, 38, 31, 39, 46, 53, 60, 61, 54, 47, 55, 62, 63
-};
-
-uint8_t mpeg2_scan_alt[64] ATTR_ALIGN(16) = {
-    /* Alternate scan pattern */
-     0, 8,  16, 24,  1,  9,  2, 10, 17, 25, 32, 40, 48, 56, 57, 49,
-    41, 33, 26, 18,  3, 11,  4, 12, 19, 27, 34, 42, 50, 58, 35, 43,
-    51, 59, 20, 28,  5, 13,  6, 14, 21, 29, 36, 44, 52, 60, 37, 45,
-    53, 61, 22, 30,  7, 15, 23, 31, 38, 46, 54, 62, 39, 47, 55, 63
-};
 
 void mpeg2_header_state_init (mpeg2dec_t * mpeg2dec)
 {
@@ -3644,19 +3460,21 @@ static inline void finalize_sequence (mpeg2_sequence_t * sequence)
 	    sequence->byte_rate = 0;        /* mpeg-1 VBR */ 
 
 	switch (sequence->pixel_width) {
-	case 0:	case 15:	/* illegal */
-	    sequence->pixel_width = sequence->pixel_height = 0;		return;
-	case 1:	/* square pixels */
+    case 0:
+    case 15:	/* illegal */
+	    sequence->pixel_width = sequence->pixel_height = 0;
+        return;
+    case 1:	/* square pixels */
 	    sequence->pixel_width = sequence->pixel_height = 1;		return;
-	case 3:	/* 720x576 16:9 */
+    case 3:	/* 720x576 16:9 */
 	    sequence->pixel_width = 64;	sequence->pixel_height = 45;	return;
-	case 6:	/* 720x480 16:9 */
+    case 6:	/* 720x480 16:9 */
 	    sequence->pixel_width = 32;	sequence->pixel_height = 27;	return;
-	case 8: /* BT.601 625 lines 4:3 */
+    case 8: /* BT.601 625 lines 4:3 */
 	    sequence->pixel_width = 59;	sequence->pixel_height = 54;	return;
-	case 12: /* BT.601 525 lines 4:3 */
+    case 12: /* BT.601 525 lines 4:3 */
 	    sequence->pixel_width = 10;	sequence->pixel_height = 11;	return;
-	default:
+    default:
 	    height = 88 * sequence->pixel_width + 1171;
 	    width = 2000;
 	}
@@ -4320,8 +4138,6 @@ void mpeg2_mc_init (uint32_t accel)
 #define put(predictor,i) dest[i] = predictor (i)
 #define avg(predictor,i) dest[i] = avg2 (predictor (i), dest[i])
 
-/* mc function template */
-
 #define MC_FUNC(op,xy)							\
 static void MC_##op##_##xy##_16_c (uint8_t * dest, const uint8_t * ref,	\
 				   const int stride, int height)	\
@@ -4364,8 +4180,6 @@ static void MC_##op##_##xy##_8_c (uint8_t * dest, const uint8_t * ref,	\
     } while (--height);							\
 }
 
-/* definitions of the actual mc functions */
-
 MC_FUNC (put,o)
 MC_FUNC (avg,o)
 MC_FUNC (put,x)
@@ -4375,5 +4189,10 @@ MC_FUNC (avg,y)
 MC_FUNC (put,xy)
 MC_FUNC (avg,xy)
 
-MPEG2_MC_EXTERN (c)
+mpeg2_mc_t mpeg2_mc_c = {
+    {MC_put_o_16_c, MC_put_x_16_c, MC_put_y_16_c, MC_put_xy_16_c, \
+     MC_put_o_8_c,  MC_put_x_8_c,  MC_put_y_8_c,  MC_put_xy_8_c}, \
+    {MC_avg_o_16_c, MC_avg_x_16_c, MC_avg_y_16_c, MC_avg_xy_16_c, \
+     MC_avg_o_8_c,  MC_avg_x_8_c,  MC_avg_y_8_c,  MC_avg_xy_8_c} 
+};
 
