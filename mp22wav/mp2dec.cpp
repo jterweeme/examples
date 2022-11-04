@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <fstream>
 #include <iostream>
+#include <algorithm>
 #include <math.h>
 
 struct Quantizer_spec
@@ -211,6 +212,7 @@ public:
     void write(FILE *fp) const;
 };
 
+//voor het gemak maken we een fixed size buffer van 1000 byte
 Buffer::Buffer()
 {
     _buf = new char[1000];
@@ -621,9 +623,7 @@ Decoder::kjmp2_decode_frame(std::istream &is, int16_t *pcm, int &samplerate)
                         for (int i = 0;  i < 16;  ++i)
                             sum -= U[(i << 5) + j];
 
-                        sum = (sum + 8) >> 4;
-                        sum = std::max(sum, -32768);
-                        sum = std::min(sum, 32767);
+                        sum = std::clamp(sum + 8 >> 4, -32768, 32767);
                         pcm[idx << 6 | j << 1 | ch] = int16_t(sum);
                     }
                 } // end of synthesis channel loop

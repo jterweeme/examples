@@ -52,7 +52,6 @@ class CApp
 {
 private:
     static void app_on_video(plm_frame_t *frame, void *);
-    static void app_on_audio(plm_samples_t *samples, void *);
     GLuint app_create_texture(GLuint index, const char *name);
     GLuint app_compile_shader(GLenum type, const char *source);
     static void app_update_texture(GLuint unit, GLuint texture, plm_plane_t *plane);
@@ -75,13 +74,6 @@ public:
 };
 
 CApp *CApp::_inst = nullptr;
-
-void CApp::app_on_audio(plm_samples_t *samples, void *)
-{
-	int size = sizeof(float) * samples->count * 2;
-	SDL_QueueAudio(_inst->audio_device, samples->interleaved, size);
-    ++g_audio;
-}
 
 void CApp::app_destroy()
 {
@@ -157,17 +149,15 @@ void CApp::app_create(const char *filename)
     
     // Initialize plmpeg, load the video file, install decode callbacks
     _plm.plm_create_with_filename(filename);
-    //int samplerate = _plm.plm_get_samplerate();
-
+#if 0
     SDL_Log(
         "Opened %s - framerate: %f, duration: %f",
         filename, 
         _plm.plm_get_framerate(),
         //_plm.plm_get_samplerate(),
         _plm.plm_get_duration());
-	
+#endif
     _plm.plm_set_loop(FALSE);
-    //_plm.plm_set_audio_enabled(FALSE);
 
     _window = SDL_CreateWindow(
         "pl_mpeg",

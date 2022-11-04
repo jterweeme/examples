@@ -7,6 +7,7 @@
 #include "pl_mpeg.h"
 #include <cstdlib>
 #include <cstring>
+#include <algorithm>
 
 static constexpr int PLM_VIDEO_PICTURE_TYPE_INTRA = 1;
 static constexpr int PLM_VIDEO_PICTURE_TYPE_PREDICTIVE = 2;
@@ -22,10 +23,12 @@ static constexpr int PLM_START_USER_DATA = 0xB2;
 #define PLM_START_IS_SLICE(c) \
     (c >= PLM_START_SLICE_FIRST && c <= PLM_START_SLICE_LAST)
 
+#if 1
 static constexpr double PLM_VIDEO_PICTURE_RATE[] = {
     0.000, 23.976, 24.000, 25.000, 29.970, 30.000, 50.000, 59.940,
     60.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000
 };
+#endif
 
 static constexpr uint8_t PLM_VIDEO_ZIG_ZAG[] = {
      0,  1,  8, 16,  9,  2,  3, 10,
@@ -405,14 +408,9 @@ static constexpr plm_vlc_uint_t PLM_VIDEO_DCT_COEFF[] = {
     {       0,   0x1c01}, {       0,   0x1b01},  // 111: 0000 0000 0001 111x
 };
 
-static inline uint8_t plm_clamp(int n) {
-    if (n > 255) {
-        n = 255;
-    }
-    else if (n < 0) {
-        n = 0;
-    }
-    return n;
+static inline uint8_t plm_clamp(int n)
+{
+    return std::clamp(n, 0, 255);
 }
 
 void Video::_idct(int *block)
@@ -515,7 +513,8 @@ int Video::plm_video_decode_sequence_header()
     // Skip pixel aspect ratio
     _buffer->skip(4);
 
-    _framerate = PLM_VIDEO_PICTURE_RATE[_buffer->read(4)];
+    _buffer->skip(4);
+    //_framerate = PLM_VIDEO_PICTURE_RATE[_buffer->read(4)];
 
     // Skip bit_rate, marker, buffer_size and constrained bit
     _buffer->skip(18 + 1 + 10 + 1);
@@ -545,8 +544,8 @@ int Video::plm_video_decode_sequence_header()
         memcpy(_non_intra_quant_matrix, PLM_VIDEO_NON_INTRA_QUANT_MATRIX, 64);
     }
 
-    _mb_width = (_width + 15) >> 4;
-    _mb_height = (_height + 15) >> 4;
+    _mb_width = _width + 15 >> 4;
+    _mb_height = _height + 15 >> 4;
     _mb_size = _mb_width * _mb_height;
     _luma_width = _mb_width << 4;
     _luma_height = _mb_height << 4;
@@ -574,7 +573,7 @@ void Video::plm_video_create_with_buffer(Buffer *buffer, int destroy_when_done)
     _destroy_buffer_when_done = destroy_when_done;
 
     // Attempt to decode the sequence header
-    _start_code = _buffer->plm_buffer_find_start_code(PLM_START_SEQUENCE);
+    _start_code = _buffer->find_start_code(PLM_START_SEQUENCE);
 
     if (_start_code != -1)
         plm_video_decode_sequence_header();
@@ -591,11 +590,6 @@ void Video::plm_video_destroy()
         delete[] _frames_data;
 }
 
-// Get the framerate in frames per second.
-double Video::plm_video_get_framerate()
-{   return plm_video_has_header() ? _framerate : 0;
-}
-
 // Get the display width/height.
 int Video::plm_video_get_width()
 {   return plm_video_has_header() ? _width : 0;
@@ -610,29 +604,6 @@ int Video::plm_video_get_height()
 // The default is FALSE.
 void Video::plm_video_set_no_delay(int no_delay)
 {   _assume_no_b_frames = no_delay;
-}
-
-// Get the current internal time in seconds.
-double Video::plm_video_get_time()
-{   return _time;
-}
-
-// Set the current internal time in seconds. This is only useful when you
-// manipulate the underlying video buffer and want to enforce a correct
-// timestamps.
-void Video::plm_video_set_time(double time) {
-    _frames_decoded = _framerate * time;
-    _time = time;
-}
-
-// Rewind the internal buffer. See plm_buffer_rewind().
-void Video::plm_video_rewind()
-{
-    _buffer->rewind();
-    _time = 0;
-    _frames_decoded = 0;
-    _has_reference_frame = FALSE;
-    _start_code = -1;
 }
 
 // Get whether the file has ended. This will be cleared on rewind.
@@ -653,7 +624,7 @@ plm_frame_t *Video::plm_video_decode()
     {
         if (_start_code != PLM_START_PICTURE)
         {
-            _start_code = _buffer->plm_buffer_find_start_code(PLM_START_PICTURE);
+            _start_code = _buffer->find_start_code(PLM_START_PICTURE);
             
             if (_start_code == -1)
             {
@@ -698,10 +669,7 @@ plm_frame_t *Video::plm_video_decode()
         }
     } while (!frame);
     
-    frame->time = _time;
     _frames_decoded++;
-    _time = (double)_frames_decoded / _framerate;
-    
     return frame;
 }
 
@@ -713,7 +681,7 @@ int Video::plm_video_has_header()
         return TRUE;
 
     if (_start_code != PLM_START_SEQUENCE)
-        _start_code = _buffer->plm_buffer_find_start_code(PLM_START_SEQUENCE);
+        _start_code = _buffer->find_start_code(PLM_START_SEQUENCE);
     
     if (_start_code == -1)
         return FALSE;
@@ -1048,10 +1016,9 @@ void Video::_process_macroblock(uint8_t *s, uint8_t *d,
     int odd_h = (motion_h & 1) == 1;
     int odd_v = (motion_v & 1) == 1;
 
-    unsigned int si = (_mb_row * block_size + vp) * dw + (_mb_col * block_size) + hp;
-    unsigned int di = (_mb_row * dw + _mb_col) * block_size;
-    
-    unsigned int max_address = dw * (_mb_height * block_size - block_size + 1) - block_size;
+    unsigned si = (_mb_row * block_size + vp) * dw + (_mb_col * block_size) + hp;
+    unsigned di = (_mb_row * dw + _mb_col) * block_size;
+    unsigned max_address = dw * (_mb_height * block_size - block_size + 1) - block_size;
 
     if (si > max_address || di > max_address)
         return; // corrupt video
@@ -1112,7 +1079,7 @@ void Video::_decode_block(int block)
 
     // Decode AC coefficients (+DC for non-intra)
     int level = 0;
-    while (TRUE)
+    while (true)
     {
         int run = 0;
         uint16_t coeff = _buffer->read_vlc_uint(PLM_VIDEO_DCT_COEFF);
@@ -1125,15 +1092,13 @@ void Video::_decode_block(int block)
             // escape
             run = _buffer->read(6);
             level = _buffer->read(8);
-            if (level == 0) {
+
+            if (level == 0)
                 level = _buffer->read(8);
-            }
-            else if (level == 128) {
+            else if (level == 128)
                 level = _buffer->read(8) - 256;
-            }
-            else if (level > 128) {
+            else if (level > 128)
                 level = level - 256;
-            }
         }
         else {
             run = coeff >> 8;
@@ -1144,12 +1109,10 @@ void Video::_decode_block(int block)
         }
 
         n += run;
-        if (n < 0 || n >= 64) {
+        if (n < 0 || n >= 64)
             return; // invalid
-        }
 
-        int de_zig_zagged = PLM_VIDEO_ZIG_ZAG[n];
-        n++;
+        int de_zig_zagged = PLM_VIDEO_ZIG_ZAG[n++];
 
         // Dequantize, oddify, clip
         level <<= 1;
@@ -1161,13 +1124,8 @@ void Video::_decode_block(int block)
 
         if ((level & 1) == 0)
             level -= level > 0 ? 1 : -1;
-        
-        if (level > 2047)
-            level = 2047;
-        else if (level < -2048)
-            level = -2048;
 
-        // Save premultiplied coefficient
+        level = std::clamp(level, -2048, 2047);       
         _block_data[de_zig_zagged] = level * PLM_VIDEO_PREMULTIPLIER_MATRIX[de_zig_zagged];
     }
 
@@ -1179,7 +1137,7 @@ void Video::_decode_block(int block)
     if (block < 4) {
         d = _frame_current.y.data;
         dw = _luma_width;
-        di = (_mb_row * _luma_width + _mb_col) << 4;
+        di = _mb_row * _luma_width + _mb_col << 4;
 
         if ((block & 1) != 0)
             di += 8;
@@ -1199,8 +1157,7 @@ void Video::_decode_block(int block)
     {
         // Overwrite (no prediction)
         if (n == 1) {
-            int clamped = plm_clamp((s[0] + 128) >> 8);
-            PLM_BLOCK_SET(d, di, dw, si, 8, 8, clamped);
+            PLM_BLOCK_SET(d, di, dw, si, 8, 8, plm_clamp(s[0] + 128 >> 8));
             s[0] = 0;
         }
         else {

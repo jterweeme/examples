@@ -39,11 +39,10 @@ int PLM::plm_init_decoders()
             _video_packet_type = Demux::PLM_DEMUX_PACKET_VIDEO_1;
         
         _video_buffer.create_with_capacity(PLM_BUFFER_DEFAULT_SIZE);
-        _video_buffer.plm_buffer_set_load_callback(plm_read_video_packet, this);
+        _video_buffer.plm_buffer_set_load_callback(_read_video_packet, this);
     }
 
     _video.plm_video_create_with_buffer(&_video_buffer, TRUE);
-    //_audio.plm_audio_create_with_buffer(&_audio_buffer, TRUE);
     _has_decoders = TRUE;
     return TRUE;
 }
@@ -98,20 +97,6 @@ int PLM::plm_get_height() {
     return plm_init_decoders() ? _video.plm_video_get_height() : 0;
 }
 
-// Get the framerate of the video stream in frames per second.
-double PLM::plm_get_framerate() {
-    return plm_init_decoders() ? _video.plm_video_get_framerate() : 0;
-}
-
-double PLM::plm_get_time() {
-    return _time;
-}
-
-// Get the video duration of the underlying source in seconds.
-double PLM::plm_get_duration() {
-    return _demux.plm_demux_get_duration(Demux::PLM_DEMUX_PACKET_VIDEO_1);
-}
-
 void PLM::plm_set_loop(int loop) {
     _loop = loop;
 }
@@ -132,9 +117,7 @@ plm_frame_t *PLM::plm_decode_video()
 
     plm_frame_t *frame = _video.plm_video_decode();
 
-    if (frame)
-        _time = frame->time;
-    else if (_demux.plm_demux_has_ended())
+    if (_demux.plm_demux_has_ended())
         plm_handle_end();
     
     return frame;
@@ -144,14 +127,14 @@ void PLM::plm_handle_end() {
     _has_ended = TRUE;
 }
 
-void PLM::plm_read_video_packet(Buffer *buffer, void *user)
+void PLM::_read_video_packet(Buffer *buffer, void *user)
 {
     PLM_UNUSED(buffer);
     PLM *plm = (PLM *)(user);
-    plm_read_packets(plm, plm->_video_packet_type);
+    _read_packets(plm, plm->_video_packet_type);
 }
 
-void PLM::plm_read_packets(PLM *self, int requested_type)
+void PLM::_read_packets(PLM *self, int requested_type)
 {
     plm_packet_t *packet;
     while ((packet = self->_demux.plm_demux_decode()))
@@ -434,7 +417,7 @@ int Buffer::plm_buffer_next_start_code()
     return -1;
 }
 
-int Buffer::plm_buffer_find_start_code(int code) {
+int Buffer::find_start_code(int code) {
     int current = 0;
     while (TRUE) {
         current = plm_buffer_next_start_code();
@@ -450,7 +433,7 @@ int Buffer::plm_buffer_has_start_code(int code) {
     int previous_discard_read_bytes = _discard_read_bytes;
     
     _discard_read_bytes = FALSE;
-    int current = plm_buffer_find_start_code(code);
+    int current = find_start_code(code);
 
     _bit_index = previous_bit_index;
     _discard_read_bytes = previous_discard_read_bytes;
@@ -486,11 +469,7 @@ void Demux::plm_demux_create(Buffer *buffer, int destroy_when_done)
 {
     _buffer = buffer;
     _destroy_buffer_when_done = destroy_when_done;
-
-    _start_time = PLM_PACKET_INVALID_TS;
-    _duration = PLM_PACKET_INVALID_TS;
     _start_code = -1;
-
     plm_demux_has_headers();
 }
 
@@ -512,7 +491,7 @@ int Demux::plm_demux_has_headers()
     if (!_has_pack_header)
     {
         if (_start_code != PLM_START_PACK &&
-            _buffer->plm_buffer_find_start_code(PLM_START_PACK) == -1
+            _buffer->find_start_code(PLM_START_PACK) == -1
         ) {
             return FALSE;
         }
@@ -527,7 +506,7 @@ int Demux::plm_demux_has_headers()
         if (_buffer->read(4) != 0x02)
             return FALSE;
 
-        _system_clock_ref = plm_demux_decode_time();
+        _buffer->skip(36); //timestamp
         _buffer->skip(1);
         _buffer->skip(22); // mux_rate * 50
         _buffer->skip(1);
@@ -539,15 +518,16 @@ int Demux::plm_demux_has_headers()
     if (!_has_system_header)
     {
         if (_start_code != PLM_START_SYSTEM &&
-            _buffer->plm_buffer_find_start_code(PLM_START_SYSTEM) == -1)
+            _buffer->find_start_code(PLM_START_SYSTEM) == -1)
         {
             return FALSE;
         }
 
         _start_code = PLM_START_SYSTEM;
-        if (!_buffer->plm_buffer_has(56)) {
+
+        if (!_buffer->plm_buffer_has(56))
             return FALSE;
-        }
+        
         _start_code = -1;
 
         _buffer->skip(16); // header_length
@@ -569,14 +549,6 @@ int Demux::plm_demux_get_num_video_streams() {
     return plm_demux_has_headers() ? _num_video_streams : 0;
 }
 
-// Returns the number of audio streams found in the system header. This will
-// attempt to read the system header if non is present yet.
-#if 0
-int Demux::plm_demux_get_num_audio_streams() {
-    return plm_demux_has_headers() ? _num_audio_streams : 0;
-}
-#endif
-
 // Rewind the internal buffer. See plm_buffer_rewind().
 void Demux::plm_demux_rewind()
 {
@@ -597,77 +569,6 @@ void Demux::plm_demux_buffer_seek(size_t pos)
     _current_packet.length = 0;
     _next_packet.length = 0;
     _start_code = -1;
-}
-
-// Get the PTS of the first packet of this type. Returns PLM_PACKET_INVALID_TS
-// if not packet of this packet type can be found.
-double Demux::plm_demux_get_start_time(int type)
-{
-    if (_start_time != PLM_PACKET_INVALID_TS)
-        return _start_time;
-
-    int previous_pos = _buffer->plm_buffer_tell();
-    int previous_start_code = _start_code;
-    
-    // Find first video PTS
-    plm_demux_rewind();
-    do {
-        plm_packet_t *packet = plm_demux_decode();
-        if (!packet)
-            break;
-        
-        if (packet->type == type)
-            _start_time = packet->pts;
-    } while (_start_time == PLM_PACKET_INVALID_TS);
-
-    plm_demux_buffer_seek(previous_pos);
-    _start_code = previous_start_code;
-    return _start_time;
-}
-
-// Get the duration for the specified packet type - i.e. the span between the
-// the first PTS and the last PTS in the data source. This only makes sense when
-// the underlying data source is a file or fixed memory.
-double Demux::plm_demux_get_duration(int type)
-{
-    size_t file_size = _buffer->get_size();
-
-    if (_duration != PLM_PACKET_INVALID_TS && _last_file_size == file_size)
-        return _duration;
-
-    size_t previous_pos = _buffer->plm_buffer_tell();
-    int previous_start_code = _start_code;
-    
-    // Find last video PTS. Start searching 64kb from the end and go further 
-    // back if needed.
-    long start_range = 64 * 1024;
-    long max_range = 4096 * 1024;
-    for (long range = start_range; range <= max_range; range *= 2) {
-        long seek_pos = file_size - range;
-        if (seek_pos < 0) {
-            seek_pos = 0;
-            range = max_range; // Make sure to bail after this round
-        }
-        plm_demux_buffer_seek(seek_pos);
-        _current_packet.length = 0;
-
-        double last_pts = PLM_PACKET_INVALID_TS;
-        plm_packet_t *packet = NULL;
-
-        while ((packet = plm_demux_decode())) {
-            if (packet->pts != PLM_PACKET_INVALID_TS && packet->type == type)
-                last_pts = packet->pts;
-        }
-        if (last_pts != PLM_PACKET_INVALID_TS) {
-            _duration = last_pts - plm_demux_get_start_time(type);
-            break;
-        }
-    }
-
-    plm_demux_buffer_seek(previous_pos);
-    _start_code = previous_start_code;
-    _last_file_size = file_size;
-    return _duration;
 }
 
 plm_packet_t *Demux::plm_demux_decode()
@@ -709,7 +610,7 @@ plm_packet_t *Demux::plm_demux_decode()
 
     return NULL;
 }
-
+#if 1
 double Demux::plm_demux_decode_time()
 {
     int64_t clock = _buffer->read(3) << 30;
@@ -720,7 +621,7 @@ double Demux::plm_demux_decode_time()
     _buffer->skip(1);
     return (double)clock / 90000.0;
 }
-
+#endif
 plm_packet_t *Demux::plm_demux_decode_packet(int type) 
 {
     if (!_buffer->plm_buffer_has(16 << 3))
