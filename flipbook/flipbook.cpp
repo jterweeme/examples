@@ -12,9 +12,6 @@
 
 #define APP_SHADER_SOURCE(...) #__VA_ARGS__
 
-static unsigned int g_nr = 1;
-static unsigned int g_audio = 1;
-
 const char * const APP_VERTEX_SHADER = APP_SHADER_SOURCE(
 	attribute vec2 vertex;
 	varying vec2 tex_coord;
@@ -39,11 +36,10 @@ const char * const APP_FRAGMENT_SHADER_YCRCB = APP_SHADER_SOURCE(
 	);
 	  
 	void main() {
-		float y = texture2D(texture_y, tex_coord).r;
-		float cb = texture2D(texture_cb, tex_coord).r;
-		float cr = texture2D(texture_cr, tex_coord).r;
-
-		gl_FragColor = vec4(y, cb, cr, 1.0) * rec601;
+        float y = texture2D(texture_y, tex_coord).r;
+        float cb = texture2D(texture_cb, tex_coord).r;
+        float cr = texture2D(texture_cr, tex_coord).r;
+        gl_FragColor = vec4(y, cb, cr, 1.0) * rec601;
 	}
 );
 #undef APP_SHADER_SOURCE
@@ -61,10 +57,8 @@ private:
     GLuint _texture_cr;
     uint8_t *_rgb_data;
     SDL_Window *_window;
-    SDL_AudioDeviceID audio_device;
     SDL_GLContext gl;
     GLuint shader_program;
-    double _last_time = 0;
     PLM _plm;
 public:
     int wants_to_quit = 0;
@@ -78,10 +72,6 @@ CApp *CApp::_inst = nullptr;
 void CApp::app_destroy()
 {
     _plm.plm_destroy();
-	
-    if (audio_device)
-        SDL_CloseAudioDevice(audio_device);
-	
     SDL_GL_DeleteContext(gl);
     SDL_Quit();
 }
@@ -140,7 +130,6 @@ void CApp::app_on_video(plm_frame_t *frame, void *)
     app_update_texture(GL_TEXTURE0, _inst->_texture_y, &frame->y);
     app_update_texture(GL_TEXTURE1, _inst->_texture_cb, &frame->cb);
     app_update_texture(GL_TEXTURE2, _inst->_texture_cr, &frame->cr);
-    ++g_nr;
 }
 
 void CApp::app_create(const char *filename)

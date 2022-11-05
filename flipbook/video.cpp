@@ -23,13 +23,6 @@ static constexpr int PLM_START_USER_DATA = 0xB2;
 #define PLM_START_IS_SLICE(c) \
     (c >= PLM_START_SLICE_FIRST && c <= PLM_START_SLICE_LAST)
 
-#if 1
-static constexpr double PLM_VIDEO_PICTURE_RATE[] = {
-    0.000, 23.976, 24.000, 25.000, 29.970, 30.000, 50.000, 59.940,
-    60.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000
-};
-#endif
-
 static constexpr uint8_t PLM_VIDEO_ZIG_ZAG[] = {
      0,  1,  8, 16,  9,  2,  3, 10,
     17, 24, 32, 25, 18, 11,  4,  5,

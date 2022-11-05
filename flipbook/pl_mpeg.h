@@ -30,7 +30,6 @@ struct plm_vlc_uint_t
 
 struct plm_packet_t {
     int type = 0;
-    double pts = 0;
     size_t length = 0;
     uint8_t *data = nullptr;
 };
@@ -152,9 +151,7 @@ private:
     plm_packet_t _next_packet;
     int _destroy_buffer_when_done;
     size_t _last_file_size = 0;
-    double _last_decoded_pts = 0;
     Buffer *_buffer;
-    double plm_demux_decode_time();
     plm_packet_t *plm_demux_get_packet();
 public:
     static constexpr int PLM_DEMUX_PACKET_PRIVATE = 0xBD;

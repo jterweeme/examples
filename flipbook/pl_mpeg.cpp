@@ -610,18 +610,7 @@ plm_packet_t *Demux::plm_demux_decode()
 
     return NULL;
 }
-#if 1
-double Demux::plm_demux_decode_time()
-{
-    int64_t clock = _buffer->read(3) << 30;
-    _buffer->skip(1);
-    clock |= _buffer->read(15) << 15;
-    _buffer->skip(1);
-    clock |= _buffer->read(15);
-    _buffer->skip(1);
-    return (double)clock / 90000.0;
-}
-#endif
+
 plm_packet_t *Demux::plm_demux_decode_packet(int type) 
 {
     if (!_buffer->plm_buffer_has(16 << 3))
@@ -644,18 +633,15 @@ plm_packet_t *Demux::plm_demux_decode_packet(int type)
 
     if (pts_dts_marker == 0x03)
     {
-        _next_packet.pts = plm_demux_decode_time();
-        _last_decoded_pts = _next_packet.pts;
+        _buffer->skip(36);
         _buffer->skip(40); // skip dts
         _next_packet.length -= 10;
     }
     else if (pts_dts_marker == 0x02) {
-        _next_packet.pts = plm_demux_decode_time();
-        _last_decoded_pts = _next_packet.pts;
+        _buffer->skip(36);
         _next_packet.length -= 5;
     }
     else if (pts_dts_marker == 0x00) {
-        _next_packet.pts = PLM_PACKET_INVALID_TS;
         _buffer->skip(4);
         _next_packet.length -= 1;
     }
@@ -674,8 +660,6 @@ plm_packet_t *Demux::plm_demux_get_packet()
     _current_packet.data = _buffer->_bytes + (_buffer->bit_index() >> 3);
     _current_packet.length = _next_packet.length;
     _current_packet.type = _next_packet.type;
-    _current_packet.pts = _next_packet.pts;
-
     _next_packet.length = 0;
     return &_current_packet;
 }
