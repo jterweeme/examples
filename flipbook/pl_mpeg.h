@@ -9,16 +9,24 @@
 #define FALSE 0
 #endif
 
+#if 0
+template <struct T> struct VLC
+{
+    int16_t idx = 0;
+    T val = 0;
+}
+#endif
+
 struct plm_vlc_t
 {
-    int16_t index = 0;
-    int16_t value = 0;
+    int16_t index;
+    int16_t value;
 };
 
 struct plm_vlc_uint_t
 {
-    int16_t index = 0;
-    uint16_t value = 0;
+    int16_t index;
+    uint16_t value;
 };
 
 // Demuxed MPEG PS packet
@@ -111,8 +119,7 @@ public:
     static void plm_buffer_load_file_callback(Buffer *self, void *user);
     int16_t read_vlc(const plm_vlc_t *table);
     uint16_t read_vlc_uint(const plm_vlc_uint_t *table);
-    void create_with_filename(const char *filename);
-    void create_with_file(FILE *fh, int close_when_done);
+    void create_with_file(FILE *fh);
     size_t bit_index() const;
     void create_with_capacity(size_t capacity);
     void destroy();
@@ -145,7 +152,6 @@ private:
     int _has_pack_header = 0;
     int _has_system_header = 0;
     int _has_headers = 0;
-    int _num_audio_streams = 0;
     int _num_video_streams = 0;
     plm_packet_t _current_packet;
     plm_packet_t _next_packet;
@@ -223,11 +229,11 @@ private:
     void _interpolate_macroblock(plm_frame_t *s, int motion_h, int motion_v);
     void _decode_block(int block);
     void _predict_macroblock();
-    static void _idct(int *block);
-    void plm_video_decode_picture();
-    void plm_video_decode_macroblock();
-    void plm_video_decode_slice(int slice);
-    void plm_video_decode_motion_vectors();
+    void _idct(int *block);
+    void _decode_picture();
+    void _decode_macroblock();
+    void _decode_slice(int slice);
+    void _decode_motion_vectors();
     void plm_video_init_frame(plm_frame_t *frame, uint8_t *base);
     int plm_video_decode_sequence_header();
     int plm_video_decode_motion_vector(int r_size, int motion);
@@ -239,7 +245,7 @@ public:
     void plm_video_set_no_delay(int no_delay);
     int plm_video_has_ended();
     plm_frame_t *plm_video_decode();
-    void plm_video_create_with_buffer(Buffer *buffer, int destroy_when_done);
+    void create(Buffer *buffer, int destroy_when_done = 0);
 };
 
 class PLM
@@ -254,18 +260,16 @@ private:
     Buffer _file_buffer;
     Buffer _video_buffer;
     Video _video;
-    void plm_create_with_file(FILE *fh, int close_when_done);
     void plm_create_with_memory(uint8_t *bytes, size_t length, int free_when_done);
     void plm_create_with_buffer(Buffer *buffer, int destroy_when_done);
     static void _read_packets(PLM *self, int requested_type);
     static void _read_video_packet(Buffer *buffer, void *user);
 public:
-    void plm_create_with_filename(const char *filename);
+    void plm_create_with_file(FILE *fh);
     int plm_init_decoders();
     void plm_handle_end();
     void plm_destroy();
     int plm_has_headers();
-    int plm_get_video_enabled();
     void plm_set_video_enabled(int enabled);
     int plm_get_num_video_streams();
     int plm_get_width();

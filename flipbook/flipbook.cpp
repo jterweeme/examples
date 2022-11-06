@@ -62,7 +62,7 @@ private:
     PLM _plm;
 public:
     int wants_to_quit = 0;
-    void app_create(const char *filename);
+    void app_create(FILE *fh);
     void app_destroy();
     void app_update();
 };
@@ -132,12 +132,10 @@ void CApp::app_on_video(plm_frame_t *frame, void *)
     app_update_texture(GL_TEXTURE2, _inst->_texture_cr, &frame->cr);
 }
 
-void CApp::app_create(const char *filename)
+void CApp::app_create(FILE *fh)
 {
     _inst = this;
-    
-    // Initialize plmpeg, load the video file, install decode callbacks
-    _plm.plm_create_with_filename(filename);
+    _plm.plm_create_with_file(fh);
 #if 0
     SDL_Log(
         "Opened %s - framerate: %f, duration: %f",
@@ -146,7 +144,7 @@ void CApp::app_create(const char *filename)
         //_plm.plm_get_samplerate(),
         _plm.plm_get_duration());
 #endif
-    _plm.plm_set_loop(FALSE);
+    //_plm.plm_set_loop(FALSE);
 
     _window = SDL_CreateWindow(
         "pl_mpeg",
@@ -179,12 +177,14 @@ int main(int argc, char **argv)
 	}
 	
     CApp app;
-    app.app_create(argv[1]);
+    FILE *fp = fopen(argv[1], "r");
+    app.app_create(fp);
 
     while (!app.wants_to_quit)
         app.app_update();
 	
     app.app_destroy();
+    fclose(fp);
     return EXIT_SUCCESS;
 }
 

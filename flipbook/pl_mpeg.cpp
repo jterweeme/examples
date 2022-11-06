@@ -6,15 +6,9 @@
 
 #define PLM_UNUSED(expr) (void)(expr)
 
-void PLM::plm_create_with_filename(const char *filename)
+void PLM::plm_create_with_file(FILE *fh)
 {
-    _file_buffer.create_with_filename(filename);
-    plm_create_with_buffer(&_file_buffer, TRUE);
-}
-
-void PLM::plm_create_with_file(FILE *fh, int close_when_done)
-{
-    _file_buffer.create_with_file(fh, close_when_done);
+    _file_buffer.create_with_file(fh);
     plm_create_with_buffer(&_file_buffer, TRUE);
 }
 
@@ -42,7 +36,7 @@ int PLM::plm_init_decoders()
         _video_buffer.plm_buffer_set_load_callback(_read_video_packet, this);
     }
 
-    _video.plm_video_create_with_buffer(&_video_buffer, TRUE);
+    _video.create(&_video_buffer, TRUE);
     _has_decoders = TRUE;
     return TRUE;
 }
@@ -67,22 +61,6 @@ int PLM::plm_has_headers()
     return TRUE;
 }
 
-int PLM::plm_get_video_enabled() {
-    return _video_enabled;
-}
-
-void PLM::plm_set_video_enabled(int enabled)
-{
-    _video_enabled = enabled;
-
-    if (!enabled) {
-        _video_packet_type = 0;
-        return;
-    }
-
-    _video_packet_type = plm_init_decoders() ? Demux::PLM_DEMUX_PACKET_VIDEO_1 : 0;
-}
-
 // Get the number of video streams (0--1) reported in the system header.
 int PLM::plm_get_num_video_streams() {
     return _demux.plm_demux_get_num_video_streams();
@@ -95,10 +73,6 @@ int PLM::plm_get_width() {
 
 int PLM::plm_get_height() {
     return plm_init_decoders() ? _video.plm_video_get_height() : 0;
-}
-
-void PLM::plm_set_loop(int loop) {
-    _loop = loop;
 }
 
 // Get whether the file has ended. If looping is enabled, this will always
@@ -144,42 +118,25 @@ void PLM::_read_packets(PLM *self, int requested_type)
         if (packet->type == requested_type)
             return;
     }
-
-    if (self->_demux.plm_demux_has_ended())
-    {
-        self->_video_buffer.plm_buffer_signal_end();
-    }
 }
 
-// Create a buffer instance with a filename. Returns NULL if the file could not
-// be opened.
-void Buffer::create_with_filename(const char *filename)
-{
-    FILE *fh = fopen(filename, "rb");
-
-    if (!fh)
-        throw "error";
-    
-    create_with_file(fh, TRUE);
-}
+///////////////////////////////////////////////
 
 size_t Buffer::bit_index() const
 {
     return _bit_index;
 }
 
-void Buffer::create_with_file(FILE *fh, int close_when_done)
+void Buffer::create_with_file(FILE *fh)
 {
     create_with_capacity(PLM_BUFFER_DEFAULT_SIZE);
     _fh = fh;
-    _close_when_done = close_when_done;
+    _close_when_done = 0;
     _mode = PLM_BUFFER_MODE_FILE;
     _discard_read_bytes = TRUE;
-    
     fseek(_fh, 0, SEEK_END);
     _total_size = ftell(_fh);
     fseek(_fh, 0, SEEK_SET);
-
     plm_buffer_set_load_callback(plm_buffer_load_file_callback, NULL);
 }
 
@@ -194,9 +151,6 @@ void Buffer::create_with_capacity(size_t capacity)
 
 void Buffer::destroy()
 {
-    if (_fh && _close_when_done)
-        fclose(_fh);
-    
     if (_free_when_done)
         free(_bytes);
 }
@@ -265,12 +219,6 @@ void Buffer::plm_buffer_set_load_callback(plm_buffer_load_callback fp, void *use
     _load_callback_user_data = user;
 }
 
-// Rewind the buffer back to the beginning. When loading from a file handle,
-// this also seeks to the beginning of the file.
-void Buffer::rewind() {
-    plm_buffer_seek(0);
-}
-
 void Buffer::plm_buffer_seek(size_t pos)
 {
     _has_ended = FALSE;
@@ -337,7 +285,7 @@ int Buffer::plm_buffer_has_ended() {
 
 int Buffer::plm_buffer_has(size_t count)
 {
-    if (((_length << 3) - _bit_index) >= count)
+    if ((_length << 3) - _bit_index >= count)
         return TRUE;
 
     if (_load_callback)
@@ -366,9 +314,9 @@ int Buffer::read(int count)
         int remaining = 8 - (_bit_index & 7); // Remaining bits in byte
         int read = remaining < count ? remaining : count; // Bits in self run
         int shift = remaining - read;
-        int mask = (0xff >> (8 - read));
+        int mask = 0xff >> 8 - read;
 
-        value = (value << read) | ((current_byte & (mask << shift)) >> shift);
+        value = value << read | ((current_byte & (mask << shift)) >> shift);
 
         _bit_index += read;
         count -= read;
@@ -378,7 +326,7 @@ int Buffer::read(int count)
 }
 
 void Buffer::plm_buffer_align() {
-    _bit_index = ((_bit_index + 7) >> 3) << 3; // Align to next byte
+    _bit_index = (_bit_index + 7 >> 3) << 3; // Align to next byte
 }
 
 void Buffer::skip(size_t count)
@@ -391,10 +339,8 @@ int Buffer::skip_bytes(uint8_t v)
 {
     plm_buffer_align();
     int skipped = 0;
-    while (plm_buffer_has(8) && _bytes[_bit_index >> 3] == v) {
-        _bit_index += 8;
-        skipped++;
-    }
+    while (plm_buffer_has(8) && _bytes[_bit_index >> 3] == v)
+        _bit_index += 8, skipped++;
     return skipped;
 }
 
@@ -403,7 +349,7 @@ int Buffer::plm_buffer_next_start_code()
     plm_buffer_align();
 
     while (plm_buffer_has(5 << 3)) {
-        size_t byte_index = (_bit_index) >> 3;
+        size_t byte_index = _bit_index >> 3;
         if (
             _bytes[byte_index + 0] == 0x00 &&
             _bytes[byte_index + 1] == 0x00 &&
@@ -421,9 +367,8 @@ int Buffer::find_start_code(int code) {
     int current = 0;
     while (TRUE) {
         current = plm_buffer_next_start_code();
-        if (current == code || current == -1) {
+        if (current == code || current == -1)
             return current;
-        }
     }
     return -1;
 }
@@ -460,8 +405,14 @@ int16_t Buffer::read_vlc(const plm_vlc_t *table)
 }
 
 uint16_t Buffer::read_vlc_uint(const plm_vlc_uint_t *table) {
-    return (uint16_t)read_vlc((const plm_vlc_t *)(table));
+    plm_vlc_uint_t state = {0, 0};
+    do {
+        state = table[state.index + read(1)];
+    } while (state.index > 0);
+    return state.value;
 }
+
+///////////////////////////////////////////////////////////////
 
 // Create a demuxer with a plm_buffer as source. This will also attempt to read
 // the pack and system headers from the buffer.
@@ -532,7 +483,7 @@ int Demux::plm_demux_has_headers()
 
         _buffer->skip(16); // header_length
         _buffer->skip(24); // rate bound
-        _num_audio_streams = _buffer->read(6);
+        _buffer->skip(6);
         _buffer->skip(5); // misc flags
         _num_video_streams = _buffer->read(5);
 
@@ -549,26 +500,9 @@ int Demux::plm_demux_get_num_video_streams() {
     return plm_demux_has_headers() ? _num_video_streams : 0;
 }
 
-// Rewind the internal buffer. See plm_buffer_rewind().
-void Demux::plm_demux_rewind()
-{
-    _buffer->rewind();
-    _current_packet.length = 0;
-    _next_packet.length = 0;
-    _start_code = -1;
-}
-
 // Get whether the file has ended. This will be cleared on seeking or rewind.
 int Demux::plm_demux_has_ended() {
     return _buffer->plm_buffer_has_ended();
-}
-
-void Demux::plm_demux_buffer_seek(size_t pos)
-{
-    _buffer->plm_buffer_seek(pos);
-    _current_packet.length = 0;
-    _next_packet.length = 0;
-    _start_code = -1;
 }
 
 plm_packet_t *Demux::plm_demux_decode()
@@ -631,24 +565,25 @@ plm_packet_t *Demux::plm_demux_decode_packet(int type)
 
     int pts_dts_marker = _buffer->read(2);
 
-    if (pts_dts_marker == 0x03)
+    switch (pts_dts_marker)
     {
+    case 0x03:
         _buffer->skip(36);
         _buffer->skip(40); // skip dts
         _next_packet.length -= 10;
-    }
-    else if (pts_dts_marker == 0x02) {
+        break;
+    case 0x02:
         _buffer->skip(36);
         _next_packet.length -= 5;
-    }
-    else if (pts_dts_marker == 0x00) {
+        break;
+    case 0x00:
         _buffer->skip(4);
         _next_packet.length -= 1;
+        break;
+    default:
+        return NULL;
     }
-    else {
-        return NULL; // invalid
-    }
-    
+
     return plm_demux_get_packet();
 }
 

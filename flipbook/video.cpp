@@ -560,7 +560,7 @@ int Video::plm_video_decode_sequence_header()
 }
 
 // Create a video decoder with a plm_buffer as source.
-void Video::plm_video_create_with_buffer(Buffer *buffer, int destroy_when_done)
+void Video::create(Buffer *buffer, int destroy_when_done)
 {
     _buffer = buffer;
     _destroy_buffer_when_done = destroy_when_done;
@@ -648,8 +648,7 @@ plm_frame_t *Video::plm_video_decode()
             return NULL;
         }
         _buffer->plm_buffer_discard_read_bytes();
-        
-        plm_video_decode_picture();
+        _decode_picture();
 
         if (_assume_no_b_frames)
         {   frame = &_frame_backward;
@@ -685,7 +684,7 @@ int Video::plm_video_has_header()
     return TRUE;
 }
 
-void Video::plm_video_decode_picture()
+void Video::_decode_picture()
 {
     _buffer->skip(10); // skip temporalReference
     _picture_type = _buffer->read(3);
@@ -736,7 +735,7 @@ void Video::plm_video_decode_picture()
     // Decode all slices
     while (PLM_START_IS_SLICE(_start_code))
     {
-        plm_video_decode_slice(_start_code & 0x000000FF);
+        _decode_slice(_start_code & 0x000000FF);
 
         if (_macroblock_address >= _mb_size - 2)
             break;
@@ -753,7 +752,7 @@ void Video::plm_video_decode_picture()
     }
 }
 
-void Video::plm_video_decode_macroblock()
+void Video::_decode_macroblock()
 {
     // Decode increment
     int increment = 0;
@@ -836,7 +835,7 @@ void Video::plm_video_decode_macroblock()
         _dc_predictor[1] = 128;
         _dc_predictor[2] = 128;
 
-        plm_video_decode_motion_vectors();
+        _decode_motion_vectors();
         _predict_macroblock();
     }
 
@@ -854,7 +853,7 @@ void Video::plm_video_decode_macroblock()
     }
 }
 
-void Video::plm_video_decode_slice(int slice)
+void Video::_decode_slice(int slice)
 {
     _slice_begin = TRUE;
     _macroblock_address = (slice - 1) * _mb_width - 1;
@@ -873,14 +872,14 @@ void Video::plm_video_decode_slice(int slice)
         _buffer->skip(8);
 
     do {
-        plm_video_decode_macroblock();
+        _decode_macroblock();
     } while (
         _macroblock_address < _mb_size - 1 &&
         _buffer->plm_buffer_peek_non_zero(23)
     );
 }
 
-void Video::plm_video_decode_motion_vectors()
+void Video::_decode_motion_vectors()
 {
     // Forward
     if (_motion_forward.is_set)
@@ -1046,12 +1045,11 @@ void Video::_decode_block(int block)
         // Read DC coeff
         if (dct_size > 0) {
             int differential = _buffer->read(dct_size);
-            if ((differential & (1 << (dct_size - 1))) != 0) {
+
+            if ((differential & (1 << (dct_size - 1))) != 0)
                 _block_data[0] = predictor + differential;
-            }
-            else {
+            else
                 _block_data[0] = predictor + (-(1 << dct_size) | (differential + 1));
-            }
         }
         else {
             _block_data[0] = predictor;
@@ -1113,7 +1111,7 @@ void Video::_decode_block(int block)
         if (!_macroblock_intra)
             level += (level < 0 ? -1 : 1);
         
-        level = (level * _quantizer_scale * quant_matrix[de_zig_zagged]) >> 4;
+        level = level * _quantizer_scale * quant_matrix[de_zig_zagged] >> 4;
 
         if ((level & 1) == 0)
             level -= level > 0 ? 1 : -1;
