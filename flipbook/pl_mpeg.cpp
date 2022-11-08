@@ -219,36 +219,6 @@ void Buffer::plm_buffer_set_load_callback(plm_buffer_load_callback fp, void *use
     _load_callback_user_data = user;
 }
 
-void Buffer::plm_buffer_seek(size_t pos)
-{
-    _has_ended = FALSE;
-
-    if (_mode == PLM_BUFFER_MODE_FILE)
-    {
-        fseek(_fh, pos, SEEK_SET);
-        _bit_index = 0;
-        _length = 0;
-    }
-    else if (_mode == PLM_BUFFER_MODE_RING)
-    {
-        if (pos != 0) {
-            // Seeking to non-0 is forbidden for dynamic-mem buffers
-            return; 
-        }
-        _bit_index = 0;
-        _length = 0;
-        _total_size = 0;
-    }
-    else if (pos < _length) {
-        _bit_index = pos << 3;
-    }
-}
-
-size_t Buffer::plm_buffer_tell() {
-    return _mode == PLM_BUFFER_MODE_FILE ? ftell(_fh) + (_bit_index >> 3) - _length
-        : _bit_index >> 3;
-}
-
 void Buffer::plm_buffer_discard_read_bytes() {
     size_t byte_pos = _bit_index >> 3;
     if (byte_pos == _length) {
@@ -331,8 +301,9 @@ void Buffer::plm_buffer_align() {
 
 void Buffer::skip(size_t count)
 {
-    if (plm_buffer_has(count))
-        _bit_index += count;
+    if (!plm_buffer_has(count))
+        throw "too much";
+    _bit_index += count;
 }
 
 int Buffer::skip_bytes(uint8_t v)
@@ -393,23 +364,6 @@ int Buffer::plm_buffer_peek_non_zero(int bit_count)
     int val = read(bit_count);
     _bit_index -= bit_count;
     return val != 0;
-}
-
-int16_t Buffer::read_vlc(const plm_vlc_t *table)
-{
-    plm_vlc_t state = {0, 0};
-    do {
-        state = table[state.index + read(1)];
-    } while (state.index > 0);
-    return state.value;
-}
-
-uint16_t Buffer::read_vlc_uint(const plm_vlc_uint_t *table) {
-    plm_vlc_uint_t state = {0, 0};
-    do {
-        state = table[state.index + read(1)];
-    } while (state.index > 0);
-    return state.value;
 }
 
 ///////////////////////////////////////////////////////////////

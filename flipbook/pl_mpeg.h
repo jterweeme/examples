@@ -9,24 +9,10 @@
 #define FALSE 0
 #endif
 
-#if 0
-template <struct T> struct VLC
+template <typename T> struct VLC
 {
-    int16_t idx = 0;
-    T val = 0;
-}
-#endif
-
-struct plm_vlc_t
-{
-    int16_t index;
-    int16_t value;
-};
-
-struct plm_vlc_uint_t
-{
-    int16_t index;
-    uint16_t value;
+    int16_t idx;
+    T val;
 };
 
 // Demuxed MPEG PS packet
@@ -114,11 +100,8 @@ public:
     uint8_t *_bytes;
     size_t _length = 0;
     size_t _bit_index = 0;
-    void plm_buffer_seek(size_t pos);
     size_t plm_buffer_tell();
     static void plm_buffer_load_file_callback(Buffer *self, void *user);
-    int16_t read_vlc(const plm_vlc_t *table);
-    uint16_t read_vlc_uint(const plm_vlc_uint_t *table);
     void create_with_file(FILE *fh);
     size_t bit_index() const;
     void create_with_capacity(size_t capacity);
@@ -126,7 +109,6 @@ public:
     size_t plm_buffer_write(uint8_t *bytes, size_t length);
     void plm_buffer_signal_end();
     void plm_buffer_set_load_callback(plm_buffer_load_callback fp, void *user);
-    void rewind();
     size_t get_size();
     size_t plm_buffer_get_remaining();
     int plm_buffer_has_ended();
@@ -172,8 +154,6 @@ public:
     void plm_demux_destroy();
     int plm_demux_has_headers();
     int plm_demux_get_num_video_streams();
-    int plm_demux_get_num_audio_streams();
-    void plm_demux_rewind();
     int plm_demux_has_ended();
     plm_packet_t *plm_demux_decode();
 };

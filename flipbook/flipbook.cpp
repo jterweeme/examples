@@ -153,7 +153,7 @@ void CApp::app_create(FILE *fh)
         SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 
     gl = SDL_GL_CreateContext(_window);
-	SDL_GL_SetSwapInterval(0);
+	SDL_GL_SetSwapInterval(1);
     glewExperimental = GL_TRUE;
     glewInit();
     const char *fsh = APP_FRAGMENT_SHADER_YCRCB;

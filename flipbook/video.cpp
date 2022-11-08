@@ -5,13 +5,10 @@
 // https://sourceforge.net/projects/javampeg1video/
 
 #include "pl_mpeg.h"
-#include <cstdlib>
 #include <cstring>
 #include <algorithm>
 
-static constexpr int PLM_VIDEO_PICTURE_TYPE_INTRA = 1;
-static constexpr int PLM_VIDEO_PICTURE_TYPE_PREDICTIVE = 2;
-static constexpr int PLM_VIDEO_PICTURE_TYPE_B = 3;
+static constexpr int PIC_TYPE_I = 1, PIC_TYPE_P = 2, PIC_TYPE_B = 3;
 
 static constexpr int PLM_START_SEQUENCE = 0xB3;
 static constexpr int PLM_START_SLICE_FIRST = 0x01;
@@ -67,7 +64,7 @@ static constexpr uint8_t PLM_VIDEO_PREMULTIPLIER_MATRIX[] = {
      9, 12, 12, 10,  9,  7,  5,  2
 };
 
-static constexpr plm_vlc_t PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT[] = {
+static constexpr VLC<int16_t> PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT[] = {
     {  1 << 1,    0}, {       0,    1},  //   0: x
     {  2 << 1,    0}, {  3 << 1,    0},  //   1: 0x
     {  4 << 1,    0}, {  5 << 1,    0},  //   2: 00x
@@ -110,12 +107,12 @@ static constexpr plm_vlc_t PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT[] = {
     {       0,   23}, {       0,   22},  //  39: 0000 0100 01x
 };
 
-static constexpr plm_vlc_t PLM_VIDEO_MACROBLOCK_TYPE_INTRA[] = {
+static constexpr VLC<int16_t> PLM_VIDEO_MACROBLOCK_TYPE_INTRA[] = {
     {  1 << 1,    0}, {       0,  0x01},  //   0: x
     {      -1,    0}, {       0,  0x11},  //   1: 0x
 };
 
-static constexpr plm_vlc_t PLM_VIDEO_MACROBLOCK_TYPE_PREDICTIVE[] = {
+static constexpr VLC<int16_t> PLM_VIDEO_MACROBLOCK_TYPE_PREDICTIVE[] = {
     {  1 << 1,    0}, {       0, 0x0a},  //   0: x
     {  2 << 1,    0}, {       0, 0x02},  //   1: 0x
     {  3 << 1,    0}, {       0, 0x08},  //   2: 00x
@@ -125,7 +122,7 @@ static constexpr plm_vlc_t PLM_VIDEO_MACROBLOCK_TYPE_PREDICTIVE[] = {
     {      -1,    0}, {       0, 0x11},  //   6: 0000 0x
 };
 
-static constexpr plm_vlc_t PLM_VIDEO_MACROBLOCK_TYPE_B[] = {
+static constexpr VLC<int16_t> PLM_VIDEO_MACROBLOCK_TYPE_B[] = {
     {  1 << 1,    0}, {  2 << 1,    0},  //   0: x
     {  3 << 1,    0}, {  4 << 1,    0},  //   1: 0x
     {       0, 0x0c}, {       0, 0x0e},  //   2: 1x
@@ -139,14 +136,14 @@ static constexpr plm_vlc_t PLM_VIDEO_MACROBLOCK_TYPE_B[] = {
     {       0, 0x16}, {       0, 0x1a},  //  10: 0000 1x
 };
 
-static const plm_vlc_t *PLM_VIDEO_MACROBLOCK_TYPE[] = {
+static const VLC<int16_t> *PLM_VIDEO_MACROBLOCK_TYPE[] = {
     NULL,
     PLM_VIDEO_MACROBLOCK_TYPE_INTRA,
     PLM_VIDEO_MACROBLOCK_TYPE_PREDICTIVE,
     PLM_VIDEO_MACROBLOCK_TYPE_B
 };
 
-static constexpr plm_vlc_t PLM_VIDEO_CODE_BLOCK_PATTERN[] = {
+static constexpr VLC<int16_t> PLM_VIDEO_CODE_BLOCK_PATTERN[] = {
     {  1 << 1,    0}, {  2 << 1,    0},  //   0: x
     {  3 << 1,    0}, {  4 << 1,    0},  //   1: 0x
     {  5 << 1,    0}, {  6 << 1,    0},  //   2: 1x
@@ -212,7 +209,7 @@ static constexpr plm_vlc_t PLM_VIDEO_CODE_BLOCK_PATTERN[] = {
     {       0,   47}, {       0,   31},  //  62: 0000 0011x
 };
 
-static constexpr plm_vlc_t PLM_VIDEO_MOTION[] = {
+static constexpr VLC<int16_t> PLM_VIDEO_MOTION[] = {
     {  1 << 1,    0}, {       0,    0},  //   0: x
     {  2 << 1,    0}, {  3 << 1,    0},  //   1: 0x
     {  4 << 1,    0}, {  5 << 1,    0},  //   2: 00x
@@ -249,7 +246,7 @@ static constexpr plm_vlc_t PLM_VIDEO_MOTION[] = {
     {       0,   11}, {       0,  -11},  //  33: 0000 0100 01x
 };
 
-static constexpr plm_vlc_t PLM_VIDEO_DCT_SIZE_LUMINANCE[] = {
+static constexpr VLC<int16_t> PLM_VIDEO_DCT_SIZE_LUMINANCE[] = {
     {  1 << 1,    0}, {  2 << 1,    0},  //   0: x
     {       0,    1}, {       0,    2},  //   1: 0x
     {  3 << 1,    0}, {  4 << 1,    0},  //   2: 1x
@@ -261,7 +258,7 @@ static constexpr plm_vlc_t PLM_VIDEO_DCT_SIZE_LUMINANCE[] = {
     {       0,    8}, {      -1,    0},  //   8: 1111 11x
 };
 
-static constexpr plm_vlc_t PLM_VIDEO_DCT_SIZE_CHROMINANCE[] = {
+static constexpr VLC<int16_t> PLM_VIDEO_DCT_SIZE_CHROMINANCE[] = {
     {  1 << 1,    0}, {  2 << 1,    0},  //   0: x
     {       0,    0}, {       0,    1},  //   1: 0x
     {       0,    2}, {  3 << 1,    0},  //   2: 1x
@@ -273,7 +270,7 @@ static constexpr plm_vlc_t PLM_VIDEO_DCT_SIZE_CHROMINANCE[] = {
     {       0,    8}, {      -1,    0},  //   8: 1111 111x
 };
 
-static const plm_vlc_t *PLM_VIDEO_DCT_SIZE[] = {
+static const VLC<int16_t> *PLM_VIDEO_DCT_SIZE[] = {
     PLM_VIDEO_DCT_SIZE_LUMINANCE,
     PLM_VIDEO_DCT_SIZE_CHROMINANCE,
     PLM_VIDEO_DCT_SIZE_CHROMINANCE
@@ -285,8 +282,7 @@ static const plm_vlc_t *PLM_VIDEO_DCT_SIZE[] = {
 //    0x00ff  level
 
 //  Decoded values are unsigned. Sign bit follows in the stream.
-
-static constexpr plm_vlc_uint_t PLM_VIDEO_DCT_COEFF[] = {
+static constexpr VLC<uint16_t> PLM_VIDEO_DCT_COEFF[] = {
     {  1 << 1,        0}, {       0,   0x0001},  //   0: x
     {  2 << 1,        0}, {  3 << 1,        0},  //   1: 0x
     {  4 << 1,        0}, {  5 << 1,        0},  //   2: 00x
@@ -406,6 +402,15 @@ static inline uint8_t plm_clamp(int n)
     return std::clamp(n, 0, 255);
 }
 
+template <typename T> static T read_vlc(Buffer *buf, const VLC<T> *table)
+{
+    VLC<T> state = {0, 0};
+    do {
+        state = table[state.idx + buf->read(1)];
+    } while (state.idx > 0);
+    return state.val;
+}
+
 void Video::_idct(int *block)
 {
     // Transform columns
@@ -503,9 +508,10 @@ int Video::plm_video_decode_sequence_header()
     if (_width <= 0 || _height <= 0)
         return FALSE;
 
-    // Skip pixel aspect ratio
+    //Skip pixel aspect ratio
     _buffer->skip(4);
 
+    //skip framerate
     _buffer->skip(4);
     //_framerate = PLM_VIDEO_PICTURE_RATE[_buffer->read(4)];
 
@@ -526,16 +532,10 @@ int Video::plm_video_decode_sequence_header()
 
     // Load custom non intra quant matrix?
     if (_buffer->read(1))
-    {
         for (int i = 0; i < 64; ++i)
-        {
-            int idx = PLM_VIDEO_ZIG_ZAG[i];
-            _non_intra_quant_matrix[idx] = _buffer->read(8);
-        }
-    }
-    else {
+            _non_intra_quant_matrix[PLM_VIDEO_ZIG_ZAG[i]] = _buffer->read(8);
+    else
         memcpy(_non_intra_quant_matrix, PLM_VIDEO_NON_INTRA_QUANT_MATRIX, 64);
-    }
 
     _mb_width = _width + 15 >> 4;
     _mb_height = _height + 15 >> 4;
@@ -625,8 +625,8 @@ plm_frame_t *Video::plm_video_decode()
                 // frame was a reference frame, we still have to return it.
                 if (_has_reference_frame && !_assume_no_b_frames &&
                     _buffer->plm_buffer_has_ended() && (
-                        _picture_type == PLM_VIDEO_PICTURE_TYPE_INTRA ||
-                        _picture_type == PLM_VIDEO_PICTURE_TYPE_PREDICTIVE))
+                        _picture_type == PIC_TYPE_I ||
+                        _picture_type == PIC_TYPE_P))
                 {
                     _has_reference_frame = FALSE;
                     frame = &_frame_backward;
@@ -652,7 +652,7 @@ plm_frame_t *Video::plm_video_decode()
 
         if (_assume_no_b_frames)
         {   frame = &_frame_backward;
-        } else if (_picture_type == PLM_VIDEO_PICTURE_TYPE_B)
+        } else if (_picture_type == PIC_TYPE_B)
         {   frame = &_frame_current;
         } else if (_has_reference_frame)
         {   frame = &_frame_forward;
@@ -691,24 +691,24 @@ void Video::_decode_picture()
     _buffer->skip(16); // skip vbv_delay
 
     // D frames or unknown coding type
-    if (_picture_type <= 0 || _picture_type > PLM_VIDEO_PICTURE_TYPE_B)
+    if (_picture_type <= 0 || _picture_type > PIC_TYPE_B)
         return;
 
     // Forward full_px, f_code
-    if (_picture_type == PLM_VIDEO_PICTURE_TYPE_PREDICTIVE ||
-        _picture_type == PLM_VIDEO_PICTURE_TYPE_B)
+    if (_picture_type == PIC_TYPE_P || _picture_type == PIC_TYPE_B)
     {
         _motion_forward.full_px = _buffer->read(1);
         int f_code = _buffer->read(3);
-        if (f_code == 0) {
-            // Ignore picture with zero f_code
+
+        // Ignore picture with zero f_code
+        if (f_code == 0)
             return;
-        }
+        
         _motion_forward.r_size = f_code - 1;
     }
 
     // Backward full_px, f_code
-    if (_picture_type == PLM_VIDEO_PICTURE_TYPE_B)
+    if (_picture_type == PIC_TYPE_B)
     {
         _motion_backward.full_px = _buffer->read(1);
         int f_code = _buffer->read(3);
@@ -721,11 +721,9 @@ void Video::_decode_picture()
     }
 
     plm_frame_t frame_temp = _frame_forward;
-    if (_picture_type == PLM_VIDEO_PICTURE_TYPE_INTRA ||
-        _picture_type == PLM_VIDEO_PICTURE_TYPE_PREDICTIVE)
-    {
+
+    if (_picture_type == PIC_TYPE_I || _picture_type == PIC_TYPE_P)
         _frame_forward = _frame_backward;
-    }
 
     // Find first slice start code; skip extension and user data
     do {
@@ -744,8 +742,8 @@ void Video::_decode_picture()
     }
 
     // If this is a reference picture rotate the prediction pointers
-    if (_picture_type == PLM_VIDEO_PICTURE_TYPE_INTRA ||
-        _picture_type == PLM_VIDEO_PICTURE_TYPE_PREDICTIVE)
+    if (_picture_type == PIC_TYPE_I ||
+        _picture_type == PIC_TYPE_P)
     {
         _frame_backward = _frame_current;
         _frame_current = frame_temp;
@@ -756,17 +754,16 @@ void Video::_decode_macroblock()
 {
     // Decode increment
     int increment = 0;
-    int t = _buffer->read_vlc(PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT);
+    int t = read_vlc(_buffer, PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT);
 
-    while (t == 34) {
-        // macroblock_stuffing
-        t = _buffer->read_vlc(PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT);
-    }
-    while (t == 35) {
-        // macroblock_escape
-        increment += 33;
-        t = _buffer->read_vlc(PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT);
-    }
+    // macroblock_stuffing
+    while (t == 34)
+        t = read_vlc(_buffer, PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT);
+
+    // macroblock_escape  
+    while (t == 35)
+        t = read_vlc(_buffer, PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT), increment += 33;
+    
     increment += t;
 
     // Process any skipped macroblocks
@@ -789,7 +786,7 @@ void Video::_decode_macroblock()
             _dc_predictor[2] = 128;
 
             // Skipped macroblocks in P-pictures reset motion vectors
-            if (_picture_type == PLM_VIDEO_PICTURE_TYPE_PREDICTIVE)
+            if (_picture_type == PIC_TYPE_P)
                 _motion_forward.h = _motion_forward.v = 0;
         }
 
@@ -813,8 +810,8 @@ void Video::_decode_macroblock()
         return; // corrupt stream;
 
     // Process the current macroblock
-    const plm_vlc_t *table = PLM_VIDEO_MACROBLOCK_TYPE[_picture_type];
-    _macroblock_type = _buffer->read_vlc(table);
+    const VLC<int16_t> *table = PLM_VIDEO_MACROBLOCK_TYPE[_picture_type];
+    _macroblock_type = read_vlc(_buffer, table);
 
     _macroblock_intra = _macroblock_type & 0x01;
     _motion_forward.is_set = _macroblock_type & 0x08;
@@ -841,7 +838,7 @@ void Video::_decode_macroblock()
 
     // Decode blocks
     int cbp = ((_macroblock_type & 0x02) != 0)
-        ? _buffer->read_vlc(PLM_VIDEO_CODE_BLOCK_PATTERN)
+        ? read_vlc(_buffer, PLM_VIDEO_CODE_BLOCK_PATTERN)
         : (_macroblock_intra ? 0x3f : 0);
 
     for (int block = 0, mask = 0x20; block < 6; block++)
@@ -888,7 +885,7 @@ void Video::_decode_motion_vectors()
         _motion_forward.h = plm_video_decode_motion_vector(r_size, _motion_forward.h);
         _motion_forward.v = plm_video_decode_motion_vector(r_size, _motion_forward.v);
     }
-    else if (_picture_type == PLM_VIDEO_PICTURE_TYPE_PREDICTIVE)
+    else if (_picture_type == PIC_TYPE_P)
     {
         // No motion information in P-picture, reset vectors
         _motion_forward.h = 0;
@@ -906,7 +903,7 @@ void Video::_decode_motion_vectors()
 int Video::plm_video_decode_motion_vector(int r_size, int motion)
 {
     int fscale = 1 << r_size;
-    int m_code = _buffer->read_vlc(PLM_VIDEO_MOTION);
+    int m_code = read_vlc(_buffer, PLM_VIDEO_MOTION);
     int r = 0;
     int d;
 
@@ -941,7 +938,7 @@ void Video::_predict_macroblock()
     if (_motion_forward.full_px)
         fw_h <<= 1, fw_v <<= 1;
 
-    if (_picture_type == PLM_VIDEO_PICTURE_TYPE_B)
+    if (_picture_type == PIC_TYPE_B)
     {
         int bw_h = _motion_backward.h;
         int bw_v = _motion_backward.v;
@@ -1040,7 +1037,7 @@ void Video::_decode_block(int block)
         // DC prediction
         int plane_index = block > 3 ? block - 3 : 0;
         int predictor = _dc_predictor[plane_index];
-        int dct_size = _buffer->read_vlc(PLM_VIDEO_DCT_SIZE[plane_index]);
+        int dct_size = read_vlc(_buffer, PLM_VIDEO_DCT_SIZE[plane_index]);
 
         // Read DC coeff
         if (dct_size > 0) {
@@ -1073,7 +1070,7 @@ void Video::_decode_block(int block)
     while (true)
     {
         int run = 0;
-        uint16_t coeff = _buffer->read_vlc_uint(PLM_VIDEO_DCT_COEFF);
+        uint16_t coeff = read_vlc(_buffer, PLM_VIDEO_DCT_COEFF);
 
         // end_of_block
         if ((coeff == 0x0001) && (n > 0) && (_buffer->read(1) == 0))

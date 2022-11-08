@@ -3,17 +3,17 @@ TEMPLATE = subdirs
 SUBDIRS =\
     base64\
     bzcat\
-    cat\
-    chessvalid\
-    compress\
-    contimeout\
-    echosvr\
-    exception\
-    flac2wav\
+    #cat\
+    #chessvalid\
+    #compress\
+    #contimeout\
+    #echosvr\
+    #exception\
+    #flac2wav\
     #gif2bmp\
     grep\
     head\
-    jpg2tga\
+    #jpg2tga\
     #ls\
     lsq\
     md5sum\
