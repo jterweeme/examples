@@ -22,10 +22,11 @@ private:
     uint16_t g_codetab[HSIZE];
     uint32_t _code(uint32_t mask);
     void reset();
+    //std::vector<char> _inbuf;
     char _inbuf[BUFSIZ + 64];
-    int _insize;
-    int _rsize;
-    int _inbits;
+    int _insize = 0;
+    int _rsize = 0;
+    int _inbits = 0;
     int _n_bits = INIT_BITS;
     void dinges();
 public:
@@ -58,7 +59,7 @@ void Decomp::reset()
     _insize = e;
     _posbits = 0;
 
-    if (_insize < sizeof(_inbuf) - BUFSIZ)
+    if (_insize < 64)
     {
         std::cin.read(_inbuf + _insize, BUFSIZ);
         _rsize = std::cin.gcount();
@@ -84,8 +85,6 @@ int Decomp::decompress(int maxbits, int block_mode)
 {
     _is->read(_inbuf, BUFSIZ);
     _rsize = _insize = _is->gcount();
-    long bytes_in = _insize;
-
     uint32_t bitmask, maxcode;
     maxcode = bitmask = (1<<_n_bits) - 1;
     long oldcode = -1;
@@ -171,8 +170,6 @@ resetbuf:
 
         oldcode = incode;
     }
-
-    bytes_in += _rsize;
 
     if (_rsize > 0)
         goto resetbuf;
