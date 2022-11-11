@@ -1,5 +1,6 @@
 #include <cstring>
 #include <iostream>
+#include <vector>
 #include <algorithm>
 
 #ifdef WIN32
@@ -11,47 +12,42 @@ static constexpr uint8_t BLOCK_MODE = 0x80, BITS = 16, INIT_BITS = 9, BIT_MASK =
 static constexpr uint32_t HSIZE = 1<<17;
 static constexpr uint16_t CLEAR = 256;
 
-class Buffer
+class Decomp
 {
-public:
-    char _inbuf[BUFSIZ + 64];
+private:
+    std::istream *_is;
+    std::ostream *_os;
     int _posbits = 0;
+    uint8_t htab[HSIZE];
+    uint16_t g_codetab[HSIZE];
+    uint32_t _code(uint32_t mask);
+    void reset();
+    char _inbuf[BUFSIZ + 64];
     int _insize;
     int _rsize;
     int _inbits;
     int _n_bits = INIT_BITS;
-public:
-    void read();
-    uint32_t code(uint32_t mask);
-    bool has();
     void dinges();
-    void reset();
+public:
+    Decomp(std::istream *is, std::ostream *os);
+    void read();
+    int decompress(int maxbits, int block_mode);
 };
 
-void Buffer::read()
-{
-    std::cin.read(_inbuf, BUFSIZ);
-}
-
-void Buffer::dinges()
+void Decomp::dinges()
 {
     _posbits = (_posbits-1) + (_n_bits * 8 - (_posbits - 1 + _n_bits * 8) % (_n_bits<<3));
 }
 
-uint32_t Buffer::code(uint32_t mask)
+uint32_t Decomp::_code(uint32_t mask)
 {
-    long ret = *(long *)(&_inbuf[_posbits >> 3]) >> (_posbits & 0x7);
+    uint32_t ret = *(uint32_t *)(&_inbuf[_posbits >> 3]) >> (_posbits & 0x7);
     ret &= mask;
     _posbits += _n_bits;
     return ret;
 }
 
-bool Buffer::has()
-{
-    return false;
-}
-
-void Buffer::reset()
+void Decomp::reset()
 {
     int o = _posbits >> 3;
     int e = o <= _insize ? _insize - o : 0;
@@ -76,31 +72,22 @@ void Buffer::reset()
     _inbits = _rsize > 0 ? _insize - _insize % _n_bits << 3 : (_insize<<3)-(_n_bits-1);
 }
 
-class Decomp
-{
-private:
-    std::istream *_is;
-    std::ostream *_os;
-public:
-    Decomp(std::istream *is, std::ostream *os);
-    int decompress(int maxbits, int block_mode);
-};
-
 Decomp::Decomp(std::istream *is, std::ostream *os) : _is(is), _os(os)
+{
+}
+
+void Decomp::read()
 {
 }
 
 int Decomp::decompress(int maxbits, int block_mode)
 {
-    Buffer buf;
-    uint8_t htab[HSIZE];
-    uint16_t g_codetab[HSIZE];
-    _is->read(buf._inbuf, BUFSIZ);
-    buf._rsize = buf._insize = _is->gcount();
-    long bytes_in = buf._insize;
+    _is->read(_inbuf, BUFSIZ);
+    _rsize = _insize = _is->gcount();
+    long bytes_in = _insize;
 
     uint32_t bitmask, maxcode;
-    maxcode = bitmask = (1<<buf._n_bits) - 1;
+    maxcode = bitmask = (1<<_n_bits) - 1;
     long oldcode = -1;
     int finchar = 0;
     uint32_t free_ent = block_mode ? 257 : 256;
@@ -108,40 +95,40 @@ int Decomp::decompress(int maxbits, int block_mode)
     for (uint16_t i = 0; i < 256; ++i)
         htab[i] = uint8_t(i);
 resetbuf:
-    buf.reset();
+    reset();
 
-    while (buf._inbits > buf._posbits)
+    if (oldcode == -1)
+    {
+        uint32_t code = _code(bitmask);
+
+        if (code >= 256)
+            throw "corrupt input";
+
+        _os->put(uint8_t(finchar = int(oldcode = code)));
+    }   
+
+    while (_inbits > _posbits)
     {
         if (free_ent > maxcode)
         {
-            buf.dinges();
-            ++buf._n_bits;
-            maxcode = buf._n_bits == maxbits ? 1 << maxbits : (1 << buf._n_bits) - 1;
-            bitmask = (1<<buf._n_bits)-1;
-            buf.reset();
-            continue;
+            dinges();
+            ++_n_bits;
+            maxcode = _n_bits == maxbits ? 1 << maxbits : (1 << _n_bits) - 1;
+            bitmask = (1 << _n_bits)-1;
+            reset();
         }
 
-        uint32_t code = buf.code(bitmask);
-
-        if (oldcode == -1)
-        {
-            if (code >= 256)
-                throw "corrupt input";
-
-            _os->put(uint8_t(finchar = int(oldcode = code)));
-            continue;
-        }
+        uint32_t code = _code(bitmask);
 
         if (code == CLEAR && block_mode)
         {
             memset(g_codetab, 0, 256);
             free_ent = 256;
-            buf.dinges();
-            buf._n_bits = INIT_BITS;
-            maxcode = (1<<buf._n_bits) - 1;
-            bitmask = (1<<buf._n_bits) - 1;
-            buf.reset();
+            dinges();
+            _n_bits = INIT_BITS;
+            maxcode = (1<<_n_bits) - 1;
+            bitmask = (1<<_n_bits) - 1;
+            reset();
             continue;
         }
 
@@ -185,9 +172,9 @@ resetbuf:
         oldcode = incode;
     }
 
-    bytes_in += buf._rsize;
+    bytes_in += _rsize;
 
-    if (buf._rsize > 0)
+    if (_rsize > 0)
         goto resetbuf;
 
     return 0;
@@ -211,6 +198,7 @@ int main(int argc, char **argv)
 
     uint8_t tmp = std::cin.get();
     Decomp d(&std::cin, &std::cout);
+    d.read();
     return d.decompress(tmp & BIT_MASK, tmp & BLOCK_MODE);
 }
 
