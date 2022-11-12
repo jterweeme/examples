@@ -25,7 +25,30 @@
 #include "mpegconsts.h"
 #include "yuv4mpeg.h"
 #include "yuv4mpeg_intern.h"
-#include "format_codes.h"
+
+#define MPEG_FORMAT_MPEG1   0
+#define MPEG_FORMAT_VCD     1
+#define MPEG_FORMAT_VCD_NSR 2
+#define MPEG_FORMAT_MPEG2   3
+#define MPEG_FORMAT_SVCD     4
+#define MPEG_FORMAT_SVCD_NSR 5
+#define MPEG_FORMAT_VCD_STILL 6
+#define MPEG_FORMAT_SVCD_STILL 7
+#define MPEG_FORMAT_DVD_NAV 8
+#define MPEG_FORMAT_DVD      9
+#define MPEG_FORMAT_ATSC480i 10
+#define MPEG_FORMAT_ATSC480p 11
+#define MPEG_FORMAT_ATSC720p 12
+#define MPEG_FORMAT_ATSC1080i 13
+
+#define MPEG_FORMAT_FIRST 0
+#define MPEG_FORMAT_LAST MPEG_FORMAT_ATSC1080i
+
+#define MPEG_STILLS_FORMAT(x) ((x)==MPEG_FORMAT_VCD_STILL||(x)==MPEG_FORMAT_SVCD_STILL)
+#define MPEG_ATSC_FORMAT(x) ((x)>=MPEG_FORMAT_ATSC480i && (x)<=MPEG_FORMAT_ATSC1080i)
+#define MPEG_HDTV_FORMAT(x) MPEG_ATSC_FORMAT(x)
+#define MPEG_SDTV_FORMAT(x) (!MPEG_HDTV_FORMAT(x))
+
 
 static y4m_ratio_t
 mpeg_framerates[] = {

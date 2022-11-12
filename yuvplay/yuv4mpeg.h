@@ -26,7 +26,11 @@
 #define __YUV4MPEG_H__
 
 #include <stdlib.h>
-#include "mjpeg_types.h"
+#include <sys/types.h> /* FreeBSD, others - ssize_t */
+#include <stdint.h>
+#include <inttypes.h>
+
+//#include "mjpeg_types.h"
 #ifndef _WIN32
 #include <unistd.h>
 #endif
