@@ -18,10 +18,6 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #define INTERNAL_Y4M_LIBCODE_STUFF_QPX
 
 #include <stdio.h>
@@ -29,14 +25,771 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
-#include "yuv4mpeg.h"
+
 #include <SDL.h>
 #include <sys/time.h>
 #include <assert.h>
-#include "config.h"
 
 #include <string.h>
-#include "yuv4mpeg.h"
+
+#include <stdlib.h>
+#include <sys/types.h> /* FreeBSD, others - ssize_t */
+#include <stdint.h>
+#include <inttypes.h>
+
+//#include "mjpeg_types.h"
+#ifndef _WIN32
+#include <unistd.h>
+#endif
+
+/*  to avoid changing all the places log_level_t is used */
+typedef int log_level_t;
+
+#if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ > 4)
+#define GNUC_PRINTF( format_idx, arg_idx )    \
+  __attribute__((format (printf, format_idx, arg_idx)))
+#else   /* !__GNUC__ */
+#define GNUC_PRINTF( format_idx, arg_idx )
+#endif  /* !__GNUC__ */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+void mjpeg_log(log_level_t level, const char format[], ...) GNUC_PRINTF(2, 3);
+typedef int(*mjpeg_log_filter_t)(log_level_t level);
+typedef void(*mjpeg_log_handler_t)(log_level_t level, const char message[]);
+mjpeg_log_handler_t mjpeg_log_set_handler(mjpeg_log_handler_t new_handler);
+int mjpeg_default_handler_identifier(const char *new_id);
+int mjpeg_default_handler_verbosity(int verbosity);
+void mjpeg_debug(const char format[], ...) GNUC_PRINTF(1,2);
+void mjpeg_info(const char format[], ...) GNUC_PRINTF(1,2);
+void mjpeg_warn(const char format[], ...) GNUC_PRINTF(1,2);
+void mjpeg_error(const char format[], ...) GNUC_PRINTF(1,2);
+void mjpeg_error_exit1(const char format[], ...) GNUC_PRINTF(1,2);
+log_level_t mjpeg_loglev_t(const char *str);
+
+#ifdef __cplusplus
+}
+#endif
+
+
+/************************************************************************
+ *  error codes returned by y4m_* functions
+ ************************************************************************/
+#define Y4M_OK          0
+#define Y4M_ERR_RANGE   1  /* argument or tag value out of range */
+#define Y4M_ERR_SYSTEM  2  /* failed system call, check errno */
+#define Y4M_ERR_HEADER  3  /* illegal/malformed header */
+#define Y4M_ERR_BADTAG  4  /* illegal tag character */
+#define Y4M_ERR_MAGIC   5  /* bad header magic */
+#define Y4M_ERR_EOF     6  /* end-of-file (clean) */
+#define Y4M_ERR_XXTAGS  7  /* too many xtags */
+#define Y4M_ERR_BADEOF  8  /* unexpected end-of-file */
+#define Y4M_ERR_FEATURE 9  /* stream requires features beyond allowed level */
+
+
+/* generic 'unknown' value for integer parameters (e.g. interlace, height) */
+#define Y4M_UNKNOWN -1
+
+/************************************************************************
+ * values for the "interlace" parameter [y4m_*_interlace()]
+ ************************************************************************/
+#define Y4M_ILACE_NONE          0   /* non-interlaced, progressive frame */
+#define Y4M_ILACE_TOP_FIRST     1   /* interlaced, top-field first       */
+#define Y4M_ILACE_BOTTOM_FIRST  2   /* interlaced, bottom-field first    */
+#define Y4M_ILACE_MIXED         3   /* mixed, "refer to frame header"    */
+
+/************************************************************************
+ * values for the "chroma" parameter [y4m_*_chroma()]
+ ************************************************************************/
+#define Y4M_CHROMA_420JPEG     0  /* 4:2:0, H/V centered, for JPEG/MPEG-1 */
+#define Y4M_CHROMA_420MPEG2    1  /* 4:2:0, H cosited, for MPEG-2         */
+#define Y4M_CHROMA_420PALDV    2  /* 4:2:0, alternating Cb/Cr, for PAL-DV */
+#define Y4M_CHROMA_444         3  /* 4:4:4, no subsampling, phew.         */
+#define Y4M_CHROMA_422         4  /* 4:2:2, H cosited                     */
+#define Y4M_CHROMA_411         5  /* 4:1:1, H cosited                     */
+#define Y4M_CHROMA_MONO        6  /* luma plane only                      */
+#define Y4M_CHROMA_444ALPHA    7  /* 4:4:4 with an alpha channel          */
+
+/************************************************************************
+ * values for sampling parameters [y4m_*_spatial(), y4m_*_temporal()]
+ ************************************************************************/
+#define Y4M_SAMPLING_PROGRESSIVE 0
+#define Y4M_SAMPLING_INTERLACED  1
+
+/************************************************************************
+ * values for "presentation" parameter [y4m_*_presentation()]
+ ************************************************************************/
+#define Y4M_PRESENT_TOP_FIRST         0  /* top-field-first                 */
+#define Y4M_PRESENT_TOP_FIRST_RPT     1  /* top-first, repeat top           */
+#define Y4M_PRESENT_BOTTOM_FIRST      2  /* bottom-field-first              */
+#define Y4M_PRESENT_BOTTOM_FIRST_RPT  3  /* bottom-first, repeat bottom     */
+#define Y4M_PRESENT_PROG_SINGLE       4  /* single progressive frame        */
+#define Y4M_PRESENT_PROG_DOUBLE       5  /* progressive frame, repeat once  */
+#define Y4M_PRESENT_PROG_TRIPLE       6  /* progressive frame, repeat twice */
+
+#define Y4M_MAX_NUM_PLANES 4
+
+/************************************************************************
+ *  'ratio' datatype, for rational numbers
+ *                                     (see 'ratio' functions down below)
+ ************************************************************************/
+typedef struct _y4m_ratio {
+  int n;  /* numerator   */
+  int d;  /* denominator */
+} y4m_ratio_t;
+
+
+/************************************************************************
+ *  useful standard framerates (as ratios)
+ ************************************************************************/
+extern const y4m_ratio_t y4m_fps_UNKNOWN;
+extern const y4m_ratio_t y4m_fps_NTSC_FILM;  /* 24000/1001 film (in NTSC)  */
+extern const y4m_ratio_t y4m_fps_FILM;       /* 24fps film                 */
+extern const y4m_ratio_t y4m_fps_PAL;        /* 25fps PAL                  */
+extern const y4m_ratio_t y4m_fps_NTSC;       /* 30000/1001 NTSC            */
+extern const y4m_ratio_t y4m_fps_30;         /* 30fps                      */
+extern const y4m_ratio_t y4m_fps_PAL_FIELD;  /* 50fps PAL field rate       */
+extern const y4m_ratio_t y4m_fps_NTSC_FIELD; /* 60000/1001 NTSC field rate */
+extern const y4m_ratio_t y4m_fps_60;         /* 60fps                      */
+
+/************************************************************************
+ *  useful standard sample (pixel) aspect ratios (W:H)
+ ************************************************************************/
+extern const y4m_ratio_t y4m_sar_UNKNOWN; 
+extern const y4m_ratio_t y4m_sar_SQUARE;        /* square pixels */
+extern const y4m_ratio_t y4m_sar_NTSC_CCIR601;  /* 525-line (NTSC) Rec.601 */
+extern const y4m_ratio_t y4m_sar_NTSC_16_9;     /* 16:9 NTSC/Rec.601       */
+extern const y4m_ratio_t y4m_sar_NTSC_SVCD_4_3; /* NTSC SVCD 4:3           */
+extern const y4m_ratio_t y4m_sar_NTSC_SVCD_16_9;/* NTSC SVCD 16:9          */
+extern const y4m_ratio_t y4m_sar_PAL_CCIR601;   /* 625-line (PAL) Rec.601  */
+extern const y4m_ratio_t y4m_sar_PAL_16_9;      /* 16:9 PAL/Rec.601        */
+extern const y4m_ratio_t y4m_sar_PAL_SVCD_4_3;  /* PAL SVCD 4:3            */
+extern const y4m_ratio_t y4m_sar_PAL_SVCD_16_9; /* PAL SVCD 16:9           */
+extern const y4m_ratio_t y4m_sar_SQR_ANA16_9;   /* anamorphic 16:9 sampled */
+                                            /* from 4:3 with square pixels */
+
+/************************************************************************
+ *  useful standard display aspect ratios (W:H)
+ ************************************************************************/
+extern const y4m_ratio_t y4m_dar_UNKNOWN; 
+extern const y4m_ratio_t y4m_dar_4_3;     /* standard TV   */
+extern const y4m_ratio_t y4m_dar_16_9;    /* widescreen TV */
+extern const y4m_ratio_t y4m_dar_221_100; /* word-to-your-mother TV */
+
+
+#define Y4M_MAX_XTAGS 32        /* maximum number of xtags in list       */
+#define Y4M_MAX_XTAG_SIZE 32    /* max length of an xtag (including 'X') */
+
+typedef struct _y4m_xtag_list y4m_xtag_list_t;
+typedef struct _y4m_stream_info y4m_stream_info_t;
+typedef struct _y4m_frame_info y4m_frame_info_t;
+
+
+#ifdef __cplusplus
+#define BEGIN_CDECLS extern "C" {
+#define END_CDECLS   }
+#else
+#define BEGIN_CDECLS 
+#define END_CDECLS   
+#endif
+
+BEGIN_CDECLS
+
+/************************************************************************
+ *  'ratio' functions
+ ************************************************************************/
+
+/* 'normalize' a ratio (remove common factors) */
+void y4m_ratio_reduce(y4m_ratio_t *r);
+
+/* parse "nnn:ddd" into a ratio (returns Y4M_OK or Y4M_ERR_RANGE) */
+int y4m_parse_ratio(y4m_ratio_t *r, const char *s);
+
+/* quick test of two ratios for equality (i.e. identical components) */
+#define Y4M_RATIO_EQL(a,b) ( ((a).n == (b).n) && ((a).d == (b).d) )
+
+/* quick conversion of a ratio to a double (no divide-by-zero check!) */
+#define Y4M_RATIO_DBL(r) ((double)(r).n / (double)(r).d)
+
+/*************************************************************************
+ *
+ * Guess the true SAR (sample aspect ratio) from a list of commonly 
+ * encountered values, given the "suggested" display aspect ratio (DAR),
+ * and the true frame width and height.
+ *
+ * Returns y4m_sar_UNKNOWN if no match is found.
+ *
+ *************************************************************************/
+y4m_ratio_t y4m_guess_sar(int width, int height, y4m_ratio_t dar);
+
+
+/*************************************************************************
+ *
+ * Chroma Subsampling Mode information
+ *
+ *  x_ratio, y_ratio  -  subsampling of chroma planes
+ *  x_offset, y_offset - offset of chroma sample grid,
+ *                        relative to luma (0,0) sample
+ *
+ *************************************************************************/
+
+y4m_ratio_t y4m_chroma_ss_x_ratio(int chroma_mode);
+y4m_ratio_t y4m_chroma_ss_y_ratio(int chroma_mode);
+#if 0
+y4m_ratio_t y4m_chroma_ss_x_offset(int chroma_mode, int field, int plane);
+y4m_ratio_t y4m_chroma_ss_y_offset(int chroma_mode, int field, int plane);
+#endif
+
+/* Given a string containing a (case-insensitive) chroma-tag keyword,
+   return appropriate chroma mode (or Y4M_UNKNOWN) */
+int y4m_chroma_parse_keyword(const char *s);
+
+/* Given a Y4M_CHROMA_* mode, return appropriate chroma-tag keyword,
+   or NULL if there is none. */
+const char *y4m_chroma_keyword(int chroma_mode);
+
+/* Given a Y4M_CHROMA_* mode, return appropriate chroma mode description,
+   or NULL if there is none. */
+const char *y4m_chroma_description(int chroma_mode);
+
+
+
+/************************************************************************
+ *  'xtag' functions
+ *
+ * o Before using an xtag_list (but after the structure/memory has been
+ *    allocated), you must initialize it via y4m_init_xtag_list().
+ * o After using an xtag_list (but before the structure is released),
+ *    call y4m_fini_xtag_list() to free internal memory.
+ *
+ ************************************************************************/
+
+/* initialize an xtag_list structure */
+void y4m_init_xtag_list(y4m_xtag_list_t *xtags);
+
+/* finalize an xtag_list structure */
+void y4m_fini_xtag_list(y4m_xtag_list_t *xtags);
+
+/* make one xtag_list into a copy of another */
+void y4m_copy_xtag_list(y4m_xtag_list_t *dest, const y4m_xtag_list_t *src);
+
+/* return number of tags in an xtag_list */
+int y4m_xtag_count(const y4m_xtag_list_t *xtags);
+
+/* access n'th tag in an xtag_list */
+const char *y4m_xtag_get(const y4m_xtag_list_t *xtags, int n);
+
+/* append a new tag to an xtag_list
+    returns:          Y4M_OK - success
+              Y4M_ERR_XXTAGS - list is already full */
+int y4m_xtag_add(y4m_xtag_list_t *xtags, const char *tag);
+
+/* remove a tag from an xtag_list 
+    returns:         Y4M_OK - success
+              Y4M_ERR_RANGE - n is out of range */
+int y4m_xtag_remove(y4m_xtag_list_t *xtags, int n);
+
+/* remove all tags from an xtag_list 
+    returns:   Y4M_OK - success       */
+int y4m_xtag_clearlist(y4m_xtag_list_t *xtags);
+
+/* append copies of tags from src list to dest list
+    returns:          Y4M_OK - success
+              Y4M_ERR_XXTAGS - operation would overfill dest list */
+int y4m_xtag_addlist(y4m_xtag_list_t *dest, const y4m_xtag_list_t *src);
+
+
+
+/************************************************************************
+ *  '*_info' functions
+ *
+ * o Before using a *_info structure (but after the structure/memory has
+ *    been allocated), you must initialize it via y4m_init_*_info().
+ * o After using a *_info structure (but before the structure is released),
+ *    call y4m_fini_*_info() to free internal memory.
+ * o Use the 'set' and 'get' accessors to modify or access the fields in
+ *    the structures; don't touch the structure directly.  (Ok, so there
+ *    is no really convenient C syntax to prevent you from doing this,
+ *    but we are all responsible programmers here, so just don't do it!)
+ *
+ ************************************************************************/
+
+/* initialize a stream_info structure */
+void y4m_init_stream_info(y4m_stream_info_t *i);
+
+/* finalize a stream_info structure */
+void y4m_fini_stream_info(y4m_stream_info_t *i);
+
+/* reset stream_info back to default/unknown values */
+void y4m_clear_stream_info(y4m_stream_info_t *info);
+
+/* make one stream_info into a copy of another */
+void y4m_copy_stream_info(y4m_stream_info_t *dest,
+              const y4m_stream_info_t *src);
+
+/* access or set stream_info fields */
+/*      level 0                   */
+int y4m_si_get_width(const y4m_stream_info_t *si);
+int y4m_si_get_height(const y4m_stream_info_t *si);
+int y4m_si_get_interlace(const y4m_stream_info_t *si);
+y4m_ratio_t y4m_si_get_framerate(const y4m_stream_info_t *si);
+y4m_ratio_t y4m_si_get_sampleaspect(const y4m_stream_info_t *si);
+void y4m_si_set_width(y4m_stream_info_t *si, int width);
+void y4m_si_set_height(y4m_stream_info_t *si, int height);
+void y4m_si_set_interlace(y4m_stream_info_t *si, int interlace);
+void y4m_si_set_framerate(y4m_stream_info_t *si, y4m_ratio_t framerate);
+void y4m_si_set_sampleaspect(y4m_stream_info_t *si, y4m_ratio_t sar);
+/*      level 1                   */
+void y4m_si_set_chroma(y4m_stream_info_t *si, int chroma_mode);
+int y4m_si_get_chroma(const y4m_stream_info_t *si);
+
+/* derived quantities (no setter) */
+/*      level 0                   */
+int y4m_si_get_framelength(const y4m_stream_info_t *si);
+/*      level 1                   */
+int y4m_si_get_plane_count(const y4m_stream_info_t *si);
+int y4m_si_get_plane_width(const y4m_stream_info_t *si, int plane);
+int y4m_si_get_plane_height(const y4m_stream_info_t *si, int plane);
+int y4m_si_get_plane_length(const y4m_stream_info_t *si, int plane);
+
+
+/* access stream_info xtag_list */
+y4m_xtag_list_t *y4m_si_xtags(y4m_stream_info_t *si);
+
+
+/* initialize a frame_info structure */
+void y4m_init_frame_info(y4m_frame_info_t *i);
+
+/* finalize a frame_info structure */
+void y4m_fini_frame_info(y4m_frame_info_t *i);
+
+/* reset frame_info back to default/unknown values */
+void y4m_clear_frame_info(y4m_frame_info_t *info);
+
+/* make one frame_info into a copy of another */
+void y4m_copy_frame_info(y4m_frame_info_t *dest,
+             const y4m_frame_info_t *src);
+
+
+/* access or set frame_info fields (level 1) */
+int y4m_fi_get_presentation(const y4m_frame_info_t *fi);
+int y4m_fi_get_temporal(const y4m_frame_info_t *fi);
+int y4m_fi_get_spatial(const y4m_frame_info_t *fi);
+
+void y4m_fi_set_presentation(y4m_frame_info_t *fi, int pres);
+void y4m_fi_set_temporal(y4m_frame_info_t *fi, int sampling);
+void y4m_fi_set_spatial(y4m_frame_info_t *fi, int sampling);
+
+
+/* access frame_info xtag_list */
+y4m_xtag_list_t *y4m_fi_xtags(y4m_frame_info_t *fi);
+
+
+/************************************************************************
+ *  blocking read and write functions
+ *
+ *  o guaranteed to transfer entire payload (or fail)
+ *  o return values:
+ *                         0 (zero)   complete success
+ *          -(# of remaining bytes)   error (and errno left set)
+ *          +(# of remaining bytes)   EOF (for y4m_read only)
+ *
+ ************************************************************************/
+
+/* read len bytes from fd into buf */
+ssize_t y4m_read(int fd, void *buf, size_t len);
+
+/* write len bytes from fd into buf */
+ssize_t y4m_write(int fd, const void *buf, size_t len);
+
+/************************************************************************
+ *  callback based read and write
+ *
+ *  The structures y4m_cb_reader_t and y4m_cb_writer_t must be
+ *  set up by the caller before and of the *_read_*_cb() or
+ *  *_write_*_cb() functions are called. Te return values of
+ *  the read() and write() members have the same meaning as for
+ *  y4m_read() and y4m_write()
+ *
+ ************************************************************************/
+
+typedef struct y4m_cb_reader_s
+  {
+  void * data;
+  ssize_t (*read)(void * data, void *buf, size_t len);
+  } y4m_cb_reader_t;
+
+typedef struct y4m_cb_writer_s
+  {
+  void * data;
+  ssize_t (*write)(void * data, const void *buf, size_t len);
+  } y4m_cb_writer_t;
+
+/* read len bytes from fd into buf */
+ssize_t y4m_read_cb(y4m_cb_reader_t * fd, void *buf, size_t len);
+
+/* write len bytes from fd into buf */
+ssize_t y4m_write_cb(y4m_cb_writer_t * fd, const void *buf, size_t len);
+
+
+/************************************************************************
+ *  stream header processing functions
+ *  
+ *  o return values:
+ *                   Y4M_OK - success
+ *                Y4M_ERR_* - error (see y4m_strerr() for descriptions)
+ *
+ ************************************************************************/
+
+/* parse a string of stream header tags */
+int y4m_parse_stream_tags(char *s, y4m_stream_info_t *i);
+
+/* read a stream header from file descriptor fd
+   (the current contents of stream_info are erased first) */
+int y4m_read_stream_header(int fd, y4m_stream_info_t *i);
+
+/* read a stream header with a callback reader
+   (the current contents of stream_info are erased first) */
+int y4m_read_stream_header_cb(y4m_cb_reader_t * fd, y4m_stream_info_t *i);
+
+/* write a stream header to file descriptor fd */
+int y4m_write_stream_header(int fd, const y4m_stream_info_t *i);
+
+/* write a stream header with a callback writer */
+int y4m_write_stream_header_cb(y4m_cb_writer_t * fd, const y4m_stream_info_t *i);
+
+
+/************************************************************************
+ *  frame processing functions
+ *  
+ *  o return values:
+ *                   Y4M_OK - success
+ *                Y4M_ERR_* - error (see y4m_strerr() for descriptions)
+ *
+ ************************************************************************/
+
+/* write a frame header to file descriptor fd */
+int y4m_write_frame_header(int fd,
+               const y4m_stream_info_t *si,
+               const y4m_frame_info_t *fi);
+
+/* write a frame header with a callback writer fd */
+int y4m_write_frame_header_cb(y4m_cb_writer_t * fd,
+               const y4m_stream_info_t *si,
+               const y4m_frame_info_t *fi);
+
+/* write a complete frame (header + data) to file descriptor fd
+   o planes[] points to 1-4 buffers, one each for image plane */
+int y4m_write_frame(int fd, const y4m_stream_info_t *si, 
+            const y4m_frame_info_t *fi, uint8_t * const *planes);
+
+/* write a complete frame (header + data) with a callback writer fd
+   o planes[] points to 1-4 buffers, one each for image plane */
+int y4m_write_frame_cb(y4m_cb_writer_t * fd, const y4m_stream_info_t *si, 
+                       const y4m_frame_info_t *fi, uint8_t * const *planes);
+
+/* write a complete frame (header + data), to file descriptor fd
+    but interleave fields from two separate buffers
+   o upper_field[] same as planes[] above, but for upper field only
+   o lower_field[] same as planes[] above, but for lower field only
+*/
+int y4m_write_fields(int fd, const y4m_stream_info_t *si, 
+             const y4m_frame_info_t *fi,
+             uint8_t * const *upper_field, 
+             uint8_t * const *lower_field);
+
+/* write a complete frame (header + data), with a callback writer fd
+    but interleave fields from two separate buffers
+   o upper_field[] same as planes[] above, but for upper field only
+   o lower_field[] same as planes[] above, but for lower field only
+*/
+int y4m_write_fields_cb(y4m_cb_writer_t * fd, const y4m_stream_info_t *si, 
+                        const y4m_frame_info_t *fi,
+                        uint8_t * const *upper_field, 
+                        uint8_t * const *lower_field);
+
+/* read a frame header from file descriptor fd 
+   (the current contents of frame_info are erased first) */
+int y4m_read_frame_header(int fd,
+              const y4m_stream_info_t *si,
+              y4m_frame_info_t *fi);
+
+/* read a frame header with callback reader fd
+   (the current contents of frame_info are erased first) */
+int y4m_read_frame_header_cb(y4m_cb_reader_t * fd,
+                             const y4m_stream_info_t *si,
+                             y4m_frame_info_t *fi);
+
+/* read frame data from file descriptor fd
+   [to be called after y4m_read_frame_header()]
+   o planes[] points to 1-4 buffers, one each for image plane */
+int y4m_read_frame_data(int fd, const y4m_stream_info_t *si, 
+                        y4m_frame_info_t *fi, uint8_t * const *planes);
+
+/* read frame data with callback reader fd
+   [to be called after y4m_read_frame_header_cb()]
+   o planes[] points to 1-4 buffers, one each for image plane */
+int y4m_read_frame_data_cb(y4m_cb_reader_t * fd, const y4m_stream_info_t *si, 
+                           y4m_frame_info_t *fi, uint8_t * const *planes);
+
+/* read frame data from file descriptor fd,
+   but de-interleave fields into two separate buffers
+    [to be called after y4m_read_frame_header()]
+   o upper_field[] same as planes[] above, but for upper field only
+   o lower_field[] same as planes[] above, but for lower field only
+*/
+int y4m_read_fields_data(int fd, const y4m_stream_info_t *si, 
+                         y4m_frame_info_t *fi,
+                         uint8_t * const *upper_field, 
+                         uint8_t * const *lower_field);
+
+/* read frame data with callback reader fd,
+   but de-interleave fields into two separate buffers
+    [to be called after y4m_read_frame_header_cb()]
+   o upper_field[] same as planes[] above, but for upper field only
+   o lower_field[] same as planes[] above, but for lower field only
+*/
+int y4m_read_fields_data_cb(y4m_cb_reader_t * fd,
+                            const y4m_stream_info_t *si, 
+                            y4m_frame_info_t *fi,
+                            uint8_t * const *upper_field, 
+                            uint8_t * const *lower_field);
+
+/* read a complete frame (header + data) from file descriptor fd,
+   o planes[] points to 1-4 buffers, one each for image plane */
+int y4m_read_frame(int fd, const y4m_stream_info_t *si, 
+           y4m_frame_info_t *fi, uint8_t * const *planes);
+
+/* read a complete frame (header + data) from callback reader fd,
+   o planes[] points to 1-4 buffers, one each for image plane */
+int y4m_read_frame_cb(y4m_cb_reader_t * fd, const y4m_stream_info_t *si, 
+                      y4m_frame_info_t *fi, uint8_t * const *planes);
+
+/* read a complete frame (header + data) from file descriptor fd,
+   but de-interleave fields into two separate buffers
+   o upper_field[] same as planes[] above, but for upper field only
+   o lower_field[] same as planes[] above, but for lower field only
+*/
+int y4m_read_fields(int fd, const y4m_stream_info_t *si, 
+            y4m_frame_info_t *fi,
+            uint8_t * const *upper_field, 
+            uint8_t * const *lower_field);
+
+/* read a complete frame (header + data) from callback_reader fd,
+   but de-interleave fields into two separate buffers
+   o upper_field[] same as planes[] above, but for upper field only
+   o lower_field[] same as planes[] above, but for lower field only
+*/
+int y4m_read_fields_cb(y4m_cb_reader_t * fd, const y4m_stream_info_t *si, 
+                       y4m_frame_info_t *fi,
+                       uint8_t * const *upper_field, 
+                       uint8_t * const *lower_field);
+
+/************************************************************************
+ *  miscellaneous functions
+ ************************************************************************/
+
+/* convenient dump of stream header info via mjpeg_log facility
+ *  - each logged/printed line is prefixed by 'prefix'
+ */
+void y4m_log_stream_info(log_level_t level, const char *prefix,
+             const y4m_stream_info_t *i);
+
+/* convert a Y4M_ERR_* error code into mildly explanatory string */
+const char *y4m_strerr(int err);
+
+/* set 'allow_unknown_tag' flag for library...
+    o yn = 0 :  unknown header tags will produce a parsing error
+    o yn = 1 :  unknown header tags/values will produce a warning, but
+                 are otherwise passed along via the xtags list
+    o yn = -1:  don't change, just return current setting
+
+   return value:  previous setting of flag
+*/
+int y4m_allow_unknown_tags(int yn);
+
+
+/* set level of "accepted extensions" for the library...
+    o level = 0:  default - conform to original YUV4MPEG2 spec; yield errors
+                   when reading or writing a stream which exceeds it.
+    o level = 1:  allow reading/writing streams which contain non-420jpeg
+                   chroma and/or mixed-mode interlacing
+    o level = -1: don't change, just return current setting
+
+   return value:  previous setting of level
+ */
+int y4m_accept_extensions(int level);
+
+
+END_CDECLS
+
+
+/************************************************************************
+ ************************************************************************
+
+  Description of the (new!, forever?) YUV4MPEG2 stream format:
+
+  STREAM consists of
+    o one '\n' terminated STREAM-HEADER
+    o unlimited number of FRAMEs
+
+  FRAME consists of
+    o one '\n' terminated FRAME-HEADER
+    o "length" octets of planar YCrCb 4:2:0 image data
+        (if frame is interlaced, then the two fields are interleaved)
+
+
+  STREAM-HEADER consists of
+     o string "YUV4MPEG2"
+     o unlimited number TAGGED-FIELDs, each preceded by ' ' separator
+     o '\n' line terminator
+
+  FRAME-HEADER consists of
+     o string "FRAME"
+     o unlimited number of TAGGED-FIELDs, each preceded by ' ' separator
+     o '\n' line terminator
+
+
+  TAGGED-FIELD consists of
+     o single ascii character tag
+     o VALUE (which does not contain whitespace)
+
+  VALUE consists of
+     o integer (base 10 ascii representation)
+  or o RATIO
+  or o single ascii character
+  or o non-whitespace ascii string
+
+  RATIO consists of
+     o numerator (integer)
+     o ':' (a colon)
+     o denominator (integer)
+
+
+  The currently supported tags for the STREAM-HEADER:
+     W - [integer] frame width, pixels, should be > 0
+     H - [integer] frame height, pixels, should be > 0
+     C - [string]  chroma-subsampling/data format
+           420jpeg   (default)
+           420mpeg2
+           420paldv
+           411
+           422
+           444       - non-subsampled Y'CbCr
+       444alpha  - Y'CbCr with alpha channel (with Y' black/white point)
+           mono      - Y' plane only
+     I - [char] interlacing:  p - progressive (none)
+                              t - top-field-first
+                              b - bottom-field-first
+                              m - mixed -- see 'I' tag in frame header
+                              ? - unknown
+     F - [ratio] frame-rate, 0:0 == unknown
+     A - [ratio] sample (pixel) aspect ratio, 0:0 == unknown
+     X - [character string] 'metadata' (unparsed, but passed around)
+
+  The currently supported tags for the FRAME-HEADER:
+     Ixyz - framing/sampling (required if-and-only-if stream is "Im")
+          x:  t - top-field-first
+              T - top-field-first and repeat
+          b - bottom-field-first
+              B - bottom-field-first and repeat
+              1 - single progressive frame
+              2 - double progressive frame (repeat)
+              3 - triple progressive frame (repeat twice)
+
+          y:  p - progressive:  fields sampled at same time
+              i - interlaced:   fields sampled at different times
+
+          z:  p - progressive:  subsampling over whole frame
+              i - interlaced:   each field subsampled independently
+              ? - unknown (allowed only for non-4:2:0 subsampling)           
+       
+     X - character string 'metadata' (unparsed, but passed around)
+
+ ************************************************************************
+ ************************************************************************/
+
+
+/*
+
+   THAT'S ALL FOLKS!
+
+   Thank you for reading the source code.  We hope you have thoroughly
+   enjoyed the experience.
+
+*/
+
+
+
+
+
+#ifdef INTERNAL_Y4M_LIBCODE_STUFF_QPX
+#define Y4MPRIVATIZE(identifier) identifier
+#else
+#define Y4MPRIVATIZE(identifier) PRIVATE##identifier
+#endif
+
+/* 
+ * Actual structure definitions of structures which you shouldn't touch.
+ *
+ */
+
+/************************************************************************
+ *  'xtag_list' --- list of unparsed and/or meta/X header tags
+ *
+ *     Do not touch this structure directly!
+ *
+ *     Use the y4m_xtag_*() functions (see below).
+ *     You must initialize/finalize this structure before/after use.
+ ************************************************************************/
+struct _y4m_xtag_list {
+  int Y4MPRIVATIZE(count);
+  char *Y4MPRIVATIZE(tags)[Y4M_MAX_XTAGS];
+};
+
+
+/************************************************************************
+ *  'stream_info' --- stream header information
+ *
+ *     Do not touch this structure directly!
+ *
+ *     Use the y4m_si_*() functions (see below).
+ *     You must initialize/finalize this structure before/after use.
+ ************************************************************************/
+struct _y4m_stream_info {
+  /* values from header/setters */
+  int Y4MPRIVATIZE(width);
+  int Y4MPRIVATIZE(height);
+  int Y4MPRIVATIZE(interlace);            /* see Y4M_ILACE_* definitions  */
+  y4m_ratio_t Y4MPRIVATIZE(framerate);    /* see Y4M_FPS_* definitions    */
+  y4m_ratio_t Y4MPRIVATIZE(sampleaspect); /* see Y4M_SAR_* definitions    */
+  int Y4MPRIVATIZE(chroma);               /* see Y4M_CHROMA_* definitions */
+
+  /* mystical X tags */
+  y4m_xtag_list_t Y4MPRIVATIZE(x_tags);
+};
+
+
+/************************************************************************
+ *  'frame_info' --- frame header information
+ *
+ *     Do not touch this structure directly!
+ *
+ *     Use the y4m_fi_*() functions (see below).
+ *     You must initialize/finalize this structure before/after use.
+ ************************************************************************/
+
+struct _y4m_frame_info {
+  int Y4MPRIVATIZE(spatial);      /* see Y4M_SAMPLING_* definitions */
+  int Y4MPRIVATIZE(temporal);     /* see Y4M_SAMPLING_* definitions */
+  int Y4MPRIVATIZE(presentation); /* see Y4M_PRESENT_* definitions  */
+  /* mystical X tags */
+  y4m_xtag_list_t Y4MPRIVATIZE(x_tags);
+};
+
+
+#undef Y4MPRIVATIZE
 
 #define Y4M_MAGIC "YUV4MPEG2"
 #define Y4M_FRAME_MAGIC "FRAME"
@@ -139,12 +892,12 @@ static int got_sigint = 0;
 
 static void usage (void) {
   fprintf(stderr, "Usage: lavpipe/lav2yuv... | yuvplay [options]\n"
-	  "  -s : display size, width x height\n"
-	  "  -t : set window title\n"
-	  "  -f : frame rate (overrides rate in stream header)\n"
+      "  -s : display size, width x height\n"
+      "  -t : set window title\n"
+      "  -f : frame rate (overrides rate in stream header)\n"
           "  -c : don't sync on frames - plays at stream speed\n"
-	  "  -v : verbosity {0, 1, 2} [default: 1]\n"
-	  );
+      "  -v : verbosity {0, 1, 2} [default: 1]\n"
+      );
 }
 
 static void sigint_handler (int signal) {
@@ -163,8 +916,8 @@ static char *print_status(int frame, double framerate) {
    static char temp[256];
 
    mpeg_timecode(&tc, frame,
-		 mpeg_framerate_code(mpeg_conform_framerate(framerate)),
-		 framerate);
+         mpeg_framerate_code(mpeg_conform_framerate(framerate)),
+         framerate);
    sprintf(temp, "%d:%2.2d:%2.2d.%2.2d", tc.h, tc.m, tc.s, tc.f);
    return temp;
 }
@@ -197,22 +950,22 @@ int main(int argc, char *argv[])
                exit(1);
             }
             break;
-	  case 't':
-	    window_title = optarg;
-	    break;
-	  case 'f':
-		  frame_rate = atof(optarg);
-		  if( frame_rate <= 0.0 || frame_rate > 200.0 )
-			  mjpeg_error_exit1( "-f option needs argument > 0.0 and < 200.0");
-		  break;
+      case 't':
+        window_title = optarg;
+        break;
+      case 'f':
+          frame_rate = atof(optarg);
+          if( frame_rate <= 0.0 || frame_rate > 200.0 )
+              mjpeg_error_exit1( "-f option needs argument > 0.0 and < 200.0");
+          break;
           case 'v':
-	    verbosity = atoi(optarg);
-	    if ((verbosity < 0) || (verbosity > 2))
-	      mjpeg_error_exit1("-v needs argument from {0, 1, 2} (not %d)",
-				verbosity);
-	    break;
-	  case 'h':
-	  case '?':
+        verbosity = atoi(optarg);
+        if ((verbosity < 0) || (verbosity > 2))
+          mjpeg_error_exit1("-v needs argument from {0, 1, 2} (not %d)",
+                verbosity);
+        break;
+      case 'h':
+      case '?':
             usage();
             exit(1);
             break;
@@ -257,11 +1010,11 @@ int main(int argc, char *argv[])
        screenwidth = frame_width * aspect.n / aspect.d;
 #else
        if ((frame_width * aspect.d) < (frame_height * aspect.n)) {
-	 screenwidth = frame_width;
-	 screenheight = frame_width * aspect.d / aspect.n;
+     screenwidth = frame_width;
+     screenheight = frame_width * aspect.d / aspect.n;
        } else {
-	 screenheight = frame_height;
-	 screenwidth = frame_height * aspect.n / aspect.d;
+     screenheight = frame_height;
+     screenwidth = frame_height * aspect.n / aspect.d;
        }
 #endif
      } else {
@@ -288,12 +1041,12 @@ int main(int argc, char *argv[])
    screen = SDL_SetVideoMode(screenwidth, screenheight, 0, SDL_SWSURFACE);
    if ( screen == NULL ) {
       mjpeg_error("SDL: Couldn't set %dx%d: %s",
-		  screenwidth, screenheight, SDL_GetError());
+          screenwidth, screenheight, SDL_GetError());
       exit(1);
    }
    else {
       mjpeg_debug("SDL: Set %dx%d @ %d bpp",
-		  screenwidth, screenheight, screen->format->BitsPerPixel);
+          screenwidth, screenheight, screen->format->BitsPerPixel);
    }
 
    /* since IYUV ordering is not supported by Xv accel on maddog's system
@@ -303,11 +1056,11 @@ int main(int argc, char *argv[])
     * we swap those when we copy the data to the display buffer...
     */
    yuv_overlay = SDL_CreateYUVOverlay(frame_width, frame_height,
-				      SDL_YV12_OVERLAY,
-				      screen);
+                      SDL_YV12_OVERLAY,
+                      screen);
    if ( yuv_overlay == NULL ) {
       mjpeg_error("SDL: Couldn't create SDL_yuv_overlay: %s",
-		      SDL_GetError());
+              SDL_GetError());
       exit(1);
    }
    if ( yuv_overlay->hw_overlay ) 
@@ -325,13 +1078,13 @@ int main(int argc, char *argv[])
    frame = 0;
    if ( frame_rate == 0.0 ) 
    {
-	   /* frame rate has not been set from command-line... */
-	   if (Y4M_RATIO_EQL(y4m_fps_UNKNOWN, y4m_si_get_framerate(&streaminfo))) {
-	     mjpeg_info("Frame-rate undefined in stream... assuming 25Hz!" );
-	     frame_rate = 25.0;
-	   } else {
-	     frame_rate = Y4M_RATIO_DBL(y4m_si_get_framerate(&streaminfo));
-	   }
+       /* frame rate has not been set from command-line... */
+       if (Y4M_RATIO_EQL(y4m_fps_UNKNOWN, y4m_si_get_framerate(&streaminfo))) {
+         mjpeg_info("Frame-rate undefined in stream... assuming 25Hz!" );
+         frame_rate = 25.0;
+       } else {
+         frame_rate = Y4M_RATIO_DBL(y4m_si_get_framerate(&streaminfo));
+       }
    }
    time_between_frames = 1.e6 / frame_rate;
 
@@ -359,7 +1112,7 @@ int main(int argc, char *argv[])
       /* Show, baby, show! */
       SDL_DisplayYUVOverlay(yuv_overlay, &rect);
       mjpeg_info("Playing frame %4.4d - %s",
-		 frame, print_status(frame, frame_rate));
+         frame, print_status(frame, frame_rate));
 
       if (wait_for_sync)
          while(get_time_diff(time_now) < time_between_frames) {
@@ -378,7 +1131,7 @@ int main(int argc, char *argv[])
    }
 
    mjpeg_info("Played %4.4d frames (%s)",
-	      frame, print_status(frame, frame_rate));
+          frame, print_status(frame, frame_rate));
 
    SDL_FreeYUVOverlay(yuv_overlay);
    SDL_Quit();
@@ -629,25 +1382,25 @@ mpeg_timecode(MPEG_timecode_t *tc, int f, int fpscode, double fps)
       0 < fpscode && fpscode + 1 < sizeof ifpss / sizeof ifpss[0] &&
       ifpss[fpscode] == ifpss[fpscode + 1]) {
     int topinmin = 0, k = (30*4) / ifpss[fpscode];
-    f *= k;			/* frame# when 119.88fps */
+    f *= k;         /* frame# when 119.88fps */
     h = (f / ((10*60*30-18)*4)); /* # of 10min. */
-    f %= ((10*60*30-18)*4);	/* frame# in 10min. */
-    f -= (2*4);			/* frame# in 10min. - (2*4) */
-    m = (f / ((60*30-2)*4));	/* min. in 10min. */
+    f %= ((10*60*30-18)*4); /* frame# in 10min. */
+    f -= (2*4);         /* frame# in 10min. - (2*4) */
+    m = (f / ((60*30-2)*4));    /* min. in 10min. */
     topinmin = ((f - k) / ((60*30-2)*4) < m);
-    m += (h % 6 * 10);		/* min. */
-    h /= 6;			/* hour */
-    f %= ((60*30-2)*4);		/* frame# in min. - (2*4)*/
-    f += (2*4);			/* frame# in min. */
-    s = f / (30*4);		/* sec. */
-    f %= (30*4);		/* frame# in sec. */
-    f /= k;			/* frame# in sec. on original fps */
+    m += (h % 6 * 10);      /* min. */
+    h /= 6;         /* hour */
+    f %= ((60*30-2)*4);     /* frame# in min. - (2*4)*/
+    f += (2*4);         /* frame# in min. */
+    s = f / (30*4);     /* sec. */
+    f %= (30*4);        /* frame# in sec. */
+    f /= k;         /* frame# in sec. on original fps */
     tc->f = f;
     if (topinmin)
       f = -f;
   } else {
     int ifps = ((0 < fpscode && fpscode < sizeof ifpss / sizeof ifpss[0])?
-		ifpss[fpscode]: (int)(fps + .5));
+        ifpss[fpscode]: (int)(fps + .5));
     s = f / ifps;
     f %= ifps;
     m = s / 60;
@@ -787,7 +1540,7 @@ y4m_ratio_t y4m_guess_sar(int width, int height, y4m_ratio_t dar)
   for (i = 0; !(Y4M_RATIO_EQL(*(sarray[i]),y4m_sar_UNKNOWN)); i++) {
     double ratio = implicit_sar / Y4M_RATIO_DBL(*(sarray[i]));
     if ( (ratio > (1.0 - GUESS_ASPECT_TOLERANCE)) &&
-	 (ratio < (1.0 + GUESS_ASPECT_TOLERANCE)) )
+     (ratio < (1.0 + GUESS_ASPECT_TOLERANCE)) )
       return *(sarray[i]);
   }
   return y4m_sar_UNKNOWN;
@@ -852,70 +1605,70 @@ framerate_definitions[MPEG_NUM_RATES] =
 static const char *mpeg1_aspect_ratio_definitions[] =
 {
     "illegal",
-	"1:1 (square pixels)",
-	"1:0.6735",
-	"1:0.7031 (16:9 Anamorphic PAL/SECAM for 720x578/352x288 images)",
-	"1:0.7615",
-	"1:0.8055",
-	"1:0.8437 (16:9 Anamorphic NTSC for 720x480/352x240 images)",
-	"1:0.8935",
-	"1:0.9375 (4:3 PAL/SECAM for 720x578/352x288 images)",
-	"1:0.9815",
-	"1:1.0255",
-	"1:1:0695",
-	"1:1.1250 (4:3 NTSC for 720x480/352x240 images)",
-	"1:1.1575",
-	"1:1.2015"
+    "1:1 (square pixels)",
+    "1:0.6735",
+    "1:0.7031 (16:9 Anamorphic PAL/SECAM for 720x578/352x288 images)",
+    "1:0.7615",
+    "1:0.8055",
+    "1:0.8437 (16:9 Anamorphic NTSC for 720x480/352x240 images)",
+    "1:0.8935",
+    "1:0.9375 (4:3 PAL/SECAM for 720x578/352x288 images)",
+    "1:0.9815",
+    "1:1.0255",
+    "1:1:0695",
+    "1:1.1250 (4:3 NTSC for 720x480/352x240 images)",
+    "1:1.1575",
+    "1:1.2015"
 };
 
 static const y4m_ratio_t mpeg1_aspect_ratios[] =
 {
     Y4M_SAR_UNKNOWN,
-	Y4M_SAR_MPEG1_1,
-	Y4M_SAR_MPEG1_2,
-	Y4M_SAR_MPEG1_3, /* Anamorphic 16:9 PAL */
-	Y4M_SAR_MPEG1_4,
-	Y4M_SAR_MPEG1_5,
-	Y4M_SAR_MPEG1_6, /* Anamorphic 16:9 NTSC */
-	Y4M_SAR_MPEG1_7,
-	Y4M_SAR_MPEG1_8, /* PAL/SECAM 4:3 */
-	Y4M_SAR_MPEG1_9,
-	Y4M_SAR_MPEG1_10,
-	Y4M_SAR_MPEG1_11,
-	Y4M_SAR_MPEG1_12, /* NTSC 4:3 */
-	Y4M_SAR_MPEG1_13,
-	Y4M_SAR_MPEG1_14,
+    Y4M_SAR_MPEG1_1,
+    Y4M_SAR_MPEG1_2,
+    Y4M_SAR_MPEG1_3, /* Anamorphic 16:9 PAL */
+    Y4M_SAR_MPEG1_4,
+    Y4M_SAR_MPEG1_5,
+    Y4M_SAR_MPEG1_6, /* Anamorphic 16:9 NTSC */
+    Y4M_SAR_MPEG1_7,
+    Y4M_SAR_MPEG1_8, /* PAL/SECAM 4:3 */
+    Y4M_SAR_MPEG1_9,
+    Y4M_SAR_MPEG1_10,
+    Y4M_SAR_MPEG1_11,
+    Y4M_SAR_MPEG1_12, /* NTSC 4:3 */
+    Y4M_SAR_MPEG1_13,
+    Y4M_SAR_MPEG1_14,
 };
 
 static const char *mpeg2_aspect_ratio_definitions[] = 
 {
     "illegal",
-	"1:1 pixels",
-	"4:3 display",
-	"16:9 display",
-	"2.21:1 display"
+    "1:1 pixels",
+    "4:3 display",
+    "16:9 display",
+    "2.21:1 display"
 };
 
 
 static const y4m_ratio_t mpeg2_aspect_ratios[] =
 {
     Y4M_DAR_UNKNOWN,
-	Y4M_DAR_MPEG2_1,
-	Y4M_DAR_MPEG2_2,
- 	Y4M_DAR_MPEG2_3,
-	Y4M_DAR_MPEG2_4
+    Y4M_DAR_MPEG2_1,
+    Y4M_DAR_MPEG2_2,
+    Y4M_DAR_MPEG2_3,
+    Y4M_DAR_MPEG2_4
 };
 
 static const char **aspect_ratio_definitions[2] = 
 {
-	mpeg1_aspect_ratio_definitions,
-	mpeg2_aspect_ratio_definitions
+    mpeg1_aspect_ratio_definitions,
+    mpeg2_aspect_ratio_definitions
 };
 
 static const y4m_ratio_t *mpeg_aspect_ratios[2] = 
 {
-	mpeg1_aspect_ratios,
-	mpeg2_aspect_ratios
+    mpeg1_aspect_ratios,
+    mpeg2_aspect_ratios
 };
 
 static const mpeg_aspect_code_t mpeg_num_aspect_ratios[2] = 
@@ -961,9 +1714,9 @@ y4m_ratio_t
 mpeg_framerate( mpeg_framerate_code_t code )
 {
     if ((code > 0) && (code < mpeg_num_framerates))
-		return mpeg_framerates[code];
+        return mpeg_framerates[code];
     else
-		return y4m_fps_UNKNOWN;
+        return y4m_fps_UNKNOWN;
 }
 
 /*
@@ -974,15 +1727,15 @@ mpeg_framerate( mpeg_framerate_code_t code )
 mpeg_framerate_code_t 
 mpeg_framerate_code( y4m_ratio_t framerate )
 {
-	mpeg_framerate_code_t i;
+    mpeg_framerate_code_t i;
   
-	y4m_ratio_reduce(&framerate);
+    y4m_ratio_reduce(&framerate);
     /* start at '1', because 0 is unknown/illegal */
-	for (i = 1; i < mpeg_num_framerates; ++i) {
-		if (Y4M_RATIO_EQL(framerate, mpeg_framerates[i]))
-			return i;
-	}
-	return 0;
+    for (i = 1; i < mpeg_num_framerates; ++i) {
+        if (Y4M_RATIO_EQL(framerate, mpeg_framerates[i]))
+            return i;
+    }
+    return 0;
 }
 
 
@@ -993,22 +1746,22 @@ mpeg_framerate_code( y4m_ratio_t framerate )
 y4m_ratio_t
 mpeg_conform_framerate( double fps )
 {
-	mpeg_framerate_code_t i;
-	y4m_ratio_t result;
+    mpeg_framerate_code_t i;
+    y4m_ratio_t result;
 
-	/* try to match it to a standard frame rate */
+    /* try to match it to a standard frame rate */
     /* (start at '1', because 0 is unknown/illegal) */
-	for (i = 1; i < mpeg_num_framerates; i++) 
-	{
-		double deviation = 1.0 - (Y4M_RATIO_DBL(mpeg_framerates[i]) / fps);
+    for (i = 1; i < mpeg_num_framerates; i++) 
+    {
+        double deviation = 1.0 - (Y4M_RATIO_DBL(mpeg_framerates[i]) / fps);
         if ((deviation > -MPEG_FPS_TOLERANCE) && (deviation < +MPEG_FPS_TOLERANCE))
-			return mpeg_framerates[i];
-	}
-	/* no luck?  just turn it into a ratio (6 decimal place accuracy) */
-	result.n = (int)((fps * 1000000.0) + 0.5);
-	result.d = 1000000;
-	y4m_ratio_reduce(&result);
-	return result;
+            return mpeg_framerates[i];
+    }
+    /* no luck?  just turn it into a ratio (6 decimal place accuracy) */
+    result.n = (int)((fps * 1000000.0) + 0.5);
+    result.d = 1000000;
+    y4m_ratio_reduce(&result);
+    return result;
 }
 
   
@@ -1020,7 +1773,7 @@ mpeg_conform_framerate( double fps )
 int
 mpeg_valid_aspect_code( int version, mpeg_framerate_code_t c )
 {
-	if ((version == 1) || (version == 2))
+    if ((version == 1) || (version == 2))
         return ((c > 0) && (c < mpeg_num_aspect_ratios[version-1])) ? 1 : 0;
     return 0;
 }
@@ -1033,16 +1786,16 @@ mpeg_valid_aspect_code( int version, mpeg_framerate_code_t c )
 y4m_ratio_t 
 mpeg_aspect_ratio( int mpeg_version,  mpeg_aspect_code_t code )
 {
-	y4m_ratio_t ratio;
+    y4m_ratio_t ratio;
     if ((mpeg_version >= 1) && (mpeg_version <= 2) &&
         (code > 0) && (code < mpeg_num_aspect_ratios[mpeg_version-1]))
-	{
-		ratio = mpeg_aspect_ratios[mpeg_version-1][code];
-		y4m_ratio_reduce(&ratio);
-		return ratio;
-	}
+    {
+        ratio = mpeg_aspect_ratios[mpeg_version-1][code];
+        y4m_ratio_reduce(&ratio);
+        return ratio;
+    }
     else
-		return y4m_sar_UNKNOWN;
+        return y4m_sar_UNKNOWN;
 }
 
 
@@ -1060,22 +1813,22 @@ mpeg_aspect_ratio( int mpeg_version,  mpeg_aspect_code_t code )
 mpeg_aspect_code_t 
 mpeg_frame_aspect_code( int mpeg_version, y4m_ratio_t aspect_ratio )
 {
-	mpeg_aspect_code_t i;
-	y4m_ratio_t red_ratio = aspect_ratio;
-	y4m_ratio_reduce( &red_ratio );
-	if( mpeg_version < 1 || mpeg_version > 2 )
-		return 0;
+    mpeg_aspect_code_t i;
+    y4m_ratio_t red_ratio = aspect_ratio;
+    y4m_ratio_reduce( &red_ratio );
+    if( mpeg_version < 1 || mpeg_version > 2 )
+        return 0;
     /* (start at '1', because 0 is unknown/illegal) */
-	for( i = 1; i < mpeg_num_aspect_ratios[mpeg_version-1]; ++i )
-	{
-		y4m_ratio_t red_entry =  mpeg_aspect_ratios[mpeg_version-1][i];
-		y4m_ratio_reduce( &red_entry );
-		if(  Y4M_RATIO_EQL( red_entry, red_ratio) )
-			return i;
-	}
+    for( i = 1; i < mpeg_num_aspect_ratios[mpeg_version-1]; ++i )
+    {
+        y4m_ratio_t red_entry =  mpeg_aspect_ratios[mpeg_version-1][i];
+        y4m_ratio_reduce( &red_entry );
+        if(  Y4M_RATIO_EQL( red_entry, red_ratio) )
+            return i;
+    }
 
-	return 0;
-			
+    return 0;
+            
 }
 
 
@@ -1095,54 +1848,54 @@ mpeg_frame_aspect_code( int mpeg_version, y4m_ratio_t aspect_ratio )
 
 mpeg_aspect_code_t 
 mpeg_guess_mpeg_aspect_code(int mpeg_version, y4m_ratio_t sampleaspect,
-							int frame_width, int frame_height)
+                            int frame_width, int frame_height)
 {
-	if (Y4M_RATIO_EQL(sampleaspect, y4m_sar_UNKNOWN))
-		return 0;
+    if (Y4M_RATIO_EQL(sampleaspect, y4m_sar_UNKNOWN))
+        return 0;
     
-	switch (mpeg_version) {
-	case 1:
-		if (Y4M_RATIO_EQL(sampleaspect, y4m_sar_SQUARE))
-			return 1;
-		
+    switch (mpeg_version) {
+    case 1:
+        if (Y4M_RATIO_EQL(sampleaspect, y4m_sar_SQUARE))
+            return 1;
+        
         if (Y4M_RATIO_EQL(sampleaspect, y4m_sar_NTSC_CCIR601))
-			return 12;
-		
+            return 12;
+        
         if (Y4M_RATIO_EQL(sampleaspect, y4m_sar_NTSC_16_9))
-			return 6;
-		
+            return 6;
+        
         if (Y4M_RATIO_EQL(sampleaspect, y4m_sar_PAL_CCIR601))
-			return 8;
-		
+            return 8;
+        
         if (Y4M_RATIO_EQL(sampleaspect, y4m_sar_PAL_16_9))
-			return 3;
-		
-		return 0;
-	case 2:
-		if (Y4M_RATIO_EQL(sampleaspect, y4m_sar_SQUARE))
-		{
-			return 1;  /* '1' means square *pixels* in MPEG-2; go figure. */
-		}
-		
-		int i;
-		double true_far;  /* true frame aspect ratio */
-		true_far = 
-			(double)(sampleaspect.n * frame_width) /
-			(double)(sampleaspect.d * frame_height);
-		/* start at '2'... */
-		for (i = 2; i < (int)(mpeg_num_aspect_ratios[mpeg_version-1]); i++) 
-		{
-			double ratio = 
+            return 3;
+        
+        return 0;
+    case 2:
+        if (Y4M_RATIO_EQL(sampleaspect, y4m_sar_SQUARE))
+        {
+            return 1;  /* '1' means square *pixels* in MPEG-2; go figure. */
+        }
+        
+        int i;
+        double true_far;  /* true frame aspect ratio */
+        true_far = 
+            (double)(sampleaspect.n * frame_width) /
+            (double)(sampleaspect.d * frame_height);
+        /* start at '2'... */
+        for (i = 2; i < (int)(mpeg_num_aspect_ratios[mpeg_version-1]); i++) 
+        {
+            double ratio = 
                 true_far / Y4M_RATIO_DBL(mpeg_aspect_ratios[mpeg_version-1][i]);
 
-			if ( (ratio > (1.0 - GUESS_ASPECT_TOLERANCE)) &&
-				 (ratio < (1.0 + GUESS_ASPECT_TOLERANCE)) )
-				return i;
-		}
-		return 0;
-	default:
-		return 0;
-	}
+            if ( (ratio > (1.0 - GUESS_ASPECT_TOLERANCE)) &&
+                 (ratio < (1.0 + GUESS_ASPECT_TOLERANCE)) )
+                return i;
+        }
+        return 0;
+    default:
+        return 0;
+    }
 }
 
 
@@ -1158,40 +1911,40 @@ mpeg_guess_mpeg_aspect_code(int mpeg_version, y4m_ratio_t sampleaspect,
  */
 y4m_ratio_t 
 mpeg_guess_sample_aspect_ratio(int mpeg_version,
-							   mpeg_aspect_code_t code,
-							   int frame_width, int frame_height)
+                               mpeg_aspect_code_t code,
+                               int frame_width, int frame_height)
 {
-	switch (mpeg_version) 
-	{
-	case 1:
-		/* MPEG-1 codes turn into SAR's, just not quite the right ones.
-		   For the common/known values, we provide the ratio used in practice,
-		   otherwise say we don't know.*/
-		switch (code)
-		{
-		case 1:  return y4m_sar_SQUARE;        break;
-		case 3:  return y4m_sar_PAL_16_9;      break;
-		case 6:  return y4m_sar_NTSC_16_9;     break;
-		case 8:  return y4m_sar_PAL_CCIR601;   break;
-		case 12: return y4m_sar_NTSC_CCIR601;  break;
-		default:
-			return y4m_sar_UNKNOWN;       break;
-		}
-		break;
-	case 2:
-		/* MPEG-2 codes turn into Display Aspect Ratios, though not exactly the
-		   DAR's used in practice.  For common/standard frame sizes, we provide
-		   the original SAR; otherwise, we say we don't know. */
-		if (code == 1) 
-			return y4m_sar_SQUARE; /* '1' means square *pixels* in MPEG-2 */
-		
-		if ((code >= 2) && (code <= 4))
+    switch (mpeg_version) 
+    {
+    case 1:
+        /* MPEG-1 codes turn into SAR's, just not quite the right ones.
+           For the common/known values, we provide the ratio used in practice,
+           otherwise say we don't know.*/
+        switch (code)
+        {
+        case 1:  return y4m_sar_SQUARE;        break;
+        case 3:  return y4m_sar_PAL_16_9;      break;
+        case 6:  return y4m_sar_NTSC_16_9;     break;
+        case 8:  return y4m_sar_PAL_CCIR601;   break;
+        case 12: return y4m_sar_NTSC_CCIR601;  break;
+        default:
+            return y4m_sar_UNKNOWN;       break;
+        }
+        break;
+    case 2:
+        /* MPEG-2 codes turn into Display Aspect Ratios, though not exactly the
+           DAR's used in practice.  For common/standard frame sizes, we provide
+           the original SAR; otherwise, we say we don't know. */
+        if (code == 1) 
+            return y4m_sar_SQUARE; /* '1' means square *pixels* in MPEG-2 */
+        
+        if ((code >= 2) && (code <= 4))
             return y4m_guess_sar(frame_width, frame_height, mpeg2_aspect_ratios[code]);
-		
+        
         return y4m_sar_UNKNOWN;
     default:
         return y4m_sar_UNKNOWN;
-	}
+    }
 }
 
 
@@ -1207,10 +1960,10 @@ mpeg_guess_sample_aspect_ratio(int mpeg_version,
 const char *
 mpeg_framerate_code_definition(   mpeg_framerate_code_t code  )
 {
-	if( code == 0 || code >=  mpeg_num_framerates )
-		return "UNDEFINED: illegal/reserved frame-rate ratio code";
+    if( code == 0 || code >=  mpeg_num_framerates )
+        return "UNDEFINED: illegal/reserved frame-rate ratio code";
 
-	return framerate_definitions[code];
+    return framerate_definitions[code];
 }
 
 /*
@@ -1222,13 +1975,13 @@ mpeg_framerate_code_definition(   mpeg_framerate_code_t code  )
 const char *
 mpeg_aspect_code_definition( int mpeg_version,  mpeg_aspect_code_t code  )
 {
-	if( mpeg_version < 1 || mpeg_version > 2 )
-		return "UNDEFINED: illegal MPEG version";
-	
-	if( code < 1 || code >=  mpeg_num_aspect_ratios[mpeg_version-1] )
-		return "UNDEFINED: illegal aspect ratio code";
+    if( mpeg_version < 1 || mpeg_version > 2 )
+        return "UNDEFINED: illegal MPEG version";
+    
+    if( code < 1 || code >=  mpeg_num_aspect_ratios[mpeg_version-1] )
+        return "UNDEFINED: illegal aspect ratio code";
 
-	return aspect_ratio_definitions[mpeg_version-1][code];
+    return aspect_ratio_definitions[mpeg_version-1][code];
 }
 
 
@@ -1240,26 +1993,26 @@ mpeg_aspect_code_definition( int mpeg_version,  mpeg_aspect_code_t code  )
 const char *
 mpeg_interlace_code_definition( int yuv4m_interlace_code )
 {
-	const char *def;
-	switch( yuv4m_interlace_code )
-	{
-	case Y4M_UNKNOWN :
-		def = "unknown";
-		break;
-	case Y4M_ILACE_NONE :
-		def = "none/progressive";
-		break;
-	case Y4M_ILACE_TOP_FIRST :
-		def = "top-field-first";
-		break;
-	case Y4M_ILACE_BOTTOM_FIRST :
-		def = "bottom-field-first";
-		break;
-	default :
-		def = "UNDEFINED: illegal video interlacing type-code!";
-		break;
-	}
-	return def;
+    const char *def;
+    switch( yuv4m_interlace_code )
+    {
+    case Y4M_UNKNOWN :
+        def = "unknown";
+        break;
+    case Y4M_ILACE_NONE :
+        def = "none/progressive";
+        break;
+    case Y4M_ILACE_TOP_FIRST :
+        def = "top-field-first";
+        break;
+    case Y4M_ILACE_BOTTOM_FIRST :
+        def = "bottom-field-first";
+        break;
+    default :
+        def = "UNDEFINED: illegal video interlacing type-code!";
+        break;
+    }
+    return def;
 }
 
 /*
@@ -1925,9 +2678,9 @@ ssize_t y4m_read(int fd, void *buf, size_t len)
      if (n <= 0) {
        /* return amount left to read */
        if (n == 0)
-	 return len;  /* n == 0 --> eof */
+     return len;  /* n == 0 --> eof */
        else
-	 return -len; /* n < 0 --> error */
+     return -len; /* n < 0 --> error */
      }
      ptr += n;
      len -= n;
@@ -2124,7 +2877,7 @@ void y4m_clear_stream_info(y4m_stream_info_t *info)
 }
 
 void y4m_copy_stream_info(y4m_stream_info_t *dest,
-			  const y4m_stream_info_t *src)
+              const y4m_stream_info_t *src)
 {
   if ((dest == NULL) || (src == NULL)) return;
   /* copy info */
@@ -2326,7 +3079,7 @@ int y4m_parse_stream_tags(char *s, y4m_stream_info_t *i)
       break;
     case 'F':  /* frame rate (fps) */
       if ((err = y4m_parse_ratio(&(i->framerate), value)) != Y4M_OK)
-	return err;
+    return err;
       if (i->framerate.n < 0) return Y4M_ERR_RANGE;
       break;
     case 'I':  /* interlacing */
@@ -2337,18 +3090,18 @@ int y4m_parse_stream_tags(char *s, y4m_stream_info_t *i)
       case 'm':  i->interlace = Y4M_ILACE_MIXED; break;
       case '?':
       default:
-	i->interlace = Y4M_UNKNOWN; break;
+    i->interlace = Y4M_UNKNOWN; break;
       }
       break;
     case 'A':  /* sample (pixel) aspect ratio */
       if ((err = y4m_parse_ratio(&(i->sampleaspect), value)) != Y4M_OK)
-	return err;
+    return err;
       if (i->sampleaspect.n < 0) return Y4M_ERR_RANGE;
       break;
     case 'C':
       i->chroma = y4m_chroma_parse_keyword(value);
       if (i->chroma == Y4M_UNKNOWN)
-	return Y4M_ERR_HEADER;
+    return Y4M_ERR_HEADER;
       break;
     case 'X':  /* 'X' meta-tag */
       if ((err = y4m_xtag_add(&(i->x_tags), token)) != Y4M_OK) return err;
@@ -2356,12 +3109,12 @@ int y4m_parse_stream_tags(char *s, y4m_stream_info_t *i)
     default:
       /* possible error on unknown options */
       if (_y4mparam_allow_unknown_tags) {
-	/* unknown tags ok:  store in xtag list and warn... */
-	if ((err = y4m_xtag_add(&(i->x_tags), token)) != Y4M_OK) return err;
-	mjpeg_warn("Unknown stream tag encountered:  '%s'", token);
+    /* unknown tags ok:  store in xtag list and warn... */
+    if ((err = y4m_xtag_add(&(i->x_tags), token)) != Y4M_OK) return err;
+    mjpeg_warn("Unknown stream tag encountered:  '%s'", token);
       } else {
-	/* unknown tags are *not* ok */
-	return Y4M_ERR_BADTAG;
+    /* unknown tags are *not* ok */
+    return Y4M_ERR_BADTAG;
       }
       break;
     }
@@ -2378,8 +3131,8 @@ int y4m_parse_stream_tags(char *s, y4m_stream_info_t *i)
   /*      - Non-420 chroma and mixed interlace require level >= 1 */
   if (_y4mparam_feature_level < 1) {
     if ((i->chroma != Y4M_CHROMA_420JPEG) &&
-	(i->chroma != Y4M_CHROMA_420MPEG2) &&
-	(i->chroma != Y4M_CHROMA_420PALDV))
+    (i->chroma != Y4M_CHROMA_420MPEG2) &&
+    (i->chroma != Y4M_CHROMA_420PALDV))
       return Y4M_ERR_FEATURE;
     if (i->interlace == Y4M_ILACE_MIXED)
       return Y4M_ERR_FEATURE;
@@ -2392,7 +3145,7 @@ int y4m_parse_stream_tags(char *s, y4m_stream_info_t *i)
 
 
 static int y4m_parse_frame_tags(char *s, const y4m_stream_info_t *si,
-				y4m_frame_info_t *fi)
+                y4m_frame_info_t *fi)
 {
   char *token, *value;
   char tag;
@@ -2419,20 +3172,20 @@ static int y4m_parse_frame_tags(char *s, const y4m_stream_info_t *si,
       case '2':  fi->presentation = Y4M_PRESENT_PROG_DOUBLE;      break;
       case '3':  fi->presentation = Y4M_PRESENT_PROG_TRIPLE;      break;
       default: 
-	return Y4M_ERR_BADTAG;
+    return Y4M_ERR_BADTAG;
       }
       switch (value[1]) {
       case 'p':  fi->temporal = Y4M_SAMPLING_PROGRESSIVE; break;
       case 'i':  fi->temporal = Y4M_SAMPLING_INTERLACED;  break;
       default: 
-	return Y4M_ERR_BADTAG;
+    return Y4M_ERR_BADTAG;
       }
       switch (value[2]) {
       case 'p':  fi->spatial = Y4M_SAMPLING_PROGRESSIVE; break;
       case 'i':  fi->spatial = Y4M_SAMPLING_INTERLACED;  break;
       case '?':  fi->spatial = Y4M_UNKNOWN;              break;
       default: 
-	return Y4M_ERR_BADTAG;
+    return Y4M_ERR_BADTAG;
       }
       break;
     case 'X':  /* 'X' meta-tag */
@@ -2441,12 +3194,12 @@ static int y4m_parse_frame_tags(char *s, const y4m_stream_info_t *si,
     default:
       /* possible error on unknown options */
       if (_y4mparam_allow_unknown_tags) {
-	/* unknown tags ok:  store in xtag list and warn... */
-	if ((err = y4m_xtag_add(&(fi->x_tags), token)) != Y4M_OK) return err;
-	mjpeg_warn("Unknown frame tag encountered:  '%s'", token);
+    /* unknown tags ok:  store in xtag list and warn... */
+    if ((err = y4m_xtag_add(&(fi->x_tags), token)) != Y4M_OK) return err;
+    mjpeg_warn("Unknown frame tag encountered:  '%s'", token);
       } else {
-	/* unknown tags are *not* ok */
-	return Y4M_ERR_BADTAG;
+    /* unknown tags are *not* ok */
+    return Y4M_ERR_BADTAG;
       }
       break;
     }
@@ -2541,8 +3294,8 @@ int y4m_write_stream_header_cb(y4m_cb_writer_t * fd, const y4m_stream_info_t *i)
     return Y4M_ERR_HEADER;
   if (_y4mparam_feature_level < 1) {
     if ((i->chroma != Y4M_CHROMA_420JPEG) &&
-	(i->chroma != Y4M_CHROMA_420MPEG2) &&
-	(i->chroma != Y4M_CHROMA_420PALDV))
+    (i->chroma != Y4M_CHROMA_420MPEG2) &&
+    (i->chroma != Y4M_CHROMA_420PALDV))
       return Y4M_ERR_FEATURE;
     if (i->interlace == Y4M_ILACE_MIXED)
       return Y4M_ERR_FEATURE;
@@ -2550,17 +3303,17 @@ int y4m_write_stream_header_cb(y4m_cb_writer_t * fd, const y4m_stream_info_t *i)
   y4m_ratio_reduce(&rate);
   y4m_ratio_reduce(&aspect);
   n = snprintf(s, sizeof(s), "%s W%d H%d F%d:%d I%s A%d:%d C%s",
-	       Y4M_MAGIC,
-	       i->width,
-	       i->height,
-	       rate.n, rate.d,
-	       (i->interlace == Y4M_ILACE_NONE) ? "p" :
-	       (i->interlace == Y4M_ILACE_TOP_FIRST) ? "t" :
-	       (i->interlace == Y4M_ILACE_BOTTOM_FIRST) ? "b" :
-	       (i->interlace == Y4M_ILACE_MIXED) ? "m" : "?",
-	       aspect.n, aspect.d,
-	       chroma_keyword
-	       );
+           Y4M_MAGIC,
+           i->width,
+           i->height,
+           rate.n, rate.d,
+           (i->interlace == Y4M_ILACE_NONE) ? "p" :
+           (i->interlace == Y4M_ILACE_TOP_FIRST) ? "t" :
+           (i->interlace == Y4M_ILACE_BOTTOM_FIRST) ? "b" :
+           (i->interlace == Y4M_ILACE_MIXED) ? "m" : "?",
+           aspect.n, aspect.d,
+           chroma_keyword
+           );
   if ((n < 0) || (n > Y4M_LINE_MAX)) return Y4M_ERR_HEADER;
   if ((err = y4m_snprint_xtags(s + n, sizeof(s) - n - 1, &(i->x_tags))) 
       != Y4M_OK) 
@@ -2571,8 +3324,8 @@ int y4m_write_stream_header_cb(y4m_cb_writer_t * fd, const y4m_stream_info_t *i)
 
 #if 1
 int y4m_read_frame_header_cb(y4m_cb_reader_t * fd,
-			  const y4m_stream_info_t *si,
-			  y4m_frame_info_t *fi)
+              const y4m_stream_info_t *si,
+              y4m_frame_info_t *fi)
 {
   char line[Y4M_LINE_MAX];
   char *p;
@@ -2624,8 +3377,8 @@ int y4m_read_frame_header_cb(y4m_cb_reader_t * fd,
 #endif
 
 int y4m_read_frame_header(int fd,
-			  const y4m_stream_info_t *si,
-			  y4m_frame_info_t *fi)
+              const y4m_stream_info_t *si,
+              y4m_frame_info_t *fi)
   {
   y4m_cb_reader_t r;
   set_cb_reader_from_fd(&r, &fd);
@@ -2633,8 +3386,8 @@ int y4m_read_frame_header(int fd,
   }
 
 int y4m_write_frame_header_cb(y4m_cb_writer_t * fd,
-			   const y4m_stream_info_t *si,
-			   const y4m_frame_info_t *fi)
+               const y4m_stream_info_t *si,
+               const y4m_frame_info_t *fi)
 {
   char s[Y4M_LINE_MAX+1];
   int n, err;
@@ -2642,21 +3395,21 @@ int y4m_write_frame_header_cb(y4m_cb_writer_t * fd,
   if (si->interlace == Y4M_ILACE_MIXED) {
     if (_y4mparam_feature_level < 1) return Y4M_ERR_FEATURE;
     n = snprintf(s, sizeof(s), "%s I%c%c%c", Y4M_FRAME_MAGIC,
-		 (fi->presentation == Y4M_PRESENT_TOP_FIRST)        ? 't' :
-		 (fi->presentation == Y4M_PRESENT_TOP_FIRST_RPT)    ? 'T' :
-		 (fi->presentation == Y4M_PRESENT_BOTTOM_FIRST)     ? 'b' :
-		 (fi->presentation == Y4M_PRESENT_BOTTOM_FIRST_RPT) ? 'B' :
-		 (fi->presentation == Y4M_PRESENT_PROG_SINGLE) ? '1' :
-		 (fi->presentation == Y4M_PRESENT_PROG_DOUBLE) ? '2' :
-		 (fi->presentation == Y4M_PRESENT_PROG_TRIPLE) ? '3' :
-		 '?',
-		 (fi->temporal == Y4M_SAMPLING_PROGRESSIVE) ? 'p' :
-		 (fi->temporal == Y4M_SAMPLING_INTERLACED)  ? 'i' :
-		 '?',
-		 (fi->spatial == Y4M_SAMPLING_PROGRESSIVE) ? 'p' :
-		 (fi->spatial == Y4M_SAMPLING_INTERLACED)  ? 'i' :
-		 '?'
-		 );
+         (fi->presentation == Y4M_PRESENT_TOP_FIRST)        ? 't' :
+         (fi->presentation == Y4M_PRESENT_TOP_FIRST_RPT)    ? 'T' :
+         (fi->presentation == Y4M_PRESENT_BOTTOM_FIRST)     ? 'b' :
+         (fi->presentation == Y4M_PRESENT_BOTTOM_FIRST_RPT) ? 'B' :
+         (fi->presentation == Y4M_PRESENT_PROG_SINGLE) ? '1' :
+         (fi->presentation == Y4M_PRESENT_PROG_DOUBLE) ? '2' :
+         (fi->presentation == Y4M_PRESENT_PROG_TRIPLE) ? '3' :
+         '?',
+         (fi->temporal == Y4M_SAMPLING_PROGRESSIVE) ? 'p' :
+         (fi->temporal == Y4M_SAMPLING_INTERLACED)  ? 'i' :
+         '?',
+         (fi->spatial == Y4M_SAMPLING_PROGRESSIVE) ? 'p' :
+         (fi->spatial == Y4M_SAMPLING_INTERLACED)  ? 'i' :
+         '?'
+         );
   } else {
     n = snprintf(s, sizeof(s), "%s", Y4M_FRAME_MAGIC);
   }
@@ -2719,9 +3472,9 @@ int y4m_read_fields_data_cb(y4m_cb_reader_t * fd, const y4m_stream_info_t *si,
 
 #if 1
 int y4m_write_fields_cb(y4m_cb_writer_t * fd, const y4m_stream_info_t *si,
-		     const y4m_frame_info_t *fi,
-		     uint8_t * const *upper_field, 
-		     uint8_t * const *lower_field)
+             const y4m_frame_info_t *fi,
+             uint8_t * const *upper_field, 
+             uint8_t * const *lower_field)
 {
   int p, err;
   int planes = y4m_si_get_plane_count(si);
