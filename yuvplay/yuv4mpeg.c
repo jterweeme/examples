@@ -29,7 +29,6 @@
 #define INTERNAL_Y4M_LIBCODE_STUFF_QPX
 #include "yuv4mpeg.h"
 #include "yuv4mpeg_intern.h"
-#include "mjpeg_logging.h"
 
 
 static int _y4mparam_allow_unknown_tags = 1;  /* default is forgiveness */
@@ -137,20 +136,6 @@ static void set_cb_reader_from_fd(y4m_cb_reader_t * ret, int * fd)
   ret->read = y4m_read_fd;
   ret->data = fd;
   }
-
-#if 0
-static void set_cb_writer_from_fd(y4m_cb_writer_t * ret, int * fd)
-  {
-  ret->write = y4m_write_fd;
-  ret->data = fd;
-  }
-#endif
-
-/*************************************************************************
- *
- * "Extra tags" handling
- *
- *************************************************************************/
 
 static char *y4m_new_xtag(void)
 {
@@ -261,13 +246,6 @@ int y4m_xtag_addlist(y4m_xtag_list_t *dest, const y4m_xtag_list_t *src)
   dest->count += src->count;
   return Y4M_OK;
 }  
-
-
-/*************************************************************************
- *
- * Creators/destructors for y4m_*_info_t structures
- *
- *************************************************************************/
 
 void y4m_init_stream_info(y4m_stream_info_t *info)
 {
@@ -383,92 +361,6 @@ void y4m_si_set_chroma(y4m_stream_info_t *si, int chroma_mode)
 
 int y4m_si_get_chroma(const y4m_stream_info_t *si)
 { return si->chroma; }
-
-
-int y4m_si_get_plane_count(const y4m_stream_info_t *si)
-{
-  switch (si->chroma) {
-  case Y4M_CHROMA_420JPEG:
-  case Y4M_CHROMA_420MPEG2:
-  case Y4M_CHROMA_420PALDV:
-  case Y4M_CHROMA_444:
-  case Y4M_CHROMA_422:
-  case Y4M_CHROMA_411:
-    return 3;
-  case Y4M_CHROMA_MONO:
-    return 1;
-  case Y4M_CHROMA_444ALPHA:
-    return 4;
-  default:
-    return Y4M_UNKNOWN;
-  }
-}
-
-int y4m_si_get_plane_width(const y4m_stream_info_t *si, int plane)
-{
-  switch (plane) {
-  case 0:
-    return (si->width);
-  case 1:
-  case 2:
-    switch (si->chroma) {
-    case Y4M_CHROMA_420JPEG: 
-    case Y4M_CHROMA_420MPEG2:
-    case Y4M_CHROMA_420PALDV:
-      return (si->width) / 2;
-    case Y4M_CHROMA_444:
-    case Y4M_CHROMA_444ALPHA:
-      return (si->width);
-    case Y4M_CHROMA_422:
-      return (si->width) / 2;
-    case Y4M_CHROMA_411:
-      return (si->width) / 4;
-    default:
-      return Y4M_UNKNOWN;
-    }
-  case 3:
-    switch (si->chroma) {
-    case Y4M_CHROMA_444ALPHA:
-      return (si->width);
-    default:
-      return Y4M_UNKNOWN;
-    }
-  default:
-    return Y4M_UNKNOWN;
-  }
-}
-
-int y4m_si_get_plane_height(const y4m_stream_info_t *si, int plane)
-{
-  switch (plane) {
-  case 0:
-    return (si->height);
-  case 1:
-  case 2:
-    switch (si->chroma) {
-    case Y4M_CHROMA_420JPEG: 
-    case Y4M_CHROMA_420MPEG2:
-    case Y4M_CHROMA_420PALDV:
-      return (si->height) / 2;
-    case Y4M_CHROMA_444:
-    case Y4M_CHROMA_444ALPHA:
-    case Y4M_CHROMA_422:
-    case Y4M_CHROMA_411:
-      return (si->height);
-    default:
-      return Y4M_UNKNOWN;
-    }
-  case 3:
-    switch (si->chroma) {
-    case Y4M_CHROMA_444ALPHA:
-      return (si->height);
-    default:
-      return Y4M_UNKNOWN;
-    }
-  default:
-    return Y4M_UNKNOWN;
-  }
-}
 
 int y4m_si_get_plane_length(const y4m_stream_info_t *si, int plane)
 {
@@ -748,16 +640,6 @@ static int y4m_parse_frame_tags(char *s, const y4m_stream_info_t *si,
   return Y4M_OK;
 }
 
-
-
-
-
-/*************************************************************************
- *
- * Read/Write stream header
- *
- *************************************************************************/
-
 #if 1
 static int y4m_read_stream_header_line_cb(y4m_cb_reader_t * fd, y4m_stream_info_t *i,char *line,int n)
 {
@@ -795,22 +677,6 @@ static int y4m_reread_stream_header_line_cb(y4m_cb_reader_t *fd,const y4m_stream
     y4m_fini_stream_info(&i);
     return err;
 }
-
-#if 0
-int y4m_read_stream_header_cb(y4m_cb_reader_t *fd, y4m_stream_info_t *i)
-{
-    char line[Y4M_LINE_MAX];
-
-    return y4m_read_stream_header_line_cb(fd,i,line,0);
-}
-
-int y4m_read_stream_header(int fd, y4m_stream_info_t *i)
-{
-  y4m_cb_reader_t r;
-  set_cb_reader_from_fd(&r, &fd);
-  return y4m_read_stream_header_cb(&r, i);
-}
-#endif
 
 int y4m_write_stream_header_cb(y4m_cb_writer_t * fd, const y4m_stream_info_t *i)
 {
@@ -852,15 +718,6 @@ int y4m_write_stream_header_cb(y4m_cb_writer_t * fd, const y4m_stream_info_t *i)
   /* non-zero on error */
   return (y4m_write_cb(fd, s, strlen(s)) ? Y4M_ERR_SYSTEM : Y4M_OK);
 }
-
-#if 0
-int y4m_write_stream_header(int fd, const y4m_stream_info_t *i)
-{
-  y4m_cb_writer_t w;
-  set_cb_writer_from_fd(&w, &fd);
-  return y4m_write_stream_header_cb(&w, i);
-}
-#endif
 
 #if 1
 int y4m_read_frame_header_cb(y4m_cb_reader_t * fd,
@@ -962,99 +819,6 @@ int y4m_write_frame_header_cb(y4m_cb_writer_t * fd,
   return (y4m_write_cb(fd, s, strlen(s)) ? Y4M_ERR_SYSTEM : Y4M_OK);
 }
 
-#if 0
-int y4m_write_frame_header(int fd,
-			   const y4m_stream_info_t *si,
-			   const y4m_frame_info_t *fi)
-{
-  y4m_cb_writer_t w;
-  set_cb_writer_from_fd(&w, &fd);
-  return y4m_write_frame_header_cb(&w, si, fi);
-}
-#endif
-
-/*************************************************************************
- *
- * Read/Write entire frame
- *
- *************************************************************************/
-
-#if 0
-int y4m_read_frame_data_cb(y4m_cb_reader_t * fd, const y4m_stream_info_t *si, 
-                        y4m_frame_info_t *fi, uint8_t * const *frame)
-{
-  int planes = y4m_si_get_plane_count(si);
-  int p;
-  
-  /* Read each plane */
-  for (p = 0; p < planes; p++) {
-    int w = y4m_si_get_plane_width(si, p);
-    int h = y4m_si_get_plane_height(si, p);
-    if (y4m_read_cb(fd, frame[p], w*h)) return Y4M_ERR_SYSTEM;
-  }
-  return Y4M_OK;
-}
-
-int y4m_read_frame_data(int fd, const y4m_stream_info_t *si, 
-                        y4m_frame_info_t *fi, uint8_t * const *frame)
-{
-  y4m_cb_reader_t r;
-  set_cb_reader_from_fd(&r, &fd);
-  return y4m_read_frame_data_cb(&r, si, fi, frame);
-}
-
-int y4m_read_frame_cb(y4m_cb_reader_t * fd, const y4m_stream_info_t *si, 
-		   y4m_frame_info_t *fi, uint8_t * const *frame)
-{
-  int err;
-  
-  /* Read frame header */
-  if ((err = y4m_read_frame_header_cb(fd, si, fi)) != Y4M_OK) return err;
-  /* Read date */
-  return y4m_read_frame_data_cb(fd, si, fi, frame);
-}
-
-int y4m_read_frame(int fd, const y4m_stream_info_t *si, 
-		   y4m_frame_info_t *fi, uint8_t * const *frame)
-{
-  y4m_cb_reader_t r;
-  set_cb_reader_from_fd(&r, &fd);
-  return y4m_read_frame_cb(&r, si, fi, frame);
-}
-
-int y4m_write_frame_cb(y4m_cb_writer_t * fd, const y4m_stream_info_t *si, 
-		    const y4m_frame_info_t *fi, uint8_t * const *frame)
-{
-  int planes = y4m_si_get_plane_count(si);
-  int err, p;
-
-  /* Write frame header */
-  if ((err = y4m_write_frame_header_cb(fd, si, fi)) != Y4M_OK) return err;
-  /* Write each plane */
-  for (p = 0; p < planes; p++) {
-    int w = y4m_si_get_plane_width(si, p);
-    int h = y4m_si_get_plane_height(si, p);
-    if (y4m_write_cb(fd, frame[p], w*h)) return Y4M_ERR_SYSTEM;
-  }
-  return Y4M_OK;
-}
-
-int y4m_write_frame(int fd, const y4m_stream_info_t *si, 
-		    const y4m_frame_info_t *fi, uint8_t * const *frame)
-{
-  y4m_cb_writer_t w;
-  set_cb_writer_from_fd(&w, &fd);
-  return y4m_write_frame_cb(&w, si, fi, frame);
-}
-#endif
-
-/*************************************************************************
- *
- * Read/Write entire frame, (de)interleaved (to)from two separate fields
- *
- *************************************************************************/
-
-
 int y4m_read_fields_data_cb(y4m_cb_reader_t * fd, const y4m_stream_info_t *si,
                          y4m_frame_info_t *fi,
                          uint8_t * const *upper_field, 
@@ -1103,39 +867,7 @@ int y4m_read_fields_data_cb(y4m_cb_reader_t * fd, const y4m_stream_info_t *si,
   return Y4M_ERR_SYSTEM;
 }
 
-#if 0
-int y4m_read_fields_data(int fd, const y4m_stream_info_t *si,
-                         y4m_frame_info_t *fi,
-                         uint8_t * const *upper_field, 
-                         uint8_t * const *lower_field)
-{
-  y4m_cb_reader_t r;
-  set_cb_reader_from_fd(&r, &fd);
-  return y4m_read_fields_data_cb(&r, si, fi, upper_field, lower_field);
-}
-
-
-int y4m_read_fields_cb(y4m_cb_reader_t * fd, const y4m_stream_info_t *si, y4m_frame_info_t *fi,
-                       uint8_t * const *upper_field, 
-                       uint8_t * const *lower_field)
-{
-  int err;
-  /* Read frame header */
-  if ((err = y4m_read_frame_header_cb(fd, si, fi)) != Y4M_OK) return err;
-  /* Read data */
-  return y4m_read_fields_data_cb(fd, si, fi, upper_field, lower_field);
-}
-
-int y4m_read_fields(int fd, const y4m_stream_info_t *si, y4m_frame_info_t *fi,
-                    uint8_t * const *upper_field, 
-                    uint8_t * const *lower_field)
-{
-  y4m_cb_reader_t r;
-  set_cb_reader_from_fd(&r, &fd);
-  return y4m_read_fields_cb(&r, si, fi, upper_field, lower_field);
-}
-#endif
-
+#if 1
 int y4m_write_fields_cb(y4m_cb_writer_t * fd, const y4m_stream_info_t *si,
 		     const y4m_frame_info_t *fi,
 		     uint8_t * const *upper_field, 
@@ -1185,64 +917,8 @@ int y4m_write_fields_cb(y4m_cb_writer_t * fd, const y4m_stream_info_t *si,
   _y4m_free(wbuf);
   return Y4M_ERR_SYSTEM;
 }
-
-#if 0
-int y4m_write_fields(int fd, const y4m_stream_info_t *si,
-                     const y4m_frame_info_t *fi,
-                     uint8_t * const *upper_field, 
-                     uint8_t * const *lower_field)
-{
-  y4m_cb_writer_t w;
-  set_cb_writer_from_fd(&w, &fd);
-  return y4m_write_fields_cb(&w, si, fi, upper_field, lower_field);
-}
 #endif
 
-void y4m_log_stream_info(log_level_t level, const char *prefix,
-             const y4m_stream_info_t *i)
-{ 
-  char s[256];          
-  
-  snprintf(s, sizeof(s), "  frame size:  ");
-  if (i->width == Y4M_UNKNOWN) 
-    snprintf(s+strlen(s), sizeof(s)-strlen(s), "(?)x");
-  else 
-    snprintf(s+strlen(s), sizeof(s)-strlen(s), "%dx", i->width);
-  if (i->height == Y4M_UNKNOWN)
-    snprintf(s+strlen(s), sizeof(s)-strlen(s), "(?) pixels ");
-  else 
-    snprintf(s+strlen(s), sizeof(s)-strlen(s), "%d pixels ", i->height);
-  { 
-    int framelength = y4m_si_get_framelength(i);
-    if (framelength == Y4M_UNKNOWN)
-      snprintf(s+strlen(s), sizeof(s)-strlen(s), "(? bytes)");
-    else
-      snprintf(s+strlen(s), sizeof(s)-strlen(s), "(%d bytes)", framelength);
-    mjpeg_log(level, "%s%s", prefix, s);
-  }
-  {
-    const char *desc = y4m_chroma_description(i->chroma);
-    if (desc == NULL) desc = "unknown!";
-    mjpeg_log(level, "%s      chroma:  %s", prefix, desc);
-  }
-  if ((i->framerate.n == 0) && (i->framerate.d == 0))
-    mjpeg_log(level, "%s  frame rate:  ??? fps", prefix);
-  else
-    mjpeg_log(level, "%s  frame rate:  %d/%d fps (~%f)", prefix,
-          i->framerate.n, i->framerate.d,
-          (double) i->framerate.n / (double) i->framerate.d);
-  mjpeg_log(level, "%s   interlace:  %s", prefix,
-      (i->interlace == Y4M_ILACE_NONE) ? "none/progressive" :
-      (i->interlace == Y4M_ILACE_TOP_FIRST) ? "top-field-first" :
-      (i->interlace == Y4M_ILACE_BOTTOM_FIRST) ? "bottom-field-first" :
-      (i->interlace == Y4M_ILACE_MIXED) ? "mixed-mode" :
-      "anyone's guess");
-  if ((i->sampleaspect.n == 0) && (i->sampleaspect.d == 0))
-    mjpeg_log(level, "%ssample aspect ratio:  ?:?", prefix);
-  else
-    mjpeg_log(level, "%ssample aspect ratio:  %d:%d", prefix,
-          i->sampleaspect.n, i->sampleaspect.d);
-}
 
 
 
