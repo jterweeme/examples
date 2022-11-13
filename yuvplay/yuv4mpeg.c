@@ -117,6 +117,7 @@ ssize_t y4m_write_cb(y4m_cb_writer_t * fd, const void *buf, size_t len)
 /* Functions to use the callback interface from plain filedescriptors */
 
 /* read len bytes from fd into buf */
+#if 1
 ssize_t y4m_read_fd(void * data, void *buf, size_t len)
   {
   int * f = (int*)data;
@@ -129,6 +130,7 @@ ssize_t y4m_write_fd(void * data, const void *buf, size_t len)
   int * f = (int*)data;
   return y4m_write(*f, buf, len);
   }
+#endif
 
 static void set_cb_reader_from_fd(y4m_cb_reader_t * ret, int * fd)
   {
@@ -136,12 +138,13 @@ static void set_cb_reader_from_fd(y4m_cb_reader_t * ret, int * fd)
   ret->data = fd;
   }
 
+#if 0
 static void set_cb_writer_from_fd(y4m_cb_writer_t * ret, int * fd)
   {
   ret->write = y4m_write_fd;
   ret->data = fd;
   }
-
+#endif
 
 /*************************************************************************
  *
@@ -151,28 +154,27 @@ static void set_cb_writer_from_fd(y4m_cb_writer_t * ret, int * fd)
 
 static char *y4m_new_xtag(void)
 {
-  return _y4m_alloc(Y4M_MAX_XTAG_SIZE * sizeof(char));
+    return _y4m_alloc(Y4M_MAX_XTAG_SIZE * sizeof(char));
 }
 
 void y4m_init_xtag_list(y4m_xtag_list_t *xtags)
 {
-  int i;
-  xtags->count = 0;
-  for (i = 0; i < Y4M_MAX_XTAGS; i++) {
-    xtags->tags[i] = NULL;
-  }
+    xtags->count = 0;
+    for (int i = 0; i < Y4M_MAX_XTAGS; i++)
+        xtags->tags[i] = NULL;
 }
 
 void y4m_fini_xtag_list(y4m_xtag_list_t *xtags)
 {
-  int i;
-  for (i = 0; i < Y4M_MAX_XTAGS; i++) {
-    if (xtags->tags[i] != NULL) {
-      _y4m_free(xtags->tags[i]);
-      xtags->tags[i] = NULL;
+    for (int i = 0; i < Y4M_MAX_XTAGS; i++)
+    {
+        if (xtags->tags[i] != NULL)
+        {
+            _y4m_free(xtags->tags[i]);
+            xtags->tags[i] = NULL;
+        }
     }
-  }
-  xtags->count = 0;
+    xtags->count = 0;
 }
 
 void y4m_copy_xtag_list(y4m_xtag_list_t *dest, const y4m_xtag_list_t *src)
@@ -308,6 +310,7 @@ void y4m_copy_stream_info(y4m_stream_info_t *dest,
 }
 
 // returns 0 if equal, nonzero if different
+#if 1
 static int y4m_compare_stream_info(const y4m_stream_info_t *s1,const y4m_stream_info_t *s2)
 {
     int i,j;
@@ -333,6 +336,7 @@ static int y4m_compare_stream_info(const y4m_stream_info_t *s1,const y4m_stream_
     }
     return 0;
 }
+#endif
 
 void y4m_fini_stream_info(y4m_stream_info_t *info)
 {
@@ -754,7 +758,7 @@ static int y4m_parse_frame_tags(char *s, const y4m_stream_info_t *si,
  *
  *************************************************************************/
 
-
+#if 1
 static int y4m_read_stream_header_line_cb(y4m_cb_reader_t * fd, y4m_stream_info_t *i,char *line,int n)
 {
     int err;
@@ -780,6 +784,7 @@ static int y4m_read_stream_header_line_cb(y4m_cb_reader_t * fd, y4m_stream_info_
 
     return Y4M_OK;
 }
+#endif
 
 static int y4m_reread_stream_header_line_cb(y4m_cb_reader_t *fd,const y4m_stream_info_t *si,char *line,int n)
 {
@@ -791,6 +796,7 @@ static int y4m_reread_stream_header_line_cb(y4m_cb_reader_t *fd,const y4m_stream
     return err;
 }
 
+#if 0
 int y4m_read_stream_header_cb(y4m_cb_reader_t *fd, y4m_stream_info_t *i)
 {
     char line[Y4M_LINE_MAX];
@@ -804,6 +810,7 @@ int y4m_read_stream_header(int fd, y4m_stream_info_t *i)
   set_cb_reader_from_fd(&r, &fd);
   return y4m_read_stream_header_cb(&r, i);
 }
+#endif
 
 int y4m_write_stream_header_cb(y4m_cb_writer_t * fd, const y4m_stream_info_t *i)
 {
@@ -846,22 +853,16 @@ int y4m_write_stream_header_cb(y4m_cb_writer_t * fd, const y4m_stream_info_t *i)
   return (y4m_write_cb(fd, s, strlen(s)) ? Y4M_ERR_SYSTEM : Y4M_OK);
 }
 
+#if 0
 int y4m_write_stream_header(int fd, const y4m_stream_info_t *i)
 {
   y4m_cb_writer_t w;
   set_cb_writer_from_fd(&w, &fd);
   return y4m_write_stream_header_cb(&w, i);
 }
+#endif
 
-
-
-
-/*************************************************************************
- *
- * Read/Write frame header
- *
- *************************************************************************/
-
+#if 1
 int y4m_read_frame_header_cb(y4m_cb_reader_t * fd,
 			  const y4m_stream_info_t *si,
 			  y4m_frame_info_t *fi)
@@ -913,6 +914,7 @@ int y4m_read_frame_header_cb(y4m_cb_reader_t * fd,
   /* non-zero on error */
   return y4m_parse_frame_tags(line, si, fi);
 }
+#endif
 
 int y4m_read_frame_header(int fd,
 			  const y4m_stream_info_t *si,
@@ -922,7 +924,6 @@ int y4m_read_frame_header(int fd,
   set_cb_reader_from_fd(&r, &fd);
   return y4m_read_frame_header_cb(&r, si, fi);
   }
-
 
 int y4m_write_frame_header_cb(y4m_cb_writer_t * fd,
 			   const y4m_stream_info_t *si,
@@ -961,6 +962,7 @@ int y4m_write_frame_header_cb(y4m_cb_writer_t * fd,
   return (y4m_write_cb(fd, s, strlen(s)) ? Y4M_ERR_SYSTEM : Y4M_OK);
 }
 
+#if 0
 int y4m_write_frame_header(int fd,
 			   const y4m_stream_info_t *si,
 			   const y4m_frame_info_t *fi)
@@ -969,6 +971,7 @@ int y4m_write_frame_header(int fd,
   set_cb_writer_from_fd(&w, &fd);
   return y4m_write_frame_header_cb(&w, si, fi);
 }
+#endif
 
 /*************************************************************************
  *
@@ -976,6 +979,7 @@ int y4m_write_frame_header(int fd,
  *
  *************************************************************************/
 
+#if 0
 int y4m_read_frame_data_cb(y4m_cb_reader_t * fd, const y4m_stream_info_t *si, 
                         y4m_frame_info_t *fi, uint8_t * const *frame)
 {
@@ -1018,8 +1022,6 @@ int y4m_read_frame(int fd, const y4m_stream_info_t *si,
   return y4m_read_frame_cb(&r, si, fi, frame);
 }
 
-
-
 int y4m_write_frame_cb(y4m_cb_writer_t * fd, const y4m_stream_info_t *si, 
 		    const y4m_frame_info_t *fi, uint8_t * const *frame)
 {
@@ -1044,6 +1046,7 @@ int y4m_write_frame(int fd, const y4m_stream_info_t *si,
   set_cb_writer_from_fd(&w, &fd);
   return y4m_write_frame_cb(&w, si, fi, frame);
 }
+#endif
 
 /*************************************************************************
  *
@@ -1100,6 +1103,7 @@ int y4m_read_fields_data_cb(y4m_cb_reader_t * fd, const y4m_stream_info_t *si,
   return Y4M_ERR_SYSTEM;
 }
 
+#if 0
 int y4m_read_fields_data(int fd, const y4m_stream_info_t *si,
                          y4m_frame_info_t *fi,
                          uint8_t * const *upper_field, 
@@ -1130,6 +1134,7 @@ int y4m_read_fields(int fd, const y4m_stream_info_t *si, y4m_frame_info_t *fi,
   set_cb_reader_from_fd(&r, &fd);
   return y4m_read_fields_cb(&r, si, fi, upper_field, lower_field);
 }
+#endif
 
 int y4m_write_fields_cb(y4m_cb_writer_t * fd, const y4m_stream_info_t *si,
 		     const y4m_frame_info_t *fi,
@@ -1181,6 +1186,7 @@ int y4m_write_fields_cb(y4m_cb_writer_t * fd, const y4m_stream_info_t *si,
   return Y4M_ERR_SYSTEM;
 }
 
+#if 0
 int y4m_write_fields(int fd, const y4m_stream_info_t *si,
                      const y4m_frame_info_t *fi,
                      uint8_t * const *upper_field, 
@@ -1190,28 +1196,23 @@ int y4m_write_fields(int fd, const y4m_stream_info_t *si,
   set_cb_writer_from_fd(&w, &fd);
   return y4m_write_fields_cb(&w, si, fi, upper_field, lower_field);
 }
-
-/*************************************************************************
- *
- * Handy logging of stream info
- *
- *************************************************************************/
+#endif
 
 void y4m_log_stream_info(log_level_t level, const char *prefix,
-			 const y4m_stream_info_t *i)
-{
-  char s[256];
-
+             const y4m_stream_info_t *i)
+{ 
+  char s[256];          
+  
   snprintf(s, sizeof(s), "  frame size:  ");
-  if (i->width == Y4M_UNKNOWN)
+  if (i->width == Y4M_UNKNOWN) 
     snprintf(s+strlen(s), sizeof(s)-strlen(s), "(?)x");
-  else
+  else 
     snprintf(s+strlen(s), sizeof(s)-strlen(s), "%dx", i->width);
   if (i->height == Y4M_UNKNOWN)
     snprintf(s+strlen(s), sizeof(s)-strlen(s), "(?) pixels ");
-  else
+  else 
     snprintf(s+strlen(s), sizeof(s)-strlen(s), "%d pixels ", i->height);
-  {
+  { 
     int framelength = y4m_si_get_framelength(i);
     if (framelength == Y4M_UNKNOWN)
       snprintf(s+strlen(s), sizeof(s)-strlen(s), "(? bytes)");
@@ -1228,144 +1229,22 @@ void y4m_log_stream_info(log_level_t level, const char *prefix,
     mjpeg_log(level, "%s  frame rate:  ??? fps", prefix);
   else
     mjpeg_log(level, "%s  frame rate:  %d/%d fps (~%f)", prefix,
-	      i->framerate.n, i->framerate.d, 
-	      (double) i->framerate.n / (double) i->framerate.d);
+          i->framerate.n, i->framerate.d,
+          (double) i->framerate.n / (double) i->framerate.d);
   mjpeg_log(level, "%s   interlace:  %s", prefix,
-	  (i->interlace == Y4M_ILACE_NONE) ? "none/progressive" :
-	  (i->interlace == Y4M_ILACE_TOP_FIRST) ? "top-field-first" :
-	  (i->interlace == Y4M_ILACE_BOTTOM_FIRST) ? "bottom-field-first" :
-	  (i->interlace == Y4M_ILACE_MIXED) ? "mixed-mode" :
-	  "anyone's guess");
+      (i->interlace == Y4M_ILACE_NONE) ? "none/progressive" :
+      (i->interlace == Y4M_ILACE_TOP_FIRST) ? "top-field-first" :
+      (i->interlace == Y4M_ILACE_BOTTOM_FIRST) ? "bottom-field-first" :
+      (i->interlace == Y4M_ILACE_MIXED) ? "mixed-mode" :
+      "anyone's guess");
   if ((i->sampleaspect.n == 0) && (i->sampleaspect.d == 0))
     mjpeg_log(level, "%ssample aspect ratio:  ?:?", prefix);
   else
     mjpeg_log(level, "%ssample aspect ratio:  %d:%d", prefix,
-	      i->sampleaspect.n, i->sampleaspect.d);
+          i->sampleaspect.n, i->sampleaspect.d);
 }
 
 
-/*************************************************************************
- *
- * Convert error code to string
- *
- *************************************************************************/
-
-const char *y4m_strerr(int err)
-{
-  switch (err) {
-  case Y4M_OK:          return "no error";
-  case Y4M_ERR_RANGE:   return "parameter out of range";
-  case Y4M_ERR_SYSTEM:  return "system error (failed read/write)";
-  case Y4M_ERR_HEADER:  return "bad stream or frame header";
-  case Y4M_ERR_BADTAG:  return "unknown header tag";
-  case Y4M_ERR_MAGIC:   return "bad header magic";
-  case Y4M_ERR_XXTAGS:  return "too many xtags";
-  case Y4M_ERR_EOF:     return "end-of-file";
-  case Y4M_ERR_BADEOF:  return "stream ended unexpectedly (EOF)";
-  case Y4M_ERR_FEATURE: return "stream requires unsupported features";
-  default: 
-    return "unknown error code";
-  }
-}
 
 
-/*************************************************************************
- *
- * Chroma subsampling stuff
- *
- *************************************************************************/
 
-y4m_ratio_t y4m_chroma_ss_x_ratio(int chroma_mode)
-{
-  y4m_ratio_t r;
-  switch (chroma_mode) {
-  case Y4M_CHROMA_444ALPHA:
-  case Y4M_CHROMA_444:
-  case Y4M_CHROMA_MONO:
-    r.n = 1; r.d = 1; break;
-  case Y4M_CHROMA_420JPEG:
-  case Y4M_CHROMA_420MPEG2:
-  case Y4M_CHROMA_420PALDV:
-  case Y4M_CHROMA_422:
-    r.n = 1; r.d = 2; break;
-  case Y4M_CHROMA_411:
-    r.n = 1; r.d = 4; break;
-  default:
-    r.n = 0; r.d = 0;
-  }
-  return r;
-}
-
-y4m_ratio_t y4m_chroma_ss_y_ratio(int chroma_mode)
-{
-  y4m_ratio_t r;
-  switch (chroma_mode) {
-  case Y4M_CHROMA_444ALPHA:
-  case Y4M_CHROMA_444:
-  case Y4M_CHROMA_MONO:
-  case Y4M_CHROMA_422:
-  case Y4M_CHROMA_411:
-    r.n = 1; r.d = 1; break;
-  case Y4M_CHROMA_420JPEG:
-  case Y4M_CHROMA_420MPEG2:
-  case Y4M_CHROMA_420PALDV:
-    r.n = 1; r.d = 2; break;
-  default:
-    r.n = 0; r.d = 0;
-  }
-  return r;
-}
-
-int y4m_chroma_parse_keyword(const char *s)
-{
-  if (!strcasecmp("420jpeg", s))
-    return Y4M_CHROMA_420JPEG;
-  else if (!strcasecmp("420mpeg2", s))
-    return Y4M_CHROMA_420MPEG2;
-  else if (!strcasecmp("420paldv", s))
-    return Y4M_CHROMA_420PALDV;
-  else if (!strcasecmp("444", s))
-    return Y4M_CHROMA_444;
-  else if (!strcasecmp("422", s))
-    return Y4M_CHROMA_422;
-  else if (!strcasecmp("411", s))
-    return Y4M_CHROMA_411;
-  else if (!strcasecmp("mono", s))
-    return Y4M_CHROMA_MONO;
-  else if (!strcasecmp("444alpha", s))
-    return Y4M_CHROMA_444ALPHA;
-  else
-    return Y4M_UNKNOWN;
-}
-
-const char *y4m_chroma_keyword(int chroma_mode)
-{
-  switch (chroma_mode) {
-  case Y4M_CHROMA_420JPEG:  return "420jpeg";
-  case Y4M_CHROMA_420MPEG2: return "420mpeg2";
-  case Y4M_CHROMA_420PALDV: return "420paldv";
-  case Y4M_CHROMA_444:      return "444";
-  case Y4M_CHROMA_422:      return "422";
-  case Y4M_CHROMA_411:      return "411";
-  case Y4M_CHROMA_MONO:     return "mono";
-  case Y4M_CHROMA_444ALPHA: return "444alpha";
-  default:
-    return NULL;
-  }
-}  
-
-const char *y4m_chroma_description(int chroma_mode)
-{           
-  switch (chroma_mode) {
-  case Y4M_CHROMA_420JPEG:  return "4:2:0 JPEG/MPEG-1 (interstitial)";
-  case Y4M_CHROMA_420MPEG2: return "4:2:0 MPEG-2 (horiz. cositing)";
-  case Y4M_CHROMA_420PALDV: return "4:2:0 PAL-DV (altern. siting)";
-  case Y4M_CHROMA_444:      return "4:4:4 (no subsampling)";
-  case Y4M_CHROMA_422:      return "4:2:2 (horiz. cositing)";
-  case Y4M_CHROMA_411:      return "4:1:1 (horiz. cositing)";
-  case Y4M_CHROMA_MONO:     return "luma plane only";
-  case Y4M_CHROMA_444ALPHA: return "4:4:4 with alpha channel";
-  default:
-    return NULL;
-  }
-}
