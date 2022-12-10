@@ -170,6 +170,12 @@ See below for detailed the API documentation.
 #define FALSE 0
 #endif
 
+template <typename T> struct VLC
+{
+    int16_t idx;
+    T val;
+};
+
 struct plm_vlc_t
 {
     int16_t index = 0;

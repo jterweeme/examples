@@ -71,7 +71,7 @@ static constexpr uint8_t PLM_VIDEO_PREMULTIPLIER_MATRIX[] = {
      9, 12, 12, 10,  9,  7,  5,  2
 };
 
-static constexpr plm_vlc_t PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT[] = {
+static constexpr VLC<int16_t> PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT[] = {
     {  1 << 1,    0}, {       0,    1},  //   0: x
     {  2 << 1,    0}, {  3 << 1,    0},  //   1: 0x
     {  4 << 1,    0}, {  5 << 1,    0},  //   2: 00x
@@ -114,12 +114,12 @@ static constexpr plm_vlc_t PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT[] = {
     {       0,   23}, {       0,   22},  //  39: 0000 0100 01x
 };
 
-static constexpr plm_vlc_t PLM_VIDEO_MACROBLOCK_TYPE_INTRA[] = {
+static constexpr VLC<int16_t> PLM_VIDEO_MACROBLOCK_TYPE_INTRA[] = {
     {  1 << 1,    0}, {       0,  0x01},  //   0: x
     {      -1,    0}, {       0,  0x11},  //   1: 0x
 };
 
-static constexpr plm_vlc_t PLM_VIDEO_MACROBLOCK_TYPE_PREDICTIVE[] = {
+static constexpr VLC<int16_t> PLM_VIDEO_MACROBLOCK_TYPE_PREDICTIVE[] = {
     {  1 << 1,    0}, {       0, 0x0a},  //   0: x
     {  2 << 1,    0}, {       0, 0x02},  //   1: 0x
     {  3 << 1,    0}, {       0, 0x08},  //   2: 00x
@@ -129,7 +129,7 @@ static constexpr plm_vlc_t PLM_VIDEO_MACROBLOCK_TYPE_PREDICTIVE[] = {
     {      -1,    0}, {       0, 0x11},  //   6: 0000 0x
 };
 
-static constexpr plm_vlc_t PLM_VIDEO_MACROBLOCK_TYPE_B[] = {
+static constexpr VLC<int16_t> PLM_VIDEO_MACROBLOCK_TYPE_B[] = {
     {  1 << 1,    0}, {  2 << 1,    0},  //   0: x
     {  3 << 1,    0}, {  4 << 1,    0},  //   1: 0x
     {       0, 0x0c}, {       0, 0x0e},  //   2: 1x
@@ -143,14 +143,14 @@ static constexpr plm_vlc_t PLM_VIDEO_MACROBLOCK_TYPE_B[] = {
     {       0, 0x16}, {       0, 0x1a},  //  10: 0000 1x
 };
 
-static const plm_vlc_t *PLM_VIDEO_MACROBLOCK_TYPE[] = {
+static const VLC<int16_t> *PLM_VIDEO_MACROBLOCK_TYPE[] = {
     NULL,
     PLM_VIDEO_MACROBLOCK_TYPE_INTRA,
     PLM_VIDEO_MACROBLOCK_TYPE_PREDICTIVE,
     PLM_VIDEO_MACROBLOCK_TYPE_B
 };
 
-static constexpr plm_vlc_t PLM_VIDEO_CODE_BLOCK_PATTERN[] = {
+static constexpr VLC<int16_t> PLM_VIDEO_CODE_BLOCK_PATTERN[] = {
     {  1 << 1,    0}, {  2 << 1,    0},  //   0: x
     {  3 << 1,    0}, {  4 << 1,    0},  //   1: 0x
     {  5 << 1,    0}, {  6 << 1,    0},  //   2: 1x
@@ -216,7 +216,7 @@ static constexpr plm_vlc_t PLM_VIDEO_CODE_BLOCK_PATTERN[] = {
     {       0,   47}, {       0,   31},  //  62: 0000 0011x
 };
 
-static constexpr plm_vlc_t PLM_VIDEO_MOTION[] = {
+static constexpr VLC<int16_t> PLM_VIDEO_MOTION[] = {
     {  1 << 1,    0}, {       0,    0},  //   0: x
     {  2 << 1,    0}, {  3 << 1,    0},  //   1: 0x
     {  4 << 1,    0}, {  5 << 1,    0},  //   2: 00x
@@ -253,7 +253,7 @@ static constexpr plm_vlc_t PLM_VIDEO_MOTION[] = {
     {       0,   11}, {       0,  -11},  //  33: 0000 0100 01x
 };
 
-static constexpr plm_vlc_t PLM_VIDEO_DCT_SIZE_LUMINANCE[] = {
+static constexpr VLC<int16_t> PLM_VIDEO_DCT_SIZE_LUMINANCE[] = {
     {  1 << 1,    0}, {  2 << 1,    0},  //   0: x
     {       0,    1}, {       0,    2},  //   1: 0x
     {  3 << 1,    0}, {  4 << 1,    0},  //   2: 1x
@@ -265,7 +265,7 @@ static constexpr plm_vlc_t PLM_VIDEO_DCT_SIZE_LUMINANCE[] = {
     {       0,    8}, {      -1,    0},  //   8: 1111 11x
 };
 
-static constexpr plm_vlc_t PLM_VIDEO_DCT_SIZE_CHROMINANCE[] = {
+static constexpr VLC<int16_t> PLM_VIDEO_DCT_SIZE_CHROMINANCE[] = {
     {  1 << 1,    0}, {  2 << 1,    0},  //   0: x
     {       0,    0}, {       0,    1},  //   1: 0x
     {       0,    2}, {  3 << 1,    0},  //   2: 1x
@@ -277,7 +277,7 @@ static constexpr plm_vlc_t PLM_VIDEO_DCT_SIZE_CHROMINANCE[] = {
     {       0,    8}, {      -1,    0},  //   8: 1111 111x
 };
 
-static const plm_vlc_t *PLM_VIDEO_DCT_SIZE[] = {
+static const VLC<int16_t> *PLM_VIDEO_DCT_SIZE[] = {
     PLM_VIDEO_DCT_SIZE_LUMINANCE,
     PLM_VIDEO_DCT_SIZE_CHROMINANCE,
     PLM_VIDEO_DCT_SIZE_CHROMINANCE
@@ -290,7 +290,7 @@ static const plm_vlc_t *PLM_VIDEO_DCT_SIZE[] = {
 
 //  Decoded values are unsigned. Sign bit follows in the stream.
 
-static constexpr plm_vlc_uint_t PLM_VIDEO_DCT_COEFF[] = {
+static constexpr VLC<uint16_t> PLM_VIDEO_DCT_COEFF[] = {
     {  1 << 1,        0}, {       0,   0x0001},  //   0: x
     {  2 << 1,        0}, {  3 << 1,        0},  //   1: 0x
     {  4 << 1,        0}, {  5 << 1,        0},  //   2: 00x
@@ -413,6 +413,15 @@ static inline uint8_t plm_clamp(int n) {
         n = 0;
     }
     return n;
+}
+
+template <typename T> static T read_vlc(Buffer *buf, const VLC<T> *table)
+{
+    VLC<T> state = {0, 0};
+    do {
+        state = table[state.idx + buf->read(1)];
+    } while (state.idx > 0);
+    return state.val;
 }
 
 void Video::_idct(int *block)
@@ -788,16 +797,16 @@ void Video::_decode_macroblock()
 {
     // Decode increment
     int increment = 0;
-    int t = _buffer->read_vlc(PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT);
+    int t = read_vlc(_buffer, PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT);
 
     while (t == 34) {
         // macroblock_stuffing
-        t = _buffer->read_vlc(PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT);
+        t = read_vlc(_buffer, PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT);
     }
     while (t == 35) {
         // macroblock_escape
         increment += 33;
-        t = _buffer->read_vlc(PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT);
+        t = read_vlc(_buffer, PLM_VIDEO_MACROBLOCK_ADDRESS_INCREMENT);
     }
     increment += t;
 
@@ -845,8 +854,8 @@ void Video::_decode_macroblock()
         return; // corrupt stream;
 
     // Process the current macroblock
-    const plm_vlc_t *table = PLM_VIDEO_MACROBLOCK_TYPE[_picture_type];
-    _macroblock_type = _buffer->read_vlc(table);
+    const VLC<int16_t> *table = PLM_VIDEO_MACROBLOCK_TYPE[_picture_type];
+    _macroblock_type = read_vlc(_buffer, table);
 
     _macroblock_intra = _macroblock_type & 0x01;
     _motion_forward.is_set = _macroblock_type & 0x08;
@@ -873,7 +882,7 @@ void Video::_decode_macroblock()
 
     // Decode blocks
     int cbp = ((_macroblock_type & 0x02) != 0)
-        ? _buffer->read_vlc(PLM_VIDEO_CODE_BLOCK_PATTERN)
+        ? read_vlc(_buffer, PLM_VIDEO_CODE_BLOCK_PATTERN)
         : (_macroblock_intra ? 0x3f : 0);
 
     for (int block = 0, mask = 0x20; block < 6; block++)
@@ -935,7 +944,7 @@ void Video::_decode_motion_vectors()
 int Video::_decode_motion_vector(int r_size, int motion)
 {
     int fscale = 1 << r_size;
-    int m_code = _buffer->read_vlc(PLM_VIDEO_MOTION);
+    int m_code = read_vlc(_buffer, PLM_VIDEO_MOTION);
     int d;
 
     if (m_code != 0 && fscale != 1)
@@ -1069,7 +1078,7 @@ void Video::_decode_block(int block)
         // DC prediction
         int plane_index = block > 3 ? block - 3 : 0;
         int predictor = _dc_predictor[plane_index];
-        int dct_size = _buffer->read_vlc(PLM_VIDEO_DCT_SIZE[plane_index]);
+        int dct_size = read_vlc(_buffer, PLM_VIDEO_DCT_SIZE[plane_index]);
 
         // Read DC coeff
         if (dct_size > 0) {
@@ -1103,7 +1112,7 @@ void Video::_decode_block(int block)
     while (TRUE)
     {
         int run = 0;
-        uint16_t coeff = _buffer->read_vlc_uint(PLM_VIDEO_DCT_COEFF);
+        uint16_t coeff = read_vlc(_buffer, PLM_VIDEO_DCT_COEFF);
 
         // end_of_block
         if (coeff == 0x0001 && n > 0 && _buffer->read(1) == 0)

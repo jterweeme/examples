@@ -47,11 +47,9 @@ const char * const APP_FRAGMENT_SHADER_YCRCB = APP_SHADER_SOURCE(
 class CApp
 {
 private:
-    static void app_on_video(plm_frame_t *frame, void *);
     GLuint app_create_texture(GLuint index, const char *name);
     GLuint app_compile_shader(GLenum type, const char *source);
-    static void app_update_texture(GLuint unit, GLuint texture, plm_plane_t *plane);
-    static CApp *_inst;
+    void app_update_texture(GLuint unit, GLuint texture, plm_plane_t *plane);
     GLuint _texture_y;
     GLuint _texture_cb;
     GLuint _texture_cr;
@@ -67,20 +65,30 @@ public:
     void app_update();
 };
 
-CApp *CApp::_inst = nullptr;
-
 void CApp::app_destroy()
 {
+    std::cerr << "CApp::app_destroy()\r\n";
+    std::cerr.flush();
     _plm.plm_destroy();
     SDL_GL_DeleteContext(gl);
     SDL_Quit();
 }
 
+void CApp::app_update_texture(GLuint unit, GLuint texture, plm_plane_t *plane)
+{
+	glActiveTexture(unit);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, plane->width, plane->height, 0,
+        GL_LUMINANCE, GL_UNSIGNED_BYTE, plane->data);
+}
+
 void CApp::app_update()
 {
 	plm_frame_t *frame = _plm.plm_decode_video();
-    app_on_video(frame, nullptr);
-    //glClear(GL_COLOR_BUFFER_BIT);
+    app_update_texture(GL_TEXTURE0, _texture_y, &frame->y);
+    app_update_texture(GL_TEXTURE1, _texture_cb, &frame->cb);
+    app_update_texture(GL_TEXTURE2, _texture_cr, &frame->cr);
     glRectf(0.0, 0.0, 1.0, 1.0);
     SDL_GL_SwapWindow(_window);
 }
@@ -116,35 +124,9 @@ GLuint CApp::app_create_texture(GLuint index, const char *name)
     return texture;
 }
 
-void CApp::app_update_texture(GLuint unit, GLuint texture, plm_plane_t *plane)
-{
-	glActiveTexture(unit);
-	glBindTexture(GL_TEXTURE_2D, texture);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, plane->width, plane->height, 0,
-        GL_LUMINANCE, GL_UNSIGNED_BYTE, plane->data);
-}
-
-void CApp::app_on_video(plm_frame_t *frame, void *)
-{
-    app_update_texture(GL_TEXTURE0, _inst->_texture_y, &frame->y);
-    app_update_texture(GL_TEXTURE1, _inst->_texture_cb, &frame->cb);
-    app_update_texture(GL_TEXTURE2, _inst->_texture_cr, &frame->cr);
-}
-
 void CApp::app_create(FILE *fh)
 {
-    _inst = this;
     _plm.plm_create_with_file(fh);
-#if 0
-    SDL_Log(
-        "Opened %s - framerate: %f, duration: %f",
-        filename, 
-        _plm.plm_get_framerate(),
-        //_plm.plm_get_samplerate(),
-        _plm.plm_get_duration());
-#endif
-    //_plm.plm_set_loop(FALSE);
 
     _window = SDL_CreateWindow(
         "pl_mpeg",

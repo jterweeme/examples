@@ -269,7 +269,7 @@ void CApp::app_create(const char *filename)
     _plm.plm_set_video_decode_callback(app_on_video, nullptr);
     _plm.plm_set_audio_decode_callback(app_on_audio, nullptr);
 	
-    _plm.plm_set_loop(TRUE);
+    _plm.plm_set_loop(FALSE);
     _plm.plm_set_audio_enabled(TRUE);
     _plm.plm_set_audio_stream(0);
 
