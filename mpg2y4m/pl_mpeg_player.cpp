@@ -60,60 +60,21 @@ steps combined.
 #include "pl_mpeg.h"
 
 
-static unsigned int g_nr = 1;
-static unsigned int g_audio = 1;
 
-class CApp
-{
-private:
-    static void app_on_video(plm_frame_t *frame, void *);
-    static CApp *_inst;
-    double _last_time = 0;
-    PLM _plm;
-public:
-    int wants_to_quit = 0;
-    void app_create(const char *filename);
-    void app_destroy();
-    void app_update();
-};
-
-CApp *CApp::_inst = nullptr;
-
-void CApp::app_destroy()
-{
-    _plm.plm_destroy();
-}
-
-void CApp::app_update()
-{
-    double seek_to = -1;
-    double current_time = (double)SDL_GetTicks() / 1000.0;
-    double elapsed_time = current_time - _last_time;
-
-    if (elapsed_time > 1.0 / 30.0)
-        elapsed_time = 1.0 / 30.0;
-
-    _last_time = current_time;
-
-    _plm.plm_decode(elapsed_time);
-
-    if (_plm.plm_has_ended())
-        wants_to_quit = TRUE;
-}
-
-void CApp::app_on_video(plm_frame_t *frame, void *)
+static void app_on_video(plm_frame_t *frame, void *)
 {
     std::cout << "FRAME\n";
     std::cout.write((const char *)(frame->y.data), frame->y.width * frame->y.height);
-    std::cout.write((const char *)(frame->cr.data), frame->cr.width * frame->cr.height);
     std::cout.write((const char *)(frame->cb.data), frame->cb.width * frame->cb.height);
-    ++g_nr;
+    std::cout.write((const char *)(frame->cr.data), frame->cr.width * frame->cr.height);
 }
 
-void CApp::app_create(const char *filename)
+int main(int argc, char **argv)
 {
-    _inst = this;
-    _plm.plm_create_with_filename(filename);
+    double _last_time = 0;
+    PLM _plm;
+    int wants_to_quit = 0;
+    _plm.plm_create_with_filename(argv[1]);
     int samplerate = _plm.plm_get_samplerate();
     std::cout << "YUV4MPEG2 ";
     std::cout << "W";
@@ -123,17 +84,26 @@ void CApp::app_create(const char *filename)
     std::cout << "\n";
     _plm.plm_set_video_decode_callback(app_on_video, nullptr);
     _plm.plm_set_loop(FALSE);
-}
 
-int main(int argc, char **argv)
-{
-    CApp app;
-    app.app_create(argv[1]);
 
-    while (!app.wants_to_quit)
-        app.app_update();
+    while (!wants_to_quit)
+    {
+        double seek_to = -1;
+        double current_time = (double)SDL_GetTicks() / 1000.0;
+        double elapsed_time = current_time - _last_time;
+    
+        if (elapsed_time > 1.0 / 30.0)
+            elapsed_time = 1.0 / 30.0;
+    
+        _last_time = current_time;
+    
+        _plm.plm_decode(elapsed_time);
+    
+        if (_plm.plm_has_ended())
+            wants_to_quit = TRUE;
+    }
 	
-    app.app_destroy();
+    _plm.plm_destroy();
     return EXIT_SUCCESS;
 }
 
