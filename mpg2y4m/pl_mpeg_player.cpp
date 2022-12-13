@@ -57,8 +57,6 @@ steps combined.
 #include <SDL2/SDL.h>
 #include <GL/glew.h>
 #include <iostream>
-
-#define PL_MPEG_IMPLEMENTATION
 #include "pl_mpeg.h"
 
 
@@ -69,16 +67,7 @@ class CApp
 {
 private:
     static void app_on_video(plm_frame_t *frame, void *);
-    static void app_on_audio(plm_samples_t *samples, void *);
-    GLuint app_create_texture(GLuint index, const char *name);
-    GLuint app_compile_shader(GLenum type, const char *source);
-    static void app_update_texture(GLuint unit, GLuint texture, plm_plane_t *plane);
     static CApp *_inst;
-    uint8_t *_rgb_data;
-    SDL_Window *_window;
-    SDL_AudioDeviceID audio_device;
-    SDL_GLContext gl;
-    GLuint shader_program;
     double _last_time = 0;
     PLM _plm;
 public:
@@ -127,8 +116,11 @@ void CApp::app_create(const char *filename)
     _plm.plm_create_with_filename(filename);
     int samplerate = _plm.plm_get_samplerate();
     std::cout << "YUV4MPEG2 ";
-    std::cout << "W320 ";
-    std::cout << "H240\n";
+    std::cout << "W";
+    std::cout << _plm.plm_get_width();
+    std::cout << " H";
+    std::cout << _plm.plm_get_height();
+    std::cout << "\n";
     _plm.plm_set_video_decode_callback(app_on_video, nullptr);
     _plm.plm_set_loop(FALSE);
 }

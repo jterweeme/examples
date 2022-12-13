@@ -50,18 +50,8 @@ int PLM::plm_init_decoders()
         _video_buffer.create_with_capacity(PLM_BUFFER_DEFAULT_SIZE);
         _video_buffer.set_load_callback(plm_read_video_packet, this);
     }
-#if 0
-    if (_demux.get_num_audio_streams() > 0)
-    {
-        if (audio_enabled)
-            audio_packet_type = Demux::PACKET_AUDIO_1 + audio_stream_index;
-        
-        _audio_buffer.create_with_capacity(PLM_BUFFER_DEFAULT_SIZE);
-        _audio_buffer.set_load_callback(plm_read_audio_packet, this);
-    }
-#endif
+
     _video.create(&_video_buffer, TRUE);
-    //_audio.create(&_audio_buffer, TRUE);
     _has_decoders = TRUE;
     return TRUE;
 }
@@ -70,7 +60,6 @@ int PLM::plm_init_decoders()
 void PLM::plm_destroy()
 {
     _video.destroy();
-    //_audio.destroy();
     _demux.destroy();
 }
 
@@ -96,31 +85,6 @@ int PLM::plm_has_headers()
         return FALSE;
 
     return TRUE;
-}
-
-void PLM::plm_set_audio_enabled(int enabled)
-{
-    audio_enabled = enabled;
-
-    if (!enabled)
-    {
-        audio_packet_type = 0;
-        return;
-    }
-
-    audio_packet_type = plm_init_decoders() ? Demux::PACKET_AUDIO_1 + audio_stream_index : 0;
-}
-
-// Set the desired audio stream (0--3). Default 0.
-void PLM::plm_set_audio_stream(int stream_index)
-{
-    if (stream_index < 0 || stream_index > 3)
-        return;
-    
-    audio_stream_index = stream_index;
-
-    // Set the correct audio_packet_type
-    plm_set_audio_enabled(audio_enabled);
 }
 
 // Get or set whether video decoding is enabled. Default TRUE.
@@ -270,20 +234,7 @@ void PLM::plm_decode(double tick)
                 decode_video_failed = TRUE;
             }
         }
-#if 0
-        if (decode_audio && _audio.get_time() < audio_target_time)
-        {
-            plm_samples_t *samples = _audio.decode();
-            if (samples)
-            {
-                audio_decode_callback(samples, audio_decode_callback_user_data);
-                did_decode = TRUE;
-            }
-            else {
-                decode_audio_failed = TRUE;
-            }
-        }
-#endif
+
     } while (did_decode);
     
     // Did all sources we wanted to decode fail and the demuxer is at the end?
@@ -360,10 +311,7 @@ void PLM::plm_read_packets(PLM *self, int requested_type)
     {
         if (packet->type == self->_video_packet_type)
             self->_video_buffer.write(packet->data, packet->length);
-#if 0
-        else if (packet->type == self->audio_packet_type)
-            self->_audio_buffer.write(packet->data, packet->length);
-#endif
+
         if (packet->type == requested_type)
             return;
     }
@@ -1008,12 +956,11 @@ plm_packet_t *Demux::seek(double seek_time, int type, int force_intra)
     double cur_time = _last_decoded_pts;
     double scan_span = 1;
 
-    if (seek_time > duration) {
+    if (seek_time > duration)
         seek_time = duration;
-    }
-    else if (seek_time < 0) {
+    else if (seek_time < 0)
         seek_time = 0;
-    }
+    
     seek_time += _start_time;
 
     for (int retry = 0; retry < 32; retry++)
