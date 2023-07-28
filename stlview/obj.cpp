@@ -34,111 +34,47 @@ struct glutWindow
     float z_far;
 };
 
-class Model_OBJ
+class Model
 {
 private:
     std::vector<float> _normals;
     std::vector<float> _triangles;
 public: 
-    int load(const char *filename);
+    void load(std::istream &is);
 	void draw();
 };
- 
-int Model_OBJ::load(const char* filename)
+
+static float readF(std::istream &is)
 {
-    std::string line;
-    std::ifstream objFile(filename);
+    float tmp;
+    is.read(reinterpret_cast<char *>(&tmp), sizeof(tmp));
+    return tmp;
+}
 
-    if (!objFile.is_open())
+void Model::load(std::istream &is)
+{
+    is.ignore(80);
+    uint32_t n_triangles;
+    is.read(reinterpret_cast<char *>(&n_triangles), sizeof(n_triangles));
+    
+    for (uint32_t i = 0; i < n_triangles; ++i)
     {
-        std::cerr << "Cannot open file\r\n";
-        std::cerr.flush();
-        return -1;
+        float normals[3];
+        
+        for (uint32_t j = 0; j < 3; ++j)
+            normals[j] = readF(is);
+
+        for (uint32_t j = 0; j < 3; ++j)
+            _normals.insert(_normals.end(), std::begin(normals), std::end(normals));           
+
+        for (uint32_t j = 0; j < 9; ++j)
+            _triangles.push_back(readF(is));
+
+        is.ignore(2);
     }
-
-    std::vector<float> vertexBuf;
- 
-    while (!objFile.eof())
-    {		
-        getline (objFile,line);
- 
-        // The first character is a v: on this line is a vertex stored.
-        if (line.c_str()[0] == 'v')	
-        {
-            line[0] = ' ';		// Set first character to 0. This will allow us to use sscanf
-            float buf[3];
-
-            // Read floats from the line: v X Y Z
-            sscanf(line.c_str(),"%f %f %f ", &buf[0], &buf[1], &buf[2]);
-            vertexBuf.insert(vertexBuf.end(), std::begin(buf), std::end(buf));
-        }
-
-        // The first character is an 'f': on this line is a point stored
-        if (line.c_str()[0] == 'f')		
-        {
-		    line[0] = ' ';		// Set first character to 0. This will allow us to use sscanf
- 
-			int vertexNumber[3] = { 0, 0, 0 };
-            sscanf(line.c_str(),"%i%i%i",		// Read integers from the line:  f 1 2 3
-					&vertexNumber[0],   // First point of our triangle. This is an 
-					&vertexNumber[1],   // pointer to our vertexBuffer list
-					&vertexNumber[2] ); // each point represents an X,Y,Z.
- 
-			vertexNumber[0] -= 1;   // OBJ file starts counting from 1
-			vertexNumber[1] -= 1;   // OBJ file starts counting from 1
-			vertexNumber[2] -= 1;   // OBJ file starts counting from 1
- 
- 
-			/********************************************************************
-             * Create triangles (f 1 2 3) from points: (v X Y Z) (v X Y Z) (v X Y Z). 
-             * The vertexBuffer contains all verteces
-             * The triangles will be created using the verteces we read previously
-             */
-
-            float coord[3][3];
-            float va[3], vb[3], vr[3], val;
-
-            for (int i = 0; i < 3; ++i)
-            {
-                _triangles.push_back(vertexBuf[3 * vertexNumber[i] + 0 ]);
-                coord[i][0] = _triangles.back();
-                _triangles.push_back(vertexBuf[3 * vertexNumber[i] + 1 ]);
-                coord[i][1] = _triangles.back();
-                _triangles.push_back(vertexBuf[3 * vertexNumber[i] + 2 ]);
-                coord[i][2] = _triangles.back();
-            }
-
-            va[0] = coord[0][0] - coord[1][0];
-            va[1] = coord[0][1] - coord[1][1];
-            va[2] = coord[0][2] - coord[1][2];
- 
-            vb[0] = coord[0][0] - coord[2][0];
-            vb[1] = coord[0][1] - coord[2][1];
-            vb[2] = coord[0][2] - coord[2][2];
- 
-            /* cross product */
-            vr[0] = va[1] * vb[2] - vb[1] * va[2];
-            vr[1] = vb[0] * va[2] - va[0] * vb[2];
-            vr[2] = va[0] * vb[1] - vb[0] * va[1];
- 
-            /* normalization factor */
-            val = sqrt( vr[0]*vr[0] + vr[1]*vr[1] + vr[2]*vr[2] );
- 
-            float norm[3];
-        	norm[0] = vr[0]/val;
-        	norm[1] = vr[1]/val;
-        	norm[2] = vr[2]/val;
- 
-			for (int i = 0; i < 3; i++)
-                _normals.insert(_normals.end(), std::begin(norm), std::end(norm));
-		}	
-	}
-
-	objFile.close();
-	return 0;
 }
  
-void Model_OBJ::draw()
+void Model::draw()
 {
     glEnableClientState(GL_VERTEX_ARRAY);						// Enable vertex arrays
     glEnableClientState(GL_NORMAL_ARRAY);						// Enable normal arrays
@@ -148,18 +84,12 @@ void Model_OBJ::draw()
     glDisableClientState(GL_VERTEX_ARRAY);						// Disable vertex arrays
     glDisableClientState(GL_NORMAL_ARRAY);						// Disable normal arrays
 }
- 
-/***************************************************************************
- * Program code
- ***************************************************************************/
- 
-
 
 class CMain
 {
 private:
     static CMain *_pthis;
-    Model_OBJ obj;
+    Model obj;
     glutWindow win;
     static void display();
     static void keyboard(unsigned char key, int x, int y);
@@ -246,7 +176,10 @@ void CMain::run(int argc, char **argv)
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
 
-    obj.load("cessna.obj");
+    std::ifstream ifs("utah_teapot_solid.stl");
+    obj.load(ifs);
+    ifs.close();
+    
     glutMainLoop();   
 }
 
