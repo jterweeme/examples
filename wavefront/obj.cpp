@@ -34,80 +34,125 @@ struct glutWindow
     float z_far;
 };
 
+struct XYZ
+{
+    float x;
+    float y;
+    float z;
+
+    XYZ(float x1, float y1, float z1) : x(x1), y(y1), z(z1) { }
+};
+
 class Model_OBJ
 {
 private:
     std::vector<float> _normals;
     std::vector<float> _triangles;
 public: 
-    int load(const char *filename);
+    void load(std::istream &is);
+    void load(const char *filename);
 	void draw();
 };
  
-int Model_OBJ::load(const char* filename)
+void Model_OBJ::load(const char* filename)
 {
-    std::string line;
     std::ifstream objFile(filename);
 
     if (!objFile.is_open())
+        throw "Cannot open file";
+
+    load(objFile);
+    objFile.close();
+}
+
+static std::vector<std::string> split(std::string line, std::string delim)
+{
+    std::vector<std::string> tokens;
+
+    std::string::size_type pos = 0;
+    std::string::size_type prev = 0;
+
+    while ((pos = line.find(delim, prev)) != std::string::npos)
     {
-        std::cerr << "Cannot open file\r\n";
-        std::cerr.flush();
-        return -1;
+        tokens.push_back(line.substr(prev, pos - prev));
+        prev = pos + delim.size();
     }
 
+    // To get the last substring (or only, if delimiter is not found)
+    tokens.push_back(line.substr(prev));
+    return tokens;
+}
+
+void Model_OBJ::load(std::istream &objFile)
+{
+    std::string line;
     std::vector<float> vertexBuf;
+    std::vector<float> normalsBuf;
+    std::vector<float> texturesBuf;
  
     while (!objFile.eof())
     {		
-        getline (objFile,line);
+        getline(objFile, line);
+        std::vector<std::string> tokens = split(line, " ");
  
-        // The first character is a v: on this line is a vertex stored.
-        if (line.c_str()[0] == 'v')	
+        if (tokens[0].compare("v") == 0)
         {
-            line[0] = ' ';		// Set first character to 0. This will allow us to use sscanf
-            float buf[3];
+            vertexBuf.push_back(std::stof(tokens[1]));
+            vertexBuf.push_back(std::stof(tokens[2]));
+            vertexBuf.push_back(std::stof(tokens[3]));
+        }
 
-            // Read floats from the line: v X Y Z
-            sscanf(line.c_str(),"%f %f %f ", &buf[0], &buf[1], &buf[2]);
-            vertexBuf.insert(vertexBuf.end(), std::begin(buf), std::end(buf));
+        if (tokens[0].compare("vn") == 0)
+        {
+            normalsBuf.push_back(std::stof(tokens[1]));
+            normalsBuf.push_back(std::stof(tokens[2]));
+            normalsBuf.push_back(std::stof(tokens[3]));
         }
 
         // The first character is an 'f': on this line is a point stored
-        if (line.c_str()[0] == 'f')		
+        if (tokens[0].compare("f") == 0)
         {
-		    line[0] = ' ';		// Set first character to 0. This will allow us to use sscanf
- 
-			int vertexNumber[3] = { 0, 0, 0 };
-            sscanf(line.c_str(),"%i%i%i",		// Read integers from the line:  f 1 2 3
-					&vertexNumber[0],   // First point of our triangle. This is an 
-					&vertexNumber[1],   // pointer to our vertexBuffer list
-					&vertexNumber[2] ); // each point represents an X,Y,Z.
- 
-			vertexNumber[0] -= 1;   // OBJ file starts counting from 1
-			vertexNumber[1] -= 1;   // OBJ file starts counting from 1
-			vertexNumber[2] -= 1;   // OBJ file starts counting from 1
- 
- 
-			/********************************************************************
-             * Create triangles (f 1 2 3) from points: (v X Y Z) (v X Y Z) (v X Y Z). 
-             * The vertexBuffer contains all verteces
-             * The triangles will be created using the verteces we read previously
-             */
-
+            int vertexNumber[3];
+            int normalsNumber[3];
+            int texturesNumber[3];
             float coord[3][3];
             float va[3], vb[3], vr[3], val;
+            std::vector<std::string> vs[3];
+            vs[0] = split(tokens[1], "/");
+            vs[1] = split(tokens[2], "/");
+            vs[2] = split(tokens[3], "/");
 
-            for (int i = 0; i < 3; ++i)
+            if (vs[0].size() > 0)
             {
-                _triangles.push_back(vertexBuf[3 * vertexNumber[i] + 0 ]);
-                coord[i][0] = _triangles.back();
-                _triangles.push_back(vertexBuf[3 * vertexNumber[i] + 1 ]);
-                coord[i][1] = _triangles.back();
-                _triangles.push_back(vertexBuf[3 * vertexNumber[i] + 2 ]);
-                coord[i][2] = _triangles.back();
+                vertexNumber[0] = std::stoi(vs[0][0]) - 1;
+                vertexNumber[1] = std::stoi(vs[1][0]) - 1;
+                vertexNumber[2] = std::stoi(vs[2][0]) - 1;
+
+                for (int i = 0; i < 3; ++i)
+                {
+                    _triangles.push_back(vertexBuf[3 * vertexNumber[i] + 0 ]);
+                    coord[i][0] = _triangles.back();
+                    _triangles.push_back(vertexBuf[3 * vertexNumber[i] + 1 ]);
+                    coord[i][1] = _triangles.back();
+                    _triangles.push_back(vertexBuf[3 * vertexNumber[i] + 2 ]);
+                    coord[i][2] = _triangles.back();
+                }
             }
 
+            if (vs[0].size() > 1)
+            {
+                normalsNumber[0] = std::stoi(vs[0][1]) - 1;
+                normalsNumber[1] = std::stoi(vs[1][1]) - 1;
+                normalsNumber[2] = std::stoi(vs[2][1]) - 1;
+
+                for (int i = 0; i < 3; ++i)
+                {
+                    _normals.push_back(normalsBuf[3 * normalsNumber[i] + 0]);
+                    _normals.push_back(normalsBuf[3 * normalsNumber[i] + 1]);
+                    _normals.push_back(normalsBuf[3 * normalsNumber[i] + 2]);
+                }
+            }
+#if 0
             va[0] = coord[0][0] - coord[1][0];
             va[1] = coord[0][1] - coord[1][1];
             va[2] = coord[0][2] - coord[1][2];
@@ -131,11 +176,9 @@ int Model_OBJ::load(const char* filename)
  
 			for (int i = 0; i < 3; i++)
                 _normals.insert(_normals.end(), std::begin(norm), std::end(norm));
+#endif
 		}	
 	}
-
-	objFile.close();
-	return 0;
 }
  
 void Model_OBJ::draw()
@@ -149,12 +192,6 @@ void Model_OBJ::draw()
     glDisableClientState(GL_NORMAL_ARRAY);						// Disable normal arrays
 }
  
-/***************************************************************************
- * Program code
- ***************************************************************************/
- 
-
-
 class CMain
 {
 private:
@@ -246,7 +283,7 @@ void CMain::run(int argc, char **argv)
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
 
-    obj.load("cessna.obj");
+    obj.load(argv[1]);
     glutMainLoop();   
 }
 

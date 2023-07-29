@@ -107,7 +107,7 @@ void CMain::display()
 	glLoadIdentity();
 	gluLookAt( 0,1,40, 0,0,0, 0,1,0);
 	glPushMatrix();
-    glRotatef(deg++, 0, 1, 0);
+    glRotatef(deg++, 1, 1, 1);
     
     if (deg > 360)
         deg = 0;
