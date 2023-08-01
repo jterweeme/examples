@@ -99,7 +99,7 @@ GLuint raw_texture_load(const char *filename, int width, int height)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_DECAL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_DECAL);
 #if 0
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB_INTEGER, width, height, 0,
                  GL_RGB, GL_UNSIGNED_BYTE, data);
 #endif
     gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -176,9 +176,9 @@ void Model_OBJ::load(std::istream &objFile)
             {
                 texturesNumber[0] = std::stoi(vs[0][1]) - 1;
                 texturesNumber[1] = std::stoi(vs[1][1]) - 1;
-                texturesNumber[1] = std::stoi(vs[2][1]) - 1;
+                texturesNumber[2] = std::stoi(vs[2][1]) - 1;
 
-                for (int i = 0; i < 1; ++i)
+                for (int i = 0; i < 3; ++i)
                 {
                     _texCoords.push_back(texturesBuf[2 * texturesNumber[i] + 0]);
                     _texCoords.push_back(texturesBuf[2 * texturesNumber[i] + 1]);
