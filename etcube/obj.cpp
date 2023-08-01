@@ -98,7 +98,12 @@ GLuint raw_texture_load(const char *filename, int width, int height)
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_DECAL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_DECAL);
-    gluBuild2DMipmaps(GL_TEXTURE_2D, 3, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
+#if 1
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
+                 GL_RGB, GL_UNSIGNED_BYTE, data);
+#endif
+    //gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
+    //gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, width, height, GL_RGB, GL_BITMAP, data);
     delete[] data;
     return texture;
 }
@@ -171,12 +176,13 @@ void Model_OBJ::load(std::istream &objFile)
             {
                 texturesNumber[0] = std::stoi(vs[0][2]) - 1;
                 texturesNumber[1] = std::stoi(vs[1][2]) - 1;
-                texturesNumber[2] = std::stoi(vs[2][2]) - 1;
 
                 for (int i = 0; i < 2; ++i)
                 {
-                    _texCoords.push_back(texturesBuf[2 * texturesNumber[i] + 0]);
-                    _texCoords.push_back(texturesBuf[2 * texturesNumber[i] + 1]);
+                    _texCoords.push_back(texturesBuf[2 * texturesNumber[i] + i]);
+                    _texCoords.push_back(0);
+                    //_texCoords.push_back(0);
+                    //_texCoords.push_back(texturesBuf[2 * texturesNumber[i] + 1]);
                 }
             }
 
@@ -232,7 +238,7 @@ void Model_OBJ::draw()
     glEnable(GL_TEXTURE_2D);
     glVertexPointer(3, GL_FLOAT, 0, _triangles.data());         // Vertex Pointer to triangle array
     glNormalPointer(GL_FLOAT, 0, _normals.data());
-    glTexCoordPointer(3, GL_FLOAT, 0, _texCoords.data());
+    glTexCoordPointer(2, GL_FLOAT, 0, _texCoords.data());
     glDrawArrays(GL_TRIANGLES, 0, _triangles.size() / 3);       // Draw the trianglesa
     glDisable(GL_TEXTURE_2D);
     glDisableClientState(GL_VERTEX_ARRAY);						// Disable vertex arrays
@@ -258,10 +264,10 @@ int deg = 0;
 
 void CMain::display()
 {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glLoadIdentity();
-	gluLookAt( 0,1,20, 0,0,0, 0,1,0);
-	glPushMatrix();
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glLoadIdentity();
+    gluLookAt(0,1,5, 0,0,0, 0,1,0);
+    glPushMatrix();
     glRotatef(deg++, 0, 1, 0);
     
     if (deg > 360)
@@ -331,7 +337,7 @@ void CMain::run(int argc, char **argv)
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
 
-    raw_texture_load("dice3.raw", 512, 512);
+    raw_texture_load("etcube.raw", 512, 1560);
     obj.load(argv[1]);
     std::cout << "Finished loading model\r\n";
     std::cout.flush();
