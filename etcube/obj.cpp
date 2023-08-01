@@ -98,11 +98,11 @@ GLuint raw_texture_load(const char *filename, int width, int height)
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_DECAL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_DECAL);
-#if 1
+#if 0
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
                  GL_RGB, GL_UNSIGNED_BYTE, data);
 #endif
-    //gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
+    gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
     //gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, width, height, GL_RGB, GL_BITMAP, data);
     delete[] data;
     return texture;
@@ -150,7 +150,7 @@ void Model_OBJ::load(std::istream &objFile)
         {
             int vertexNumber[3];    //xyz
             int normalsNumber[3];   //xyz
-            int texturesNumber[2];  //xyz
+            int texturesNumber[3];  //xyz
             float coord[3][3];
             float va[3], vb[3], vr[3], val;
             std::vector<std::string> vs[3];
@@ -174,24 +174,23 @@ void Model_OBJ::load(std::istream &objFile)
 
             if (vs[0].size() > 1)
             {
-                texturesNumber[0] = std::stoi(vs[0][2]) - 1;
-                texturesNumber[1] = std::stoi(vs[1][2]) - 1;
+                texturesNumber[0] = std::stoi(vs[0][1]) - 1;
+                texturesNumber[1] = std::stoi(vs[1][1]) - 1;
+                texturesNumber[1] = std::stoi(vs[2][1]) - 1;
 
-                for (int i = 0; i < 2; ++i)
+                for (int i = 0; i < 1; ++i)
                 {
-                    _texCoords.push_back(texturesBuf[2 * texturesNumber[i] + i]);
-                    _texCoords.push_back(0);
-                    //_texCoords.push_back(0);
-                    //_texCoords.push_back(texturesBuf[2 * texturesNumber[i] + 1]);
+                    _texCoords.push_back(texturesBuf[2 * texturesNumber[i] + 0]);
+                    _texCoords.push_back(texturesBuf[2 * texturesNumber[i] + 1]);
                 }
             }
 
             //obj bestand heeft normals
             if (vs[0].size() > 2)
             {
-                normalsNumber[0] = std::stoi(vs[0][1]) - 1;
-                normalsNumber[1] = std::stoi(vs[1][1]) - 1;
-                normalsNumber[2] = std::stoi(vs[2][1]) - 1;
+                normalsNumber[0] = std::stoi(vs[0][2]) - 1;
+                normalsNumber[1] = std::stoi(vs[1][2]) - 1;
+                normalsNumber[2] = std::stoi(vs[2][2]) - 1;
 
                 for (int i = 0; i < 3; ++i)
                 {
