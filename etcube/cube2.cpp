@@ -24,7 +24,9 @@
 #include <array>
  
 #define KEY_ESCAPE 27
- 
+
+int deg = 0;
+
 struct glutWindow
 {
     int width;
@@ -233,6 +235,16 @@ void Model_OBJ::load(std::istream &objFile)
  
 void Model_OBJ::draw()
 {
+    glLoadIdentity();
+    gluLookAt(0,1,5, 0,0,0, 0,1,0);
+    glPushMatrix();
+    glRotatef(deg++, 0, 1, 0);
+    
+    if (deg > 360)
+        deg = 0;
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glMatrixMode(GL_MODELVIEW);
     glEnableClientState(GL_VERTEX_ARRAY);						// Enable vertex arrays
     glEnableClientState(GL_NORMAL_ARRAY);						// Enable normal arrays
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -246,6 +258,8 @@ void Model_OBJ::draw()
     glDisableClientState(GL_VERTEX_ARRAY);						// Disable vertex arrays
     glDisableClientState(GL_NORMAL_ARRAY);						// Disable normal arrays
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glPopMatrix();
+    glutSwapBuffers();
 }
  
 class CMain
@@ -262,24 +276,11 @@ public:
 
 CMain *CMain::_pthis;
 
-int deg = 0;
+
 
 void CMain::display()
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glLoadIdentity();
-    gluLookAt(0,1,5, 0,0,0, 0,1,0);
-    glPushMatrix();
-    glRotatef(deg++, 0, 1, 0);
-    
-    if (deg > 360)
-        deg = 0;
-
-    //glRotatef(45,0,1,0);
-    //glRotatef(90,0,1,0);
     _pthis->obj.draw();
-	glPopMatrix();
-	glutSwapBuffers();
 }
 
 void CMain::keyboard(unsigned char key, int x, int y)
@@ -301,13 +302,13 @@ void CMain::run(int argc, char **argv)
     win.height = 480;
     win.field_of_view_angle = 45;
     win.z_near = 1.0f;
-	win.z_far = 500.0f;
+    win.z_far = 500.0f;
     glutInit(&argc, argv);                                      // GLUT initialization
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH );  // Display Mode
     glutInitWindowSize(win.width, win.height);					// set window size
     glutCreateWindow("OpenGL/GLUT OBJ Loader.");
     glutDisplayFunc(display);									// register Display Function
-    glutIdleFunc( display );									// register Idle Function
+    glutIdleFunc(display);									// register Idle Function
     glutKeyboardFunc(keyboard);								// register Keyboard Handler
 
     glMatrixMode(GL_PROJECTION);
@@ -317,27 +318,7 @@ void CMain::run(int argc, char **argv)
     glLoadIdentity();
 	gluPerspective(win.field_of_view_angle, aspect, win.z_near, win.z_far);
     glMatrixMode(GL_MODELVIEW);
-    glShadeModel( GL_SMOOTH );
-    glClearColor( 0.0f, 0.1f, 0.0f, 0.5f );
-    glClearDepth( 1.0f );
-    glEnable( GL_DEPTH_TEST );
-    glDepthFunc( GL_LEQUAL );
-    glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
- 
-    GLfloat amb_light[] = { 0.1, 0.1, 0.1, 1.0 };
-    GLfloat diffuse[] = { 0.6, 0.6, 0.6, 1 };
-    GLfloat specular[] = { 0.7, 0.7, 0.3, 1 };
-    glLightModelfv( GL_LIGHT_MODEL_AMBIENT, amb_light );
-    glLightfv( GL_LIGHT0, GL_DIFFUSE, diffuse );
-    glLightfv( GL_LIGHT0, GL_SPECULAR, specular );
-    glEnable( GL_LIGHT0 );
-    glEnable( GL_COLOR_MATERIAL );
-    glShadeModel( GL_SMOOTH );
-    glLightModeli( GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE );
-    glDepthFunc( GL_LEQUAL );
-    glEnable( GL_DEPTH_TEST );
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
+    glEnable(GL_DEPTH_TEST);
 
     raw_texture_load("etcube.raw", 512, 1560);
     obj.load(argv[1]);
