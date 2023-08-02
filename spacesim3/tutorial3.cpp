@@ -27,19 +27,91 @@ of course you may need to change the makefile
  
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream>
+#include <GL/glu.h>
 #include <GL/glut.h>
-#include "texture.h"
 
 #define MAX_VERTICES 2000 // Max number of vertices (for each object)
 #define MAX_POLYGONS 2000 // Max number of polygons (for each object)
 
 
+int num_texture = -1;
 
-/**********************************************************
- *
- * TYPES DECLARATION
- *
- *********************************************************/
+typedef struct                       /**** BMP file info structure ****/
+    {
+    unsigned int   biSize;           /* Size of info header */
+    int            biWidth;          /* Width of image */
+    int            biHeight;         /* Height of image */
+    unsigned short biPlanes;         /* Number of color planes */
+    unsigned short biBitCount;       /* Number of bits per pixel */
+    unsigned int   biCompression;    /* Type of compression to use */
+    unsigned int   biSizeImage;      /* Size of image data */
+    int            biXPelsPerMeter;  /* X pixels per meter */
+    int            biYPelsPerMeter;  /* Y pixels per meter */
+    unsigned int   biClrUsed;        /* Number of colors used */
+    unsigned int   biClrImportant;   /* Number of important colors */
+    char *data;
+    } BITMAPINFOHEADER;
+
+int LoadBitmap(const char *filename)
+{   
+    FILE * file;
+    char temp;
+    long i;
+
+    BITMAPINFOHEADER infoheader;
+
+    num_texture++; // The counter of the current texture is increased
+
+    if( (file = fopen(filename, "rb"))==NULL) return (-1); // Open the file for reading
+
+    fseek(file, 18, SEEK_CUR);  /* start reading width & height */
+    fread(&infoheader.biWidth, sizeof(int), 1, file);
+
+    fread(&infoheader.biHeight, sizeof(int), 1, file);
+
+    fread(&infoheader.biPlanes, sizeof(short int), 1, file);
+    if (infoheader.biPlanes != 1) {
+        printf("Planes from %s is not 1: %u\n", filename, infoheader.biPlanes);
+        return 0;
+    }
+
+    // read the bpp
+    fread(&infoheader.biBitCount, sizeof(unsigned short int), 1, file);
+    if (infoheader.biBitCount != 24) {
+      printf("Bpp from %s is not 24: %d\n", filename, infoheader.biBitCount);
+      return 0;
+    }
+
+    fseek(file, 24, SEEK_CUR);
+
+    // read the data.
+    infoheader.data = (char *) malloc(infoheader.biWidth * infoheader.biHeight * 3);
+    if (infoheader.data == NULL) {
+        printf("Error allocating memory for color-corrected image data\n");
+        return 0;
+    }
+
+    if ((i = fread(infoheader.data, infoheader.biWidth * infoheader.biHeight * 3, 1, file)) != 1) {
+        printf("Error reading image data from %s.\n", filename);
+        return 0;
+    }
+
+    for (i=0; i<(infoheader.biWidth * infoheader.biHeight * 3); i+=3) { // reverse all of the colors. (bgr -> rgb)
+        temp = infoheader.data[i];
+        infoheader.data[i] = infoheader.data[i+2];
+        infoheader.data[i+2] = temp;
+    }
+
+    fclose(file);
+    glBindTexture(GL_TEXTURE_2D, num_texture);
+
+    gluBuild2DMipmaps(GL_TEXTURE_2D, 3, infoheader.biWidth, infoheader.biHeight,
+                      GL_RGB, GL_UNSIGNED_BYTE, infoheader.data);
+
+    free(infoheader.data);
+    return num_texture;
+}
 
 /*** Our vertex type ***/
 typedef struct{
@@ -62,7 +134,7 @@ typedef struct {
     polygon_type polygon[MAX_POLYGONS];
     mapcoord_type mapcoord[MAX_VERTICES];
     int id_texture;
-} obj_type, *obj_type_ptr;
+} obj_type;
 
 
 
@@ -124,57 +196,10 @@ obj_type cube =
     0, 
 };
 
-
-
-/**********************************************************
- *
- * SUBROUTINE init()
- *
- * Used to initialize OpenGL and to setup our world
- *
- *********************************************************/
-
-void  init(void)
-{
-    glClearColor(0.0, 0.0, 0.2, 0.0); // This clear the background color to dark blue
-    glShadeModel(GL_SMOOTH); // Type of shading for the polygons
-   	
-    // Viewport transformation
-    glViewport(0,0,screen_width,screen_height);  
-
-    // Projection transformation
-    glMatrixMode(GL_PROJECTION); // Specifies which matrix stack is the target for matrix operations 
-    glLoadIdentity(); // We initialize the projection matrix as identity
-    gluPerspective(45.0f,(GLfloat)screen_width/(GLfloat)screen_height,1.0f,1000.0f); // We define the "viewing volume"
-   
-    glEnable(GL_DEPTH_TEST); // We enable the depth test (also called z buffer)
-    glPolygonMode (GL_FRONT_AND_BACK, GL_FILL); // Polygon rasterization mode (polygon filled)
-    
-    glEnable(GL_TEXTURE_2D); // This Enable the Texture mapping
-
-
-    cube.id_texture=LoadBitmap("texture1.bmp"); // The Function LoadBitmap() return the current texture ID
-    
-	// If the last function returns -1 it means the file was not found so we exit from the program
-/*    if (cube.id_texture==-1)
-    {
-        MessageBox(NULL,"Image file: texture1.bmp not found", "Zetadeck",MB_OK | MB_ICONERROR);
-        exit (0);
-    }*/
-}
-
-
-
-/**********************************************************
- *
- * SUBROUTINE resize(int,int)
- *
- * This routine must be called everytime we resize our window.
- * 
- *********************************************************/
-
 void resize (int width, int height)
 {
+    std::cerr << "Resize\r\n";
+    std::cerr.flush();
     screen_width=width; // We obtain the new screen width values and store it
     screen_height=height; // Height value
 
@@ -188,31 +213,19 @@ void resize (int width, int height)
     glutPostRedisplay (); // This command redraw the scene (it calls the same routine of glutDisplayFunc)
 }
 
-
-
-/**********************************************************
- *
- * SUBROUTINE keyboard(unsigned char,int,int)
- *
- * Used to handle the keyboard input (ASCII Characters)
- * 
- *********************************************************/
-
 void keyboard (unsigned char key, int x, int y)
 {
-
     switch (key)
     {
-  
-        case ' ':
-            rotation_x_increment=0;
-            rotation_y_increment=0;
-            rotation_z_increment=0;
+    case ' ':
+        rotation_x_increment=0;
+        rotation_y_increment=0;
+        rotation_z_increment=0;
         break;
-        case 'r': case 'R':
-            if (filling==0)
-            {
-                glPolygonMode (GL_FRONT_AND_BACK, GL_FILL); // Polygon rasterization mode (polygon filled)
+    case 'r': case 'R':
+        if (filling==0)
+        {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // Polygon rasterization mode (polygon filled)
                 filling=1;
             }   
             else 
@@ -221,25 +234,14 @@ void keyboard (unsigned char key, int x, int y)
                 filling=0;
             }
         break;
-		case 27:
-			exit(0);
-		break;
+    case 27:
+        exit(0);
+        break;
     }
 }
 
-
-
-/**********************************************************
- *
- * SUBROUTINE keyboard(int,int,int)
- *
- * Used to handle the keyboard input (not ASCII Characters)
- * 
- *********************************************************/
-
 void keyboard_s (int key, int x, int y)
 {
-        
     switch (key)
     {
         case GLUT_KEY_UP:
@@ -257,21 +259,9 @@ void keyboard_s (int key, int x, int y)
     }
 }
 
-
-
-/**********************************************************
- *
- * SUBROUTINE display()
- *
- * This is our main rendering subroutine, called each frame
- * 
- *********************************************************/
-
-void  display(void)
+void display(void)
 {
-    int l_index;
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // This clear the background color to dark blue
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
     glMatrixMode(GL_MODELVIEW); // Modeling transformation
     glLoadIdentity(); // Initialize the model matrix as identity
     
@@ -289,10 +279,12 @@ void  display(void)
     glRotatef(rotation_y,0.0,1.0,0.0);
     glRotatef(rotation_z,0.0,0.0,1.0);
     
-    glBindTexture(GL_TEXTURE_2D, cube.id_texture); // We set the active texture
+    //glBindTexture(GL_TEXTURE_2D, cube.id_texture); // We set the active texture
 
-    glBegin(GL_TRIANGLES); // GlBegin and glEnd delimit the vertices that define a primitive (in our case triangles)
-    for (l_index=0;l_index<12;l_index++)
+    // GlBegin and glEnd delimit the vertices that define a primitive (in our case triangles)
+    glBegin(GL_TRIANGLES);
+
+    for (int l_index=0;l_index<12;l_index++)
     {
         /*** FIRST VERTEX ***/
         // Texture coordinates of the first vertex
@@ -348,7 +340,17 @@ int main(int argc, char **argv)
     glutReshapeFunc (resize);
     glutKeyboardFunc (keyboard);
     glutSpecialFunc (keyboard_s);
-    init();
+
+   	
+    // Viewport transformation
+    glViewport(0,0,screen_width,screen_height);  
+
+    // Projection transformation
+    glLoadIdentity(); // We initialize the projection matrix as identity
+    glEnable(GL_DEPTH_TEST); // We enable the depth test (also called z buffer)
+    glEnable(GL_TEXTURE_2D); // This Enable the Texture mapping
+    cube.id_texture=LoadBitmap("texture1.bmp");
+
     glutMainLoop();
 
     return(0);    

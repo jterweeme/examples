@@ -229,7 +229,7 @@ void Model_OBJ::draw()
     glEnableClientState(GL_VERTEX_ARRAY);						// Enable vertex arrays
     glEnableClientState(GL_NORMAL_ARRAY);						// Enable normal arrays
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    //glEnable(GL_TEXTURE_2D);
+    glEnable(GL_TEXTURE_2D);
     glVertexPointer(3, GL_FLOAT, 0, _triangles.data());         // Vertex Pointer to triangle array
     glNormalPointer(GL_FLOAT, 0, _normals.data());
     glTexCoordPointer(3, GL_FLOAT, 0, _texCoords.data());
