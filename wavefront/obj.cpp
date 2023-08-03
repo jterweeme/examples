@@ -96,8 +96,6 @@ GLuint raw_texture_load(const char *filename, int width, int height)
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_DECAL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_DECAL);
     gluBuild2DMipmaps(GL_TEXTURE_2D, 3, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
     delete[] data;
     return texture;
@@ -105,47 +103,105 @@ GLuint raw_texture_load(const char *filename, int width, int height)
 
 using Coords = XYZ<float>;
 
+class Bitmap
+{
+public:
+    
+};
+
+template <typename T> T readX(std::istream &is)
+{
+    T ret;
+    is.read(reinterpret_cast<char *>(&ret), sizeof(ret));
+    return ret;
+}
+
+void bitmap(std::istream &is)
+{
+    std::cerr << "Bitmap\r\n";
+    std::cerr.flush();
+    is.ignore(18);
+    int width = readX<int>(is);
+    int height = readX<int>(is);
+    std::cerr << width << "x" << height << "\r\n";
+    std::cerr.flush();
+    is.ignore(112);
+    char *data = new char[width * height * 3];
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    //glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    gluBuild2DMipmaps(GL_TEXTURE_2D, 3, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
+    delete[] data;
+}
+
+void material(std::istream &is)
+{
+    while (!is.eof())
+    {
+        std::string line;
+        getline(is, line);
+        std::vector<std::string> tokens = split(line, " ");
+
+        if (tokens[0].compare("map_Kd") == 0)
+        {
+            std::ifstream ifs(tokens[1]);
+            bitmap(ifs);
+            ifs.close();
+        }
+    }
+}
+
 void Model_OBJ::load(std::istream &objFile)
 {
-    std::string line;
     std::vector<Coords> vertexBuf;
     std::vector<float> normalsBuf;
     std::vector<float> texturesBuf;
  
     while (!objFile.eof())
-    {		
+    {
+        using std::stof;
+        std::string line;
         getline(objFile, line);
         std::vector<std::string> tokens = split(line, " ");
+
+        if (tokens[0].compare("mtllib") == 0)
+        {
+            std::ifstream ifs(tokens[1]);
+            //material(ifs);
+            ifs.close();
+        }
+
+        if (tokens[0].compare("usemtl") == 0)
+        {
+        }
  
         if (tokens[0].compare("v") == 0)
         {
-            float x = std::stof(tokens[1]);
-            float y = std::stof(tokens[2]);
-            float z = std::stof(tokens[3]);
+            float x = stof(tokens[1]);
+            float y = stof(tokens[2]);
+            float z = stof(tokens[3]);
             vertexBuf.push_back(XYZ(x, y, z));
-            std::cout << "#" << vertexBuf.size() << " " << x << " " << y << " " << z << "\r\n";
-            std::cout.flush();
         }
 
         if (tokens[0].compare("vn") == 0)
         {
-            normalsBuf.push_back(std::stof(tokens[1]));
-            normalsBuf.push_back(std::stof(tokens[2]));
-            normalsBuf.push_back(std::stof(tokens[3]));
+            normalsBuf.push_back(stof(tokens[1]));
+            normalsBuf.push_back(stof(tokens[2]));
+            normalsBuf.push_back(stof(tokens[3]));
         }
 
         if (tokens[0].compare("vt") == 0)
         {
-            texturesBuf.push_back(std::stof(tokens[1]));
-            texturesBuf.push_back(std::stof(tokens[2]));
+            texturesBuf.push_back(stof(tokens[1]));
+            texturesBuf.push_back(stof(tokens[2]));
         }
 
         // The first character is an 'f': on this line is a point stored
         if (tokens[0].compare("f") == 0)
         {
-            int vertexNumber[3];    //xyz
-            int normalsNumber[3];   //xyz
-            int texturesNumber[2];  //xyz
+            int normalsNumber[3];
+
             float coord[3][3];
             float va[3], vb[3], vr[3], val;
             std::vector<std::string> vs[3];
@@ -155,6 +211,7 @@ void Model_OBJ::load(std::istream &objFile)
 
             if (vs[0].size() > 0)
             {
+                int vertexNumber[3];
                 vertexNumber[0] = std::stoi(vs[0][0]) - 1;
                 vertexNumber[1] = std::stoi(vs[1][0]) - 1;
                 vertexNumber[2] = std::stoi(vs[2][0]) - 1;
@@ -169,11 +226,12 @@ void Model_OBJ::load(std::istream &objFile)
 
             if (vs[0].size() > 1)
             {
-                texturesNumber[0] = std::stoi(vs[0][2]) - 1;
-                texturesNumber[1] = std::stoi(vs[1][2]) - 1;
-                texturesNumber[2] = std::stoi(vs[2][2]) - 1;
+                int texturesNumber[3];
+                texturesNumber[0] = std::stoi(vs[0][1]) - 1;
+                texturesNumber[1] = std::stoi(vs[1][1]) - 1;
+                texturesNumber[2] = std::stoi(vs[2][1]) - 1;
 
-                for (int i = 0; i < 2; ++i)
+                for (int i = 0; i < 3; ++i)
                 {
                     _texCoords.push_back(texturesBuf[2 * texturesNumber[i] + 0]);
                     _texCoords.push_back(texturesBuf[2 * texturesNumber[i] + 1]);
@@ -183,9 +241,9 @@ void Model_OBJ::load(std::istream &objFile)
             //obj bestand heeft normals
             if (vs[0].size() > 2)
             {
-                normalsNumber[0] = std::stoi(vs[0][1]) - 1;
-                normalsNumber[1] = std::stoi(vs[1][1]) - 1;
-                normalsNumber[2] = std::stoi(vs[2][1]) - 1;
+                normalsNumber[0] = std::stoi(vs[0][2]) - 1;
+                normalsNumber[1] = std::stoi(vs[1][2]) - 1;
+                normalsNumber[2] = std::stoi(vs[2][2]) - 1;
 
                 for (int i = 0; i < 3; ++i)
                 {
@@ -229,10 +287,10 @@ void Model_OBJ::draw()
     glEnableClientState(GL_VERTEX_ARRAY);						// Enable vertex arrays
     glEnableClientState(GL_NORMAL_ARRAY);						// Enable normal arrays
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    //glEnable(GL_TEXTURE_2D);
+    glEnable(GL_TEXTURE_2D);
     glVertexPointer(3, GL_FLOAT, 0, _triangles.data());         // Vertex Pointer to triangle array
     glNormalPointer(GL_FLOAT, 0, _normals.data());
-    glTexCoordPointer(3, GL_FLOAT, 0, _texCoords.data());
+    glTexCoordPointer(2, GL_FLOAT, 0, _texCoords.data());
     glDrawArrays(GL_TRIANGLES, 0, _triangles.size() / 3);       // Draw the trianglesa
     glDisable(GL_TEXTURE_2D);
     glDisableClientState(GL_VERTEX_ARRAY);						// Disable vertex arrays
@@ -260,7 +318,7 @@ void CMain::display()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
-	gluLookAt( 0,1,20, 0,0,0, 0,1,0);
+	gluLookAt( 0,1,5, 0,0,0, 0,1,0);
 	glPushMatrix();
     glRotatef(deg++, 0, 1, 0);
     
@@ -331,7 +389,7 @@ void CMain::run(int argc, char **argv)
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
 
-    raw_texture_load("dice3.raw", 512, 512);
+    raw_texture_load("etcube.raw", 512, 1560);
     obj.load(argv[1]);
     std::cout << "Finished loading model\r\n";
     std::cout.flush();

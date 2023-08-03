@@ -44,31 +44,30 @@ public:
 	void draw();
 };
 
-static float readF(std::istream &is)
+template <typename T> T readX(std::istream &is)
 {
-    float tmp;
-    is.read(reinterpret_cast<char *>(&tmp), sizeof(tmp));
-    return tmp;
+    T ret;
+    is.read(reinterpret_cast<char *>(&ret), sizeof(ret));
+    return ret;
 }
 
 void Model::load(std::istream &is)
 {
     is.ignore(80);
-    uint32_t n_triangles;
-    is.read(reinterpret_cast<char *>(&n_triangles), sizeof(n_triangles));
+    uint32_t n_triangles = readX<uint32_t>(is);
     
     for (uint32_t i = 0; i < n_triangles; ++i)
     {
         float normals[3];
         
         for (uint32_t j = 0; j < 3; ++j)
-            normals[j] = readF(is);
+            normals[j] = read<float>(is);
 
         for (uint32_t j = 0; j < 3; ++j)
             _normals.insert(_normals.end(), std::begin(normals), std::end(normals));           
 
         for (uint32_t j = 0; j < 9; ++j)
-            _triangles.push_back(readF(is));
+            _triangles.push_back(read<float>(is));
 
         is.ignore(2);
     }
