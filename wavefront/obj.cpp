@@ -11,7 +11,9 @@
  * g++ obj.cpp -lglut -lGL -lGLU
  *
  */
- 
+
+//TODO: werkt niet met DOS line endings bestanden!
+
 #include <iostream>
 #include <fstream>
 #include <GL/gl.h>
@@ -29,9 +31,6 @@ struct glutWindow
 {
     int width;
     int height;
-    float field_of_view_angle;
-    float z_near;
-    float z_far;
 };
 
 template <typename T> class XYZ
@@ -86,28 +85,7 @@ static std::vector<std::string> split(std::string line, std::string delim)
     return tokens;
 }
 
-GLuint raw_texture_load(const char *filename, int width, int height)
-{
-    GLuint texture;
-    uint8_t *data = new uint8_t[width * height * 3];
-    std::ifstream ifs(filename);
-    ifs.read((char *)(data), width * height * 3);
-    ifs.close();
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-    gluBuild2DMipmaps(GL_TEXTURE_2D, 3, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
-    delete[] data;
-    return texture;
-}
-
 using Coords = XYZ<float>;
-
-class Bitmap
-{
-public:
-    
-};
 
 template <typename T> T readX(std::istream &is)
 {
@@ -127,10 +105,11 @@ void bitmap(std::istream &is)
     std::cerr.flush();
     is.ignore(112);
     char *data = new char[width * height * 3];
+    is.read(data, width * height * 3);
     GLuint texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-    //glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
     gluBuild2DMipmaps(GL_TEXTURE_2D, 3, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
     delete[] data;
 }
@@ -168,7 +147,7 @@ void Model_OBJ::load(std::istream &objFile)
         if (tokens[0].compare("mtllib") == 0)
         {
             std::ifstream ifs(tokens[1]);
-            //material(ifs);
+            material(ifs);
             ifs.close();
         }
 
@@ -316,10 +295,11 @@ int deg = 0;
 
 void CMain::display()
 {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glLoadIdentity();
-	gluLookAt( 0,1,5, 0,0,0, 0,1,0);
-	glPushMatrix();
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glLoadIdentity();
+    gluLookAt(0,1,40, 0,0,0, 0,1,0);
+    glTranslatef(0, -10, 0);
+    glPushMatrix();
     glRotatef(deg++, 0, 1, 0);
     
     if (deg > 360)
@@ -349,9 +329,6 @@ void CMain::run(int argc, char **argv)
     _pthis = this;
     win.width = 640;
     win.height = 480;
-    win.field_of_view_angle = 45;
-    win.z_near = 1.0f;
-	win.z_far = 500.0f;
     glutInit(&argc, argv);                                      // GLUT initialization
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH );  // Display Mode
     glutInitWindowSize(win.width, win.height);					// set window size
@@ -363,33 +340,13 @@ void CMain::run(int argc, char **argv)
     glMatrixMode(GL_PROJECTION);
 	glViewport(0, 0, win.width, win.height);
 	GLfloat aspect = (GLfloat) win.width / win.height;
-    glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-	gluPerspective(win.field_of_view_angle, aspect, win.z_near, win.z_far);
+	gluPerspective(45, aspect, 1, 500);
     glMatrixMode(GL_MODELVIEW);
-    glShadeModel( GL_SMOOTH );
-    glClearColor( 0.0f, 0.1f, 0.0f, 0.5f );
-    glClearDepth( 1.0f );
-    glEnable( GL_DEPTH_TEST );
-    glDepthFunc( GL_LEQUAL );
-    glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
- 
-    GLfloat amb_light[] = { 0.1, 0.1, 0.1, 1.0 };
-    GLfloat diffuse[] = { 0.6, 0.6, 0.6, 1 };
-    GLfloat specular[] = { 0.7, 0.7, 0.3, 1 };
-    glLightModelfv( GL_LIGHT_MODEL_AMBIENT, amb_light );
-    glLightfv( GL_LIGHT0, GL_DIFFUSE, diffuse );
-    glLightfv( GL_LIGHT0, GL_SPECULAR, specular );
-    glEnable( GL_LIGHT0 );
-    glEnable( GL_COLOR_MATERIAL );
-    glShadeModel( GL_SMOOTH );
-    glLightModeli( GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE );
-    glDepthFunc( GL_LEQUAL );
-    glEnable( GL_DEPTH_TEST );
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
 
-    raw_texture_load("etcube.raw", 512, 1560);
+    glShadeModel( GL_SMOOTH );
+    glEnable( GL_DEPTH_TEST );
+
     obj.load(argv[1]);
     std::cout << "Finished loading model\r\n";
     std::cout.flush();
