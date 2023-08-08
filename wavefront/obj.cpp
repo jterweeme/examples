@@ -106,10 +106,13 @@ void bitmap(std::istream &is)
     is.ignore(112);
     char *data = new char[width * height * 3];
     is.read(data, width * height * 3);
+
+    for (int i = 0; i < width * height * 3; i += 3)
+        std::swap(data[i], data[i + 2]);
+
     GLuint texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
     gluBuild2DMipmaps(GL_TEXTURE_2D, 3, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
     delete[] data;
 }
@@ -292,13 +295,20 @@ public:
 CMain *CMain::_pthis;
 
 int deg = 0;
+float scale = 1;
+float panY = -10;
 
 void CMain::display()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
     gluLookAt(0,1,40, 0,0,0, 0,1,0);
-    glTranslatef(0, -10, 0);
+
+    glScalef(scale, scale, scale);
+
+    //pan naar beneden
+    glTranslatef(0, panY, 0);
+
     glPushMatrix();
     glRotatef(deg++, 0, 1, 0);
     
@@ -314,14 +324,34 @@ void CMain::display()
 
 void CMain::keyboard(unsigned char key, int x, int y)
 {
-    switch ( key )
+    switch (key)
     {
+    case 'a':
+        scale /= 2;
+        break;
+    case 'z':
+        scale *= 2;
+        break;
+    case 'w':
+        panY += 5;
+        break;
+    case 's':
+        panY -= 5;
+        break;
     case KEY_ESCAPE:        
-      exit ( 0 );   
-      break;      
-    default:      
-      break;
+        exit(0);
+        break;    
+    default:
+        break;
     }
+}
+
+void idle()
+{
+    glRotatef(deg++, 0, 1, 0);
+    
+    if (deg > 360)
+        deg = 0;
 }
 
 void CMain::run(int argc, char **argv)
@@ -334,7 +364,7 @@ void CMain::run(int argc, char **argv)
     glutInitWindowSize(win.width, win.height);					// set window size
     glutCreateWindow("OpenGL/GLUT OBJ Loader.");
     glutDisplayFunc(display);									// register Display Function
-    glutIdleFunc( display );									// register Idle Function
+    glutIdleFunc(display);									// register Idle Function
     glutKeyboardFunc(keyboard);								// register Keyboard Handler
 
     glMatrixMode(GL_PROJECTION);

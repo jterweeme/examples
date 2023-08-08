@@ -67,41 +67,27 @@ int LoadBitmap(const char *filename)
 
     fseek(file, 18, SEEK_CUR);  /* start reading width & height */
     fread(&infoheader.biWidth, sizeof(int), 1, file);
-
     fread(&infoheader.biHeight, sizeof(int), 1, file);
-
     fread(&infoheader.biPlanes, sizeof(short int), 1, file);
-    if (infoheader.biPlanes != 1) {
-        printf("Planes from %s is not 1: %u\n", filename, infoheader.biPlanes);
-        return 0;
-    }
-
-    // read the bpp
     fread(&infoheader.biBitCount, sizeof(unsigned short int), 1, file);
-    if (infoheader.biBitCount != 24) {
-      printf("Bpp from %s is not 24: %d\n", filename, infoheader.biBitCount);
-      return 0;
-    }
-
     fseek(file, 24, SEEK_CUR);
 
-    // read the data.
     infoheader.data = (char *) malloc(infoheader.biWidth * infoheader.biHeight * 3);
-    if (infoheader.data == NULL) {
-        printf("Error allocating memory for color-corrected image data\n");
-        return 0;
-    }
 
     if ((i = fread(infoheader.data, infoheader.biWidth * infoheader.biHeight * 3, 1, file)) != 1) {
         printf("Error reading image data from %s.\n", filename);
         return 0;
     }
 
-    for (i=0; i<(infoheader.biWidth * infoheader.biHeight * 3); i+=3) { // reverse all of the colors. (bgr -> rgb)
+    // reverse all of the colors. (bgr -> rgb)
+#if 1
+    for (i=0; i<(infoheader.biWidth * infoheader.biHeight * 3); i+=3)
+    {
         temp = infoheader.data[i];
         infoheader.data[i] = infoheader.data[i+2];
         infoheader.data[i+2] = temp;
     }
+#endif
 
     fclose(file);
     glBindTexture(GL_TEXTURE_2D, num_texture);
@@ -244,17 +230,17 @@ void keyboard_s (int key, int x, int y)
 {
     switch (key)
     {
-        case GLUT_KEY_UP:
-            rotation_x_increment = rotation_x_increment +0.005;
+    case GLUT_KEY_UP:
+        rotation_x_increment = rotation_x_increment +0.005;
         break;
-        case GLUT_KEY_DOWN:
-            rotation_x_increment = rotation_x_increment -0.005;
+    case GLUT_KEY_DOWN:
+        rotation_x_increment = rotation_x_increment -0.005;
         break;
-        case GLUT_KEY_LEFT:
-            rotation_y_increment = rotation_y_increment +0.005;
+    case GLUT_KEY_LEFT:
+        rotation_y_increment = rotation_y_increment +0.005;
         break;
-        case GLUT_KEY_RIGHT:
-            rotation_y_increment = rotation_y_increment -0.005;
+    case GLUT_KEY_RIGHT:
+        rotation_y_increment = rotation_y_increment -0.005;
         break;
     }
 }
