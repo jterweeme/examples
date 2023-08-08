@@ -39,15 +39,6 @@ of course you may need to change the makefile
 
 extern int num_texture;
 
-
-/**********************************************************
- *
- * FUNCTION LoadBitmap(char *)
- *
- * This function loads a bitmap file and return the OpenGL reference ID to use that texture
- *
- *********************************************************/
-
 extern int LoadBitmap(char *filename);
 
 typedef struct                       /**** BMP file info structure ****/
@@ -85,7 +76,8 @@ typedef struct{
 }mapcoord_type;
 
 // The object type
-typedef struct {
+struct obj_type
+{
     char name[20];
 
     int vertices_qty;
@@ -95,7 +87,7 @@ typedef struct {
     polygon_type polygon[MAX_POLYGONS];
     mapcoord_type mapcoord[MAX_VERTICES];
     int id_texture;
-} obj_type, *obj_type_ptr;
+};
 
 int num_texture=-1;
 
@@ -108,10 +100,8 @@ long filelength(int f)
     return(buf.st_size);
 }
 
-char Load3DS(obj_type_ptr p_object, const char *p_filename)
+char Load3DS(obj_type *p_object, const char *p_filename)
 {
-    int i; //Index variable
-
     FILE *l_file; //File pointer
 
     unsigned short l_chunk_id; //Chunk identifier
@@ -122,7 +112,8 @@ char Load3DS(obj_type_ptr p_object, const char *p_filename)
 
     unsigned short l_face_flags; //Flag that stores some face information
 
-    if ((l_file=fopen (p_filename, "rb"))== NULL) return 0; //Open the file
+    if ((l_file=fopen (p_filename, "rb"))== NULL)
+        return 0; //Open the file
 
     while (ftell (l_file) < filelength (fileno (l_file))) //Loop to scan the whole file
     //while(!EOF)
@@ -158,14 +149,17 @@ char Load3DS(obj_type_ptr p_object, const char *p_filename)
             // Chunk Lenght: len(object name) + sub chunks
             //-------------------------------------------
             case 0x4000:
-                i=0;
+            {
+                int i=0;
                 do
                 {
                     fread (&l_char, 1, 1, l_file);
                     p_object->name[i]=l_char;
-                    i++;
-                }while(l_char != '\0' && i<20);
-            break;
+                    ++i;
+                }
+                while(l_char != '\0' && i<20);
+            }
+                break;
 
             //--------------- OBJ_TRIMESH ---------------
             // Description: Triangular mesh, contains chunks for 3d mesh info
@@ -186,7 +180,7 @@ char Load3DS(obj_type_ptr p_object, const char *p_filename)
                 fread (&l_qty, sizeof (unsigned short), 1, l_file);
                 p_object->vertices_qty = l_qty;
                 printf("Number of vertices: %d\n",l_qty);
-                for (i=0; i<l_qty; i++)
+                for (int i=0; i<l_qty; i++)
                 {
                     fread (&p_object->vertex[i].x, sizeof(float), 1, l_file);
                     printf("Vertices list x: %f\n",p_object->vertex[i].x);
@@ -208,7 +202,7 @@ char Load3DS(obj_type_ptr p_object, const char *p_filename)
                 fread (&l_qty, sizeof (unsigned short), 1, l_file);
                 p_object->polygons_qty = l_qty;
                 printf("Number of polygons: %d\n",l_qty);
-                for (i=0; i<l_qty; i++)
+                for (int i=0; i<l_qty; ++i)
                 {
                     fread (&p_object->polygon[i].a, sizeof (unsigned short), 1, l_file);
                     printf("Polygon point a: %d\n",p_object->polygon[i].a);
@@ -230,7 +224,7 @@ char Load3DS(obj_type_ptr p_object, const char *p_filename)
             //-------------------------------------------
             case 0x4140:
                 fread (&l_qty, sizeof (unsigned short), 1, l_file);
-                for (i=0; i<l_qty; i++)
+                for (int i=0; i<l_qty; ++i)
                 {
                     fread (&p_object->mapcoord[i].u, sizeof (float), 1, l_file);
                     printf("Mapping list u: %f\n",p_object->mapcoord[i].u);
@@ -266,14 +260,8 @@ int LoadBitmap(const char *filename)
     
     fseek(file, 18, SEEK_CUR);  /* start reading width & height */
     fread(&infoheader.biWidth, sizeof(int), 1, file); 
-    
     fread(&infoheader.biHeight, sizeof(int), 1, file);
-    
     fread(&infoheader.biPlanes, sizeof(short int), 1, file);
-    if (infoheader.biPlanes != 1) {
-        printf("Planes from %s is not 1: %u\n", filename, infoheader.biPlanes);
-        return 0;
-    }
 
     // read the bpp
     fread(&infoheader.biBitCount, sizeof(unsigned short int), 1, file);
@@ -312,10 +300,9 @@ int LoadBitmap(const char *filename)
     // The next commands sets the texture parameters
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); // The magnification function ("linear" produces better results)
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST); //The minifying function
-
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE); // We don't combine the color with the original surface color, use only the texture map.
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE); 
 
     // Finally we define the 2d texture
     glTexImage2D(GL_TEXTURE_2D, 0, 3, infoheader.biWidth, infoheader.biHeight,
@@ -413,8 +400,6 @@ void keyboard_s(int key, int x, int y)
 
 void display(void)
 {
-    int l_index;
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW); // Modeling transformation
     glLoadIdentity(); // Initialize the model matrix as identity
@@ -435,8 +420,8 @@ void display(void)
     
     glBindTexture(GL_TEXTURE_2D, object.id_texture); // We set the active texture 
 
-    glBegin(GL_TRIANGLES); // glBegin and glEnd delimit the vertices that define a primitive (in our case triangles)
-    for (l_index=0;l_index<object.polygons_qty;l_index++)
+    glBegin(GL_TRIANGLES);
+    for (int l_index=0;l_index<object.polygons_qty;l_index++)
     {
         glTexCoord2f( object.mapcoord[ object.polygon[l_index].a ].u,
                       object.mapcoord[ object.polygon[l_index].a ].v);

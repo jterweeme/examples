@@ -14,12 +14,7 @@ CC = gcc $(OPT) -Wall
 GLLIBS = $(MAINLIB) -lGL -lGLU
 LIBS = $(GLLIBS) -lm
 
-all: tutorial4
-
-.c.o:
-	$(CC) -c $<
-
-tutorial4:
+all:
 	g++ -o tutorial4 tutorial4.cpp $(LIBS)
 
 clean:

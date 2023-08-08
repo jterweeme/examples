@@ -43,18 +43,98 @@ public:
     T z() { return _xyz[2]; }
 };
 
+class Bitmap
+{
+public:
+    int id;
+    std::string name;
+};
+
+std::vector<Bitmap> g_bitmaps;
+
+class Bitmaps
+{
+};
+
+class VertexPoint
+{
+public:
+    float x, y, z;
+    void draw() const;
+};
+
+void VertexPoint::draw() const
+{
+    glVertex3f(x, y, z);
+}
+
+class TexCoord
+{
+public:
+    float u, v;
+    void draw() const;
+};
+
+void TexCoord::draw() const
+{
+    glTexCoord2f(u, v);
+}
+
+class Face
+{
+public:
+    TexCoord tca;
+    TexCoord tcb;
+    TexCoord tcc;
+    VertexPoint vpa;
+    VertexPoint vpb;
+    VertexPoint vpc;
+    std::string material;
+    void draw() const;
+};
+
+class Material
+{
+private:
+    std::string _name;
+    float _ns;
+    float _ka[3];
+    float _kd[3];
+    float _ks[3];
+    float _ni;
+    float _d;
+    int _illum;
+    int _map_kd;
+public:
+    void name(std::string &name) { _name = name; }
+};
+
 class Model_OBJ
 {
 private:
     std::vector<float> _normals;
     std::vector<float> _triangles;
     std::vector<float> _texCoords;
+    std::vector<Material> _materials;
+    std::vector<Face> _faces;
+    Bitmaps _bitmaps;
+    void material(std::istream &is);
 public: 
     void load(std::istream &is);
     void load(const char *filename);
 	void draw();
 };
- 
+
+void Face::draw() const
+{
+    tca.draw();
+    vpa.draw();
+    tcb.draw();
+    vpb.draw();
+    tcc.draw();
+    vpc.draw();
+}
+
 void Model_OBJ::load(const char* filename)
 {
     std::ifstream objFile(filename);
@@ -117,7 +197,19 @@ void bitmap(std::istream &is)
     delete[] data;
 }
 
-void material(std::istream &is)
+int findBitmapId(std::string name)
+{
+    for (std::vector<Bitmap>::const_iterator it = g_bitmaps.cbegin(); it != g_bitmaps.cend(); ++it)
+    {
+        if (it->name == name)
+            return it->id;
+    }
+
+    return -1;
+}
+
+//read mtl file
+void Model_OBJ::material(std::istream &is)
 {
     while (!is.eof())
     {
@@ -125,8 +217,17 @@ void material(std::istream &is)
         getline(is, line);
         std::vector<std::string> tokens = split(line, " ");
 
+        if (tokens[0].compare("newmtl") == 0)
+        {
+            _materials.push_back(Material());
+            _materials.back().name(tokens[1]);
+        }
+
         if (tokens[0].compare("map_Kd") == 0)
         {
+            if (findBitmapId(tokens[1]) > 0)
+                continue;
+
             std::ifstream ifs(tokens[1]);
             bitmap(ifs);
             ifs.close();
@@ -179,9 +280,9 @@ void Model_OBJ::load(std::istream &objFile)
             texturesBuf.push_back(stof(tokens[2]));
         }
 
-        // The first character is an 'f': on this line is a point stored
         if (tokens[0].compare("f") == 0)
         {
+            Face face;
             int normalsNumber[3];
 
             float coord[3][3];
@@ -198,6 +299,20 @@ void Model_OBJ::load(std::istream &objFile)
                 vertexNumber[1] = std::stoi(vs[1][0]) - 1;
                 vertexNumber[2] = std::stoi(vs[2][0]) - 1;
 
+                VertexPoint vp;
+                vp.x = vertexBuf[vertexNumber[0]].x();
+                vp.y = vertexBuf[vertexNumber[0]].y();
+                vp.z = vertexBuf[vertexNumber[0]].z();
+                face.vpa = vp;
+                vp.x = vertexBuf[vertexNumber[1]].x();
+                vp.y = vertexBuf[vertexNumber[1]].y();
+                vp.z = vertexBuf[vertexNumber[1]].z();
+                face.vpb = vp;
+                vp.x = vertexBuf[vertexNumber[2]].x();
+                vp.y = vertexBuf[vertexNumber[2]].y();
+                vp.z = vertexBuf[vertexNumber[2]].z();
+                face.vpc = vp;
+
                 for (int i = 0; i < 3; ++i)
                 {
                     float *p = vertexBuf[vertexNumber[i]]._xyz;
@@ -212,6 +327,17 @@ void Model_OBJ::load(std::istream &objFile)
                 texturesNumber[0] = std::stoi(vs[0][1]) - 1;
                 texturesNumber[1] = std::stoi(vs[1][1]) - 1;
                 texturesNumber[2] = std::stoi(vs[2][1]) - 1;
+
+                TexCoord tc;
+                tc.u = texturesBuf[2 * texturesNumber[0] + 0];
+                tc.v = texturesBuf[2 * texturesNumber[0] + 1];
+                face.tca = tc;
+                tc.u = texturesBuf[2 * texturesNumber[1] + 0];
+                tc.v = texturesBuf[2 * texturesNumber[1] + 1];
+                face.tcb = tc;
+                tc.u = texturesBuf[2 * texturesNumber[2] + 0];
+                tc.v = texturesBuf[2 * texturesNumber[2] + 1];
+                face.tcc = tc;
 
                 for (int i = 0; i < 3; ++i)
                 {
@@ -260,24 +386,24 @@ void Model_OBJ::load(std::istream &objFile)
 			    for (int i = 0; i < 3; i++)
                     _normals.insert(_normals.end(), std::begin(norm), std::end(norm));
             }
+
+            _faces.push_back(face);
 		}	
 	}
 }
  
 void Model_OBJ::draw()
 {
-    glEnableClientState(GL_VERTEX_ARRAY);						// Enable vertex arrays
-    glEnableClientState(GL_NORMAL_ARRAY);						// Enable normal arrays
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glBindTexture(GL_TEXTURE_2D, 1);
     glEnable(GL_TEXTURE_2D);
-    glVertexPointer(3, GL_FLOAT, 0, _triangles.data());         // Vertex Pointer to triangle array
-    glNormalPointer(GL_FLOAT, 0, _normals.data());
-    glTexCoordPointer(2, GL_FLOAT, 0, _texCoords.data());
-    glDrawArrays(GL_TRIANGLES, 0, _triangles.size() / 3);       // Draw the trianglesa
+    glBegin(GL_TRIANGLES);
+
+    for (std::vector<Face>::const_iterator it = _faces.cbegin(); it != _faces.cend(); ++it)
+        it->draw();
+    
+    glEnd();
     glDisable(GL_TEXTURE_2D);
-    glDisableClientState(GL_VERTEX_ARRAY);						// Disable vertex arrays
-    glDisableClientState(GL_NORMAL_ARRAY);						// Disable normal arrays
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glFlush();
 }
  
 class CMain
