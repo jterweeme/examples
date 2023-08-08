@@ -3,7 +3,7 @@
 
 MAINLIB = -lglut
 
-SRC = tutorial4.cpp 3dsloader.cpp
+SRC = tutorial4.cpp
 
 OBJ = $(SRC:.c=.o)
 
@@ -19,8 +19,8 @@ all: tutorial4
 .c.o:
 	$(CC) -c $<
 
-tutorial4: $(OBJ)
-	gcc -o $@ $^ $(LIBS)
+tutorial4:
+	g++ -o tutorial4 tutorial4.cpp $(LIBS)
 
 clean:
 	rm -f tutorial4 *.o
