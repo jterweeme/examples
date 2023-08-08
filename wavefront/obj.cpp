@@ -46,15 +46,38 @@ public:
 class Bitmap
 {
 public:
-    int id;
+    GLuint id;
     std::string name;
+    void bind();
 };
 
-std::vector<Bitmap> g_bitmaps;
+void Bitmap::bind()
+{
+    glBindTexture(GL_TEXTURE_2D, id);
+}
 
 class Bitmaps
 {
+private:
+    std::vector<Bitmap> _bitmaps;
+    GLuint _bitmap(std::istream &is);
+public:
+    GLuint findBitmapId(std::string name);
+    Bitmap get(std::string name);
+    bool has(std::string name);
+    Bitmap add(std::string name);
 };
+
+bool Bitmaps::has(std::string name)
+{
+    for (std::vector<Bitmap>::const_iterator it = _bitmaps.cbegin(); it != _bitmaps.cend(); ++it)
+    {
+        if (it->name == name)
+            return true;
+    }
+
+    return false;
+}
 
 class VertexPoint
 {
@@ -104,10 +127,45 @@ private:
     float _ni;
     float _d;
     int _illum;
-    int _map_kd;
+    GLuint _texture = 0;
 public:
-    void name(std::string &name) { _name = name; }
+    void name(std::string &name);
+    std::string name() const;
+    void texture(GLuint t) { _texture = t; }
+    GLuint texture() { return _texture; }
 };
+
+std::string Material::name() const
+{
+    return _name;
+}
+
+void Material::name(std::string &name)
+{
+    _name = name;
+}
+
+class Materials
+{
+    Bitmaps _bitmaps;
+public:
+    std::vector<Material> _materials;
+    void readFile(std::istream &is);
+    GLuint getTexture(std::string material);
+};
+
+GLuint Materials::getTexture(std::string material)
+{
+    for (std::vector<Material>::iterator it = _materials.begin(); it != _materials.end(); ++it)
+    {
+        if (it->name() == material)
+        {
+            return it->texture();
+        }
+    }
+
+    return 0;
+}
 
 class Model_OBJ
 {
@@ -115,10 +173,11 @@ private:
     std::vector<float> _normals;
     std::vector<float> _triangles;
     std::vector<float> _texCoords;
-    std::vector<Material> _materials;
+    Materials _materials;
+    //std::vector<Material> _materials;
     std::vector<Face> _faces;
-    Bitmaps _bitmaps;
-    void material(std::istream &is);
+
+    //void material(std::istream &is);
 public: 
     void load(std::istream &is);
     void load(const char *filename);
@@ -174,15 +233,11 @@ template <typename T> T readX(std::istream &is)
     return ret;
 }
 
-void bitmap(std::istream &is)
+GLuint Bitmaps::_bitmap(std::istream &is)
 {
-    std::cerr << "Bitmap\r\n";
-    std::cerr.flush();
     is.ignore(18);
     int width = readX<int>(is);
     int height = readX<int>(is);
-    std::cerr << width << "x" << height << "\r\n";
-    std::cerr.flush();
     is.ignore(112);
     char *data = new char[width * height * 3];
     is.read(data, width * height * 3);
@@ -195,21 +250,46 @@ void bitmap(std::istream &is)
     glBindTexture(GL_TEXTURE_2D, texture);
     gluBuild2DMipmaps(GL_TEXTURE_2D, 3, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
     delete[] data;
+    return texture;
 }
 
-int findBitmapId(std::string name)
+Bitmap Bitmaps::add(std::string name)
 {
-    for (std::vector<Bitmap>::const_iterator it = g_bitmaps.cbegin(); it != g_bitmaps.cend(); ++it)
+    std::cerr << name << "\r\n";
+    std::ifstream ifs(name);
+    GLuint id = _bitmap(ifs);
+    ifs.close();
+    Bitmap bitmap;
+    bitmap.id = id;
+    bitmap.name = name;
+    _bitmaps.push_back(bitmap);
+    return bitmap;
+}
+
+Bitmap Bitmaps::get(std::string name)
+{
+    for (std::vector<Bitmap>::const_iterator it = _bitmaps.cbegin(); it != _bitmaps.cend(); ++it)
+    {
+        if (it->name == name)
+            return *it;
+    }
+
+    return Bitmap();
+}
+
+GLuint Bitmaps::findBitmapId(std::string name)
+{
+    for (std::vector<Bitmap>::const_iterator it = _bitmaps.cbegin(); it != _bitmaps.cend(); ++it)
     {
         if (it->name == name)
             return it->id;
     }
 
-    return -1;
+    return 0;
 }
 
 //read mtl file
-void Model_OBJ::material(std::istream &is)
+void Materials::readFile(std::istream &is)
 {
     while (!is.eof())
     {
@@ -225,12 +305,10 @@ void Model_OBJ::material(std::istream &is)
 
         if (tokens[0].compare("map_Kd") == 0)
         {
-            if (findBitmapId(tokens[1]) > 0)
-                continue;
+            if (_bitmaps.has(tokens[1]) == false)
+                _bitmaps.add(tokens[1]);
 
-            std::ifstream ifs(tokens[1]);
-            bitmap(ifs);
-            ifs.close();
+            _materials.back().texture(_bitmaps.get(tokens[1]).id);
         }
     }
 }
@@ -240,6 +318,7 @@ void Model_OBJ::load(std::istream &objFile)
     std::vector<Coords> vertexBuf;
     std::vector<float> normalsBuf;
     std::vector<float> texturesBuf;
+    std::string currentMaterial;
  
     while (!objFile.eof())
     {
@@ -251,12 +330,13 @@ void Model_OBJ::load(std::istream &objFile)
         if (tokens[0].compare("mtllib") == 0)
         {
             std::ifstream ifs(tokens[1]);
-            material(ifs);
+            _materials.readFile(ifs);
             ifs.close();
         }
 
         if (tokens[0].compare("usemtl") == 0)
         {
+            currentMaterial = tokens[1];
         }
  
         if (tokens[0].compare("v") == 0)
@@ -283,6 +363,7 @@ void Model_OBJ::load(std::istream &objFile)
         if (tokens[0].compare("f") == 0)
         {
             Face face;
+            face.material = currentMaterial;
             int normalsNumber[3];
 
             float coord[3][3];
@@ -312,13 +393,6 @@ void Model_OBJ::load(std::istream &objFile)
                 vp.y = vertexBuf[vertexNumber[2]].y();
                 vp.z = vertexBuf[vertexNumber[2]].z();
                 face.vpc = vp;
-
-                for (int i = 0; i < 3; ++i)
-                {
-                    float *p = vertexBuf[vertexNumber[i]]._xyz;
-                    _triangles.insert(_triangles.end(), p, p + 3);
-                    std::copy(p, p + 3, coord[i]);
-                }
             }
 
             if (vs[0].size() > 1)
@@ -338,12 +412,6 @@ void Model_OBJ::load(std::istream &objFile)
                 tc.u = texturesBuf[2 * texturesNumber[2] + 0];
                 tc.v = texturesBuf[2 * texturesNumber[2] + 1];
                 face.tcc = tc;
-
-                for (int i = 0; i < 3; ++i)
-                {
-                    _texCoords.push_back(texturesBuf[2 * texturesNumber[i] + 0]);
-                    _texCoords.push_back(texturesBuf[2 * texturesNumber[i] + 1]);
-                }
             }
 
             //obj bestand heeft normals
@@ -390,16 +458,42 @@ void Model_OBJ::load(std::istream &objFile)
             _faces.push_back(face);
 		}	
 	}
+#if 0
+    for (std::vector<Face>::const_iterator it = _faces.cbegin(); it != _faces.cend(); ++it)
+    {
+        std::cerr << it->material << "\r\n";
+    }
+    std::cerr.flush();
+#endif
+
+    
 }
  
 void Model_OBJ::draw()
 {
-    glBindTexture(GL_TEXTURE_2D, 1);
-    glEnable(GL_TEXTURE_2D);
+    std::string currentMaterial = "";
+    //glBindTexture(GL_TEXTURE_2D, 1);
+    //glEnable(GL_TEXTURE_2D);
     glBegin(GL_TRIANGLES);
 
-    for (std::vector<Face>::const_iterator it = _faces.cbegin(); it != _faces.cend(); ++it)
+    for (std::vector<Face>::iterator it = _faces.begin(); it != _faces.end(); ++it)
+    {
+        if (it->material != currentMaterial)
+        {
+            currentMaterial = it->material;
+            GLuint texture = _materials.getTexture(currentMaterial);
+
+            if (texture > 0)
+            {
+                glEnd();
+                glDisable(GL_TEXTURE_2D);
+                glBindTexture(GL_TEXTURE_2D, texture);
+                glEnable(GL_TEXTURE_2D);
+                glBegin(GL_TRIANGLES);
+            }
+        }
         it->draw();
+    }
     
     glEnd();
     glDisable(GL_TEXTURE_2D);
