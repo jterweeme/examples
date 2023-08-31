@@ -405,8 +405,10 @@ void Model_OBJ::load(std::istream &objFile)
             vs[0] = split(tokens[1], "/");
             vs[1] = split(tokens[2], "/");
             vs[2] = split(tokens[3], "/");
+            std::cerr << vs[0][0] << " " << vs[0][1] << " " << vs[0][2] << "\r\n";
+            std::cerr.flush();
 
-            if (vs[0].size() > 0)
+            if (vs[0][0].size() > 0)
             {
                 int vertexNumber[3];
                 vertexNumber[0] = stoi(vs[0][0]) - 1;
@@ -417,7 +419,7 @@ void Model_OBJ::load(std::istream &objFile)
                 face.vpc = vertexBuf[vertexNumber[2]];
             }
 
-            if (vs[0].size() > 1)
+            if (vs[0][1].size() > 0)
             {
                 int texturesNumber[3];
                 texturesNumber[0] = stoi(vs[0][1]) - 1;
@@ -429,7 +431,7 @@ void Model_OBJ::load(std::istream &objFile)
             }
 
             //obj bestand heeft normals
-            if (vs[0].size() > 2)
+            if (vs[0][2].size() > 0)
             {
                 int normalsNumber[3];
                 normalsNumber[0] = stoi(vs[0][2]) - 1;
@@ -610,8 +612,8 @@ void CMain::run(int argc, char **argv)
     glShadeModel(GL_SMOOTH);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_NORMALIZE);
-    //glEnable(GL_LIGHTING);
-    //glEnable(GL_LIGHT0);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
 
     obj.load(argv[1]);
     std::cout << "Finished loading model\r\n";

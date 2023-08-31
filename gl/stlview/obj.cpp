@@ -1,17 +1,3 @@
-/*
- *
- * Demonstrates how to load and display an Wavefront OBJ file. 
- * Using triangles and normals as static object. No texture mapping.
- * https://tutorialsplay.com/opengl/
- *
- * OBJ files must be triangulated!!!
- * Non triangulated objects wont work!
- * You can use Blender to triangulate
- *
- * g++ obj.cpp -lglut -lGL -lGLU
- *
- */
- 
 #include <iostream>
 #include <fstream>
 #include <GL/gl.h>
@@ -61,13 +47,13 @@ void Model::load(std::istream &is)
         float normals[3];
         
         for (uint32_t j = 0; j < 3; ++j)
-            normals[j] = read<float>(is);
+            normals[j] = readX<float>(is);
 
         for (uint32_t j = 0; j < 3; ++j)
             _normals.insert(_normals.end(), std::begin(normals), std::end(normals));           
 
         for (uint32_t j = 0; j < 9; ++j)
-            _triangles.push_back(read<float>(is));
+            _triangles.push_back(readX<float>(is));
 
         is.ignore(2);
     }
@@ -154,31 +140,12 @@ void CMain::run(int argc, char **argv)
 	gluPerspective(win.field_of_view_angle, aspect, win.z_near, win.z_far);
     glMatrixMode(GL_MODELVIEW);
     glShadeModel( GL_SMOOTH );
-    glClearColor( 0.0f, 0.1f, 0.0f, 0.5f );
-    glClearDepth( 1.0f );
     glEnable( GL_DEPTH_TEST );
-    glDepthFunc( GL_LEQUAL );
-    glHint( GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST );
- 
-    GLfloat amb_light[] = { 0.1, 0.1, 0.1, 1.0 };
-    GLfloat diffuse[] = { 0.6, 0.6, 0.6, 1 };
-    GLfloat specular[] = { 0.7, 0.7, 0.3, 1 };
-    glLightModelfv( GL_LIGHT_MODEL_AMBIENT, amb_light );
-    glLightfv( GL_LIGHT0, GL_DIFFUSE, diffuse );
-    glLightfv( GL_LIGHT0, GL_SPECULAR, specular );
-    glEnable( GL_LIGHT0 );
-    glEnable( GL_COLOR_MATERIAL );
-    glShadeModel( GL_SMOOTH );
-    glLightModeli( GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE );
-    glDepthFunc( GL_LEQUAL );
-    glEnable( GL_DEPTH_TEST );
-    glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
-
-    std::ifstream ifs("utah_teapot_solid.stl");
+    glEnable(GL_LIGHTING);
+    std::ifstream ifs(argv[1]);
     obj.load(ifs);
     ifs.close();
-    
     glutMainLoop();   
 }
 
