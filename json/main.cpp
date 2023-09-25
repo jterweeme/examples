@@ -1,24 +1,47 @@
 #include <fstream>
 #include <iostream>
+#include <vector>
 
-class JSONDocument
-{
-    
-};
+static constexpr int TYPE_STRING = 1;
+static constexpr int TYPE_NUMBER = 2;
+static constexpr int TYPE_NULL = 3;
 
 class JSONNode
 {
-    JSONNode *next;
+    JSONNode *_next;
+public:
+    virtual void serialize(std::ostream &os) { }
 };
 
 class JSONObject : public JSONNode
 {
+    std::string name;
+    int type;
+    
     
 };
 
 class JSONArray : public JSONNode
 {
+public:
+    void serialize(std::ostream &os) { }
 };
+
+class JSONString : public JSONNode
+{
+    std::string s;
+};
+
+class JSONDocument
+{
+    JSONObject *first;
+public:
+    void serialize(std::ostream &os);
+};
+
+void JSONDocument::serialize(std::ostream &os)
+{
+}
 
 struct Token
 {
@@ -26,6 +49,8 @@ struct Token
     {
         CURLY_OPEN,
         CURLY_CLOSE,
+        BRACKET_OPEN,
+        BRACKET_CLOSE,
         COLON,
         COMMA,
         NUMBER,
@@ -85,6 +110,20 @@ bool Tokenizer::hasNext()
         if (c == '}')
         {
             _next.type = Token::TYPE::CURLY_CLOSE;
+            _next.value = "";
+            return true;
+        }
+
+        if (c == '[')
+        {
+            _next.type = Token::TYPE::BRACKET_OPEN;
+            _next.value = "";
+            return true;
+        }
+
+        if (c == ']')
+        {
+            _next.type = Token::TYPE::BRACKET_CLOSE;
             _next.value = "";
             return true;
         }
@@ -171,6 +210,12 @@ int main(int argc, char **argv)
 
         if (tok.type == Token::TYPE::CURLY_CLOSE)
             std::cout << "}" << "\r\n";
+
+        if (tok.type == Token::TYPE::BRACKET_OPEN)
+            std::cout << "[" << "\r\n";
+
+        if (tok.type == Token::TYPE::BRACKET_CLOSE)
+            std::cout << "]" << "\r\n";
 
         if (tok.type == Token::TYPE::COLON)
             std::cout << ":" << "\r\n";
