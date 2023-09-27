@@ -1,6 +1,5 @@
 #include <iostream>
 #include <fstream>
-#include <vector>
 
 class XMLNode
 {
@@ -51,9 +50,6 @@ void XMLString::remove()
 void XMLString::serialize(std::ostream &os) const
 {
     os << _s;
-
-    if (next() != nullptr)
-        next()->serialize(os);
 }
 
 class XMLTag : public XMLNode
@@ -61,6 +57,7 @@ class XMLTag : public XMLNode
 public:
     XMLNode *_firstChild = nullptr;
     std::string _name;
+    std::string _attributes;
     XMLTag() { }
 public:
     static XMLTag *create();
@@ -114,21 +111,28 @@ void XMLTag::firstChild(XMLNode *child)
 
 void XMLTag::serialize(std::ostream &os) const
 {
-#if 0
-    std::cerr << "XMLTag::serialize\r\n";
-#endif
     os << "<" << _name;
 
     if (_firstChild == nullptr)
-        os.put('/');
+    {
+        os << "/>";
+        return;
+    }
 
     os.put('>');
+    XMLNode *current = _firstChild;
 
-    if (_firstChild)
+    while (true)
     {
-        _firstChild->serialize(os);
-        os << "</" << _name << ">";
+        current->serialize(os);
+
+        if (current->next() == nullptr)
+            break;
+
+        current = current->next();
     }
+
+    os << "</" << _name << ">";
 }
 
 class XMLDocument
@@ -143,9 +147,6 @@ public:
 
 void XMLDocument::serialize(std::ostream &os) const
 {
-#if 0
-    std::cerr << "XMLDocument::serialize\r\n";
-#endif
     if (_root)
         _root->serialize(os);
 }
@@ -157,16 +158,6 @@ void XMLDocument::bogus()
     _root->appendChild(XMLString::create("Jasper "));
     _root->appendChild(XMLString::create("ter "));
     _root->appendChild(XMLString::create("Weeme"));
-#if 0
-    XMLString *j = XMLString::create("Jasper ");
-    XMLString *t = XMLString::create("ter ");
-    XMLString *w = XMLString::create("Weeme");
-    j->next(t);
-    t->next(w);
-    _root->firstChild(j);
-    _root->lastChild()->prev()->serialize(std::cout);
-    std::cout << "\r\n";
-#endif
 }
 
 void XMLDocument::parse(std::istream &is)
@@ -187,35 +178,20 @@ void XMLDocument::parse(std::istream &is)
         {
             c = is.peek();
 
-            //XML Header
-            if (c == '?')
+            //ignore headers and comments
+            if (c == '?' || c == '!')
             {
-#if 0
-                std::cerr << "XML Header\r\n";
-#endif
-                do
-                {
-                    c = is.get();
-                }
-                while (c != '>');
-
+                do { c = is.get(); } while (c != '>');
                 continue;
             }
 
             //Close tag
             if (c == '/')
             {
-                do
-                {
-                    c = is.get();
-                }
-                while (c != '>');
+                do { c = is.get(); } while (c != '>');
 
                 if (currentTag->parent())
-                {
                     currentTag = (XMLTag *)(currentTag->parent());
-                    std::cerr << currentTag->_name << "\r\n";
-                }
 
                 continue;
             }
@@ -241,7 +217,6 @@ void XMLDocument::parse(std::istream &is)
             }
             else
             {
-                std::cerr << t->_name << "\r\n";
                 currentTag->appendChild(t);
             }
 
@@ -266,9 +241,6 @@ void XMLDocument::parse(std::istream &is)
 
         XMLString *xs = XMLString::create(s);
         currentTag->appendChild(xs);
-        
-        std::cerr << s << "\r\n";
-
     }
 }
 
