@@ -153,17 +153,109 @@ private:
     static void _parseTag(XMLTag *tag, const std::string &s);
     static void _parseAttributes(std::unordered_map<std::string, std::string> &m, std::string &s);
     static void _makeNodes(std::vector<std::string> &tokens, std::vector<XMLNode *> &nodes);
+    static XMLTag *_makeTree(std::vector<XMLNode *> &nodes);
 public:
     XMLTag *root() { return _root; }
     void parse(std::istream &is);
     void serialize(std::ostream &os) const;
+    static void tokenize2(std::istream &is, std::vector<std::string> &tokens);
+    static void parseTokens2(std::vector<XMLNode *> &nodes, std::vector<std::string> &tokens);
+    static bool isOneOf(std::string s, char c);
 };
+
+bool XMLDocument::isOneOf(std::string s, char c)
+{
+    return s.find(c) == -1 ? false : true;
+}
 
 void XMLDocument::serialize(std::ostream &os) const
 {
     if (_root)
         _root->serialize(os);
 }
+
+#if 1
+void XMLDocument::tokenize2(std::istream &is, std::vector<std::string> &tokens)
+{
+    std::string token;
+
+    while (true)
+    {
+        int c = is.get();
+
+        if (c == EOF)
+            break;
+
+        if (c == '<')
+        {
+            if (token.size() > 1)
+            {
+                tokens.push_back(token);
+            }
+
+            token.clear();
+            tokens.push_back("<");
+
+            while (true)
+            {
+                c = is.get();
+
+                if (c == '>')
+                {
+                    tokens.push_back(">");
+                    break;
+                }
+
+                if (isOneOf("?!=/", c))
+                {
+                    tokens.push_back(std::string(1, c));
+                    continue;
+                }
+
+                if (c == 34)
+                {
+                    token.push_back(c);
+
+                    do
+                    {
+                        c = is.get();
+                        token.push_back(c);
+                    }
+                    while (c != 34);
+
+                    tokens.push_back(token);
+                    token.clear();
+                    continue;
+                }
+
+                if (isalpha(c))
+                {
+                    token.push_back(c);
+
+                    while (true)
+                    {
+                        c = is.peek();
+
+                        if (isOneOf(">?!= ", c))
+                        {
+                            tokens.push_back(token);
+                            token.clear();
+                            break;
+                        }
+
+                        c = is.get();
+                        token.push_back(c);
+                    }
+                    continue;
+                }
+            }
+            continue;
+        }
+
+        token.push_back(c);
+    }
+}
+#endif
 
 void XMLDocument::_tokenize(std::istream &is, std::vector<std::string> &tokens)
 {
@@ -241,16 +333,8 @@ void XMLDocument::_makeNodes(std::vector<std::string> &tokens, std::vector<XMLNo
     }
 }
 
-void XMLDocument::parse(std::istream &is)
+XMLTag *XMLDocument::_makeTree(std::vector<XMLNode *> &nodes)
 {
-    std::vector<std::string> tokens;
-    _tokenize(is, tokens);
-    std::vector<XMLNode *> nodes;
-    _makeNodes(tokens, nodes);
-
-
-    //Maak tree
-    //root tag
     std::vector<XMLNode *>::iterator it = nodes.begin();
     XMLTag *currentTag = dynamic_cast<XMLTag *>(*it);
     XMLTag *root = currentTag;
@@ -294,7 +378,16 @@ void XMLDocument::parse(std::istream &is)
         ++it;
     }
 
-    _root = root;
+    return root;
+}
+
+void XMLDocument::parse(std::istream &is)
+{
+    std::vector<std::string> tokens;
+    _tokenize(is, tokens);
+    std::vector<XMLNode *> nodes;
+    _makeNodes(tokens, nodes);
+    _root = _makeTree(nodes);
 }
 
 void XMLDocument::_parseAttributes(std::unordered_map<std::string, std::string> &m, std::string &s)
@@ -382,6 +475,15 @@ int main(int argc, char **argv)
     ifs.close();
     d.serialize(std::cout);
     std::cout << "\r\n\r\n";
+    //ifs.seekg(0, std::ios::beg);
+    ifs.open(argv[1]);
+    std::vector<std::string> tokens;
+    d.tokenize2(ifs, tokens);
+    
+    for (auto token : tokens)
+    {
+        //std::cerr << token << "\r\n";
+    }
     return 0;
 }
 
