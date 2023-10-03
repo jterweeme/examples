@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <person>
     <name>Jasper <b>ter Weeme</b></name>
-    <birthdate>13/11/1988</birthdate>
+    <birthdate abc="def">13/11/1988</birthdate>
+    <test abc="def"/>
 </person>
 
 

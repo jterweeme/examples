@@ -1,20 +1,20 @@
 #include <iostream>
 #include <fstream>
+#include <vector>
+#include <unordered_map>
 
 class XMLNode
 {
-private:
+protected:
+    XMLNode *_parent = nullptr;
     XMLNode *_prev = nullptr;
     XMLNode *_next = nullptr;
-protected:
     XMLNode() { }
-    XMLNode *_parent = nullptr;
 public:
     virtual void serialize(std::ostream &os) const = 0;
     void next(XMLNode *next);
     void prev(XMLNode *prev) { _prev = prev; }
     void parent(XMLNode *parent) { _parent = parent; }
-    XMLNode *prev() const { return _prev; }
     XMLNode *next() const { return _next; }
     XMLNode *parent() const { return _parent; }
     virtual void remove() = 0;
@@ -57,13 +57,14 @@ class XMLTag : public XMLNode
 public:
     XMLNode *_firstChild = nullptr;
     std::string _name;
-    std::string _attributes;
+    std::unordered_map<std::string, std::string> _attr;
     XMLTag() { }
 public:
     static XMLTag *create();
-    void firstChild(XMLNode *child);
+    //void firstChild(XMLNode *child);
     void name(std::string s) { _name = s; }
-    bool hasChild(XMLNode *child) { return false; }
+    std::string name() { return _name; }
+    //bool hasChild(XMLNode *child) { return false; }
     XMLNode *lastChild() const;
     void remove() { }
     void removeAllChildren() { }
@@ -104,14 +105,23 @@ XMLNode *XMLTag::lastChild() const
     return ret;
 }
 
+#if 0
 void XMLTag::firstChild(XMLNode *child)
 {
     _firstChild = child;
 }
+#endif
 
 void XMLTag::serialize(std::ostream &os) const
 {
     os << "<" << _name;
+
+    typedef std::unordered_map<std::string, std::string>::const_iterator umcit;
+
+    for (umcit cit = _attr.cbegin(); cit != _attr.cend(); ++cit)
+    {
+        os << " " << cit->first << "=\"" << cit->second << "\"";
+    }
 
     if (_firstChild == nullptr)
     {
@@ -139,9 +149,13 @@ class XMLDocument
 {
 private:
     XMLTag *_root = nullptr;
+    static void _tokenize(std::istream &is, std::vector<std::string> &tokens);
+    static void _parseTag(XMLTag *tag, const std::string &s);
+    static void _parseAttributes(std::unordered_map<std::string, std::string> &m, std::string &s);
+    static void _makeNodes(std::vector<std::string> &tokens, std::vector<XMLNode *> &nodes);
 public:
+    XMLTag *root() { return _root; }
     void parse(std::istream &is);
-    void bogus();
     void serialize(std::ostream &os) const;
 };
 
@@ -151,130 +165,223 @@ void XMLDocument::serialize(std::ostream &os) const
         _root->serialize(os);
 }
 
-void XMLDocument::bogus()
+void XMLDocument::_tokenize(std::istream &is, std::vector<std::string> &tokens)
 {
-    _root = XMLTag::create();
-    _root->name("person");
-    _root->appendChild(XMLString::create("Jasper "));
-    _root->appendChild(XMLString::create("ter "));
-    _root->appendChild(XMLString::create("Weeme"));
-}
-
-void XMLDocument::parse(std::istream &is)
-{
-    XMLTag *currentTag = nullptr;
+    std::string token;
 
     while (true)
     {
-        int c = is.get();
+        token.clear();
+        int c = is.peek();
 
         if (c == EOF)
+        {
+            is.get();
             return;
+        }
 
         if (c == ' ' || c == '\r' || c == '\n')
-            continue;
-
-        if (c == '<')
         {
-            c = is.peek();
-
-            //ignore headers and comments
-            if (c == '?' || c == '!')
-            {
-                do { c = is.get(); } while (c != '>');
-                continue;
-            }
-
-            //Close tag
-            if (c == '/')
-            {
-                do { c = is.get(); } while (c != '>');
-
-                if (currentTag->parent())
-                    currentTag = (XMLTag *)(currentTag->parent());
-
-                continue;
-            }
-
-            //Open tag
-            XMLTag *t = XMLTag::create();
-            std::string name;
-
-            while (true)
-            {
-                c = is.get();
-                
-                if (c == ' ' || c == '>')
-                    break;
-
-                name.push_back(c);
-            }
-            t->name(name);
-            
-            if (_root == nullptr)
-            {
-                _root = t;
-            }
-            else
-            {
-                currentTag->appendChild(t);
-            }
-
-            currentTag = t;
+            is.get();
             continue;
         }
 
-        //String, geen tag gevonden
-        std::string s;
-        s.push_back(c);
+        if (c == '<')
+        {
+            do
+            {
+                c = is.get();
+                token.push_back(c);
+            }
+            while (c != '>');
+
+            tokens.push_back(token);
+
+            continue;
+        }
 
         while (true)
         {
             c = is.peek();
-
-            if (c == '<' || c == EOF)
+            
+            if (c == '<')
                 break;
 
-            s.push_back(c);
-            is.get();
+            c = is.get();
+            token.push_back(c);
         }
 
-        XMLString *xs = XMLString::create(s);
-        currentTag->appendChild(xs);
+        tokens.push_back(token);
     }
 }
 
+void XMLDocument::_makeNodes(std::vector<std::string> &tokens, std::vector<XMLNode *> &nodes)
+{
+    for (auto token : tokens)
+    {
+        //ignore XML header
+        if (token[0] == '<' && token[1] == '?')
+            continue;
 
+        //ignore comments
+        if (token[0] == '<' && token[1] == '!')
+            continue;
+
+        if (token[0] == '<')
+        {
+            XMLTag *tag = XMLTag::create();
+            _parseTag(tag, token);
+            nodes.push_back(tag);
+            continue;
+        }
+
+        XMLString *str = XMLString::create(token);
+        nodes.push_back(str);
+        continue;
+    }
+}
+
+void XMLDocument::parse(std::istream &is)
+{
+    std::vector<std::string> tokens;
+    _tokenize(is, tokens);
+    std::vector<XMLNode *> nodes;
+    _makeNodes(tokens, nodes);
+
+
+    //Maak tree
+    //root tag
+    std::vector<XMLNode *>::iterator it = nodes.begin();
+    XMLTag *currentTag = dynamic_cast<XMLTag *>(*it);
+    XMLTag *root = currentTag;
+    ++it;
+
+    while (it != nodes.end())
+    {
+        XMLTag *tag = dynamic_cast<XMLTag *>(*it);
+
+        if (tag)
+        {
+            std::cerr << "XMLTag: " << tag->_name << "\r\n";
+
+            if (tag->_name[0] == '/')
+            {
+                currentTag = dynamic_cast<XMLTag *>(currentTag->parent());
+                ++it;
+                continue;
+            }
+
+            //self closing
+            if (tag->_name.back() == '/')
+            {
+                tag->_name.pop_back();
+                currentTag->appendChild(tag);
+                ++it;
+                continue;
+            }
+
+            currentTag->appendChild(tag);
+            currentTag = tag;
+            ++it;
+            continue;
+        }
+
+        if (dynamic_cast<XMLString *>(*it))
+            std::cerr << "XMLString: \r\n";
+
+        currentTag->appendChild(*it);
+
+        ++it;
+    }
+
+    _root = root;
+}
+
+void XMLDocument::_parseAttributes(std::unordered_map<std::string, std::string> &m, std::string &s)
+{
+    std::string attr;
+    std::string val;
+    int len = s.length();
+
+    for (int i = 0; i < len; ++i)
+    {
+        if (s[i] == ' ')
+            continue;
+
+        while (i < len)
+        {
+            if (s[i] == '=')
+                break;
+
+            attr.push_back(s[i]);
+            ++i;
+        }
+
+        if (s[i] == '=')
+        {
+            ++i;
+        }
+    }
+}
+
+void XMLDocument::_parseTag(XMLTag *tag, const std::string &s)
+{
+    std::string name;
+    int len = s.length();
+    
+    name.push_back(s[1]);
+    int i;
+
+    for (i = 2; i < len; ++i)
+    {
+        if (s[i] == ' ' || s[i] == '/' || s[i] == '>')
+            break;
+
+        name.push_back(s[i]);
+    }
+
+    if (s[i] == ' ')
+    {
+        ++i;
+        std::string attributes;
+        
+        while (true)
+        {
+            if (s[i] == 34)
+            {
+                ++i;
+
+                do
+                {
+                    attributes.push_back(s[i]);
+                    ++i;
+                }
+                while (s[i] != 34);
+            }
+            if (s[i] == '/' || s[i] == '>')
+                break;
+
+            attributes.push_back(s[i]);
+            ++i;
+        }
+
+        _parseAttributes(tag->_attr, attributes);
+    }
+
+    if (s[len - 2] == '/')
+        name.push_back(s[len - 2]);
+
+    tag->_name = name;
+}
 
 int main(int argc, char **argv)
 {
-#if 1
     std::ifstream ifs(argv[1]);
     XMLDocument d;
     d.parse(ifs);
     ifs.close();
     d.serialize(std::cout);
-    std::cout << "\r\n";
-#endif
-
-#if 0
-    std::vector<XMLNode *> nodes;
-    XMLString onzin("onzin");
-    nodes.push_back(&onzin);
-
-    for (std::vector<XMLNode *>::const_iterator it = nodes.cbegin(); it != nodes.cend(); ++it)
-    {
-        XMLNode *node = *it;
-        node->serialize(std::cout);
-    }
-#endif
-
-#if 0
-    XMLDocument doc;
-    doc.bogus();
-    doc.serialize(std::cout);
-    std::cout << "\r\n";
-#endif
+    std::cout << "\r\n\r\n";
     return 0;
 }
 
