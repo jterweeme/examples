@@ -64,6 +64,7 @@ public:
     //void firstChild(XMLNode *child);
     void name(std::string s) { _name = s; }
     std::string name() { return _name; }
+    void addAttribute(std::string name, std::string val);
     //bool hasChild(XMLNode *child) { return false; }
     XMLNode *lastChild() const;
     void remove() { }
@@ -71,6 +72,11 @@ public:
     void appendChild(XMLNode *node);
     void serialize(std::ostream &os) const;
 };
+
+void XMLTag::addAttribute(std::string name, std::string val)
+{
+    _attr.insert(std::make_pair(name, val));
+}
 
 void XMLTag::appendChild(XMLNode *node)
 {
@@ -172,6 +178,90 @@ void XMLDocument::serialize(std::ostream &os) const
 {
     if (_root)
         _root->serialize(os);
+}
+
+void XMLDocument::parseTokens2(std::vector<XMLNode *> &nodes, std::vector<std::string> &tokens)
+{
+    int len = tokens.size();
+
+    for (int i = 0; i < len; ++i)
+    {
+        if (tokens[i].compare("<") != 0)
+        {
+            XMLString *s = XMLString::create(tokens[i]);
+            nodes.push_back(s);
+            continue;
+        }
+
+        //if (tokens[i].compare("<") == 0)
+        {
+            ++i;
+            std::string tag_name;
+
+            if (tokens[i].compare("?") == 0)
+            {
+                while (true)
+                {
+                    ++i;
+
+                    if (tokens[i].compare(">") == 0)
+                        break;
+                }
+
+                continue;
+            }
+
+            //first check for closing tag
+            if (tokens[i].compare("/") == 0)
+            {
+                tag_name.append("/");
+                ++i;
+            }
+
+            if (isalpha(tokens[i][0]) == false)
+                continue;
+
+            tag_name.append(tokens[i]);
+            ++i;
+            XMLTag *tag = XMLTag::create();
+
+            //attributes
+            while (true)
+            {
+                if (isalpha(tokens[i][0]) == false)
+                    break;
+
+                std::string attr = tokens[i];
+                ++i;
+
+                if (tokens[i].compare("=") != 0)
+                    throw "Specification mandates value for attribute";
+
+                ++i;
+
+                //trim leading and trailing quotes
+                std::string value = tokens[i].substr(1, tokens[i].length() - 2);
+                
+                tag->addAttribute(attr, value);
+                ++i;
+            }
+
+            if (tokens[i].compare("/") == 0)
+            {
+                tag_name.append("/");
+                ++i;
+            }
+
+            if (tokens[i].compare(">") != 0)
+                throw "No closing >";
+
+            tag->name(tag_name);
+            nodes.push_back(tag);
+            continue;
+        }
+
+    }
+
 }
 
 #if 1
@@ -346,7 +436,7 @@ XMLTag *XMLDocument::_makeTree(std::vector<XMLNode *> &nodes)
 
         if (tag)
         {
-            std::cerr << "XMLTag: " << tag->_name << "\r\n";
+            //std::cerr << "XMLTag: " << tag->_name << "\r\n";
 
             if (tag->_name[0] == '/')
             {
@@ -371,7 +461,9 @@ XMLTag *XMLDocument::_makeTree(std::vector<XMLNode *> &nodes)
         }
 
         if (dynamic_cast<XMLString *>(*it))
-            std::cerr << "XMLString: \r\n";
+        {
+            //std::cerr << "XMLString: \r\n";
+        }
 
         currentTag->appendChild(*it);
 
@@ -384,9 +476,9 @@ XMLTag *XMLDocument::_makeTree(std::vector<XMLNode *> &nodes)
 void XMLDocument::parse(std::istream &is)
 {
     std::vector<std::string> tokens;
-    _tokenize(is, tokens);
+    tokenize2(is, tokens);
     std::vector<XMLNode *> nodes;
-    _makeNodes(tokens, nodes);
+    parseTokens2(nodes, tokens);
     _root = _makeTree(nodes);
 }
 
@@ -475,15 +567,26 @@ int main(int argc, char **argv)
     ifs.close();
     d.serialize(std::cout);
     std::cout << "\r\n\r\n";
+#if 0
     //ifs.seekg(0, std::ios::beg);
     ifs.open(argv[1]);
     std::vector<std::string> tokens;
     d.tokenize2(ifs, tokens);
+    std::vector<XMLNode *> nodes;
+    d.parseTokens2(nodes, tokens);
     
     for (auto token : tokens)
     {
         //std::cerr << token << "\r\n";
     }
+
+    for (auto node : nodes)
+    {
+        node->serialize(std::cerr);
+    }
+
+    std::cerr << "\r\n\r\n";
+#endif
     return 0;
 }
 

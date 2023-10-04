@@ -2,7 +2,7 @@
 <person>
     <name>Jasper <b>ter Weeme</b></name>
     <birthdate abc="def">13/11/1988</birthdate>
-    <test abc="def"/>
+    <test abc="def" auto="ford"/>
 </person>
 
 
