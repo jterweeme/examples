@@ -155,6 +155,10 @@ class XMLDocument
 {
 private:
     XMLTag *_root = nullptr;
+    static void _tokenize(std::istream &is, std::vector<std::string> &tokens);
+    static void _parseTag(XMLTag *tag, const std::string &s);
+    static void _parseAttributes(std::unordered_map<std::string, std::string> &m, std::string &s);
+    static void _makeNodes(std::vector<std::string> &tokens, std::vector<XMLNode *> &nodes);
     static XMLTag *_makeTree(std::vector<XMLNode *> &nodes);
 public:
     XMLTag *root() { return _root; }
@@ -182,7 +186,6 @@ void XMLDocument::parseTokens2(std::vector<XMLNode *> &nodes, std::vector<std::s
 
     for (int i = 0; i < len; ++i)
     {
-        //bewaar de tags voor later, doe eerst losse strings
         if (tokens[i].compare("<") != 0)
         {
             XMLString *s = XMLString::create(tokens[i]);
@@ -190,75 +193,78 @@ void XMLDocument::parseTokens2(std::vector<XMLNode *> &nodes, std::vector<std::s
             continue;
         }
 
-        ++i;
-        std::string tag_name;
-
-        //ignore headers and comments
-        if (tokens[i].compare("?") == 0 || tokens[i].compare("!") == 0)
+        //if (tokens[i].compare("<") == 0)
         {
-            while (true)
-            {
-                ++i;
+            ++i;
+            std::string tag_name;
 
-                if (tokens[i].compare(">") == 0)
-                    break;
+            if (tokens[i].compare("?") == 0)
+            {
+                while (true)
+                {
+                    ++i;
+
+                    if (tokens[i].compare(">") == 0)
+                        break;
+                }
+
+                continue;
             }
 
+            //first check for closing tag
+            if (tokens[i].compare("/") == 0)
+            {
+                tag_name.append("/");
+                ++i;
+            }
+
+            if (isalpha(tokens[i][0]) == false)
+                continue;
+
+            tag_name.append(tokens[i]);
+            ++i;
+            XMLTag *tag = XMLTag::create();
+
+            //attributes
+            while (true)
+            {
+                if (isalpha(tokens[i][0]) == false)
+                    break;
+
+                std::string attr = tokens[i];
+                ++i;
+
+                if (tokens[i].compare("=") != 0)
+                    throw "Specification mandates value for attribute";
+
+                ++i;
+
+                //trim leading and trailing quotes
+                std::string value = tokens[i].substr(1, tokens[i].length() - 2);
+                
+                tag->addAttribute(attr, value);
+                ++i;
+            }
+
+            if (tokens[i].compare("/") == 0)
+            {
+                tag_name.append("/");
+                ++i;
+            }
+
+            if (tokens[i].compare(">") != 0)
+                throw "No closing >";
+
+            tag->name(tag_name);
+            nodes.push_back(tag);
             continue;
         }
 
-        //first check for closing tag
-        if (tokens[i].compare("/") == 0)
-        {
-            tag_name.append("/");
-            ++i;
-        }
-
-        if (isalpha(tokens[i][0]) == false)
-            throw "Mag niet!";
-
-        tag_name.append(tokens[i]);
-        ++i;
-        XMLTag *tag = XMLTag::create();
-
-        //attributes
-        while (true)
-        {
-            if (isalpha(tokens[i][0]) == false)
-                break;
-
-            std::string attr = tokens[i];
-            ++i;
-
-            if (tokens[i].compare("=") != 0)
-                throw "Specification mandates value for attribute";
-
-            ++i;
-
-            //trim leading and trailing quotes, single quotes not supported!
-            std::string value = tokens[i].substr(1, tokens[i].length() - 2);
-                
-            tag->addAttribute(attr, value);
-            ++i;
-        }
-
-        //check for self closing tag
-        if (tokens[i].compare("/") == 0)
-        {
-            //we voegen een / toe aan de tagnaam als tip voor de treebuilder later
-            tag_name.append("/");
-            ++i;
-        }
-
-        if (tokens[i].compare(">") != 0)
-            throw "No closing >";
-
-        tag->name(tag_name);
-        nodes.push_back(tag);
-        continue;
     }
+
 }
 
+#if 1
 void XMLDocument::tokenize2(std::istream &is, std::vector<std::string> &tokens)
 {
     std::string token;
@@ -339,21 +345,90 @@ void XMLDocument::tokenize2(std::istream &is, std::vector<std::string> &tokens)
         token.push_back(c);
     }
 }
+#endif
+
+void XMLDocument::_tokenize(std::istream &is, std::vector<std::string> &tokens)
+{
+    std::string token;
+
+    while (true)
+    {
+        token.clear();
+        int c = is.peek();
+
+        if (c == EOF)
+        {
+            is.get();
+            return;
+        }
+
+        if (c == ' ' || c == '\r' || c == '\n')
+        {
+            is.get();
+            continue;
+        }
+
+        if (c == '<')
+        {
+            do
+            {
+                c = is.get();
+                token.push_back(c);
+            }
+            while (c != '>');
+
+            tokens.push_back(token);
+
+            continue;
+        }
+
+        while (true)
+        {
+            c = is.peek();
+            
+            if (c == '<')
+                break;
+
+            c = is.get();
+            token.push_back(c);
+        }
+
+        tokens.push_back(token);
+    }
+}
+
+void XMLDocument::_makeNodes(std::vector<std::string> &tokens, std::vector<XMLNode *> &nodes)
+{
+    for (auto token : tokens)
+    {
+        //ignore XML header
+        if (token[0] == '<' && token[1] == '?')
+            continue;
+
+        //ignore comments
+        if (token[0] == '<' && token[1] == '!')
+            continue;
+
+        if (token[0] == '<')
+        {
+            XMLTag *tag = XMLTag::create();
+            _parseTag(tag, token);
+            nodes.push_back(tag);
+            continue;
+        }
+
+        XMLString *str = XMLString::create(token);
+        nodes.push_back(str);
+        continue;
+    }
+}
 
 XMLTag *XMLDocument::_makeTree(std::vector<XMLNode *> &nodes)
 {
     std::vector<XMLNode *>::iterator it = nodes.begin();
-    XMLTag *root;
-
-    //find root tag
-    do
-    {
-        root = dynamic_cast<XMLTag *>(*it);
-        ++it;
-    }
-    while (root == nullptr);
-
-    XMLTag *currentTag = root;
+    XMLTag *currentTag = dynamic_cast<XMLTag *>(*it);
+    XMLTag *root = currentTag;
+    ++it;
 
     while (it != nodes.end())
     {
@@ -361,6 +436,8 @@ XMLTag *XMLDocument::_makeTree(std::vector<XMLNode *> &nodes)
 
         if (tag)
         {
+            //std::cerr << "XMLTag: " << tag->_name << "\r\n";
+
             if (tag->_name[0] == '/')
             {
                 currentTag = dynamic_cast<XMLTag *>(currentTag->parent());
@@ -383,8 +460,13 @@ XMLTag *XMLDocument::_makeTree(std::vector<XMLNode *> &nodes)
             continue;
         }
 
-        //append XMLString
+        if (dynamic_cast<XMLString *>(*it))
+        {
+            //std::cerr << "XMLString: \r\n";
+        }
+
         currentTag->appendChild(*it);
+
         ++it;
     }
 
@@ -400,6 +482,83 @@ void XMLDocument::parse(std::istream &is)
     _root = _makeTree(nodes);
 }
 
+void XMLDocument::_parseAttributes(std::unordered_map<std::string, std::string> &m, std::string &s)
+{
+    std::string attr;
+    std::string val;
+    int len = s.length();
+
+    for (int i = 0; i < len; ++i)
+    {
+        if (s[i] == ' ')
+            continue;
+
+        while (i < len)
+        {
+            if (s[i] == '=')
+                break;
+
+            attr.push_back(s[i]);
+            ++i;
+        }
+
+        if (s[i] == '=')
+        {
+            ++i;
+        }
+    }
+}
+
+void XMLDocument::_parseTag(XMLTag *tag, const std::string &s)
+{
+    std::string name;
+    int len = s.length();
+    
+    name.push_back(s[1]);
+    int i;
+
+    for (i = 2; i < len; ++i)
+    {
+        if (s[i] == ' ' || s[i] == '/' || s[i] == '>')
+            break;
+
+        name.push_back(s[i]);
+    }
+
+    if (s[i] == ' ')
+    {
+        ++i;
+        std::string attributes;
+        
+        while (true)
+        {
+            if (s[i] == 34)
+            {
+                ++i;
+
+                do
+                {
+                    attributes.push_back(s[i]);
+                    ++i;
+                }
+                while (s[i] != 34);
+            }
+            if (s[i] == '/' || s[i] == '>')
+                break;
+
+            attributes.push_back(s[i]);
+            ++i;
+        }
+
+        _parseAttributes(tag->_attr, attributes);
+    }
+
+    if (s[len - 2] == '/')
+        name.push_back(s[len - 2]);
+
+    tag->_name = name;
+}
+
 int main(int argc, char **argv)
 {
     std::ifstream ifs(argv[1]);
@@ -408,7 +567,26 @@ int main(int argc, char **argv)
     ifs.close();
     d.serialize(std::cout);
     std::cout << "\r\n\r\n";
+#if 0
+    //ifs.seekg(0, std::ios::beg);
+    ifs.open(argv[1]);
+    std::vector<std::string> tokens;
+    d.tokenize2(ifs, tokens);
+    std::vector<XMLNode *> nodes;
+    d.parseTokens2(nodes, tokens);
+    
+    for (auto token : tokens)
+    {
+        //std::cerr << token << "\r\n";
+    }
 
+    for (auto node : nodes)
+    {
+        node->serialize(std::cerr);
+    }
+
+    std::cerr << "\r\n\r\n";
+#endif
     return 0;
 }
 
