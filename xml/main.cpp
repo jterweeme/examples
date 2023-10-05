@@ -261,6 +261,7 @@ void XMLDocument::parseTokens2(std::vector<XMLNode *> &nodes, std::vector<std::s
 
 void XMLDocument::tokenize2(std::istream &is, std::vector<std::string> &tokens)
 {
+    //TODO: scope kan kleiner van token...
     std::string token;
 
     while (true)
