@@ -71,7 +71,33 @@ public:
     void removeAllChildren() { }
     void appendChild(XMLNode *node);
     void serialize(std::ostream &os) const;
+    std::vector<XMLTag *> findTagsByTagname(std::string n);
 };
+
+std::vector<XMLTag *> XMLTag::findTagsByTagname(std::string n)
+{
+    std::vector<XMLTag *> ret;
+    
+    XMLNode *child = _firstChild;
+
+    while (child != nullptr)
+    {
+        XMLTag *tag = dynamic_cast<XMLTag *>(child);
+
+        if (tag)
+        {
+            if (tag->name().compare(n) == 0)
+                ret.push_back(tag);
+
+            std::vector<XMLTag *> sub = tag->findTagsByTagname(n);
+            ret.insert(ret.end(), sub.begin(), sub.end());
+        }
+
+        child = child->next();
+    }
+
+    return ret;
+}
 
 void XMLTag::addAttribute(std::string name, std::string val)
 {
@@ -261,8 +287,6 @@ void XMLDocument::parseTokens2(std::vector<XMLNode *> &nodes, std::vector<std::s
 
 void XMLDocument::tokenize2(std::istream &is, std::vector<std::string> &tokens)
 {
-    //std::string token;
-
     while (true)
     {
         int c = is.get();
@@ -270,97 +294,75 @@ void XMLDocument::tokenize2(std::istream &is, std::vector<std::string> &tokens)
         if (c == EOF)
             break;
 
-        if (c == '<')
+        std::string token;
+        token.clear();
+
+        while (c != '<' && c != EOF)
         {
-#if 0
-            if (token.size() >= 1)
-            {
-                tokens.push_back(token);
-            }
+            token.push_back(c);
+            c = is.get();
+        }
 
-            token.clear();
-#endif
-            tokens.push_back("<");
+        if (token.size() > 0)
+            tokens.push_back(token);
 
-            while (true)
-            {
-                c = is.get();
-
-                if (c == '>')
-                {
-                    tokens.push_back(">");
-                    break;
-                }
-
-                if (isOneOf("?!=/", c))
-                {
-                    tokens.push_back(std::string(1, c));
-                    continue;
-                }
-
-                if (c == '\"')
-                {
-                    std::string token2;
-                    token2.push_back(c);
-
-                    do
-                    {
-                        c = is.get();
-                        token2.push_back(c);
-                    }
-                    while (c != '\"');
-
-                    tokens.push_back(token2);
-                    continue;
-                }
-
-                if (isalpha(c))
-                {
-                    std::string token2;
-                    token2.push_back(c);
-
-                    while (true)
-                    {
-                        c = is.peek();
-
-                        if (isOneOf(">?!= ", c))
-                        {
-                            tokens.push_back(token2);
-                            break;
-                        }
-
-                        c = is.get();
-                        token2.push_back(c);
-                    }
-                    continue;
-                }
-            }
+        if (c != '<')
             continue;
-        }
-#if 1
+
+        tokens.push_back("<");
+
+        while (true)
         {
-            std::string token2;
-            token2.push_back(c);
-        
-            while (true)
+            c = is.get();
+
+            if (c == '>')
             {
-                c = is.peek();
-
-                if (c == EOF)
-                    return;
-
-                if (c == '<')
-                    break;
-
-                token2.push_back(c);
-                is.get();
+                tokens.push_back(">");
+                break;
             }
 
-            tokens.push_back(token2);
+            if (isOneOf("?!=/", c))
+            {
+                tokens.push_back(std::string(1, c));
+                continue;
+            }
+
+            if (c == '\"')
+            {
+                std::string token2;
+                token2.push_back(c);
+
+                do
+                {
+                    c = is.get();
+                    token2.push_back(c);
+                }
+                while (c != '\"');
+
+                tokens.push_back(token2);
+                continue;
+            }
+
+            if (isalpha(c))
+            {
+                std::string token2;
+                token2.push_back(c);
+
+                while (true)
+                {
+                    c = is.peek();
+
+                    if (isOneOf(">?!= ", c))
+                    {
+                        tokens.push_back(token2);
+                        break;
+                    }
+
+                    c = is.get();
+                    token2.push_back(c);
+                }
+            }
         }
-#else
-        token.push_back(c);
-#endif
     }
 }
 
@@ -408,7 +410,9 @@ XMLTag *XMLDocument::_makeTree(std::vector<XMLNode *> &nodes)
         }
 
         //append XMLString
-        currentTag->appendChild(*it);
+        if (currentTag)
+            currentTag->appendChild(*it);
+
         ++it;
     }
 
@@ -432,6 +436,15 @@ int main(int argc, char **argv)
     ifs.close();
     d.serialize(std::cout);
     std::cout << "\r\n\r\n";
+
+    XMLTag *root = d.root();
+    std::vector<XMLTag *> tags = root->findTagsByTagname("a");
+
+    for (auto tag : tags)
+    {
+        tag->serialize(std::cout);
+        std::cout << "\r\n";
+    }
 
     return 0;
 }
