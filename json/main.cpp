@@ -175,6 +175,17 @@ static void tokenize(std::vector<std::string> &tokens, std::istream &is)
     }
 }
 
+typedef std::vector<std::string>::iterator vecstrit;
+
+static JSONNode *parse(vecstrit &it, vecstrit &end)
+{
+    JSONNode *root = nullptr;
+
+    JSONNode *newnode;
+    
+    return root;
+}
+
 int main(int argc, char **argv)
 {
     JSONArray *root = new JSONArray();

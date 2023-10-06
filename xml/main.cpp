@@ -261,8 +261,7 @@ void XMLDocument::parseTokens2(std::vector<XMLNode *> &nodes, std::vector<std::s
 
 void XMLDocument::tokenize2(std::istream &is, std::vector<std::string> &tokens)
 {
-    //TODO: scope kan kleiner van token...
-    std::string token;
+    //std::string token;
 
     while (true)
     {
@@ -273,12 +272,14 @@ void XMLDocument::tokenize2(std::istream &is, std::vector<std::string> &tokens)
 
         if (c == '<')
         {
-            if (token.size() > 1)
+#if 0
+            if (token.size() >= 1)
             {
                 tokens.push_back(token);
             }
 
             token.clear();
+#endif
             tokens.push_back("<");
 
             while (true)
@@ -297,25 +298,26 @@ void XMLDocument::tokenize2(std::istream &is, std::vector<std::string> &tokens)
                     continue;
                 }
 
-                if (c == 34)
+                if (c == '\"')
                 {
-                    token.push_back(c);
+                    std::string token2;
+                    token2.push_back(c);
 
                     do
                     {
                         c = is.get();
-                        token.push_back(c);
+                        token2.push_back(c);
                     }
-                    while (c != 34);
+                    while (c != '\"');
 
-                    tokens.push_back(token);
-                    token.clear();
+                    tokens.push_back(token2);
                     continue;
                 }
 
                 if (isalpha(c))
                 {
-                    token.push_back(c);
+                    std::string token2;
+                    token2.push_back(c);
 
                     while (true)
                     {
@@ -323,21 +325,42 @@ void XMLDocument::tokenize2(std::istream &is, std::vector<std::string> &tokens)
 
                         if (isOneOf(">?!= ", c))
                         {
-                            tokens.push_back(token);
-                            token.clear();
+                            tokens.push_back(token2);
                             break;
                         }
 
                         c = is.get();
-                        token.push_back(c);
+                        token2.push_back(c);
                     }
                     continue;
                 }
             }
             continue;
         }
+#if 1
+        {
+            std::string token2;
+            token2.push_back(c);
+        
+            while (true)
+            {
+                c = is.peek();
 
+                if (c == EOF)
+                    return;
+
+                if (c == '<')
+                    break;
+
+                token2.push_back(c);
+                is.get();
+            }
+
+            tokens.push_back(token2);
+        }
+#else
         token.push_back(c);
+#endif
     }
 }
 
