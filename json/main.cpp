@@ -5,6 +5,7 @@
 class JSONNode
 {
 public:
+    virtual ~JSONNode() { }
     virtual void append(JSONNode *n) { std::cerr << "Append error\r\n"; throw "Error"; }
     virtual void serialize(std::ostream &os) { }
 };
@@ -14,6 +15,8 @@ class JSONRoot : public JSONNode
 private:
     JSONNode *_root;
 public:
+    ~JSONRoot() { delete _root; }
+    JSONNode *root() const { return _root; }
     void append(JSONNode *n) override { _root = n; }
     void serialize(std::ostream &os) override { _root->serialize(os); }
 };
@@ -25,6 +28,7 @@ private:
 public:
     JSONString() { }
     JSONString(std::string s) : _s(s) { }
+    std::string s() const { return _s; }
     void serialize(std::ostream &os) override { os << "\"" << _s << "\""; }
 };
 
@@ -52,6 +56,7 @@ private:
     std::string _n;
 public:
     JSONNumber() { }
+    JSONNumber(int n) { _n = std::to_string(n); }
     JSONNumber(std::string n) : _n(n) { }
     void serialize(std::ostream &os) override { os << _n; }
 };
@@ -65,6 +70,7 @@ public:
     JSONProperty() { }
     JSONProperty(std::string key) : _key(key) { }
     JSONProperty(std::string key, JSONNode *val) : _key(key), _value(val) { }
+    ~JSONProperty() { delete _value; }
     void append(JSONNode *n) override { _value = n; }
     void serialize(std::ostream &os) override;
 };
@@ -84,6 +90,7 @@ private:
     std::vector<JSONProperty *> _properties;
 public:
     JSONObject() { }
+    ~JSONObject() { for (auto property : _properties) delete property; }
     void appendProperty(JSONProperty *p) { _properties.push_back(p); }
     void append(std::string key, JSONNode *n) { appendProperty(new JSONProperty(key, n)); }
     void append(std::string key, std::string value) { append(key, new JSONString(value)); }
@@ -113,9 +120,16 @@ class JSONArray : public JSONNode
 private:
     std::vector<JSONNode *> _nodes;
 public:
+    ~JSONArray();
     void append(JSONNode *child);
     void serialize(std::ostream &os);
 };
+
+JSONArray::~JSONArray()
+{
+    for (auto node : _nodes)
+        delete node;
+}
 
 class JSONNull : public JSONNode
 {
@@ -223,13 +237,12 @@ static void tokenize(std::vector<std::string> &tokens, std::istream &is)
     }
 }
 
-typedef std::vector<std::string>::iterator vecstrit;
+typedef std::vector<std::string>::const_iterator cvecstrit;
 
-static JSONRoot *parse(vecstrit it, vecstrit end)
+static void parse(cvecstrit it, cvecstrit end, JSONNode *parent)
 {
-    JSONRoot *root = new JSONRoot();
     std::vector<JSONNode *> stack;
-    stack.push_back(root);
+    stack.push_back(parent);
     std::string peek;
 
     while (it != end)
@@ -323,37 +336,38 @@ static JSONRoot *parse(vecstrit it, vecstrit end)
         std::cerr << token << "\r\n";
         throw "Onbekend token!";
     }
-
-    return root;
 }
 
 int main(int argc, char **argv)
 {
 #if 0
     JSONArray *root = new JSONArray();
-    root->append(new JSONNumber(1));
-    root->append(new JSONNumber(2));
+    root->append(new JSONNumber("1"));
+    root->append(new JSONNumber("2"));
+#if 0
     root->append(new JSONString("alpha"));
     root->append(new JSONString("bravo"));
     JSONObject *o = new JSONObject();
     o->append("naam", "Jasper");
     o->append("birthdate", "13/11/1988");
-    root->append(o);
+    root->append(o);a
+#endif
     root->serialize(std::cerr);
     std::cerr << "\r\n";
+    delete root;
 #endif
 #if 1
     std::vector<std::string> tokens;
     tokenize(tokens, std::cin);
-
+#if 0
     for (auto token : tokens)
         std::cerr << token << "\r\n";
-
-    vecstrit it = tokens.begin();
-    JSONRoot *root2;
-    root2 = parse(it, tokens.end());
+#endif
+    JSONRoot *root2 = new JSONRoot();
+    parse(tokens.cbegin(), tokens.cend(), root2);
     root2->serialize(std::cerr);
     std::cerr << "\r\n";
+    delete root2;
 #endif
     return 0;
 }
