@@ -28,13 +28,31 @@ public:
     void serialize(std::ostream &os) override { os << "\"" << _s << "\""; }
 };
 
+class JSONBool : public JSONNode
+{
+private:
+    bool _b;
+public:
+    JSONBool() { }
+    JSONBool(bool b) : _b(b) { }
+    void serialize(std::ostream &os) override;
+};
+
+void JSONBool::serialize(std::ostream &os)
+{
+    if (_b)
+        os << "true";
+    else
+        os << "false";
+}
+
 class JSONNumber : public JSONNode
 {
 private:
-    int _n;
+    std::string _n;
 public:
     JSONNumber() { }
-    JSONNumber(int n) : _n(n) { }
+    JSONNumber(std::string n) : _n(n) { }
     void serialize(std::ostream &os) override { os << _n; }
 };
 
@@ -99,6 +117,12 @@ public:
     void serialize(std::ostream &os);
 };
 
+class JSONNull : public JSONNode
+{
+public:
+    void serialize(std::ostream &os) { os << "null"; }
+};
+
 void JSONArray::serialize(std::ostream &os)
 {
     os.put('[');
@@ -142,7 +166,7 @@ static void tokenize(std::vector<std::string> &tokens, std::istream &is)
             continue;
         }
 
-        if (isdigit(c))
+        if (isOneOf("0123456789-.", c))
         {
             std::string token;
             token.push_back(c);
@@ -151,7 +175,7 @@ static void tokenize(std::vector<std::string> &tokens, std::istream &is)
             {
                 c = is.peek();
 
-                if (isdigit(c) == false)
+                if (isOneOf("0123456789-.", c) == false)
                     break;
 
                 token.push_back(c);
@@ -162,18 +186,22 @@ static void tokenize(std::vector<std::string> &tokens, std::istream &is)
             continue;
         }
 
-        if (c == 'n')
+        if (isalpha(c))
         {
+            std::string token;
+
             while (true)
             {
+                token.push_back(c);
                 c = is.peek();
 
                 if (isalpha(c) == false)
                     break;
 
-                is.get();
+                c = is.get();
             }
-            tokens.push_back("null");
+
+            tokens.push_back(token);
             continue;
         }
 
@@ -196,51 +224,6 @@ static void tokenize(std::vector<std::string> &tokens, std::istream &is)
 }
 
 typedef std::vector<std::string>::iterator vecstrit;
-
-static JSONRoot *parse(std::vector<std::string> &tokens)
-{
-    JSONRoot *root = new JSONRoot();
-    std::vector<JSONNode *> stack;
-    stack.push_back(root);
-    int i;
-    int len = tokens.size();
-    std::string peek;
-
-    for (i = 0; i < len; ++i)
-    {
-        std::string token = tokens[i];
-        peek.clear();
-        
-
-        if (token.compare("[") == 0)
-        {
-            JSONArray *a = new JSONArray();
-            stack.back()->append(a);
-            stack.push_back(a);
-        }
-        else if (token.compare("]") == 0)
-        {
-            stack.pop_back();
-        }
-        else if (token.compare("{") == 0)
-        {
-            JSONObject *o = new JSONObject();
-            stack.back()->append(o);
-            stack.push_back(o);
-        }
-        else if (token[0] == '\"')
-        {
-            std::string s = token.substr(1, token.length() - 2);
-            stack.back()->append(new JSONString(s));
-        }
-        else if (isdigit(token[0]))
-        {
-            stack.back()->append(new JSONNumber(stoi(token, 0, 10)));
-        }
-    }
-
-    return root;
-}
 
 static JSONRoot *parse(vecstrit it, vecstrit end)
 {
@@ -276,119 +259,77 @@ static JSONRoot *parse(vecstrit it, vecstrit end)
             ++it;
             continue;
         }
-        else if (token.compare("[") == 0)
-        {
-            JSONArray *a = new JSONArray();
-            stack.back()->append(a);
-            stack.push_back(a);
-        }
-        else if (token.compare("]") == 0)
-        {
-            stack.pop_back();
-        }
-        else if (token.compare("{") == 0)
-        {
-            JSONObject *o = new JSONObject();
-            stack.back()->append(o);
-            stack.push_back(o);
-        }
-        else if (token.compare("}") == 0)
-        {
-            stack.pop_back();
-            stack.pop_back();
-        }
-        else if (token[0] == '\"')
-        {
-            std::string s = token.substr(1, token.length() - 2);
-            stack.back()->append(new JSONString(s));
-        }
-        else if (isdigit(token[0]))
-        {
-            stack.back()->append(new JSONNumber(stoi(token, 0, 10)));
-        }
-        else
-        {
-            std::cerr << token << "\r\n";
-            throw "onzin";
-        }
-    }
 
-    return root;
-}
-
-static void parse(vecstrit &it, vecstrit end, JSONNode *parent)
-{
-    JSONProperty *prop = dynamic_cast<JSONProperty *>(parent);
-
-    while (it != end)
-    {
-        std::string token = *it++;
-        std::string peek = *it;
-
-        if (prop)
+        if (token.compare("null") == 0)
         {
-            if (token.compare(",") == 0)
-                ;
+            stack.back()->append(new JSONNull());
+            continue;
+        }
+
+        if (token.compare("true") == 0)
+        {
+            stack.back()->append(new JSONBool(true));
+            continue;
+        }
+
+        if (token.compare("false") == 0)
+        {
+            stack.back()->append(new JSONBool(false));
+            continue;
         }
 
         if (token.compare("[") == 0)
         {
             JSONArray *a = new JSONArray();
-            parent->append(a);
-            parse(it, end, a);
+            stack.back()->append(a);
+            stack.push_back(a);
             continue;
         }
 
         if (token.compare("]") == 0)
         {
-            return;
+            stack.pop_back();
+            continue;
         }
-
+    
         if (token.compare("{") == 0)
         {
-            std::cerr << "Parsing {\r\n";
             JSONObject *o = new JSONObject();
-            parent->append(o);
-            parse(it, end, o);
+            stack.back()->append(o);
+            stack.push_back(o);
             continue;
         }
 
         if (token.compare("}") == 0)
         {
-            return;
-        }
-
-        //we hebben te maken met een pair in een object
-        if (peek.compare(":") == 0)
-        {
-            std::cerr << "Parsing property\r\n";
-            std::string s = token.substr(1, token.length() - 2);
-            JSONProperty *p = new JSONProperty(s);
-            parent->append(p);
-            ++it;
-            parse(it, end, p);
+            stack.pop_back();
+            stack.pop_back();
             continue;
         }
 
         if (token[0] == '\"')
         {
             std::string s = token.substr(1, token.length() - 2);
-            parent->append(new JSONString(s));
+            stack.back()->append(new JSONString(s));
             continue;
         }
 
-        if (isdigit(token[0]))
+        if (isdigit(token[0]) || token[0] == '-')
         {
-            parent->append(new JSONNumber(stoi(token, 0, 10)));
+            stack.back()->append(new JSONNumber(token));
             continue;
         }
 
+        std::cerr << token << "\r\n";
+        throw "Onbekend token!";
     }
+
+    return root;
 }
 
 int main(int argc, char **argv)
 {
-#if 1
+#if 0
     JSONArray *root = new JSONArray();
     root->append(new JSONNumber(1));
     root->append(new JSONNumber(2));
@@ -404,11 +345,13 @@ int main(int argc, char **argv)
 #if 1
     std::vector<std::string> tokens;
     tokenize(tokens, std::cin);
+
+    for (auto token : tokens)
+        std::cerr << token << "\r\n";
+
     vecstrit it = tokens.begin();
     JSONRoot *root2;
     root2 = parse(it, tokens.end());
-    //root2 = parse(tokens);
-    //parse(it, tokens.end(), &root2);
     root2->serialize(std::cerr);
     std::cerr << "\r\n";
 #endif
