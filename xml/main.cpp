@@ -446,6 +446,10 @@ int main(int argc, char **argv)
         std::cout << "\r\n";
     }
 
+    tags[0]->appendChild(XMLString::create("Onzin"));
+    d.serialize(std::cout);
+    std::cout << "\r\n\r\n";
+
     return 0;
 }
 
