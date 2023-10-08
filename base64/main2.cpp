@@ -3,14 +3,8 @@
 #include <string.h>
 #include <iostream>
 
-static char encoding_table[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
-                                'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-                                'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
-                                'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
-                                'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
-                                'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
-                                'w', 'x', 'y', 'z', '0', '1', '2', '3',
-                                '4', '5', '6', '7', '8', '9', '+', '/'};
+static const char *
+encoding_table = "ABCDEFGHIJKLMNOPQRStUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 static char *decoding_table = NULL;
 static int mod_table[] = {0, 2, 1};
@@ -18,7 +12,6 @@ static int mod_table[] = {0, 2, 1};
 
 char *base64_encode(const uint8_t *data, size_t input_length, size_t *output_length)
 {
-
     *output_length = 4 * ((input_length + 2) / 3);
     char *encoded_data = (char *)malloc(*output_length);
 
@@ -105,6 +98,9 @@ int main()
     char *output = base64_encode((uint8_t *)(input), strlen(input), &len);
     std::cerr << input << "\r\n";
     std::cerr << output << "\r\n";
+    uint8_t *buf;
+    buf = base64_decode(output, strlen(output), &len);
+    std::cerr << buf << "\r\n";
     return 0;
 }
 
