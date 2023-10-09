@@ -7,11 +7,10 @@ static const char *
 encoding_table = "ABCDEFGHIJKLMNOPQRStUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 static char *decoding_table = NULL;
-static int mod_table[] = {0, 2, 1};
-
 
 char *base64_encode(const uint8_t *data, size_t input_length, size_t *output_length)
 {
+    static int mod_table[] = {0, 2, 1};
     *output_length = 4 * ((input_length + 2) / 3);
     char *encoded_data = (char *)malloc(*output_length);
 
@@ -38,12 +37,30 @@ char *base64_encode(const uint8_t *data, size_t input_length, size_t *output_len
     return encoded_data;
 }
 
+static char nibble(uint8_t n)
+{
+    return n <= 9 ? '0' + char(n) : 'A' + char (n - 10);
+}
+
+static std::string hex8(uint8_t b)
+{
+    std::string ret;
+    ret += nibble(b >> 4 & 0xf);
+    ret += nibble(b >> 0 & 0xf);
+    return ret;
+}
+
 void build_decoding_table()
 {
     decoding_table = (char *)malloc(256);
 
     for (int i = 0; i < 64; i++)
         decoding_table[(unsigned char) encoding_table[i]] = i;
+
+    for (int i = 0; i < 256; ++i)
+    {
+        //std::cerr << hex8(decoding_table[i]) << "\r\n";
+    }
 }
 
 uint8_t *base64_decode(const char *data, size_t input_length, size_t *output_length)
