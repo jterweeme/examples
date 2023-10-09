@@ -173,6 +173,7 @@ lib3ds_file_load(const char *filename)
  *
  * \ingroup file
  */
+#if 0
 Lib3dsBool
 lib3ds_file_save(Lib3dsFile *file, const char *filename)
 {
@@ -204,11 +205,12 @@ lib3ds_file_save(Lib3dsFile *file, const char *filename)
   lib3ds_io_free(io);
   return(result);
 }
-
+#endif
 
 /*!
  * \ingroup file
  */
+#if 1
 Lib3dsFile*
 lib3ds_file_new()
 {
@@ -230,7 +232,7 @@ lib3ds_file_new()
 
   return(file);
 }
-
+#endif
 
 /*!
  * \ingroup file
@@ -762,7 +764,7 @@ colorf_write(Lib3dsRgba rgb, Lib3dsIo *io)
   return(LIB3DS_TRUE);
 }
 
-
+#if 0
 static Lib3dsBool
 mdata_write(Lib3dsFile *file, Lib3dsIo *io)
 {
@@ -884,7 +886,7 @@ mdata_write(Lib3dsFile *file, Lib3dsIo *io)
   }
   return(LIB3DS_TRUE);
 }
-
+#endif
 
 
 static Lib3dsBool
@@ -961,6 +963,7 @@ kfdata_write(Lib3dsFile *file, Lib3dsIo *io)
 /*!
  * \ingroup file
  */
+#if 0
 Lib3dsBool
 lib3ds_file_write(Lib3dsFile *file, Lib3dsIo *io)
 {
@@ -993,7 +996,7 @@ lib3ds_file_write(Lib3dsFile *file, Lib3dsIo *io)
   }
   return(LIB3DS_TRUE);
 }
-
+#endif
 
 /*!
  * \ingroup file

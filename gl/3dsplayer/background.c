@@ -200,6 +200,7 @@ colorf_defined(Lib3dsRgba rgb)
 /*!
  * \ingroup background
  */
+#if 0
 Lib3dsBool
 lib3ds_background_write(Lib3dsBackground *background, Lib3dsIo *io)
 {
@@ -255,7 +256,7 @@ lib3ds_background_write(Lib3dsBackground *background, Lib3dsIo *io)
   
   return(LIB3DS_TRUE);
 }
-
+#endif
 
 /*!
 
