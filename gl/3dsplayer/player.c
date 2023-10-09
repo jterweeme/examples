@@ -159,7 +159,7 @@ render_node(Lib3dsNode *node)
 
       {
         unsigned p;
-        Lib3dsVector *normalL=malloc(3*sizeof(Lib3dsVector)*mesh->faces);
+        Lib3dsVector *normalL = (Lib3dsVector *)malloc(3*sizeof(Lib3dsVector)*mesh->faces);
 
         {
           Lib3dsMatrix M;

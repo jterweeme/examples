@@ -203,7 +203,7 @@ lib3ds_mesh_new_point_list(Lib3dsMesh *mesh, Lib3dsDword points)
   }
   ASSERT(!mesh->pointL && !mesh->points);
   mesh->points=0;
-  mesh->pointL=calloc(sizeof(Lib3dsPoint)*points,1);
+  mesh->pointL = (Lib3dsPoint *)calloc(sizeof(Lib3dsPoint)*points,1);
   if (!mesh->pointL) {
     LIB3DS_ERROR_LOG;
     return(LIB3DS_FALSE);
@@ -245,7 +245,7 @@ lib3ds_mesh_new_flag_list(Lib3dsMesh *mesh, Lib3dsDword flags)
   }
   ASSERT(!mesh->flagL && !mesh->flags);
   mesh->flags=0;
-  mesh->flagL=calloc(sizeof(Lib3dsWord)*flags,1);
+  mesh->flagL = (Lib3dsWord *)calloc(sizeof(Lib3dsWord)*flags,1);
   if (!mesh->flagL) {
     LIB3DS_ERROR_LOG;
     return(LIB3DS_FALSE);
@@ -287,7 +287,7 @@ lib3ds_mesh_new_texel_list(Lib3dsMesh *mesh, Lib3dsDword texels)
   }
   ASSERT(!mesh->texelL && !mesh->texels);
   mesh->texels=0;
-  mesh->texelL=calloc(sizeof(Lib3dsTexel)*texels,1);
+  mesh->texelL=(Lib3dsTexel *)calloc(sizeof(Lib3dsTexel)*texels,1);
   if (!mesh->texelL) {
     LIB3DS_ERROR_LOG;
     return(LIB3DS_FALSE);
@@ -329,7 +329,7 @@ lib3ds_mesh_new_normal_list(Lib3dsMesh *mesh, Lib3dsDword normals)
   }
   ASSERT(!mesh->normalL && !mesh->normals);
   mesh->normals=0;
-  mesh->normalL=calloc(sizeof(Lib3dsPoint)*normals,1);
+  mesh->normalL=(Lib3dsPoint *)calloc(sizeof(Lib3dsPoint)*normals,1);
   if (!mesh->normalL) {
     LIB3DS_ERROR_LOG;
     return(LIB3DS_FALSE);
@@ -371,7 +371,7 @@ lib3ds_mesh_new_face_list(Lib3dsMesh *mesh, Lib3dsDword faces)
   }
   ASSERT(!mesh->faceL && !mesh->faces);
   mesh->faces=0;
-  mesh->faceL=calloc(sizeof(Lib3dsFace)*faces,1);
+  mesh->faceL = (Lib3dsFace *)calloc(sizeof(Lib3dsFace)*faces,1);
   if (!mesh->faceL) {
     LIB3DS_ERROR_LOG;
     return(LIB3DS_FALSE);
@@ -472,9 +472,9 @@ lib3ds_mesh_calculate_normals(Lib3dsMesh *mesh, Lib3dsVector *normalL)
     return;
   }
 
-  fl=calloc(sizeof(Lib3dsFaces*),mesh->points);
+  fl=(Lib3dsFaces **)calloc(sizeof(Lib3dsFaces*),mesh->points);
   ASSERT(fl);
-  fa=calloc(sizeof(Lib3dsFaces),3*mesh->faces);
+  fa=(Lib3dsFaces *)calloc(sizeof(Lib3dsFaces),3*mesh->faces);
   ASSERT(fa);
   k=0;
   for (i=0; i<mesh->faces; ++i) {
@@ -853,7 +853,7 @@ face_array_write(Lib3dsMesh *mesh, Lib3dsIo *io)
     Lib3dsChunk c;
     unsigned i,j;
     Lib3dsWord num;
-    char *matf=calloc(sizeof(char), mesh->faces);
+    char *matf=(char *)calloc(sizeof(char), mesh->faces);
     if (!matf) {
       return(LIB3DS_FALSE);
     }

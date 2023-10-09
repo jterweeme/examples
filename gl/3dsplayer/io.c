@@ -46,7 +46,7 @@ Lib3dsIo*
 lib3ds_io_new(void *self, Lib3dsIoErrorFunc error_func, Lib3dsIoSeekFunc seek_func,
   Lib3dsIoTellFunc tell_func, Lib3dsIoReadFunc read_func, Lib3dsIoWriteFunc write_func)
 {
-  Lib3dsIo *io = calloc(sizeof(Lib3dsIo),1);
+  Lib3dsIo *io = (Lib3dsIo *)calloc(sizeof(Lib3dsIo),1);
   ASSERT(io);
   if (!io) {
     return 0;
@@ -194,7 +194,7 @@ lib3ds_io_read_intb(Lib3dsIo *io)
   Lib3dsIntb b;
 
   ASSERT(io);
-  lib3ds_io_read(io, &b, 1);
+  lib3ds_io_read(io, (Lib3dsByte*)&b, 1);
   return(b);
 }
 
@@ -317,7 +317,7 @@ lib3ds_io_read_string(Lib3dsIo *io, char *s, int buflen)
 
   ASSERT(io);
   for (;;) {
-    if (lib3ds_io_read(io, &c, 1)!=1) {
+    if (lib3ds_io_read(io, (Lib3dsByte *)&c, 1)!=1) {
       return LIB3DS_FALSE;
     }
     *s++ = c;
@@ -401,7 +401,7 @@ Lib3dsBool
 lib3ds_io_write_intb(Lib3dsIo *io, Lib3dsIntb b)
 {
   ASSERT(io);
-  if (lib3ds_io_write(io, &b, 1)!=1) {
+  if (lib3ds_io_write(io, (const Lib3dsByte*)&b, 1)!=1) {
     return(LIB3DS_FALSE);
   }
   return(LIB3DS_TRUE);
@@ -519,6 +519,6 @@ lib3ds_io_write_string(Lib3dsIo *io, const char *s)
 {
   ASSERT(s);
   ASSERT(io);
-  lib3ds_io_write(io, s, strlen(s)+1);
+  lib3ds_io_write(io, (const Lib3dsByte *)s, strlen(s)+1);
   return(!lib3ds_io_error(io));
 }
