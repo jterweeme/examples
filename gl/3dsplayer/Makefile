@@ -1,3 +1,3 @@
 all:
-	g++ -o player *.c -lm -lglut -lGL -lGLU
+	g++ -o player *.cpp -lm -lglut -lGL -lGLU
 
