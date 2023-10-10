@@ -19,20 +19,8 @@
  *
  * $Id: ease.c,v 1.4 2001/01/12 10:29:17 jeh Exp $
  */
-#define LIB3DS_EXPORT
 #include "ease.h"
 
-
-/*!
- * \defgroup ease Ease
- *
- * \author J.E. Hoffmann <je-h@gmx.net>
- */
-
-
-/*!
- * \ingroup ease
- */
 Lib3dsFloat
 lib3ds_ease(Lib3dsFloat fp, Lib3dsFloat fc, Lib3dsFloat fn,
   Lib3dsFloat ease_from, Lib3dsFloat ease_to)

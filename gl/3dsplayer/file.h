@@ -36,7 +36,7 @@ extern "C" {
  * 3ds file structure
  * \ingroup file
  */
-class _Lib3dsFile {
+class Lib3dsFile {
 public:
     Lib3dsDword mesh_version;
     Lib3dsWord keyf_revision;

@@ -26,18 +26,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include "config.h"
-#ifdef WITH_DMALLOC
-#include <dmalloc.h>
-#endif
-
-
-/*!
- * \defgroup material Materials
- *
- * \author J.E. Hoffmann <je-h@gmx.net>
- */
-
 
 static void
 initialize_texture_map(Lib3dsTextureMap *map)

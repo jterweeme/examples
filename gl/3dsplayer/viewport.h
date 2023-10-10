@@ -23,19 +23,13 @@
  * $Id: viewport.h,v 1.4 2001/07/07 19:05:30 jeh Exp $
  */
 
-#ifndef INCLUDED_LIB3DS_TYPES_H
 #include "types.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/*!
- * Layout view types
- * \ingroup viewport
- */
-typedef enum _Lib3dsViewType {
+enum Lib3dsViewType {
   LIB3DS_VIEW_TYPE_NOT_USED  =0,
   LIB3DS_VIEW_TYPE_TOP       =1,
   LIB3DS_VIEW_TYPE_BOTTOM    =2,
@@ -46,7 +40,7 @@ typedef enum _Lib3dsViewType {
   LIB3DS_VIEW_TYPE_USER      =7,
   LIB3DS_VIEW_TYPE_SPOTLIGHT =18,
   LIB3DS_VIEW_TYPE_CAMERA    =65535
-} Lib3dsViewType;
+};
 
 /*!
  * Layout view settings
@@ -122,9 +116,9 @@ struct _Lib3dsViewport {
     Lib3dsDefaultView default_view;
 };
 
-extern LIB3DSAPI Lib3dsBool lib3ds_viewport_read(Lib3dsViewport *viewport, Lib3dsIo *io);
-extern LIB3DSAPI void lib3ds_viewport_set_views(Lib3dsViewport *viewport, Lib3dsDword views);
-extern LIB3DSAPI Lib3dsBool lib3ds_viewport_write(Lib3dsViewport *viewport, Lib3dsIo *io);
+extern Lib3dsBool lib3ds_viewport_read(Lib3dsViewport *viewport, Lib3dsIo *io);
+extern void lib3ds_viewport_set_views(Lib3dsViewport *viewport, Lib3dsDword views);
+extern Lib3dsBool lib3ds_viewport_write(Lib3dsViewport *viewport, Lib3dsIo *io);
 
 #ifdef __cplusplus
 };

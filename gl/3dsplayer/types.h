@@ -26,15 +26,8 @@
 extern "C" {
 #endif
 
-#if defined (_LIB3DS_DLL) && defined(_WIN32) && (!defined(__GNUC__))
-#ifdef LIB3DS_EXPORT
-#define LIB3DSAPI __declspec(dllexport)
-#else               
-#define LIB3DSAPI __declspec(dllimport)
-#endif           
-#else
+
 #define LIB3DSAPI
-#endif
 
 #define LIB3DS_TRUE 1
 #define LIB3DS_FALSE 0
@@ -83,7 +76,7 @@ typedef float Lib3dsRgba[4];
 #endif
 
 typedef struct _Lib3dsIo Lib3dsIo;
-typedef class _Lib3dsFile Lib3dsFile;
+//typedef class _Lib3dsFile Lib3dsFile;
 typedef struct _Lib3dsBackground Lib3dsBackground;
 typedef struct _Lib3dsAtmosphere Lib3dsAtmosphere;
 typedef struct _Lib3dsShadow Lib3dsShadow;
@@ -93,7 +86,7 @@ typedef struct _Lib3dsFace Lib3dsFace;
 typedef struct _Lib3dsBoxMap Lib3dsBoxMap; 
 typedef struct _Lib3dsMapData Lib3dsMapData; 
 typedef struct _Lib3dsMesh Lib3dsMesh;
-typedef struct _Lib3dsCamera Lib3dsCamera;
+//typedef struct _Lib3dsCamera Lib3dsCamera;
 typedef struct _Lib3dsLight Lib3dsLight;
 typedef struct _Lib3dsBoolKey Lib3dsBoolKey;
 typedef struct _Lib3dsBoolTrack Lib3dsBoolTrack;
@@ -116,7 +109,10 @@ typedef enum _Lib3dsNodeTypes {
   LIB3DS_SPOT_NODE    =6
 } Lib3dsNodeTypes;
 
-typedef struct _Lib3dsNode Lib3dsNode;
+//typedef struct _Lib3dsNode Lib3dsNode;
+
+struct Lib3dsNode;
+class Lib3dsCamera;
 
 typedef union _Lib3dsUserData {
     void *p;

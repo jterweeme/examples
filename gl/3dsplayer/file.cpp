@@ -27,11 +27,9 @@
 #include "camera.h"
 #include "light.h"
 #include "node.h"
-#include "vector.h"
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "config.h"
 
 static Lib3dsBool
 fileio_error_func(void *self)
@@ -698,244 +696,6 @@ colorf_write(Lib3dsRgba rgb, Lib3dsIo *io)
   return(LIB3DS_TRUE);
 }
 
-#if 0
-static Lib3dsBool
-mdata_write(Lib3dsFile *file, Lib3dsIo *io)
-{
-  Lib3dsChunk c;
-
-  c.chunk=LIB3DS_MDATA;
-  if (!lib3ds_chunk_write_start(&c,io)) {
-    return(LIB3DS_FALSE);
-  }
-
-  { /*---- LIB3DS_MESH_VERSION ----*/
-    Lib3dsChunk c;
-    c.chunk=LIB3DS_MESH_VERSION;
-    c.size=10;
-    lib3ds_chunk_write(&c,io);
-    lib3ds_io_write_intd(io, file->mesh_version);
-  }
-  { /*---- LIB3DS_MASTER_SCALE ----*/
-    Lib3dsChunk c;
-    c.chunk=LIB3DS_MASTER_SCALE;
-    c.size=10;
-    lib3ds_chunk_write(&c,io);
-    lib3ds_io_write_float(io, file->master_scale);
-  }
-  { /*---- LIB3DS_O_CONSTS ----*/
-    int i;
-    for (i=0; i<3; ++i) {
-      if (fabs(file->construction_plane[i])>LIB3DS_EPSILON) {
-        break;
-      }
-    }
-    if (i<3) {
-      Lib3dsChunk c;
-      c.chunk=LIB3DS_O_CONSTS;
-      c.size=18;
-      lib3ds_chunk_write(&c,io);
-      lib3ds_io_write_vector(io, file->construction_plane);
-    }
-  }
-  
-  { /*---- LIB3DS_AMBIENT_LIGHT ----*/
-    int i;
-    for (i=0; i<3; ++i) {
-      if (fabs(file->ambient[i])>LIB3DS_EPSILON) {
-        break;
-      }
-    }
-    if (i<3) {
-      Lib3dsChunk c;
-      c.chunk=LIB3DS_AMBIENT_LIGHT;
-      c.size=42;
-      lib3ds_chunk_write(&c,io);
-      colorf_write(file->ambient,io);
-    }
-  }
-  lib3ds_background_write(&file->background, io);
-  lib3ds_atmosphere_write(&file->atmosphere, io);
-  lib3ds_shadow_write(&file->shadow, io);
-  lib3ds_viewport_write(&file->viewport, io);
-  {
-    Lib3dsMaterial *p;
-    for (p=file->materials; p!=0; p=p->next) {
-      if (!lib3ds_material_write(p,io)) {
-        return(LIB3DS_FALSE);
-      }
-    }
-  }
-  {
-    Lib3dsCamera *p;
-    Lib3dsChunk c;
-    
-    for (p=file->cameras; p!=0; p=p->next) {
-      c.chunk=LIB3DS_NAMED_OBJECT;
-      if (!lib3ds_chunk_write_start(&c,io)) {
-        return(LIB3DS_FALSE);
-      }
-      lib3ds_io_write_string(io, p->name);
-      lib3ds_camera_write(p,io);
-      if (!lib3ds_chunk_write_end(&c,io)) {
-        return(LIB3DS_FALSE);
-      }
-    }
-  }
-  {
-    Lib3dsLight *p;
-    Lib3dsChunk c;
-    
-    for (p=file->lights; p!=0; p=p->next) {
-      c.chunk=LIB3DS_NAMED_OBJECT;
-      if (!lib3ds_chunk_write_start(&c,io)) {
-        return(LIB3DS_FALSE);
-      }
-      lib3ds_io_write_string(io,p->name);
-      lib3ds_light_write(p,io);
-      if (!lib3ds_chunk_write_end(&c,io)) {
-        return(LIB3DS_FALSE);
-      }
-    }
-  }
-  {
-    Lib3dsMesh *p;
-    Lib3dsChunk c;
-    
-    for (p=file->meshes; p!=0; p=p->next) {
-      c.chunk=LIB3DS_NAMED_OBJECT;
-      if (!lib3ds_chunk_write_start(&c,io)) {
-        return(LIB3DS_FALSE);
-      }
-      lib3ds_io_write_string(io, p->name);
-      lib3ds_mesh_write(p,io);
-      if (!lib3ds_chunk_write_end(&c,io)) {
-        return(LIB3DS_FALSE);
-      }
-    }
-  }
-
-  if (!lib3ds_chunk_write_end(&c,io)) {
-    return(LIB3DS_FALSE);
-  }
-  return(LIB3DS_TRUE);
-}
-#endif
-
-#if 0
-static Lib3dsBool
-nodes_write(Lib3dsNode *node, Lib3dsFile *file, Lib3dsIo *io)
-{
-  {
-    Lib3dsNode *p;
-    for (p=node->childs; p!=0; p=p->next) {
-      if (!lib3ds_node_write(p, file, io)) {
-        return(LIB3DS_FALSE);
-      }
-      nodes_write(p, file, io);
-    }
-  }
-  return(LIB3DS_TRUE);
-}
-#endif
-
-#if 0
-static Lib3dsBool
-kfdata_write(Lib3dsFile *file, Lib3dsIo *io)
-{
-  Lib3dsChunk c;
-  
-  c.chunk=LIB3DS_KFDATA;
-  if (!lib3ds_chunk_write_start(&c,io)) {
-    return(LIB3DS_FALSE);
-  }
-  
-  { /*---- LIB3DS_KFHDR ----*/
-    Lib3dsChunk c;
-    c.chunk=LIB3DS_KFHDR;
-    c.size=6 + 2 + strlen(file->name)+1 +4;
-    lib3ds_chunk_write(&c,io);
-    lib3ds_io_write_intw(io, file->keyf_revision);
-    lib3ds_io_write_string(io, file->name);
-    lib3ds_io_write_intd(io, file->frames);
-  }
-  { /*---- LIB3DS_KFSEG ----*/
-    Lib3dsChunk c;
-    c.chunk=LIB3DS_KFSEG;
-    c.size=14;
-    lib3ds_chunk_write(&c,io);
-    lib3ds_io_write_intd(io, file->segment_from);
-    lib3ds_io_write_intd(io, file->segment_to);
-  }
-  { /*---- LIB3DS_KFCURTIME ----*/
-    Lib3dsChunk c;
-    c.chunk=LIB3DS_KFCURTIME;
-    c.size=10;
-    lib3ds_chunk_write(&c,io);
-    lib3ds_io_write_intd(io, file->current_frame);
-  }
-  lib3ds_viewport_write(&file->viewport_keyf, io);
-  
-  {
-    Lib3dsNode *p;
-    for (p=file->nodes; p!=0; p=p->next) {
-      if (!lib3ds_node_write(p, file, io)) {
-        return(LIB3DS_FALSE);
-      }
-      if (!nodes_write(p, file, io)) {
-        return(LIB3DS_FALSE);
-      }
-    }
-  }
-  
-  if (!lib3ds_chunk_write_end(&c,io)) {
-    return(LIB3DS_FALSE);
-  }
-  return(LIB3DS_TRUE);
-}
-#endif
-
-/*!
- * \ingroup file
- */
-#if 0
-Lib3dsBool
-lib3ds_file_write(Lib3dsFile *file, Lib3dsIo *io)
-{
-  Lib3dsChunk c;
-
-  c.chunk=LIB3DS_M3DMAGIC;
-  if (!lib3ds_chunk_write_start(&c,io)) {
-    LIB3DS_ERROR_LOG;
-    return(LIB3DS_FALSE);
-  }
-
-  { /*---- LIB3DS_M3D_VERSION ----*/
-    Lib3dsChunk c;
-
-    c.chunk=LIB3DS_M3D_VERSION;
-    c.size=10;
-    lib3ds_chunk_write(&c,io);
-    lib3ds_io_write_dword(io, file->mesh_version);
-  }
-
-  if (!mdata_write(file, io)) {
-    return(LIB3DS_FALSE);
-  }
-  if (!kfdata_write(file, io)) {
-    return(LIB3DS_FALSE);
-  }
-
-  if (!lib3ds_chunk_write_end(&c,io)) {
-    return(LIB3DS_FALSE);
-  }
-  return(LIB3DS_TRUE);
-}
-#endif
-
-/*!
- * \ingroup file
- */
 void
 Lib3dsFile::lib3ds_file_insert_material(Lib3dsFile *file, Lib3dsMaterial *material)
 {
@@ -1324,12 +1084,7 @@ lib3ds_file_light_by_name(Lib3dsFile *file, const char *name)
   return(0);
 }
 
-
-/*!
- * \ingroup file
- */
-void
-lib3ds_file_dump_lights(Lib3dsFile *file)
+void lib3ds_file_dump_lights(Lib3dsFile *file)
 {
   Lib3dsLight *p;
 
@@ -1339,71 +1094,6 @@ lib3ds_file_dump_lights(Lib3dsFile *file)
   }
 }
 
-
-/*!
- * \ingroup file
- */
-void
-lib3ds_file_bounding_box(Lib3dsFile *file, Lib3dsVector min, Lib3dsVector max)
-{
-  Lib3dsBool init=LIB3DS_FALSE;
-
-  {
-    Lib3dsVector lmin, lmax;
-    Lib3dsMesh *p=file->meshes;
-
-    if (!init && p) {
-      init = LIB3DS_TRUE;
-      lib3ds_mesh_bounding_box(p, min, max);
-      p = p->next;  
-    }
-    while (p) {
-      lib3ds_mesh_bounding_box(p, lmin, lmax);
-      lib3ds_vector_min(min, lmin);
-      lib3ds_vector_max(max, lmax);
-      p=p->next;
-    }
-  }
-  {
-    Lib3dsCamera *p=file->cameras;
-    if (!init && p) {
-      init = LIB3DS_TRUE;
-      lib3ds_vector_copy(min, p->position);
-      lib3ds_vector_copy(max, p->position);
-    }
-
-    while (p) {
-      lib3ds_vector_min(min, p->position);
-      lib3ds_vector_max(max, p->position);
-      lib3ds_vector_min(min, p->target);
-      lib3ds_vector_max(max, p->target);
-      p=p->next;
-    }
-  }
-  {
-    Lib3dsLight *p=file->lights;
-    if (!init && p) {
-      init = LIB3DS_TRUE;
-      lib3ds_vector_copy(min, p->position);
-      lib3ds_vector_copy(max, p->position);
-    }
-
-    while (p) {
-      lib3ds_vector_min(min, p->position);
-      lib3ds_vector_max(max, p->position);
-      if (p->spot_light) {
-        lib3ds_vector_min(min, p->spot);
-        lib3ds_vector_max(max, p->spot);
-      }
-      p=p->next;
-    }
-  }
-}  
-
-
-/*!
- * \ingroup file
- */
 Lib3dsNode*
 Lib3dsFile::lib3ds_file_node_by_name(Lib3dsFile *file, const char* name, Lib3dsNodeTypes type)
 {
@@ -1422,10 +1112,6 @@ Lib3dsFile::lib3ds_file_node_by_name(Lib3dsFile *file, const char* name, Lib3dsN
   return(0);
 }
 
-
-/*!
- * \ingroup file
- */
 Lib3dsNode*
 Lib3dsFile::lib3ds_file_node_by_id(Lib3dsFile *file, Lib3dsWord node_id)
 {

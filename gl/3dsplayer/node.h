@@ -1,50 +1,24 @@
-/* -*- c -*- */
 #ifndef INCLUDED_LIB3DS_NODE_H
 #define INCLUDED_LIB3DS_NODE_H
-/*
- * The 3D Studio File Format Library
- * Copyright (C) 1996-2001 by J.E. Hoffmann <je-h@gmx.net>
- * All rights reserved.
- *
- * This program is  free  software;  you can redistribute it and/or modify it
- * under the terms of the  GNU Lesser General Public License  as published by 
- * the  Free Software Foundation;  either version 2.1 of the License,  or (at 
- * your option) any later version.
- *
- * This  program  is  distributed in  the  hope that it will  be useful,  but
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
- * or  FITNESS FOR A  PARTICULAR PURPOSE.  See the  GNU Lesser General Public  
- * License for more details.
- *
- * You should  have received  a copy of the GNU Lesser General Public License
- * along with  this program;  if not, write to the  Free Software Foundation,
- * Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: node.h,v 1.7 2001/07/07 19:05:30 jeh Exp $
- */
 
-#ifndef INCLUDED_LIB3DS_TRACKS_H
 #include "tracks.h"
-#endif
+
+class Lib3dsFile;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/*!
- * Scene graph ambient color node data
- * \ingroup node
- */
-typedef struct _Lib3dsAmbientData {
+struct Lib3dsAmbientData {
     Lib3dsRgb col;
     Lib3dsLin3Track col_track;
-} Lib3dsAmbientData;
+};
 
 /*!
  * Scene graph object instance node data
  * \ingroup node
  */
-typedef struct _Lib3dsObjectData {
+struct Lib3dsObjectData {
     Lib3dsVector pivot;
     char instance[64];
     Lib3dsVector bbox_min;
@@ -60,35 +34,35 @@ typedef struct _Lib3dsObjectData {
     Lib3dsMorphTrack morph_track;
     Lib3dsBool hide;
     Lib3dsBoolTrack hide_track;
-} Lib3dsObjectData;
+};
 
 /*!
  * Scene graph camera node data
  * \ingroup node
  */
-typedef struct _Lib3dsCameraData {
+struct Lib3dsCameraData {
     Lib3dsVector pos;
     Lib3dsLin3Track pos_track;
     Lib3dsFloat fov;
     Lib3dsLin1Track fov_track;
     Lib3dsFloat roll;
     Lib3dsLin1Track roll_track;
-} Lib3dsCameraData;
+};
 
 /*!
  * Scene graph camera target node data
  * \ingroup node
  */
-typedef struct _Lib3dsTargetData {
+struct Lib3dsTargetData {
     Lib3dsVector pos;
     Lib3dsLin3Track pos_track;
-} Lib3dsTargetData;
+};
 
 /*!
  * Scene graph light node data
  * \ingroup node
  */
-typedef struct _Lib3dsLightData {
+struct Lib3dsLightData {
     Lib3dsVector pos;
     Lib3dsLin3Track pos_track;
     Lib3dsRgb col;
@@ -99,29 +73,29 @@ typedef struct _Lib3dsLightData {
     Lib3dsLin1Track falloff_track;
     Lib3dsFloat roll;
     Lib3dsLin1Track roll_track;
-} Lib3dsLightData;
+};
 
 /*!
  * Scene graph spotlight target node data
  * \ingroup node
  */
-typedef struct _Lib3dsSpotData {
+struct Lib3dsSpotData {
     Lib3dsVector pos;
     Lib3dsLin3Track pos_track;
-} Lib3dsSpotData;
+};
 
 /*!
  * Scene graph node data union
  * \ingroup node
  */
-typedef union _Lib3dsNodeData {
+union Lib3dsNodeData {
     Lib3dsAmbientData ambient;
     Lib3dsObjectData object;
     Lib3dsCameraData camera;
     Lib3dsTargetData target;
     Lib3dsLightData light;
     Lib3dsSpotData spot;
-} Lib3dsNodeData;
+};
 
 /*!
  * \ingroup node
@@ -132,7 +106,7 @@ typedef union _Lib3dsNodeData {
  * Scene graph node
  * \ingroup node
  */
-struct _Lib3dsNode {
+struct Lib3dsNode {
     Lib3dsUserData user;
     Lib3dsNode *next;\
     Lib3dsNode *childs;\
@@ -147,20 +121,20 @@ struct _Lib3dsNode {
     Lib3dsNodeData data;
 };
 
-extern LIB3DSAPI Lib3dsNode* lib3ds_node_new_ambient();
-extern LIB3DSAPI Lib3dsNode* lib3ds_node_new_object();
-extern LIB3DSAPI Lib3dsNode* lib3ds_node_new_camera();
-extern LIB3DSAPI Lib3dsNode* lib3ds_node_new_target();
-extern LIB3DSAPI Lib3dsNode* lib3ds_node_new_light();
-extern LIB3DSAPI Lib3dsNode* lib3ds_node_new_spot();
-extern LIB3DSAPI void lib3ds_node_free(Lib3dsNode *node);
-extern LIB3DSAPI void lib3ds_node_eval(Lib3dsNode *node, Lib3dsFloat t);
-extern LIB3DSAPI Lib3dsNode* lib3ds_node_by_name(Lib3dsNode *node, const char* name,
+extern Lib3dsNode* lib3ds_node_new_ambient();
+extern Lib3dsNode* lib3ds_node_new_object();
+extern Lib3dsNode* lib3ds_node_new_camera();
+extern Lib3dsNode* lib3ds_node_new_target();
+extern Lib3dsNode* lib3ds_node_new_light();
+extern Lib3dsNode* lib3ds_node_new_spot();
+extern void lib3ds_node_free(Lib3dsNode *node);
+extern void lib3ds_node_eval(Lib3dsNode *node, Lib3dsFloat t);
+extern Lib3dsNode* lib3ds_node_by_name(Lib3dsNode *node, const char* name,
   Lib3dsNodeTypes type);
-extern LIB3DSAPI Lib3dsNode* lib3ds_node_by_id(Lib3dsNode *node, Lib3dsWord node_id);
-extern LIB3DSAPI void lib3ds_node_dump(Lib3dsNode *node, Lib3dsIntd level);
-extern LIB3DSAPI Lib3dsBool lib3ds_node_read(Lib3dsNode *node, Lib3dsFile *file, Lib3dsIo *io);
-extern LIB3DSAPI Lib3dsBool lib3ds_node_write(Lib3dsNode *node, Lib3dsFile *file, Lib3dsIo *io);
+extern Lib3dsNode* lib3ds_node_by_id(Lib3dsNode *node, Lib3dsWord node_id);
+extern void lib3ds_node_dump(Lib3dsNode *node, Lib3dsIntd level);
+extern Lib3dsBool lib3ds_node_read(Lib3dsNode *node, Lib3dsFile *file, Lib3dsIo *io);
+extern Lib3dsBool lib3ds_node_write(Lib3dsNode *node, Lib3dsFile *file, Lib3dsIo *io);
 
 #ifdef __cplusplus
 };

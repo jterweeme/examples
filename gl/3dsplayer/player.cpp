@@ -31,11 +31,8 @@
 #include "config.h"
 #include <stdlib.h>
 #include <math.h>
-#ifdef WITH_DMALLOC
-#include <dmalloc.h>
-#endif
-#include "glstub.h"
-
+#include <GL/glut.h>
+#include <iostream>
 
 /*!
 \example player.c
@@ -51,10 +48,18 @@ Syntax: player filename
 \author J.E. Hoffmann <je-h@gmx.net>
 */
 
+class App
+{
+public:
+    const char* filename=0;
+    const char* camera=0;
+    Lib3dsFile *file = 0;
+};
 
-static const char* filename=0;
-static const char* camera=0;
-static Lib3dsFile *file=0;
+App app;
+
+
+//static Lib3dsFile *file=0;
 static float current_frame=0.0;
 static int gl_width;
 static int gl_height;
@@ -71,13 +76,14 @@ camera_menu(int value)
   Lib3dsCamera *c;
   int i;
 
-  for (c=file->cameras,i=0; i<value; ++i) {
-    if (!c) {
+  for (c = app.file->cameras,i=0; i<value; ++i)
+  {
+    if (!c)
       return;
-    }
+    
     c=c->next;
   }
-  camera=c->name;
+  app.camera=c->name;
 }
 
 
@@ -100,55 +106,56 @@ init(void)
   //glPolygonOffset(1.0, 2);
 
 
-  file = Lib3dsFile::lib3ds_file_load(filename);
-  if (!file) {
-    puts("***ERROR*** Loading 3DS file failed.");
+  app.file = Lib3dsFile::lib3ds_file_load(app.filename);
+
+  if (!app.file)
+  {
+    std::cerr << "***ERROR*** Loading 3DS file failed.\r\n";
     exit(1);
   }
-  if (!file->cameras) {
-    puts("***ERROR*** No Camera found.");
-    Lib3dsFile::lib3ds_file_free(file);
-    file=0;
+
+  if (!app.file->cameras)
+  {  
+    std::cerr << "***ERROR*** No Camera found.";
+    Lib3dsFile::lib3ds_file_free(app.file);
+    app.file=0;
     exit(1);
   }
-  if (!camera) {
-    camera=file->cameras->name;
+  if (!app.camera) {
+    app.camera = app.file->cameras->name;
   }
   camera_menu_id=glutCreateMenu(camera_menu);
   {
-    Lib3dsCamera *c;
-    int i;
-    for (c=file->cameras,i=0; c; c=c->next,++i) {
+    Lib3dsCamera *c = app.file->cameras;
+    int i = 0;
+
+    while (c)
+    {
       glutAddMenuEntry(c->name, i);
+      c = c->next;
+      ++i;
     }
   }
   glutAttachMenu(0);
 
-  Lib3dsFile::lib3ds_file_eval(file,0);
+  Lib3dsFile::lib3ds_file_eval(app.file,0);
 }
 
-
-/*!
- *
- */
 static void
 render_node(Lib3dsNode *node)
 {
   ASSERT(file);
 
-  {
-    Lib3dsNode *p;
-    for (p=node->childs; p!=0; p=p->next) {
+  for (Lib3dsNode *p = node->childs; p != nullptr; p=p->next)
       render_node(p);
-    }
-  }
-  if (node->type==LIB3DS_OBJECT_NODE) {
-    if (strcmp(node->name,"$$$DUMMY")==0) {
+  
+  if (node->type==LIB3DS_OBJECT_NODE)
+  {
+    if (strcmp(node->name,"$$$DUMMY")==0)
       return;
-    }
 
     if (!node->user.d) {
-      Lib3dsMesh *mesh=Lib3dsFile::lib3ds_file_mesh_by_name(file, node->name);
+      Lib3dsMesh *mesh=Lib3dsFile::lib3ds_file_mesh_by_name(app.file, node->name);
       ASSERT(mesh);
       if (!mesh) {
         return;
@@ -158,7 +165,6 @@ render_node(Lib3dsNode *node)
       glNewList(node->user.d, GL_COMPILE);
 
       {
-        unsigned p;
         Lib3dsVector *normalL = (Lib3dsVector *)malloc(3*sizeof(Lib3dsVector)*mesh->faces);
 
         {
@@ -169,26 +175,29 @@ render_node(Lib3dsNode *node)
         }
         lib3ds_mesh_calculate_normals(mesh, normalL);
 
-        for (p=0; p<mesh->faces; ++p) {
+        for (unsigned p=0; p<mesh->faces; ++p)
+        {
           Lib3dsFace *f=&mesh->faceL[p];
           Lib3dsMaterial *mat=0;
-          if (f->material[0]) {
-            mat=Lib3dsFile::lib3ds_file_material_by_name(file, f->material);
-          }
 
-          if (mat) {
+          if (f->material[0])
+            mat = Lib3dsFile::lib3ds_file_material_by_name(app.file, f->material);
+
+          if (mat)
+          {
             static GLfloat a[4]={0,0,0,1};
-            float s;
             glMaterialfv(GL_FRONT, GL_AMBIENT, a);
             glMaterialfv(GL_FRONT, GL_DIFFUSE, mat->diffuse);
             glMaterialfv(GL_FRONT, GL_SPECULAR, mat->specular);
-            s = pow(2, 10.0*mat->shininess);
-            if (s>128.0) {
+            float s = pow(2, 10.0*mat->shininess);
+
+            if (s>128.0)
               s=128.0;
-            }
+            
             glMaterialf(GL_FRONT, GL_SHININESS, s);
           }
-          else {
+          else
+          {
             Lib3dsRgba a={0.2, 0.2, 0.2, 1.0};
             Lib3dsRgba d={0.8, 0.8, 0.8, 1.0};
             Lib3dsRgba s={0.0, 0.0, 0.0, 1.0};
@@ -196,16 +205,16 @@ render_node(Lib3dsNode *node)
             glMaterialfv(GL_FRONT, GL_DIFFUSE, d);
             glMaterialfv(GL_FRONT, GL_SPECULAR, s);
           }
+          
+          glBegin(GL_TRIANGLES);
+          glNormal3fv(f->normal);
+
+          for (int i=0; i<3; ++i)
           {
-            int i;
-            glBegin(GL_TRIANGLES);
-              glNormal3fv(f->normal);
-              for (i=0; i<3; ++i) {
                 glNormal3fv(normalL[3*p+i]);
                 glVertex3fv(mesh->pointL[f->points[i]].pos);
-              }
-            glEnd();
           }
+          glEnd();
         }
 
         free(normalL);
@@ -228,23 +237,18 @@ render_node(Lib3dsNode *node)
   }
 }
 
-
-/*!
- *
- */
-static void
-display(void)
+static void display(void)
 {
   Lib3dsNode *c,*t;
   Lib3dsMatrix M;
   
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  if (!file) {
+  if (!app.file) {
     return;
   }
-  c=Lib3dsFile::lib3ds_file_node_by_name(file, camera, LIB3DS_CAMERA_NODE);
-  t=Lib3dsFile::lib3ds_file_node_by_name(file, camera, LIB3DS_TARGET_NODE);
+  c=Lib3dsFile::lib3ds_file_node_by_name(app.file, app.camera, LIB3DS_CAMERA_NODE);
+  t=Lib3dsFile::lib3ds_file_node_by_name(app.file, app.camera, LIB3DS_TARGET_NODE);
   if (!c || !t) {
     return;
   }
@@ -263,7 +267,7 @@ display(void)
     Lib3dsLight *l;
 
     int li=GL_LIGHT0;
-    for (l=file->lights; l; l=l->next) {
+    for (l = app.file->lights; l; l=l->next) {
       glEnable(li);
 
       glLightfv(li, GL_AMBIENT, a);
@@ -290,19 +294,15 @@ display(void)
   lib3ds_matrix_camera(M, c->data.camera.pos, t->data.target.pos, c->data.camera.roll);
   glMultMatrixf(&M[0][0]);
 
-  {
-    Lib3dsNode *p;
-    for (p=file->nodes; p!=0; p=p->next) {
+  for (Lib3dsNode *p = app.file->nodes; p!=0; p=p->next)
       render_node(p);
-    }
-  }
 
   if (!halt) {
     current_frame+=1.0;
-    if (current_frame>file->frames) {
+    if (current_frame > app.file->frames) {
       current_frame=0;
     }
-    Lib3dsFile::lib3ds_file_eval(file, current_frame);
+    Lib3dsFile::lib3ds_file_eval(app.file, current_frame);
     glutSwapBuffers();
     glutPostRedisplay();
   }
@@ -350,7 +350,7 @@ main(int argc, char** argv)
     puts("***ERROR*** No 3DS file specified");
     exit(1);
   }
-  filename=argv[1];
+  app.filename=argv[1];
 
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
   glutInitWindowSize(500, 500); 

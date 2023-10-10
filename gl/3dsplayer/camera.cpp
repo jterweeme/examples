@@ -19,7 +19,6 @@
  *
  * $Id: camera.c,v 1.10 2001/07/07 19:05:30 jeh Exp $
  */
-#define LIB3DS_EXPORT
 #include "camera.h"
 #include "chunk.h"
 #include "io.h"
@@ -27,36 +26,21 @@
 #include <math.h>
 #include <string.h>
 #include "config.h"
-#ifdef WITH_DMALLOC
-#include <dmalloc.h>
-#endif
 
-
-/*!
- * \defgroup camera Cameras
- *
- * \author J.E. Hoffmann <je-h@gmx.net>
- */
-
-
-/*!
- * \ingroup camera
- */
 Lib3dsCamera*
 lib3ds_camera_new(const char *name)
 {
-  Lib3dsCamera *camera;
-
   ASSERT(name);
   ASSERT(strlen(name)<64);
   
-  camera=(Lib3dsCamera*)calloc(sizeof(Lib3dsCamera), 1);
-  if (!camera) {
-    return(0);
-  }
+  Lib3dsCamera *camera = (Lib3dsCamera*)calloc(sizeof(Lib3dsCamera), 1);
+
+  if (!camera)
+    return nullptr;
+  
   strcpy(camera->name, name);
   camera->fov=45.0f;
-  return(camera);
+  return camera;
 }
 
 
