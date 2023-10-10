@@ -145,59 +145,8 @@ lib3ds_camera_read(Lib3dsCamera *camera, Lib3dsIo *io)
   }
   
   lib3ds_chunk_read_end(&c, io);
-  return(LIB3DS_TRUE);
+  return LIB3DS_TRUE;
 }
 
 
-/*!
- * \ingroup camera
- */
-Lib3dsBool
-lib3ds_camera_write(Lib3dsCamera *camera, Lib3dsIo *io)
-{
-  Lib3dsChunk c;
 
-  c.chunk=LIB3DS_N_CAMERA;
-  if (!lib3ds_chunk_write_start(&c,io)) {
-    return(LIB3DS_FALSE);
-  }
-
-  lib3ds_io_write_vector(io, camera->position);
-  lib3ds_io_write_vector(io, camera->target);
-  lib3ds_io_write_float(io, camera->roll);
-  if (fabs(camera->fov)<LIB3DS_EPSILON) {
-    lib3ds_io_write_float(io, 2400.0f/45.0f);
-  }
-  else {
-    lib3ds_io_write_float(io, 2400.0f/camera->fov);
-  }
-
-  if (camera->see_cone) {
-    Lib3dsChunk c;
-    c.chunk=LIB3DS_CAM_SEE_CONE;
-    c.size=6;
-    lib3ds_chunk_write(&c, io);
-  }
-  {
-    Lib3dsChunk c;
-    c.chunk=LIB3DS_CAM_RANGES;
-    c.size=14;
-    lib3ds_chunk_write(&c, io);
-    lib3ds_io_write_float(io, camera->near_range);
-    lib3ds_io_write_float(io, camera->far_range);
-  }
-
-  if (!lib3ds_chunk_write_end(&c,io)) {
-    return(LIB3DS_FALSE);
-  }
-  return(LIB3DS_TRUE);
-}
-
-
-/*!
-
-\typedef Lib3dsCamera
-  \ingroup camera
-  \sa _Lib3dsCamera
-
-*/

@@ -19,7 +19,6 @@
  *
  * $Id: file.c,v 1.19 2001/08/07 10:25:43 vividos Exp $
  */
-#define LIB3DS_EXPORT
 #include "file.h"
 #include "chunk.h"
 #include "io.h"
@@ -33,17 +32,6 @@
 #include <string.h>
 #include <math.h>
 #include "config.h"
-#ifdef WITH_DMALLOC
-#include <dmalloc.h>
-#endif
-
-
-/*!
- * \defgroup file Files
- *
- * \author J.E. Hoffmann <je-h@gmx.net>
- */
-
 
 static Lib3dsBool
 fileio_error_func(void *self)
@@ -51,7 +39,6 @@ fileio_error_func(void *self)
   FILE *f = (FILE*)self;
   return(ferror(f)!=0);
 }
-
 
 static long
 fileio_seek_func(void *self, long offset, Lib3dsIoSeek origin)
@@ -118,7 +105,7 @@ fileio_write_func(void *self, const Lib3dsByte *buffer, int size)
  * \ingroup file
  */
 Lib3dsFile*
-lib3ds_file_load(const char *filename)
+Lib3dsFile::lib3ds_file_load(const char *filename)
 {
   FILE *f;
   Lib3dsFile *file;
@@ -159,58 +146,6 @@ lib3ds_file_load(const char *filename)
   return(file);
 }
 
-
-/*!
- * Saves a .3DS file from memory to disk.
- *
- * \param file      A pointer to a Lib3dsFile structure containing the
- *                  the data that should be stored.
- * \param filename  The filename of the .3DS file to store the data in.
- *
- * \return          TRUE on success, FALSE otherwise.
- *
- * \see lib3ds_file_load
- *
- * \ingroup file
- */
-#if 0
-Lib3dsBool
-lib3ds_file_save(Lib3dsFile *file, const char *filename)
-{
-  FILE *f;
-  Lib3dsIo *io;
-  Lib3dsBool result;
-
-  f = fopen(filename, "wb");
-  if (!f) {
-    return(LIB3DS_FALSE);
-  }
-  io = lib3ds_io_new(
-    f, 
-    fileio_error_func,
-    fileio_seek_func,
-    fileio_tell_func,
-    fileio_read_func,
-    fileio_write_func
-  );
-  if (!io) {
-    fclose(f);
-    return LIB3DS_FALSE;
-  }
-  
-  result = lib3ds_file_write(file, io);
-
-  fclose(f);
-
-  lib3ds_io_free(io);
-  return(result);
-}
-#endif
-
-/*!
- * \ingroup file
- */
-#if 1
 Lib3dsFile*
 lib3ds_file_new()
 {
@@ -232,7 +167,6 @@ lib3ds_file_new()
 
   return(file);
 }
-#endif
 
 /*!
  * \ingroup file
@@ -888,7 +822,7 @@ mdata_write(Lib3dsFile *file, Lib3dsIo *io)
 }
 #endif
 
-
+#if 0
 static Lib3dsBool
 nodes_write(Lib3dsNode *node, Lib3dsFile *file, Lib3dsIo *io)
 {
@@ -903,8 +837,9 @@ nodes_write(Lib3dsNode *node, Lib3dsFile *file, Lib3dsIo *io)
   }
   return(LIB3DS_TRUE);
 }
+#endif
 
-
+#if 0
 static Lib3dsBool
 kfdata_write(Lib3dsFile *file, Lib3dsIo *io)
 {
@@ -958,7 +893,7 @@ kfdata_write(Lib3dsFile *file, Lib3dsIo *io)
   }
   return(LIB3DS_TRUE);
 }
-
+#endif
 
 /*!
  * \ingroup file
@@ -1026,7 +961,6 @@ lib3ds_file_insert_material(Lib3dsFile *file, Lib3dsMaterial *material)
     q->next=material;
   }
 }
-
 
 /*!
  * \ingroup file
@@ -1124,6 +1058,7 @@ lib3ds_file_insert_mesh(Lib3dsFile *file, Lib3dsMesh *mesh)
 /*!
  * \ingroup file
  */
+#if 0
 void
 lib3ds_file_remove_mesh(Lib3dsFile *file, Lib3dsMesh *mesh)
 {
@@ -1149,7 +1084,7 @@ lib3ds_file_remove_mesh(Lib3dsFile *file, Lib3dsMesh *mesh)
   }
   mesh->next=0;
 }
-
+#endif
 
 /*!
  * \ingroup file

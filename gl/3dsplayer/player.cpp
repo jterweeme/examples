@@ -100,7 +100,7 @@ init(void)
   //glPolygonOffset(1.0, 2);
 
 
-  file=lib3ds_file_load(filename);
+  file = Lib3dsFile::lib3ds_file_load(filename);
   if (!file) {
     puts("***ERROR*** Loading 3DS file failed.");
     exit(1);

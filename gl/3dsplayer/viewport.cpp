@@ -203,6 +203,7 @@ lib3ds_viewport_set_views(Lib3dsViewport *viewport, Lib3dsDword views)
 /*!
  * \ingroup viewport 
  */
+#if 0
 Lib3dsBool
 lib3ds_viewport_write(Lib3dsViewport *viewport, Lib3dsIo *io)
 {
@@ -358,7 +359,7 @@ lib3ds_viewport_write(Lib3dsViewport *viewport, Lib3dsIo *io)
   }
   return(LIB3DS_TRUE);
 }
-
+#endif
 
 /*!
 

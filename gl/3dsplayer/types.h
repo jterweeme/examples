@@ -83,7 +83,7 @@ typedef float Lib3dsRgba[4];
 #endif
 
 typedef struct _Lib3dsIo Lib3dsIo;
-typedef struct _Lib3dsFile Lib3dsFile;
+typedef class _Lib3dsFile Lib3dsFile;
 typedef struct _Lib3dsBackground Lib3dsBackground;
 typedef struct _Lib3dsAtmosphere Lib3dsAtmosphere;
 typedef struct _Lib3dsShadow Lib3dsShadow;
