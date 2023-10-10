@@ -147,7 +147,7 @@ Lib3dsFile::lib3ds_file_load(const char *filename)
 }
 
 Lib3dsFile*
-lib3ds_file_new()
+Lib3dsFile::lib3ds_file_new()
 {
   Lib3dsFile *file;
 
@@ -172,7 +172,7 @@ lib3ds_file_new()
  * \ingroup file
  */
 void
-lib3ds_file_free(Lib3dsFile* file)
+Lib3dsFile::lib3ds_file_free(Lib3dsFile* file)
 {
   ASSERT(file);
   lib3ds_viewport_set_views(&file->viewport,0);
@@ -228,7 +228,7 @@ lib3ds_file_free(Lib3dsFile* file)
  * \ingroup file
  */
 void
-lib3ds_file_eval(Lib3dsFile *file, Lib3dsFloat t)
+Lib3dsFile::lib3ds_file_eval(Lib3dsFile *file, Lib3dsFloat t)
 {
   Lib3dsNode *p;
 
@@ -268,7 +268,7 @@ named_object_read(Lib3dsFile *file, Lib3dsIo *io)
           if (!lib3ds_mesh_read(mesh, io)) {
             return(LIB3DS_FALSE);
           }
-          lib3ds_file_insert_mesh(file, mesh);
+          Lib3dsFile::lib3ds_file_insert_mesh(file, mesh);
         }
         break;
       case LIB3DS_N_CAMERA:
@@ -283,7 +283,7 @@ named_object_read(Lib3dsFile *file, Lib3dsIo *io)
           if (!lib3ds_camera_read(camera, io)) {
             return(LIB3DS_FALSE);
           }
-          lib3ds_file_insert_camera(file, camera);
+          Lib3dsFile::lib3ds_file_insert_camera(file, camera);
         }
         break;
       case LIB3DS_N_DIRECT_LIGHT:
@@ -298,7 +298,7 @@ named_object_read(Lib3dsFile *file, Lib3dsIo *io)
           if (!lib3ds_light_read(light, io)) {
             return(LIB3DS_FALSE);
           }
-          lib3ds_file_insert_light(file, light);
+          Lib3dsFile::lib3ds_file_insert_light(file, light);
         }
         break;
       default:
@@ -454,7 +454,7 @@ mdata_read(Lib3dsFile *file, Lib3dsIo *io)
           if (!lib3ds_material_read(material, io)) {
             return(LIB3DS_FALSE);
           }
-          lib3ds_file_insert_material(file, material);
+          Lib3dsFile::lib3ds_file_insert_material(file, material);
         }
         break;
       case LIB3DS_NAMED_OBJECT:
@@ -528,7 +528,7 @@ kfdata_read(Lib3dsFile *file, Lib3dsIo *io)
           if (!lib3ds_node_read(node, file, io)) {
             return(LIB3DS_FALSE);
           }
-          lib3ds_file_insert_node(file, node);
+          Lib3dsFile::lib3ds_file_insert_node(file, node);
         }
         break;
       case LIB3DS_OBJECT_NODE_TAG:
@@ -543,7 +543,7 @@ kfdata_read(Lib3dsFile *file, Lib3dsIo *io)
           if (!lib3ds_node_read(node, file, io)) {
             return(LIB3DS_FALSE);
           }
-          lib3ds_file_insert_node(file, node);
+          Lib3dsFile::lib3ds_file_insert_node(file, node);
         }
         break;
       case LIB3DS_CAMERA_NODE_TAG:
@@ -558,7 +558,7 @@ kfdata_read(Lib3dsFile *file, Lib3dsIo *io)
           if (!lib3ds_node_read(node, file, io)) {
             return(LIB3DS_FALSE);
           }
-          lib3ds_file_insert_node(file, node);
+          Lib3dsFile::lib3ds_file_insert_node(file, node);
         }
         break;
       case LIB3DS_TARGET_NODE_TAG:
@@ -573,7 +573,7 @@ kfdata_read(Lib3dsFile *file, Lib3dsIo *io)
           if (!lib3ds_node_read(node, file, io)) {
             return(LIB3DS_FALSE);
           }
-          lib3ds_file_insert_node(file, node);
+          Lib3dsFile::lib3ds_file_insert_node(file, node);
         }
         break;
       case LIB3DS_LIGHT_NODE_TAG:
@@ -589,7 +589,7 @@ kfdata_read(Lib3dsFile *file, Lib3dsIo *io)
           if (!lib3ds_node_read(node, file, io)) {
             return(LIB3DS_FALSE);
           }
-          lib3ds_file_insert_node(file, node);
+          Lib3dsFile::lib3ds_file_insert_node(file, node);
         }
         break;
       case LIB3DS_L_TARGET_NODE_TAG:
@@ -604,7 +604,7 @@ kfdata_read(Lib3dsFile *file, Lib3dsIo *io)
           if (!lib3ds_node_read(node, file, io)) {
             return(LIB3DS_FALSE);
           }
-          lib3ds_file_insert_node(file, node);
+          Lib3dsFile::lib3ds_file_insert_node(file, node);
         }
         break;
       default:
@@ -621,7 +621,7 @@ kfdata_read(Lib3dsFile *file, Lib3dsIo *io)
  * \ingroup file
  */
 Lib3dsBool
-lib3ds_file_read(Lib3dsFile *file, Lib3dsIo *io)
+Lib3dsFile::lib3ds_file_read(Lib3dsFile *file, Lib3dsIo *io)
 {
   Lib3dsChunk c;
   Lib3dsWord chunk;
@@ -937,7 +937,7 @@ lib3ds_file_write(Lib3dsFile *file, Lib3dsIo *io)
  * \ingroup file
  */
 void
-lib3ds_file_insert_material(Lib3dsFile *file, Lib3dsMaterial *material)
+Lib3dsFile::lib3ds_file_insert_material(Lib3dsFile *file, Lib3dsMaterial *material)
 {
   Lib3dsMaterial *p,*q;
   
@@ -996,7 +996,7 @@ lib3ds_file_remove_material(Lib3dsFile *file, Lib3dsMaterial *material)
  * \ingroup file
  */
 Lib3dsMaterial*
-lib3ds_file_material_by_name(Lib3dsFile *file, const char *name)
+Lib3dsFile::lib3ds_file_material_by_name(Lib3dsFile *file, const char *name)
 {
   Lib3dsMaterial *p;
 
@@ -1029,7 +1029,7 @@ lib3ds_file_dump_materials(Lib3dsFile *file)
  * \ingroup file
  */
 void
-lib3ds_file_insert_mesh(Lib3dsFile *file, Lib3dsMesh *mesh)
+Lib3dsFile::lib3ds_file_insert_mesh(Lib3dsFile *file, Lib3dsMesh *mesh)
 {
   Lib3dsMesh *p,*q;
   
@@ -1090,7 +1090,7 @@ lib3ds_file_remove_mesh(Lib3dsFile *file, Lib3dsMesh *mesh)
  * \ingroup file
  */
 Lib3dsMesh*
-lib3ds_file_mesh_by_name(Lib3dsFile *file, const char *name)
+Lib3dsFile::lib3ds_file_mesh_by_name(Lib3dsFile *file, const char *name)
 {
   Lib3dsMesh *p;
 
@@ -1158,7 +1158,7 @@ lib3ds_file_dump_instances(Lib3dsFile *file)
  * \ingroup file
  */
 void
-lib3ds_file_insert_camera(Lib3dsFile *file, Lib3dsCamera *camera)
+Lib3dsFile::lib3ds_file_insert_camera(Lib3dsFile *file, Lib3dsCamera *camera)
 {
   Lib3dsCamera *p,*q;
   
@@ -1251,7 +1251,7 @@ lib3ds_file_dump_cameras(Lib3dsFile *file)
  * \ingroup file
  */
 void
-lib3ds_file_insert_light(Lib3dsFile *file, Lib3dsLight *light)
+Lib3dsFile::lib3ds_file_insert_light(Lib3dsFile *file, Lib3dsLight *light)
 {
   Lib3dsLight *p,*q;
   
@@ -1405,7 +1405,7 @@ lib3ds_file_bounding_box(Lib3dsFile *file, Lib3dsVector min, Lib3dsVector max)
  * \ingroup file
  */
 Lib3dsNode*
-lib3ds_file_node_by_name(Lib3dsFile *file, const char* name, Lib3dsNodeTypes type)
+Lib3dsFile::lib3ds_file_node_by_name(Lib3dsFile *file, const char* name, Lib3dsNodeTypes type)
 {
   Lib3dsNode *p,*q;
 
@@ -1427,7 +1427,7 @@ lib3ds_file_node_by_name(Lib3dsFile *file, const char* name, Lib3dsNodeTypes typ
  * \ingroup file
  */
 Lib3dsNode*
-lib3ds_file_node_by_id(Lib3dsFile *file, Lib3dsWord node_id)
+Lib3dsFile::lib3ds_file_node_by_id(Lib3dsFile *file, Lib3dsWord node_id)
 {
   Lib3dsNode *p,*q;
 
@@ -1449,7 +1449,7 @@ lib3ds_file_node_by_id(Lib3dsFile *file, Lib3dsWord node_id)
  * \ingroup file
  */
 void
-lib3ds_file_insert_node(Lib3dsFile *file, Lib3dsNode *node)
+Lib3dsFile::lib3ds_file_insert_node(Lib3dsFile *file, Lib3dsNode *node)
 {
   Lib3dsNode *parent,*p,*n;
   
@@ -1498,7 +1498,7 @@ lib3ds_file_insert_node(Lib3dsFile *file, Lib3dsNode *node)
     for (n=file->nodes; n!=0; n=p) {
       p=n->next;
       if (n->parent_id==node->node_id) {
-        lib3ds_file_remove_node(file, n);
+        Lib3dsFile::lib3ds_file_remove_node(file, n);
         lib3ds_file_insert_node(file, n);
       }
     }
@@ -1510,7 +1510,7 @@ lib3ds_file_insert_node(Lib3dsFile *file, Lib3dsNode *node)
  * \ingroup file
  */
 Lib3dsBool
-lib3ds_file_remove_node(Lib3dsFile *file, Lib3dsNode *node)
+Lib3dsFile::lib3ds_file_remove_node(Lib3dsFile *file, Lib3dsNode *node)
 {
   Lib3dsNode *p,*n;
 

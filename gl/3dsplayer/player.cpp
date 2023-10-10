@@ -107,7 +107,7 @@ init(void)
   }
   if (!file->cameras) {
     puts("***ERROR*** No Camera found.");
-    lib3ds_file_free(file);
+    Lib3dsFile::lib3ds_file_free(file);
     file=0;
     exit(1);
   }
@@ -124,7 +124,7 @@ init(void)
   }
   glutAttachMenu(0);
 
-  lib3ds_file_eval(file,0);
+  Lib3dsFile::lib3ds_file_eval(file,0);
 }
 
 
@@ -148,7 +148,7 @@ render_node(Lib3dsNode *node)
     }
 
     if (!node->user.d) {
-      Lib3dsMesh *mesh=lib3ds_file_mesh_by_name(file, node->name);
+      Lib3dsMesh *mesh=Lib3dsFile::lib3ds_file_mesh_by_name(file, node->name);
       ASSERT(mesh);
       if (!mesh) {
         return;
@@ -173,7 +173,7 @@ render_node(Lib3dsNode *node)
           Lib3dsFace *f=&mesh->faceL[p];
           Lib3dsMaterial *mat=0;
           if (f->material[0]) {
-            mat=lib3ds_file_material_by_name(file, f->material);
+            mat=Lib3dsFile::lib3ds_file_material_by_name(file, f->material);
           }
 
           if (mat) {
@@ -243,8 +243,8 @@ display(void)
   if (!file) {
     return;
   }
-  c=lib3ds_file_node_by_name(file, camera, LIB3DS_CAMERA_NODE);
-  t=lib3ds_file_node_by_name(file, camera, LIB3DS_TARGET_NODE);
+  c=Lib3dsFile::lib3ds_file_node_by_name(file, camera, LIB3DS_CAMERA_NODE);
+  t=Lib3dsFile::lib3ds_file_node_by_name(file, camera, LIB3DS_TARGET_NODE);
   if (!c || !t) {
     return;
   }
@@ -302,7 +302,7 @@ display(void)
     if (current_frame>file->frames) {
       current_frame=0;
     }
-    lib3ds_file_eval(file, current_frame);
+    Lib3dsFile::lib3ds_file_eval(file, current_frame);
     glutSwapBuffers();
     glutPostRedisplay();
   }
