@@ -1,7 +1,7 @@
 #include "images.hpp"
 
 #include <cassert>
-#include <glad/glad.h>
+#include "../glad.h"
 #include <iostream>
 
 void renderToImage(size_t width, size_t height, size_t numComponents,

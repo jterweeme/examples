@@ -17,8 +17,6 @@ message(STATUS "Preparing solution with CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-set(GLAD_DIR glad)
-
 set(OpenGL_GL_PREFERENCE GLVND)
 find_package(OpenGL REQUIRED)
 
@@ -31,12 +29,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 include(c2ba-glsl-shaders)
 
 set(SHADER_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin/shaders)
-
-set(
-    THIRD_PARTY_SRC_FILES
-    #${IMGUI_SRC_FILES}
-    third-party/${GLAD_DIR}/src/glad.c
-)
 
 set(
     LIBRARIES
@@ -66,14 +58,12 @@ file(
 add_executable(
     ${APP}
     ${SRC_FILES}
-    ${THIRD_PARTY_SRC_FILES}
 )
 
 target_include_directories(
     ${APP}
     PUBLIC
     ${OPENGL_INCLUDE_DIRS}
-    third-party/${GLAD_DIR}/include
     lib/include
     /usr/include/stb
     /usr/include/imgui
