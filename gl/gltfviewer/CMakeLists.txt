@@ -20,7 +20,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 option(GLTF_VIEWER_USE_BOOST_FILESYSTEM "Use boost for filesystem library instead of experimental std lib" OFF)
 
 set(IMGUI_DIR imgui-1.74)
-set(GLM_DIR glm-0.9.9.7)
+#set(GLM_DIR glm-0.9.9.7)
 set(GLAD_DIR glad)
 
 if(${CMAKE_VERSION} VERSION_LESS "3.10.0")
@@ -112,8 +112,8 @@ target_include_directories(
     ${APP}
     PUBLIC
     ${OPENGL_INCLUDE_DIRS}
-    third-party/${GLFW_DIR}/include
-    third-party/${GLM_DIR}
+    #third-party/${GLFW_DIR}/include
+    #third-party/${GLM_DIR}
     third-party/${GLAD_DIR}/include
     third-party/${IMGUI_DIR}
     third-party/${IMGUI_DIR}/examples/
