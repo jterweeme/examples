@@ -1,7 +1,7 @@
 #include "gl_debug_output.hpp"
 #include <algorithm>
 #include <array>
-#include "../glad.h"
+#include "glad.h"
 #include <imgui.h>
 #include <iostream>
 #include <tuple>

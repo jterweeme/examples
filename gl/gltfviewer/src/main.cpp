@@ -1,6 +1,6 @@
 #include "ViewerApplication.hpp"
-#include "utils/GLFWHandle.hpp"
-#include "utils/filesystem.hpp"
+#include "GLFWHandle.hpp"
+#include "filesystem.hpp"
 
 #include <args.hxx>
 

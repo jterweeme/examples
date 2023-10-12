@@ -8,9 +8,9 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/io.hpp>
 
-#include "utils/cameras.hpp"
-#include "utils/gltf.hpp"
-#include "utils/images.hpp"
+#include "cameras.hpp"
+#include "gltf.hpp"
+#include "images.hpp"
 
 #include <stb/stb_image_write.h>
 #include <tiny_gltf.h>

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "utils/GLFWHandle.hpp"
-#include "utils/cameras.hpp"
-#include "utils/filesystem.hpp"
-#include "utils/shaders.hpp"
+#include "GLFWHandle.hpp"
+#include "cameras.hpp"
+#include "filesystem.hpp"
+#include "shaders.hpp"
 
 #include <tiny_gltf.h>
 

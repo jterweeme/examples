@@ -2,7 +2,7 @@
 
 #include "filesystem.hpp"
 #include <fstream>
-#include "../glad.h"
+#include "glad.h"
 #include <iostream>
 #include <memory>
 #include <sstream>
