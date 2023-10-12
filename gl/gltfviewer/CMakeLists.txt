@@ -17,7 +17,6 @@ message(STATUS "Preparing solution with CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-#set(IMGUI_DIR imgui-1.74)
 set(GLAD_DIR glad)
 
 set(OpenGL_GL_PREFERENCE GLVND)
@@ -30,11 +29,8 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 include(c2ba-glsl-shaders)
-include(c2ba-copy-dll-post-build)
-include(c2ba-assets-directory)
 
 set(SHADER_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin/shaders)
-set(ASSET_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin/assets)
 
 set(
     THIRD_PARTY_SRC_FILES
@@ -51,21 +47,9 @@ set(
 )
 
 set(CXXFLAGS ${CXXFLAGS} std=c++14)
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    set(CXXFLAGS ${CXXFLAGS} std=c++17)
-    set(LIBRARIES ${LIBRARIES} stdc++fs)
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "8.0.0")
-        set(USE_STD_FILESYSTEM 1)
-    endif()
+set(LIBRARIES ${LIBRARIES} stdc++fs)
+set(USE_STD_FILESYSTEM 1)
 
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "[Cc]lang")
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "9.0.0")
-        set(LIBRARIES ${LIBRARIES} stdc++fs)
-    else()
-        set(CXXFLAGS ${CXXFLAGS} std=c++17)
-        set(USE_STD_FILESYSTEM 1)
-    endif()
-endif()
 
 source_group("glsl" REGULAR_EXPRESSION ".*/*.glsl")
 source_group("third-party" REGULAR_EXPRESSION "third-party/*.*")
@@ -114,7 +98,6 @@ install(
 )
 
 c2ba_add_shader_directory(${SRC_DIR}/shaders ${SHADER_OUTPUT_PATH})
-c2ba_add_assets_directory(${SRC_DIR}/assets ${ASSET_OUTPUT_PATH})
 
 install(
     DIRECTORY ${SRC_DIR}/shaders/
