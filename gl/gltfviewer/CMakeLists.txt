@@ -23,7 +23,7 @@ set(IMGUI_DIR imgui-1.74)
 set(GLFW_DIR glfw-3.3.1)
 set(GLM_DIR glm-0.9.9.7)
 set(GLAD_DIR glad)
-set(TINYGLTF_DIR tinygltf-bcf2ce586ee8bf2a2a816afa6bfe2f8692ba6ac2)
+#set(TINYGLTF_DIR tinygltf-bcf2ce586ee8bf2a2a816afa6bfe2f8692ba6ac2)
 
 # Add GLFW subdirectory, set some options to OFF by default (the user can still enable them by modifying its CMakeCache.txt)
 option(GLFW_BUILD_DOCS OFF)
@@ -143,8 +143,9 @@ target_include_directories(
     third-party/${GLAD_DIR}/include
     third-party/${IMGUI_DIR}
     third-party/${IMGUI_DIR}/examples/
-    third-party/${TINYGLTF_DIR}/include
+    #third-party/${TINYGLTF_DIR}/include
     lib/include
+    /usr/include/stb
 )
 
 target_compile_definitions(
@@ -153,12 +154,6 @@ target_compile_definitions(
     IMGUI_IMPL_OPENGL_LOADER_GLAD
     GLM_ENABLE_EXPERIMENTAL
 )
-
-#if(${CMAKE_VERSION} VERSION_LESS "3.8.0")
-#    set_property(TARGET ${APP} PROPERTY CXX_STANDARD 14)
-#else()
-#    set_property(TARGET ${APP} PROPERTY CXX_STANDARD 17)
-#endif()
 
 target_link_libraries(
     ${APP}

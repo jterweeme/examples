@@ -4,6 +4,7 @@
 #include <glm/gtc/quaternion.hpp>
 
 #include <iostream>
+#include <functional>
 
 glm::mat4 getLocalToWorldMatrix(
     const tinygltf::Node &node, const glm::mat4 &parentMatrix)

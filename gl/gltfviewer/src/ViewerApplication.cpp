@@ -510,7 +510,7 @@ std::vector<GLuint> ViewerApplication::createTextureObjects(
   defaultSampler.magFilter = GL_LINEAR;
   defaultSampler.wrapS = GL_REPEAT;
   defaultSampler.wrapT = GL_REPEAT;
-  defaultSampler.wrapR = GL_REPEAT;
+  //defaultSampler.wrapR = GL_REPEAT;
 
   glActiveTexture(GL_TEXTURE0);
 
@@ -531,7 +531,7 @@ std::vector<GLuint> ViewerApplication::createTextureObjects(
         sampler.magFilter != -1 ? sampler.magFilter : GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, sampler.wrapS);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, sampler.wrapT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, sampler.wrapR);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, sampler.wrapR);
 
     if (sampler.minFilter == GL_NEAREST_MIPMAP_NEAREST ||
         sampler.minFilter == GL_NEAREST_MIPMAP_LINEAR ||
