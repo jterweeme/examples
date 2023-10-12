@@ -17,22 +17,11 @@ message(STATUS "Preparing solution with CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-option(GLTF_VIEWER_USE_BOOST_FILESYSTEM "Use boost for filesystem library instead of experimental std lib" OFF)
-
-set(IMGUI_DIR imgui-1.74)
-#set(GLM_DIR glm-0.9.9.7)
+#set(IMGUI_DIR imgui-1.74)
 set(GLAD_DIR glad)
 
-if(${CMAKE_VERSION} VERSION_LESS "3.10.0")
-    set(OpenGL_GL_PREFERENCE LEGACY)
-else()
-    set(OpenGL_GL_PREFERENCE GLVND)
-endif()
+set(OpenGL_GL_PREFERENCE GLVND)
 find_package(OpenGL REQUIRED)
-
-if(GLTF_VIEWER_USE_BOOST_FILESYSTEM)
-    find_package(Boost COMPONENTS system filesystem REQUIRED)
-endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -48,18 +37,8 @@ set(SHADER_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin/shaders)
 set(ASSET_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin/assets)
 
 set(
-    IMGUI_SRC_FILES
-    third-party/${IMGUI_DIR}/imgui.cpp
-    third-party/${IMGUI_DIR}/imgui_demo.cpp
-    third-party/${IMGUI_DIR}/imgui_draw.cpp
-    third-party/${IMGUI_DIR}/imgui_widgets.cpp
-    third-party/${IMGUI_DIR}/examples/imgui_impl_opengl3.cpp
-    third-party/${IMGUI_DIR}/examples/imgui_impl_glfw.cpp
-)
-
-set(
     THIRD_PARTY_SRC_FILES
-    ${IMGUI_SRC_FILES}
+    #${IMGUI_SRC_FILES}
     third-party/${GLAD_DIR}/src/glad.c
 )
 
@@ -67,26 +46,24 @@ set(
     LIBRARIES
     ${OPENGL_LIBRARIES}
     glfw
+    imgui
+    stb
 )
 
 set(CXXFLAGS ${CXXFLAGS} std=c++14)
-if (GLTF_VIEWER_USE_BOOST_FILESYSTEM)
-    set(LIBRARIES ${LIBRARIES} ${Boost_SYSTEM_LIBRARY} ${Boost_FILESYSTEM_LIBRARY})
-else()
-    if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-        set(CXXFLAGS ${CXXFLAGS} std=c++17)
-        set(LIBRARIES ${LIBRARIES} stdc++fs)
-        if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "8.0.0")
-            set(USE_STD_FILESYSTEM 1)
-        endif()
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    set(CXXFLAGS ${CXXFLAGS} std=c++17)
+    set(LIBRARIES ${LIBRARIES} stdc++fs)
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "8.0.0")
+        set(USE_STD_FILESYSTEM 1)
+    endif()
 
-    elseif(CMAKE_CXX_COMPILER_ID MATCHES "[Cc]lang")
-        if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "9.0.0")
-            set(LIBRARIES ${LIBRARIES} stdc++fs)
-        else()
-            set(CXXFLAGS ${CXXFLAGS} std=c++17)
-            set(USE_STD_FILESYSTEM 1)
-        endif()
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "[Cc]lang")
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "9.0.0")
+        set(LIBRARIES ${LIBRARIES} stdc++fs)
+    else()
+        set(CXXFLAGS ${CXXFLAGS} std=c++17)
+        set(USE_STD_FILESYSTEM 1)
     endif()
 endif()
 
@@ -112,13 +89,11 @@ target_include_directories(
     ${APP}
     PUBLIC
     ${OPENGL_INCLUDE_DIRS}
-    #third-party/${GLFW_DIR}/include
-    #third-party/${GLM_DIR}
     third-party/${GLAD_DIR}/include
-    third-party/${IMGUI_DIR}
-    third-party/${IMGUI_DIR}/examples/
     lib/include
     /usr/include/stb
+    /usr/include/imgui
+    /usr/include/imgui/backends
 )
 
 target_compile_definitions(
