@@ -20,16 +20,8 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 option(GLTF_VIEWER_USE_BOOST_FILESYSTEM "Use boost for filesystem library instead of experimental std lib" OFF)
 
 set(IMGUI_DIR imgui-1.74)
-set(GLFW_DIR glfw-3.3.1)
 set(GLM_DIR glm-0.9.9.7)
 set(GLAD_DIR glad)
-#set(TINYGLTF_DIR tinygltf-bcf2ce586ee8bf2a2a816afa6bfe2f8692ba6ac2)
-
-# Add GLFW subdirectory, set some options to OFF by default (the user can still enable them by modifying its CMakeCache.txt)
-option(GLFW_BUILD_DOCS OFF)
-option(GLFW_BUILD_TESTS OFF)
-option(GLFW_BUILD_EXAMPLES OFF)
-add_subdirectory(third-party/${GLFW_DIR})
 
 if(${CMAKE_VERSION} VERSION_LESS "3.10.0")
     set(OpenGL_GL_PREFERENCE LEGACY)
@@ -52,13 +44,8 @@ include(c2ba-glsl-shaders)
 include(c2ba-copy-dll-post-build)
 include(c2ba-assets-directory)
 
-if(MSVC)
-    set(SHADER_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin/\$\(Configuration\)/shaders)
-    set(ASSET_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin/\$\(Configuration\)/assets)
-else()
-    set(SHADER_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin/shaders)
-    set(ASSET_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin/assets)
-endif()
+set(SHADER_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin/shaders)
+set(ASSET_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin/assets)
 
 set(
     IMGUI_SRC_FILES
@@ -121,19 +108,6 @@ add_executable(
     ${THIRD_PARTY_SRC_FILES}
 )
 
-if(GLTF_VIEWER_USE_BOOST_FILESYSTEM)
-    target_include_directories (
-        ${APP}
-        PUBLIC
-        ${Boost_INCLUDE_DIRS}
-    )
-    target_compile_definitions(
-        ${APP}
-        PUBLIC
-        GLTF_VIEWER_USE_BOOST_FILESYSTEM
-    )
-endif()
-
 target_include_directories(
     ${APP}
     PUBLIC
@@ -143,7 +117,6 @@ target_include_directories(
     third-party/${GLAD_DIR}/include
     third-party/${IMGUI_DIR}
     third-party/${IMGUI_DIR}/examples/
-    #third-party/${TINYGLTF_DIR}/include
     lib/include
     /usr/include/stb
 )
