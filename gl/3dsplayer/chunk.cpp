@@ -204,7 +204,6 @@ lib3ds_chunk_write(Lib3dsChunk *c, Lib3dsIo *io)
   return(LIB3DS_TRUE);
 }
 
-
 /*!
  * \ingroup chunk
  */
@@ -222,7 +221,6 @@ lib3ds_chunk_write_start(Lib3dsChunk *c, Lib3dsIo *io)
   }
   return(LIB3DS_TRUE);
 }
-
 
 /*!
  * \ingroup chunk
@@ -246,7 +244,6 @@ lib3ds_chunk_write_end(Lib3dsChunk *c, Lib3dsIo *io)
   }
   return(LIB3DS_TRUE);
 }
-
 
 /*!
  * \ingroup chunk

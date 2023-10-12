@@ -23,9 +23,7 @@
  * $Id: mesh.h,v 1.13 2001/07/07 19:05:30 jeh Exp $
  */
 
-#ifndef INCLUDED_LIB3DS_TYPES_H
 #include "types.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -81,61 +79,58 @@ typedef enum {
  * \ingroup mesh
  */
 struct _Lib3dsMapData {
-    Lib3dsWord maptype;
+    uint16_t maptype;
     Lib3dsVector pos;
     Lib3dsMatrix matrix;
-    Lib3dsFloat scale;
-    Lib3dsFloat tile[2];
-    Lib3dsFloat planar_size[2];
-    Lib3dsFloat cylinder_height;
+    float scale;
+    float tile[2];
+    float planar_size[2];
+    float cylinder_height;
 };
 
 /*!
  * Triangular mesh object
  * \ingroup mesh
  */
-struct _Lib3dsMesh {
+struct Lib3dsMesh {
     Lib3dsUserData user;
     Lib3dsMesh *next;
     char name[64];
-    Lib3dsByte color;
+    uint8_t color;
     Lib3dsMatrix matrix;
-    Lib3dsDword points;
+    uint32_t points;
     Lib3dsPoint *pointL;
-    Lib3dsDword flags;
-    Lib3dsWord *flagL;
-    Lib3dsDword texels;
+    uint32_t flags;
+    uint16_t *flagL;
+    uint32_t texels;
     Lib3dsTexel *texelL;
-    Lib3dsDword faces;
+    uint32_t faces;
     Lib3dsFace *faceL;
     Lib3dsBoxMap box_map;
     Lib3dsMapData map_data;
     /* additional variables */
-    Lib3dsWord normaltype;
-    Lib3dsDword normals;
+    uint16_t normaltype;
+    uint32_t normals;
     Lib3dsPoint *normalL;
 }; 
 
-extern LIB3DSAPI Lib3dsMesh* lib3ds_mesh_new(const char *name);
-extern LIB3DSAPI void lib3ds_mesh_free(Lib3dsMesh *mesh);
-extern LIB3DSAPI Lib3dsBool lib3ds_mesh_new_point_list(Lib3dsMesh *mesh, Lib3dsDword points);
-extern LIB3DSAPI void lib3ds_mesh_free_point_list(Lib3dsMesh *mesh);
-extern LIB3DSAPI Lib3dsBool lib3ds_mesh_new_flag_list(Lib3dsMesh *mesh, Lib3dsDword flags);
-extern LIB3DSAPI void lib3ds_mesh_free_flag_list(Lib3dsMesh *mesh);
-extern LIB3DSAPI Lib3dsBool lib3ds_mesh_new_texel_list(Lib3dsMesh *mesh, Lib3dsDword texels);
-extern LIB3DSAPI void lib3ds_mesh_free_texel_list(Lib3dsMesh *mesh);
-extern LIB3DSAPI Lib3dsBool lib3ds_mesh_new_face_list(Lib3dsMesh *mesh, Lib3dsDword flags);
-extern LIB3DSAPI void lib3ds_mesh_free_face_list(Lib3dsMesh *mesh);
-extern LIB3DSAPI Lib3dsBool lib3ds_mesh_new_normal_list(Lib3dsMesh *mesh, Lib3dsDword normals);
-extern LIB3DSAPI void lib3ds_mesh_free_normal_list(Lib3dsMesh *mesh);
-extern LIB3DSAPI void lib3ds_mesh_bounding_box(Lib3dsMesh *mesh, Lib3dsVector min, Lib3dsVector max);
-extern LIB3DSAPI void lib3ds_mesh_calculate_normals(Lib3dsMesh *mesh, Lib3dsVector *normalL);
-extern LIB3DSAPI void lib3ds_mesh_dump(Lib3dsMesh *mesh);
-extern LIB3DSAPI Lib3dsBool lib3ds_mesh_read(Lib3dsMesh *mesh, Lib3dsIo *io);
-extern LIB3DSAPI Lib3dsBool lib3ds_mesh_write(Lib3dsMesh *mesh, Lib3dsIo *io);
+extern Lib3dsMesh* lib3ds_mesh_new(const char *name);
+extern void lib3ds_mesh_free(Lib3dsMesh *mesh);
+extern Lib3dsBool lib3ds_mesh_new_point_list(Lib3dsMesh *mesh, Lib3dsDword points);
+extern void lib3ds_mesh_free_point_list(Lib3dsMesh *mesh);
+extern Lib3dsBool lib3ds_mesh_new_flag_list(Lib3dsMesh *mesh, Lib3dsDword flags);
+extern void lib3ds_mesh_free_flag_list(Lib3dsMesh *mesh);
+extern Lib3dsBool lib3ds_mesh_new_texel_list(Lib3dsMesh *mesh, Lib3dsDword texels);
+extern void lib3ds_mesh_free_texel_list(Lib3dsMesh *mesh);
+extern Lib3dsBool lib3ds_mesh_new_face_list(Lib3dsMesh *mesh, Lib3dsDword flags);
+extern void lib3ds_mesh_free_face_list(Lib3dsMesh *mesh);
+extern Lib3dsBool lib3ds_mesh_new_normal_list(Lib3dsMesh *mesh, Lib3dsDword normals);
+extern void lib3ds_mesh_free_normal_list(Lib3dsMesh *mesh);
+extern void lib3ds_mesh_bounding_box(Lib3dsMesh *mesh, Lib3dsVector min, Lib3dsVector max);
+extern void lib3ds_mesh_calculate_normals(Lib3dsMesh *mesh, Lib3dsVector *normalL);
+extern void lib3ds_mesh_dump(Lib3dsMesh *mesh);
+extern Lib3dsBool lib3ds_mesh_read(Lib3dsMesh *mesh, Lib3dsIo *io);
 
-#ifdef __cplusplus
 };
-#endif
 #endif
 

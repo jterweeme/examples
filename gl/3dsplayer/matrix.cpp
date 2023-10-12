@@ -44,10 +44,9 @@
 void
 lib3ds_matrix_zero(Lib3dsMatrix m)
 {
-  int i,j;
-
-  for (i=0; i<4; i++) {
-    for (j=0; j<4; j++) m[i][j]=0.0f;
+  for (int i=0; i<4; i++) {
+    for (int j=0; j<4; j++)
+      m[i][j]=0.0f;
   }
 }
 
@@ -58,12 +57,12 @@ lib3ds_matrix_zero(Lib3dsMatrix m)
 void
 lib3ds_matrix_identity(Lib3dsMatrix m)
 {
-  int i,j;
-
-  for (i=0; i<4; i++) {
-    for (j=0; j<4; j++) m[i][j]=0.0;
+  for (int i=0; i<4; i++) {
+    for (int j=0; j<4; j++)
+      m[i][j]=0.0;
   }
-  for (i=0; i<4; i++) m[i][i]=1.0;
+  for (int i=0; i<4; i++)
+    m[i][i]=1.0;
 }
 
 

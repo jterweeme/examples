@@ -165,19 +165,17 @@ lib3ds_quat_scalar(Lib3dsQuat c, Lib3dsFloat k)
 void
 lib3ds_quat_normalize(Lib3dsQuat c)
 {
-  Lib3dsDouble l,m;
+  double l=sqrt(c[0]*c[0] + c[1]*c[1] + c[2]*c[2] + c[3]*c[3]);
 
-  l=sqrt(c[0]*c[0] + c[1]*c[1] + c[2]*c[2] + c[3]*c[3]);
   if (fabs(l)<LIB3DS_EPSILON) {
     c[0]=c[1]=c[2]=0.0f;
     c[3]=1.0f; 
   }
   else {  
-    int i;
-    m=1.0f/l;
-    for (i=0; i<4; ++i) {
+    double m=1.0f/l;
+
+    for (int i=0; i<4; ++i)
       c[i]=(Lib3dsFloat)(c[i]*m);
-    }
   }
 }
 

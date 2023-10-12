@@ -43,9 +43,7 @@ initialize_texture_map(Lib3dsTextureMap *map)
 Lib3dsMaterial*
 lib3ds_material_new()
 {
-  Lib3dsMaterial *mat;
-
-  mat = (Lib3dsMaterial*)calloc(sizeof(Lib3dsMaterial), 1);
+  Lib3dsMaterial *mat = (Lib3dsMaterial*)calloc(sizeof(Lib3dsMaterial), 1);
   if (!mat) {
     return(0);
   }
@@ -187,14 +185,10 @@ texture_map_read(Lib3dsTextureMap *map, Lib3dsIo *io)
         }
         break;
       case LIB3DS_MAT_MAP_TILING:
-        {
-          map->flags=lib3ds_io_read_word(io);
-        }
+        map->flags=lib3ds_io_read_word(io);
         break;
       case LIB3DS_MAT_MAP_TEXBLUR:
-        {
-          map->blur=lib3ds_io_read_float(io);
-        }
+        map->blur=lib3ds_io_read_float(io);
         break;
       case LIB3DS_MAT_MAP_USCALE:
         {

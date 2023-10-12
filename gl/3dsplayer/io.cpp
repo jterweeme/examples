@@ -523,3 +523,4 @@ lib3ds_io_write_string(Lib3dsIo *io, const char *s)
   return(!lib3ds_io_error(io));
 }
 
+

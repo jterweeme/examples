@@ -43,37 +43,37 @@ typedef long (*Lib3dsIoTellFunc)(void *self);
 typedef int (*Lib3dsIoReadFunc)(void *self, Lib3dsByte *buffer, int size);
 typedef int (*Lib3dsIoWriteFunc)(void *self, const Lib3dsByte *buffer, int size);
 
-extern LIB3DSAPI Lib3dsIo* lib3ds_io_new(void *self, Lib3dsIoErrorFunc error_func,
+extern Lib3dsIo* lib3ds_io_new(void *self, Lib3dsIoErrorFunc error_func,
   Lib3dsIoSeekFunc seek_func, Lib3dsIoTellFunc tell_func,
   Lib3dsIoReadFunc read_func, Lib3dsIoWriteFunc write_func);
-extern LIB3DSAPI void lib3ds_io_free(Lib3dsIo *io);
-extern LIB3DSAPI Lib3dsBool lib3ds_io_error(Lib3dsIo *io);
-extern LIB3DSAPI long lib3ds_io_seek(Lib3dsIo *io, long offset, Lib3dsIoSeek origin);
-extern LIB3DSAPI long lib3ds_io_tell(Lib3dsIo *io);
-extern LIB3DSAPI int lib3ds_io_read(Lib3dsIo *io, Lib3dsByte *buffer, int size);
-extern LIB3DSAPI int lib3ds_io_write(Lib3dsIo *io, const Lib3dsByte *buffer, int size);
+extern void lib3ds_io_free(Lib3dsIo *io);
+extern Lib3dsBool lib3ds_io_error(Lib3dsIo *io);
+extern long lib3ds_io_seek(Lib3dsIo *io, long offset, Lib3dsIoSeek origin);
+extern long lib3ds_io_tell(Lib3dsIo *io);
+extern int lib3ds_io_read(Lib3dsIo *io, Lib3dsByte *buffer, int size);
+extern int lib3ds_io_write(Lib3dsIo *io, const Lib3dsByte *buffer, int size);
 
-extern LIB3DSAPI Lib3dsByte lib3ds_io_read_byte(Lib3dsIo *io);
-extern LIB3DSAPI Lib3dsWord lib3ds_io_read_word(Lib3dsIo *io);
-extern LIB3DSAPI Lib3dsDword lib3ds_io_read_dword(Lib3dsIo *io);
-extern LIB3DSAPI Lib3dsIntb lib3ds_io_read_intb(Lib3dsIo *io);
-extern LIB3DSAPI Lib3dsIntw lib3ds_io_read_intw(Lib3dsIo *io);
-extern LIB3DSAPI Lib3dsIntd lib3ds_io_read_intd(Lib3dsIo *io);
-extern LIB3DSAPI Lib3dsFloat lib3ds_io_read_float(Lib3dsIo *io);
-extern LIB3DSAPI Lib3dsBool lib3ds_io_read_vector(Lib3dsIo *io, Lib3dsVector v);
-extern LIB3DSAPI Lib3dsBool lib3ds_io_read_rgb(Lib3dsIo *io, Lib3dsRgb rgb);
-extern LIB3DSAPI Lib3dsBool lib3ds_io_read_string(Lib3dsIo *io, char *s, int buflen);
+extern Lib3dsByte lib3ds_io_read_byte(Lib3dsIo *io);
+extern Lib3dsWord lib3ds_io_read_word(Lib3dsIo *io);
+extern Lib3dsDword lib3ds_io_read_dword(Lib3dsIo *io);
+extern Lib3dsIntb lib3ds_io_read_intb(Lib3dsIo *io);
+extern Lib3dsIntw lib3ds_io_read_intw(Lib3dsIo *io);
+extern Lib3dsIntd lib3ds_io_read_intd(Lib3dsIo *io);
+extern Lib3dsFloat lib3ds_io_read_float(Lib3dsIo *io);
+extern Lib3dsBool lib3ds_io_read_vector(Lib3dsIo *io, Lib3dsVector v);
+extern Lib3dsBool lib3ds_io_read_rgb(Lib3dsIo *io, Lib3dsRgb rgb);
+extern Lib3dsBool lib3ds_io_read_string(Lib3dsIo *io, char *s, int buflen);
 
-extern LIB3DSAPI Lib3dsBool lib3ds_io_write_byte(Lib3dsIo *io, Lib3dsByte b);
-extern LIB3DSAPI Lib3dsBool lib3ds_io_write_word(Lib3dsIo *io, Lib3dsWord w);
-extern LIB3DSAPI Lib3dsBool lib3ds_io_write_dword(Lib3dsIo *io, Lib3dsDword d);
-extern LIB3DSAPI Lib3dsBool lib3ds_io_write_intb(Lib3dsIo *io, Lib3dsIntb b);
-extern LIB3DSAPI Lib3dsBool lib3ds_io_write_intw(Lib3dsIo *io, Lib3dsIntw w);
-extern LIB3DSAPI Lib3dsBool lib3ds_io_write_intd(Lib3dsIo *io, Lib3dsIntd d);
-extern LIB3DSAPI Lib3dsBool lib3ds_io_write_float(Lib3dsIo *io, Lib3dsFloat l);
-extern LIB3DSAPI Lib3dsBool lib3ds_io_write_vector(Lib3dsIo *io, Lib3dsVector v);
-extern LIB3DSAPI Lib3dsBool lib3ds_io_write_rgb(Lib3dsIo *io, Lib3dsRgb rgb);
-extern LIB3DSAPI Lib3dsBool lib3ds_io_write_string(Lib3dsIo *io, const char *s);
+extern Lib3dsBool lib3ds_io_write_byte(Lib3dsIo *io, Lib3dsByte b);
+extern Lib3dsBool lib3ds_io_write_word(Lib3dsIo *io, Lib3dsWord w);
+extern Lib3dsBool lib3ds_io_write_dword(Lib3dsIo *io, Lib3dsDword d);
+extern Lib3dsBool lib3ds_io_write_intb(Lib3dsIo *io, Lib3dsIntb b);
+extern Lib3dsBool lib3ds_io_write_intw(Lib3dsIo *io, Lib3dsIntw w);
+extern Lib3dsBool lib3ds_io_write_intd(Lib3dsIo *io, Lib3dsIntd d);
+extern Lib3dsBool lib3ds_io_write_float(Lib3dsIo *io, Lib3dsFloat l);
+extern Lib3dsBool lib3ds_io_write_vector(Lib3dsIo *io, Lib3dsVector v);
+extern Lib3dsBool lib3ds_io_write_rgb(Lib3dsIo *io, Lib3dsRgb rgb);
+extern Lib3dsBool lib3ds_io_write_string(Lib3dsIo *io, const char *s);
 
 #ifdef __cplusplus
 };

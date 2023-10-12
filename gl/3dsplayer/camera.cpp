@@ -28,7 +28,7 @@
 #include "config.h"
 
 Lib3dsCamera*
-lib3ds_camera_new(const char *name)
+Lib3dsCamera::lib3ds_camera_new(const char *name)
 {
   ASSERT(name);
   ASSERT(strlen(name)<64);
@@ -48,7 +48,7 @@ lib3ds_camera_new(const char *name)
  * \ingroup camera 
  */
 void
-lib3ds_camera_free(Lib3dsCamera *camera)
+Lib3dsCamera::lib3ds_camera_free(Lib3dsCamera *camera)
 {
   memset(camera, 0, sizeof(Lib3dsCamera));
   free(camera);
@@ -59,7 +59,7 @@ lib3ds_camera_free(Lib3dsCamera *camera)
  * \ingroup camera
  */
 void
-lib3ds_camera_dump(Lib3dsCamera *camera)
+Lib3dsCamera::lib3ds_camera_dump(Lib3dsCamera *camera)
 {
   ASSERT(camera);
   printf("  name:       %s\n", camera->name);
@@ -80,7 +80,7 @@ lib3ds_camera_dump(Lib3dsCamera *camera)
  * \ingroup camera
  */
 Lib3dsBool
-lib3ds_camera_read(Lib3dsCamera *camera, Lib3dsIo *io)
+Lib3dsCamera::lib3ds_camera_read(Lib3dsCamera *camera, Lib3dsIo *io)
 {
   Lib3dsChunk c;
   Lib3dsWord chunk;

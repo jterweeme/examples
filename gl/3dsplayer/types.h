@@ -1,30 +1,10 @@
 /* -*- c -*- */
 #ifndef INCLUDED_LIB3DS_TYPES_H
 #define INCLUDED_LIB3DS_TYPES_H
-/*
- * The 3D Studio File Format Library
- * Copyright (C) 1996-2001 by J.E. Hoffmann <je-h@gmx.net>
- * All rights reserved.
- *
- * This program is  free  software;  you can redistribute it and/or modify it
- * under the terms of the  GNU Lesser General Public License  as published by 
- * the  Free Software Foundation;  either version 2.1 of the License,  or (at 
- * your option) any later version.
- *
- * This  program  is  distributed in  the  hope that it will  be useful,  but
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
- * or  FITNESS FOR A  PARTICULAR PURPOSE.  See the  GNU Lesser General Public  
- * License for more details.
- *
- * You should  have received  a copy of the GNU Lesser General Public License
- * along with  this program;  if not, write to the  Free Software Foundation,
- * Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: types.h,v 1.14 2001/07/07 19:05:30 jeh Exp $
- */
-#ifdef __cplusplus
+
+#include <stdint.h>
+
 extern "C" {
-#endif
 
 
 #define LIB3DSAPI
@@ -33,12 +13,12 @@ extern "C" {
 #define LIB3DS_FALSE 0
 
 typedef int Lib3dsBool;
-typedef unsigned char Lib3dsByte;
-typedef unsigned short int Lib3dsWord;
-typedef unsigned long Lib3dsDword;
-typedef signed char Lib3dsIntb;
-typedef signed short int Lib3dsIntw;
-typedef signed long Lib3dsIntd;
+typedef uint8_t Lib3dsByte;
+typedef uint16_t Lib3dsWord;
+typedef uint32_t Lib3dsDword;
+typedef int8_t Lib3dsIntb;
+typedef int16_t Lib3dsIntw;
+typedef int32_t Lib3dsIntd;
 typedef float Lib3dsFloat;
 typedef double Lib3dsDouble;
 
@@ -85,7 +65,7 @@ typedef struct _Lib3dsMaterial Lib3dsMaterial;
 typedef struct _Lib3dsFace Lib3dsFace; 
 typedef struct _Lib3dsBoxMap Lib3dsBoxMap; 
 typedef struct _Lib3dsMapData Lib3dsMapData; 
-typedef struct _Lib3dsMesh Lib3dsMesh;
+//typedef struct _Lib3dsMesh Lib3dsMesh;
 //typedef struct _Lib3dsCamera Lib3dsCamera;
 typedef struct _Lib3dsLight Lib3dsLight;
 typedef struct _Lib3dsBoolKey Lib3dsBoolKey;
@@ -112,6 +92,7 @@ typedef enum _Lib3dsNodeTypes {
 //typedef struct _Lib3dsNode Lib3dsNode;
 
 struct Lib3dsNode;
+struct Lib3dsMesh;
 class Lib3dsCamera;
 
 typedef union _Lib3dsUserData {
