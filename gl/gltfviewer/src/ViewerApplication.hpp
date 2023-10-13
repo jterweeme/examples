@@ -2,7 +2,6 @@
 
 #include "GLFWHandle.hpp"
 #include "cameras.hpp"
-#include "filesystem.hpp"
 #include "shaders.hpp"
 
 #include <tiny_gltf.h>

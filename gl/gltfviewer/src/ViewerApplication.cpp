@@ -282,7 +282,8 @@ int ViewerApplication::run()
     // The recursive function that should draw a node
     // We use a std::function because a simple lambda cannot be recursive
     const std::function<void(int, const glm::mat4 &)> drawNode =
-        [&](int nodeIdx, const glm::mat4 &parentMatrix) {
+        [&](int nodeIdx, const glm::mat4 &parentMatrix)
+        {
           const auto &node = model.nodes[nodeIdx];
           const glm::mat4 modelMatrix =
               getLocalToWorldMatrix(node, parentMatrix);
@@ -369,8 +370,8 @@ int ViewerApplication::run()
   }
 
   // Loop until the user closes the window
-  for (auto iterationCount = 0u; !m_GLFWHandle.shouldClose();
-       ++iterationCount) {
+  for (auto iterationCount = 0u; !m_GLFWHandle.shouldClose(); ++iterationCount)
+  {
     const auto seconds = glfwGetTime();
 
     const auto camera = cameraController->getCamera();
@@ -496,7 +497,8 @@ bool ViewerApplication::loadGltfFile(tinygltf::Model &model)
   return true;
 }
 
-std::vector<GLuint> ViewerApplication::createTextureObjects(
+std::vector<GLuint>
+ViewerApplication::createTextureObjects(
     const tinygltf::Model &model) const
 {
   std::vector<GLuint> textureObjects(model.textures.size(), 0);
@@ -545,23 +547,26 @@ std::vector<GLuint> ViewerApplication::createTextureObjects(
   return textureObjects;
 }
 
-std::vector<GLuint> ViewerApplication::createBufferObjects(
+std::vector<GLuint>
+ViewerApplication::createBufferObjects(
     const tinygltf::Model &model) const
 {
-  std::vector<GLuint> bufferObjects(model.buffers.size(), 0);
+    std::vector<GLuint> bufferObjects(model.buffers.size(), 0);
+    glGenBuffers(GLsizei(model.buffers.size()), bufferObjects.data());
 
-  glGenBuffers(GLsizei(model.buffers.size()), bufferObjects.data());
-  for (size_t i = 0; i < model.buffers.size(); ++i) {
-    glBindBuffer(GL_ARRAY_BUFFER, bufferObjects[i]);
-    glBufferStorage(GL_ARRAY_BUFFER, model.buffers[i].data.size(),
-        model.buffers[i].data.data(), 0);
-  }
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
+    for (size_t i = 0; i < model.buffers.size(); ++i)
+    {
+        glBindBuffer(GL_ARRAY_BUFFER, bufferObjects[i]);
 
-  return bufferObjects;
+        glBufferStorage(GL_ARRAY_BUFFER, model.buffers[i].data.size(),
+            model.buffers[i].data.data(), 0);
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    return bufferObjects;
 }
 
-std::vector<GLuint> ViewerApplication::createVertexArrayObjects(
+std::vector<GLuint>
+ViewerApplication::createVertexArrayObjects(
     const tinygltf::Model &model, const std::vector<GLuint> &bufferObjects,
     std::vector<VaoRange> &meshToVertexArrays) const
 {

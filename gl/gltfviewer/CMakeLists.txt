@@ -5,7 +5,7 @@ project(gltf-viewer VERSION 0.0.1)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
     add_definitions(
-        -std=c++14
+        -std=c++17
     )
 endif()
 
@@ -38,10 +38,8 @@ set(
     stb
 )
 
-set(CXXFLAGS ${CXXFLAGS} std=c++14)
 set(LIBRARIES ${LIBRARIES} stdc++fs)
 set(USE_STD_FILESYSTEM 1)
-
 
 source_group("glsl" REGULAR_EXPRESSION ".*/*.glsl")
 source_group("third-party" REGULAR_EXPRESSION "third-party/*.*")

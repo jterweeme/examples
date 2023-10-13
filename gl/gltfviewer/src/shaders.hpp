@@ -1,6 +1,5 @@
 #pragma once
 
-#include "filesystem.hpp"
 #include <fstream>
 #include "glad.h"
 #include <iostream>
@@ -9,6 +8,10 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <vector>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 class GLShader
 {
