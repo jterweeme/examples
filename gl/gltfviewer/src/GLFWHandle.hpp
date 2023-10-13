@@ -1,7 +1,10 @@
 #pragma once
 
 #include "gl_debug_output.hpp"
-#include "glfw.hpp"
+//#include "glfw.hpp"
+#include "glad.h"
+#include <GLFW/glfw3.h>
+
 #include <glm/glm.hpp>
 
 #include <imgui.h>
@@ -90,19 +93,6 @@ public:
 private:
   GLFWwindow *m_pWindow = nullptr;
 };
-
-inline void imguiNewFrame()
-{
-  ImGui_ImplOpenGL3_NewFrame();
-  ImGui_ImplGlfw_NewFrame();
-  ImGui::NewFrame();
-}
-
-inline void imguiRenderFrame()
-{
-  ImGui::Render();
-  ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-}
 
 inline void printGLVersion()
 {

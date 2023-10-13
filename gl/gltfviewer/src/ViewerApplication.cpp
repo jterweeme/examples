@@ -10,17 +10,28 @@
 
 #include "cameras.hpp"
 #include "gltf.hpp"
-#include "images.hpp"
 
-#include <stb/stb_image_write.h>
 #include <tiny_gltf.h>
+#include <functional>
 
-void keyCallback(
-    GLFWwindow *window, int key, int scancode, int action, int mods)
+static inline void imguiNewFrame()
 {
-  if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
+  ImGui_ImplOpenGL3_NewFrame();
+  ImGui_ImplGlfw_NewFrame();
+  ImGui::NewFrame();
+}
+
+static inline void imguiRenderFrame()
+{
+  ImGui::Render();
+  ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+
+static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
+{
+  if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE)
     glfwSetWindowShouldClose(window, 1);
-  }
 }
 
 int ViewerApplication::run()
@@ -346,29 +357,6 @@ int ViewerApplication::run()
     }
   };
 
-  // If we want to render in an image
-  if (!m_OutputPath.empty()) {
-    const auto numComponents = 3;
-    std::vector<unsigned char> pixels(
-        m_nWindowWidth * m_nWindowHeight * numComponents);
-    renderToImage(
-        m_nWindowWidth, m_nWindowHeight, numComponents, pixels.data(), [&]() {
-          const auto camera = cameraController->getCamera();
-          drawScene(camera);
-        });
-    // OpenGL has not the same convention for image axis than most image
-    // formats, so we flip on the Y axis
-    flipImageYAxis(
-        m_nWindowWidth, m_nWindowHeight, numComponents, pixels.data());
-
-    // Write png on disk
-    const auto strPath = m_OutputPath.string();
-    stbi_write_png(
-        strPath.c_str(), m_nWindowWidth, m_nWindowHeight, 3, pixels.data(), 0);
-
-    return 0; // Exit, in that mode we don't want to run interactive viewer
-  }
-
   // Loop until the user closes the window
   for (auto iterationCount = 0u; !m_GLFWHandle.shouldClose(); ++iterationCount)
   {
@@ -684,7 +672,8 @@ ViewerApplication::createVertexArrayObjects(
 ViewerApplication::ViewerApplication(const fs::path &appPath, uint32_t width,
     uint32_t height, const fs::path &gltfFile,
     const std::vector<float> &lookatArgs, const std::string &vertexShader,
-    const std::string &fragmentShader, const fs::path &output) :
+    const std::string &fragmentShader, const fs::path &output)
+  :
     m_nWindowWidth(width),
     m_nWindowHeight(height),
     m_AppPath{appPath},
@@ -694,12 +683,13 @@ ViewerApplication::ViewerApplication(const fs::path &appPath, uint32_t width,
     m_gltfFilePath{gltfFile},
     m_OutputPath{output}
 {
-  if (!lookatArgs.empty()) {
+  if (!lookatArgs.empty())
+  {
     m_hasUserCamera = true;
     m_userCamera =
-        Camera{glm::vec3(lookatArgs[0], lookatArgs[1], lookatArgs[2]),
+        Camera(glm::vec3(lookatArgs[0], lookatArgs[1], lookatArgs[2]),
             glm::vec3(lookatArgs[3], lookatArgs[4], lookatArgs[5]),
-            glm::vec3(lookatArgs[6], lookatArgs[7], lookatArgs[8])};
+            glm::vec3(lookatArgs[6], lookatArgs[7], lookatArgs[8]));
   }
 
   if (!vertexShader.empty()) {
