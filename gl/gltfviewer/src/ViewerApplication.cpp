@@ -1,5 +1,11 @@
 #include "ViewerApplication.hpp"
 
+#include "cameras.hpp"
+#include "gltf.hpp"
+#include "shaders.hpp"
+
+#include <tiny_gltf.h>
+#include <functional>
 #include <iostream>
 #include <numeric>
 
@@ -7,12 +13,6 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/io.hpp>
-
-#include "cameras.hpp"
-#include "gltf.hpp"
-
-#include <tiny_gltf.h>
-#include <functional>
 
 static inline void imguiNewFrame()
 {
@@ -94,9 +94,13 @@ int ViewerApplication::run()
   std::unique_ptr<CameraController> cameraController =
       std::make_unique<TrackballCameraController>(
           m_GLFWHandle.window(), 0.5f * maxDistance);
-  if (m_hasUserCamera) {
+
+  if (m_hasUserCamera)
+  {
     cameraController->setCamera(m_userCamera);
-  } else {
+  }
+  else
+  {
     const auto center = 0.5f * (bboxMax + bboxMin);
     const auto up = glm::vec3(0, 1, 0);
     const auto eye =
@@ -162,14 +166,12 @@ int ViewerApplication::run()
         glBindTexture(GL_TEXTURE_2D, textureObject);
         glUniform1i(uBaseColorTexture, 0);
       }
-      if (uMetallicFactor >= 0) {
-        glUniform1f(
-            uMetallicFactor, (float)pbrMetallicRoughness.metallicFactor);
-      }
-      if (uRoughnessFactor >= 0) {
-        glUniform1f(
-            uRoughnessFactor, (float)pbrMetallicRoughness.roughnessFactor);
-      }
+      if (uMetallicFactor >= 0)
+        glUniform1f(uMetallicFactor, (float)pbrMetallicRoughness.metallicFactor);
+      
+      if (uRoughnessFactor >= 0)
+        glUniform1f(uRoughnessFactor, (float)pbrMetallicRoughness.roughnessFactor);
+      
       if (uMetallicRoughnessTexture >= 0) {
         auto textureObject = 0u;
         if (pbrMetallicRoughness.metallicRoughnessTexture.index >= 0) {
@@ -185,12 +187,16 @@ int ViewerApplication::run()
         glBindTexture(GL_TEXTURE_2D, textureObject);
         glUniform1i(uMetallicRoughnessTexture, 1);
       }
-      if (uEmissiveFactor >= 0) {
+
+      if (uEmissiveFactor >= 0)
+      {
         glUniform3f(uEmissiveFactor, (float)material.emissiveFactor[0],
             (float)material.emissiveFactor[1],
             (float)material.emissiveFactor[2]);
       }
-      if (uEmissiveTexture >= 0) {
+
+      if (uEmissiveTexture >= 0)
+      {
         auto textureObject = 0u;
         if (material.emissiveTexture.index >= 0) {
           const auto &texture = model.textures[material.emissiveTexture.index];
@@ -203,6 +209,7 @@ int ViewerApplication::run()
         glBindTexture(GL_TEXTURE_2D, textureObject);
         glUniform1i(uEmissiveTexture, 2);
       }
+
       if (uOcclusionStrength >= 0) {
         glUniform1f(
             uOcclusionStrength, (float)material.occlusionTexture.strength);
@@ -221,10 +228,6 @@ int ViewerApplication::run()
         glUniform1i(uOcclusionTexture, 3);
       }
     } else {
-      // Apply default material
-      // Defined here:
-      // https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#reference-material
-      // https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#reference-pbrmetallicroughness3
       if (uBaseColorFactor >= 0) {
         glUniform4f(uBaseColorFactor, 1, 1, 1, 1);
       }
@@ -313,8 +316,8 @@ int ViewerApplication::run()
 
             glUniformMatrix4fv(modelViewProjMatrixLocation, 1, GL_FALSE,
                 glm::value_ptr(mvpMatrix));
-            glUniformMatrix4fv(
-                modelViewMatrixLocation, 1, GL_FALSE, glm::value_ptr(mvMatrix));
+            glUniformMatrix4fv( modelViewMatrixLocation, 1, GL_FALSE,
+                glm::value_ptr(mvMatrix));
             glUniformMatrix4fv(normalMatrixLocation, 1, GL_FALSE,
                 glm::value_ptr(normalMatrix));
 
@@ -327,11 +330,11 @@ int ViewerApplication::run()
               bindMaterial(primitive.material);
 
               glBindVertexArray(vao);
-              if (primitive.indices >= 0) {
+              if (primitive.indices >= 0)
+              {
                 const auto &accessor = model.accessors[primitive.indices];
                 const auto &bufferView = model.bufferViews[accessor.bufferView];
-                const auto byteOffset =
-                    accessor.byteOffset + bufferView.byteOffset;
+                const auto byteOffset = accessor.byteOffset + bufferView.byteOffset;
                 glDrawElements(primitive.mode, GLsizei(accessor.count),
                     accessor.componentType, (const GLvoid *)byteOffset);
               } else {

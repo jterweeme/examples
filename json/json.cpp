@@ -129,8 +129,9 @@ void tokenize(std::vector<std::string> &tokens, std::istream &is)
             tokens.push_back(std::string(1, c));
             continue;
         }
-                
-        if (isOneOf("0123456789-.", c))
+        
+        //numbers -0.2e3, true, false, null
+        if (isOneOf("0123456789-.aeflnrstu", c))
         {
             std::string token;
             token.push_back(c);
@@ -139,32 +140,13 @@ void tokenize(std::vector<std::string> &tokens, std::istream &is)
             {
                 c = is.peek();
 
-                if (isOneOf("0123456789-.", c) == false)
+                if (isOneOf("0123456789-.aeflnrstu", c) == false)
                     break;
 
                 token.push_back(c);
                 is.get();
             }
     
-            tokens.push_back(token);
-            continue;
-        }
-
-        if (isalpha(c))
-        {
-            std::string token;
-
-            while (true)
-            {
-                token.push_back(c);
-                c = is.peek(); 
-
-                if (isalpha(c) == false)
-                    break;
-
-                c = is.get();
-            }
-
             tokens.push_back(token);
             continue;
         }
@@ -265,8 +247,17 @@ void parse(cvecstrit it, cvecstrit end, JSONNode *parent)
 
         if (token.compare("}") == 0)
         {
-            stack.pop_back();
-            stack.pop_back();
+            JSONObject *test = dynamic_cast<JSONObject *>(stack.back());
+
+            if (test)
+            {
+                stack.pop_back();
+            }
+            else
+            {
+                stack.pop_back();
+                stack.pop_back();
+            }
             continue;
         }
 
@@ -283,7 +274,7 @@ void parse(cvecstrit it, cvecstrit end, JSONNode *parent)
             continue;
         }
 
-        std::cerr << token << "\r\n";
+        std::cerr << "Onbekend token: " << token << "\r\n";
         throw "Onbekend token!";
     }
 }

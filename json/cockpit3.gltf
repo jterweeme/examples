@@ -1,0 +1,20 @@
+{
+  "animations": [
+    {
+    },
+    {
+      "extensions": {
+      }
+    },
+    {
+      "extensions": {
+        "ASOBO_material_invisible": {},
+        "ASOBO_tags": {
+          "tags": [
+            "Collision"
+          ]
+        }
+      }
+    }
+  ]
+}

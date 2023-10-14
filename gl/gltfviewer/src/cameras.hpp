@@ -10,41 +10,11 @@ class Camera
 {
 public:
   Camera() = default;
-
-  Camera(glm::vec3 e, glm::vec3 c, glm::vec3 u) : m_eye(e), m_center(c), m_up(u)
-  {
-    const auto front = m_center - m_eye;
-    const auto left = cross(m_up, front);
-    assert(left != glm::vec3(0));
-    m_up = normalize(cross(front, left));
-  };
-
-  glm::mat4 getViewMatrix() const { return glm::lookAt(m_eye, m_center, m_up); }
-
-  // Move the camera along its left axis.
-  void truckLeft(float offset)
-  {
-    const auto front = m_center - m_eye;
-    const auto left = normalize(cross(m_up, front));
-    const auto translationVector = offset * left;
-    m_eye += translationVector;
-    m_center += translationVector;
-  }
-
-  void pedestalUp(float offset)
-  {
-    const auto translationVector = offset * m_up;
-    m_eye += translationVector;
-    m_center += translationVector;
-  }
-
-  void dollyIn(float offset)
-  {
-    const auto front = normalize(m_center - m_eye);
-    const auto translationVector = offset * front;
-    m_eye += translationVector;
-    m_center += translationVector;
-  }
+  Camera(glm::vec3 e, glm::vec3 c, glm::vec3 u);
+  glm::mat4 getViewMatrix() const;
+  void truckLeft(float offset);
+  void pedestalUp(float offset);
+  void dollyIn(float offset);
 
   void moveLocal(float truckLeftOffset, float pedestalUpOffset, float dollyIn)
   {

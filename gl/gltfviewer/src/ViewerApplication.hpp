@@ -2,9 +2,11 @@
 
 #include "GLFWHandle.hpp"
 #include "cameras.hpp"
-#include "shaders.hpp"
 
 #include <tiny_gltf.h>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 class ViewerApplication
 {

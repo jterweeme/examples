@@ -1,8 +1,6 @@
 #include "cameras.hpp"
 #include <GLFW/glfw3.h>
 
-#include <iostream>
-
 // Good reference here to map camera movements to lookAt calls
 // http://learnwebgl.brown37.net/07_cameras/camera_movement.html
 
@@ -19,6 +17,44 @@ struct ViewFrame
   {
   }
 };
+
+Camera::Camera(glm::vec3 e, glm::vec3 c, glm::vec3 u) : m_eye(e), m_center(c), m_up(u)
+{
+    const auto front = m_center - m_eye;
+    const auto left = cross(m_up, front);
+    assert(left != glm::vec3(0));
+    m_up = normalize(cross(front, left));
+}
+
+glm::mat4 Camera::getViewMatrix() const
+{
+    return glm::lookAt(m_eye, m_center, m_up);
+}
+
+// Move the camera along its left axis.
+void Camera::truckLeft(float offset)
+{
+    const auto front = m_center - m_eye;
+    const auto left = normalize(cross(m_up, front));
+    const auto translationVector = offset * left;
+    m_eye += translationVector;
+    m_center += translationVector;
+}
+
+void Camera::pedestalUp(float offset)
+{
+    const auto translationVector = offset * m_up;
+    m_eye += translationVector;
+    m_center += translationVector;
+}
+
+void Camera::dollyIn(float offset)
+{ 
+    const auto front = normalize(m_center - m_eye);
+    const auto translationVector = offset * front;
+    m_eye += translationVector;
+    m_center += translationVector;
+}
 
 ViewFrame fromViewToWorldMatrix(const mat4 &viewToWorldMatrix)
 {

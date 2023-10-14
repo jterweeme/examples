@@ -1,7 +1,6 @@
 #pragma once
 
 #include "gl_debug_output.hpp"
-//#include "glfw.hpp"
 #include "glad.h"
 #include <GLFW/glfw3.h>
 
