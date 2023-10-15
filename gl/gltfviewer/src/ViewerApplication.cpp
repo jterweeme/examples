@@ -469,8 +469,8 @@ bool ViewerApplication::loadGltfFile(tinygltf::Model &model)
   std::string err;
   std::string warn;
 
-  bool ret =
-      loader.LoadASCIIFromFile(&model, &err, &warn, m_gltfFilePath.string());
+  //bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, m_gltfFilePath.string());
+  bool ret = loader.LoadBinaryFromFile(&model, &err, &warn, m_gltfFilePath.string());
 
   if (!warn.empty()) {
     std::cerr << warn << std::endl;
