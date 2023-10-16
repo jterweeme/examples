@@ -233,14 +233,6 @@ bool IsDataURI(const std::string &in);
 bool DecodeDataURI(std::vector<unsigned char> *out, std::string &mime_type,
                    const std::string &in, size_t reqBytes, bool checkSize);
 
-#ifdef __clang__
-#pragma clang diagnostic push
-// Suppress warning for : static Value null_value
-#pragma clang diagnostic ignored "-Wexit-time-destructors"
-#pragma clang diagnostic ignored "-Wpadded"
-#endif
-
-// Simple class to represent JSON object
 class Value {
  public:
   typedef std::vector<Value> Array;
@@ -397,13 +389,6 @@ TINYGLTF_VALUE_GET(Value::Array, array_value_)
 TINYGLTF_VALUE_GET(Value::Object, object_value_)
 #undef TINYGLTF_VALUE_GET
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc++98-compat"
-#pragma clang diagnostic ignored "-Wpadded"
-#endif
-
-/// Aggregate object for representing a color
 using ColorValue = std::array<double, 4>;
 
 // === legacy interface ====
@@ -435,15 +420,6 @@ struct Parameter {
   DEFAULT_METHODS(Parameter)
   bool operator==(const Parameter &) const;
 };
-
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wpadded"
-#endif
 
 typedef std::map<std::string, Parameter> ParameterMap;
 typedef std::map<std::string, Value> ExtensionMap;
@@ -524,24 +500,6 @@ struct Image {
   DEFAULT_METHODS(Image)
 
   bool operator==(const Image &) const;
-};
-
-struct Texture {
-  std::string name;
-
-  int sampler{-1};
-  int source{-1};
-  Value extras;
-  ExtensionMap extensions;
-
-  // Filled when SetStoreOriginalJSONForExtrasAndExtensions is enabled.
-  std::string extras_json_string;
-  std::string extensions_json_string;
-
-  Texture() = default;
-  DEFAULT_METHODS(Texture)
-
-  bool operator==(const Texture &) const;
 };
 
 struct TextureInfo {
@@ -766,7 +724,6 @@ struct Accessor {
   }
 
   Accessor()
-
   {
     sparse.isSparse = false;
   }
@@ -1017,15 +974,12 @@ class Model {
   bool operator==(const Model &) const;
 
   std::vector<Accessor> accessors;
-  //std::vector<Animation> animations;
   std::vector<Buffer> buffers;
   std::vector<BufferView> bufferViews;
   std::vector<Material> materials;
   std::vector<Mesh> meshes;
   std::vector<Node> nodes;
-  //std::vector<Texture> textures;
   std::vector<Image> images;
-  //std::vector<Skin> skins;
   std::vector<Sampler> samplers;
   std::vector<Camera> cameras;
   std::vector<Scene> scenes;
@@ -1130,18 +1084,8 @@ struct FsCallbacks {
   void *user_data;  // An argument that is passed to all fs callbacks
 };
 
-#ifndef TINYGLTF_NO_FS
-// Declaration of default filesystem callbacks
-
 bool FileExists(const std::string &abs_filename, void *);
 
-///
-/// Expand file path(e.g. `~` to home directory on posix, `%APPDATA%` to
-/// `C:\\Users\\tinygltf\\AppData`)
-///
-/// @param[in] filepath File path string. Assume UTF-8
-/// @param[in] userdata User data. Set to `nullptr` if you don't need it.
-///
 std::string ExpandFilePath(const std::string &filepath, void *userdata);
 
 bool ReadWholeFile(std::vector<unsigned char> *out, std::string *err,
@@ -1152,11 +1096,7 @@ bool WriteWholeFile(std::string *err, const std::string &filepath,
 
 bool GetFileSizeInBytes(size_t *filesize_out, std::string *err,
                         const std::string &filepath, void *);
-#endif
 
-///
-/// glTF Parser/Serializer context.
-///
 class TinyGLTF {
  public:
   TinyGLTF() = default;
@@ -1325,10 +1265,6 @@ class TinyGLTF {
   void *write_image_user_data_{nullptr};
 };
 
-#ifdef __clang__
-#pragma clang diagnostic pop  // -Wpadded
-#endif
-
 }  // namespace tinygltf
 
 #endif  // TINY_GLTF_H_
@@ -1363,10 +1299,6 @@ class TinyGLTF {
 #endif
 #endif
 
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
@@ -1384,11 +1316,6 @@ class TinyGLTF {
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #define TINYGLTF_INTERNAL_WIN32_LEAN_AND_MEAN
-#endif
-#ifndef __MINGW32__
-#include <Windows.h>  // include API for expanding a file path
-#else
-#include <windows.h>
 #endif
 
 #ifdef TINYGLTF_INTERNAL_WIN32_LEAN_AND_MEAN
@@ -1417,67 +1344,12 @@ class TinyGLTF {
 
 namespace tinygltf {
 namespace detail {
-#ifdef TINYGLTF_USE_RAPIDJSON
 
-#ifdef TINYGLTF_USE_RAPIDJSON_CRTALLOCATOR
-// This uses the RapidJSON CRTAllocator.  It is thread safe and multiple
-// documents may be active at once.
-using json =
-    rapidjson::GenericValue<rapidjson::UTF8<>, rapidjson::CrtAllocator>;
-using json_iterator = json::MemberIterator;
-using json_const_iterator = json::ConstMemberIterator;
-using json_const_array_iterator = json const *;
-using JsonDocument =
-    rapidjson::GenericDocument<rapidjson::UTF8<>, rapidjson::CrtAllocator>;
-rapidjson::CrtAllocator s_CrtAllocator;  // stateless and thread safe
-rapidjson::CrtAllocator &GetAllocator() { return s_CrtAllocator; }
-#else
-// This uses the default RapidJSON MemoryPoolAllocator.  It is very fast, but
-// not thread safe. Only a single JsonDocument may be active at any one time,
-// meaning only a single gltf load/save can be active any one time.
-using json = rapidjson::Value;
-using json_iterator = json::MemberIterator;
-using json_const_iterator = json::ConstMemberIterator;
-using json_const_array_iterator = json const *;
-rapidjson::Document *s_pActiveDocument = nullptr;
-rapidjson::Document::AllocatorType &GetAllocator() {
-  assert(s_pActiveDocument);  // Root json node must be JsonDocument type
-  return s_pActiveDocument->GetAllocator();
-}
-
-struct JsonDocument : public rapidjson::Document {
-  JsonDocument() {
-    assert(s_pActiveDocument ==
-           nullptr);  // When using default allocator, only one document can be
-                      // active at a time, if you need multiple active at once,
-                      // define TINYGLTF_USE_RAPIDJSON_CRTALLOCATOR
-    s_pActiveDocument = this;
-  }
-  JsonDocument(const JsonDocument &) = delete;
-  JsonDocument(JsonDocument &&rhs) noexcept
-      : rapidjson::Document(std::move(rhs)) {
-    s_pActiveDocument = this;
-    rhs.isNil = true;
-  }
-  ~JsonDocument() {
-    if (!isNil) {
-      s_pActiveDocument = nullptr;
-    }
-  }
-
- private:
-  bool isNil = false;
-};
-
-#endif  // TINYGLTF_USE_RAPIDJSON_CRTALLOCATOR
-
-#else
 using nlohmann::json;
 using json_iterator = json::iterator;
 using json_const_iterator = json::const_iterator;
 using json_const_array_iterator = json_const_iterator;
 using JsonDocument = json;
-#endif
 
 void JsonParse(JsonDocument &doc, const char *str, size_t length, bool throwExc = false)
 {
@@ -1488,12 +1360,8 @@ void JsonParse(JsonDocument &doc, const char *str, size_t length, bool throwExc 
 
 namespace tinygltf {
 
-struct LoadImageDataOption {
-  bool preserve_channels{false};
-};
-
-// Equals function for Value, for recursivity
-static bool Equals(const tinygltf::Value &one, const tinygltf::Value &other) {
+static bool Equals(const tinygltf::Value &one, const tinygltf::Value &other)
+{
   if (one.Type() != other.Type()) return false;
 
   switch (one.Type()) {
@@ -1554,61 +1422,6 @@ bool Accessor::operator==(const Accessor &other) const {
          Equals(this->maxValues, other.maxValues) &&
          Equals(this->minValues, other.minValues) && this->name == other.name &&
          this->normalized == other.normalized && this->type == other.type;
-}
-bool Asset::operator==(const Asset &other) const {
-  return this->copyright == other.copyright &&
-         this->extensions == other.extensions && this->extras == other.extras &&
-         this->generator == other.generator &&
-         this->minVersion == other.minVersion && this->version == other.version;
-}
-bool Buffer::operator==(const Buffer &other) const {
-  return this->data == other.data && this->extensions == other.extensions &&
-         this->extras == other.extras && this->name == other.name &&
-         this->uri == other.uri;
-}
-bool BufferView::operator==(const BufferView &other) const {
-  return this->buffer == other.buffer && this->byteLength == other.byteLength &&
-         this->byteOffset == other.byteOffset &&
-         this->byteStride == other.byteStride && this->name == other.name &&
-         this->target == other.target && this->extensions == other.extensions &&
-         this->extras == other.extras &&
-         this->dracoDecoded == other.dracoDecoded;
-}
-bool Mesh::operator==(const Mesh &other) const {
-  return this->extensions == other.extensions && this->extras == other.extras &&
-         this->name == other.name && Equals(this->weights, other.weights) &&
-         this->primitives == other.primitives;
-}
-bool Node::operator==(const Node &other) const {
-  return this->camera == other.camera && this->children == other.children &&
-         this->extensions == other.extensions && this->extras == other.extras &&
-         Equals(this->matrix, other.matrix) && this->mesh == other.mesh &&
-         (this->light == other.light) && (this->emitter == other.emitter) &&
-         this->name == other.name && Equals(this->rotation, other.rotation) &&
-         Equals(this->scale, other.scale) && this->skin == other.skin &&
-         Equals(this->translation, other.translation) &&
-         Equals(this->weights, other.weights);
-}
-bool SpotLight::operator==(const SpotLight &other) const {
-  return this->extensions == other.extensions && this->extras == other.extras &&
-         TINYGLTF_DOUBLE_EQUAL(this->innerConeAngle, other.innerConeAngle) &&
-         TINYGLTF_DOUBLE_EQUAL(this->outerConeAngle, other.outerConeAngle);
-}
-bool PositionalEmitter::operator==(const PositionalEmitter &other) const {
-  return this->extensions == other.extensions && this->extras == other.extras &&
-         TINYGLTF_DOUBLE_EQUAL(this->coneInnerAngle, other.coneInnerAngle) &&
-         TINYGLTF_DOUBLE_EQUAL(this->coneOuterAngle, other.coneOuterAngle) &&
-         TINYGLTF_DOUBLE_EQUAL(this->coneOuterGain, other.coneOuterGain) &&
-         TINYGLTF_DOUBLE_EQUAL(this->maxDistance, other.maxDistance) &&
-         TINYGLTF_DOUBLE_EQUAL(this->refDistance, other.refDistance) &&
-         TINYGLTF_DOUBLE_EQUAL(this->rolloffFactor, other.rolloffFactor);
-}
-bool OrthographicCamera::operator==(const OrthographicCamera &other) const {
-  return this->extensions == other.extensions && this->extras == other.extras &&
-         TINYGLTF_DOUBLE_EQUAL(this->xmag, other.xmag) &&
-         TINYGLTF_DOUBLE_EQUAL(this->ymag, other.ymag) &&
-         TINYGLTF_DOUBLE_EQUAL(this->zfar, other.zfar) &&
-         TINYGLTF_DOUBLE_EQUAL(this->znear, other.znear);
 }
 bool Parameter::operator==(const Parameter &other) const {
   if (this->bool_value != other.bool_value ||
@@ -1988,51 +1801,8 @@ void TinyGLTF::SetURICallbacks(URICallbacks callbacks) {
 
 bool FileExists(const std::string &abs_filename, void *) {
   bool ret;
-#ifdef TINYGLTF_ANDROID_LOAD_FROM_ASSETS
-  if (asset_manager) {
-    AAsset *asset = AAssetManager_open(asset_manager, abs_filename.c_str(),
-                                       AASSET_MODE_STREAMING);
-    if (!asset) {
-      return false;
-    }
-    AAsset_close(asset);
-    ret = true;
-  } else {
-    return false;
-  }
-#else
-#ifdef _WIN32
-#if defined(_MSC_VER) || defined(_LIBCPP_VERSION)
 
-  // First check if a file is a directory.
-  DWORD result = GetFileAttributesW(UTF8ToWchar(abs_filename).c_str());
-  if (result == INVALID_FILE_ATTRIBUTES) {
-    return false;
-  }
-  if (result & FILE_ATTRIBUTE_DIRECTORY) {
-    return false;
-  }
 
-  FILE *fp = nullptr;
-  errno_t err = _wfopen_s(&fp, UTF8ToWchar(abs_filename).c_str(), L"rb");
-  if (err != 0) {
-    return false;
-  }
-#elif defined(__GLIBCXX__)
-  FILE *fp = fopen(abs_filename.c_str(), "rb");
-  if (!fp) {
-    return false;
-  }
-#else
-  // TODO: is_directory check
-  FILE *fp = nullptr;
-  errno_t err = fopen_s(&fp, abs_filename.c_str(), "rb");
-  if (err != 0) {
-    return false;
-  }
-#endif
-
-#else
   struct stat sb;
   if (stat(abs_filename.c_str(), &sb)) {
     return false;
@@ -2042,28 +1812,16 @@ bool FileExists(const std::string &abs_filename, void *) {
   }
 
   FILE *fp = fopen(abs_filename.c_str(), "rb");
-#endif
   if (fp) {
     ret = true;
     fclose(fp);
   } else {
     ret = false;
   }
-#endif
-
   return ret;
 }
 
 std::string ExpandFilePath(const std::string &filepath, void *) {
-  // https://github.com/syoyo/tinygltf/issues/368
-  //
-  // No file path expansion in built-in FS function anymore, since glTF URI
-  // should not contain tilde('~') and environment variables, and for security
-  // reason(`wordexp`).
-  //
-  // Users need to supply `base_dir`(in `LoadASCIIFromString`,
-  // `LoadBinaryFromMemory`) in expanded absolute path.
-
   return filepath;
 }
 
@@ -2392,35 +2150,13 @@ bool GetInt(const detail::json &o, int &val) {
   return false;
 }
 
-#ifdef TINYGLTF_USE_RAPIDJSON
-asdf
-bool GetDouble(const detail::json &o, double &val) {
-  if (o.IsDouble()) {
-    val = o.GetDouble();
-    return true;
-  }
-
-  return false;
-}
-#endif
-
 bool GetNumber(const detail::json &o, double &val) {
-#ifdef TINYGLTF_USE_RAPIDJSON
-asdf
-  if (o.IsNumber()) {
-    val = o.GetDouble();
-    return true;
-  }
-
-  return false;
-#else
   if (o.is_number()) {
     val = o.get<double>();
     return true;
   }
 
   return false;
-#endif
 }
 
 bool GetString(const detail::json &o, std::string &val) {
@@ -2661,21 +2397,11 @@ static bool ParseUnsignedProperty(size_t *ret, std::string *err,
 
   size_t uValue = 0;
   bool isUValue;
-#ifdef TINYGLTF_USE_RAPIDJSON
-  isUValue = false;
-  if (value.IsUint()) {
-    uValue = value.GetUint();
-    isUValue = true;
-  } else if (value.IsUint64()) {
-    uValue = value.GetUint64();
-    isUValue = true;
-  }
-#else
+
   isUValue = value.is_number_unsigned();
   if (isUValue) {
     uValue = value.get<size_t>();
   }
-#endif
   if (!isUValue) {
     if (required) {
       if (err) {
@@ -2786,10 +2512,9 @@ static bool ParseNumberArrayProperty(std::vector<double> *ret, std::string *err,
 }
 
 static bool ParseIntegerArrayProperty(std::vector<int> *ret, std::string *err,
-                                      const detail::json &o,
-                                      const std::string &property,
-                                      bool required,
-                                      const std::string &parent_node = "") {
+                  const detail::json &o, const std::string &property,
+                  bool required, const std::string &parent_node = "")
+{
   detail::json_const_iterator it;
   if (!detail::FindMember(o, property.c_str(), it)) {
     if (required) {
@@ -2965,9 +2690,9 @@ static bool ParseExtensionsProperty(ExtensionMap *ret, std::string *err,
   return true;
 }
 
-template <typename GltfType>
-static bool ParseExtrasAndExtensions(GltfType *target, std::string *err,
-                                     const detail::json &o, bool store_json_strings)
+template <typename GltfType> static bool
+ParseExtrasAndExtensions(GltfType *target, std::string *err,
+                         const detail::json &o, bool store_json_strings)
 {
   ParseExtensionsProperty(&target->extensions, err, o);
   ParseExtrasProperty(&target->extras, o);
@@ -3296,15 +3021,10 @@ static bool ParseAccessor(Accessor *accessor, std::string *err, const detail::js
   }
 
   ParseStringProperty(&accessor->name, err, o, "name", false);
-
   accessor->minValues.clear();
   accessor->maxValues.clear();
-  ParseNumberArrayProperty(&accessor->minValues, err, o, "min", false,
-                           "Accessor");
-
-  ParseNumberArrayProperty(&accessor->maxValues, err, o, "max", false,
-                           "Accessor");
-
+  ParseNumberArrayProperty(&accessor->minValues, err, o, "min", false, "Accessor");
+  ParseNumberArrayProperty(&accessor->maxValues, err, o, "max", false, "Accessor");
   accessor->count = count;
   accessor->bufferView = bufferView;
   accessor->byteOffset = byteOffset;
@@ -3341,8 +3061,8 @@ static bool ParseAccessor(Accessor *accessor, std::string *err, const detail::js
 }
 
 static bool ParsePrimitive(Primitive *primitive, Model *model, std::string *err,
-                           const detail::json &o,
-                           bool store_original_json_for_extras_and_extensions) {
+                const detail::json &o, bool store_original_json_for_extras_and_extensions)
+{
   int material = -1;
   ParseIntegerProperty(&material, err, o, "material", false);
   primitive->material = material;
@@ -3729,10 +3449,9 @@ bool ForEachInArray(const detail::json &_v, const char *member, Callback &&cb) {
 }  // end of namespace detail
 
 bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
-                              const char *json_str,
-                              unsigned int json_str_length,
-                              const std::string &base_dir,
-                              unsigned int check_sections) {
+                              const char *json_str, unsigned int json_str_length,
+                              const std::string &base_dir, unsigned int check_sections)
+{
   if (json_str_length < 4) {
     if (err) {
       (*err) = "JSON string too short.\n";
@@ -4358,10 +4077,9 @@ bool TinyGLTF::LoadBinaryFromMemory(Model *model, std::string *err,
   return true;
 }
 
-bool TinyGLTF::LoadBinaryFromFile(Model *model, std::string *err,
-                                  std::string *warn,
-                                  const std::string &filename,
-                                  unsigned int check_sections) {
+bool TinyGLTF::LoadBinaryFromFile(Model *model, std::string *err, std::string *warn,
+                                  const std::string &filename, unsigned int check_sections)
+{
   std::stringstream ss;
 
   if (fs.ReadWholeFile == nullptr) {
@@ -4393,33 +4111,6 @@ bool TinyGLTF::LoadBinaryFromFile(Model *model, std::string *err,
 
   return ret;
 }
-
-namespace detail {
-detail::json JsonFromString(const char *s) {
-  return detail::json(s);
-}
-
-void JsonAssign(detail::json &dest, const detail::json &src) {
-  dest = src;
-}
-
-void JsonAddMember(detail::json &o, const char *key, detail::json &&value) {
-  o[key] = std::move(value);
-}
-
-void JsonPushBack(detail::json &o, detail::json &&value) {
-  o.push_back(std::move(value));
-}
-
-void JsonSetObject(detail::json &o) {
-  o = o.object({});
-}
-
-void JsonReserveArray(detail::json &o, size_t s) {
-  (void)(o);
-  (void)(s);
-}
-}  // namespace detail
 
 }  // namespace tinygltf
 
