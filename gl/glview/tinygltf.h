@@ -11,6 +11,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <iostream>
 
 
 #define TINYGLTF_NOEXCEPT noexcept
@@ -376,25 +377,23 @@ struct BufferView {
   DEFAULT_METHODS(BufferView)
 };
 
-struct Accessor {
-  int bufferView{-1};  // optional in spec but required here since sparse
-                       // accessor are not supported
-  std::string name;
-  size_t byteOffset{0};
-  bool normalized{false};  // optional.
-  int componentType{-1};   // (required) One of TINYGLTF_COMPONENT_TYPE_***
-  size_t count{0};         // required
-  int type{-1};            // (required) One of TINYGLTF_TYPE_***   ..
-  Value extras;
-  ExtensionMap extensions;
+struct Accessor
+{
+    int bufferView{-1};
+    std::string name;
+    size_t byteOffset{0};
+    bool normalized{false};  // optional.
+    int componentType{-1};   // (required) One of TINYGLTF_COMPONENT_TYPE_***
+    size_t count{0};         // required
+    int type{-1};            // (required) One of TINYGLTF_TYPE_***   ..
+    Value extras;
+    ExtensionMap extensions;
 
-  std::string extras_json_string;
-  std::string extensions_json_string;
+    std::string extras_json_string;
+    std::string extensions_json_string;
 
-  std::vector<double>
-      minValues;  // optional. integer value is promoted to double
-  std::vector<double>
-      maxValues;  // optional. integer value is promoted to double
+    std::vector<double> minValues;
+    std::vector<double> maxValues;
 
   struct Sparse {
     int count;
@@ -459,14 +458,20 @@ struct Accessor {
     }
 
     // unreachable return 0;
-  }
+    }
 
-  Accessor()
-  {
-    sparse.isSparse = false;
-  }
-  DEFAULT_METHODS(Accessor)
-  bool operator==(const tinygltf::Accessor &) const;
+    Accessor()
+    {
+        sparse.isSparse = false;
+    }
+    DEFAULT_METHODS(Accessor)
+    bool operator==(const tinygltf::Accessor &) const;
+
+    void dump(std::ostream &os)
+    {
+        os << name << " " << bufferView << " " << byteOffset << " " << normalized
+           << " " << componentType << " " << count << " " << type << "\r\n";
+    }
 };
 
 struct Primitive {
