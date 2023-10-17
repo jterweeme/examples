@@ -6,7 +6,7 @@
 #include <limits>
 #include <string>
 #include <vector>
-
+#include <sstream>
 #include <GL/glew.h>
 
 #define GLFW_INCLUDE_GLU
