@@ -1,3 +1,3 @@
 all:
-	g++ -o glview glview.cpp trackball.cpp -lGL -lGLEW -lglfw -lGLU
+	g++ -o glview *.cpp -lGL -lGLEW -lglfw -lGLU
 
