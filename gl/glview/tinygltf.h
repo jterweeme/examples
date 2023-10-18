@@ -24,7 +24,7 @@
   x &operator=(const x &) = default;   \
   x &operator=(x &&) TINYGLTF_NOEXCEPT = default;
 
-namespace tinygltf {
+
 
 #define TINYGLTF_MODE_POINTS (0)
 #define TINYGLTF_MODE_LINE (1)
@@ -114,6 +114,8 @@ namespace tinygltf {
 #define TINYGLTF_DOUBLE_EPS (1.e-12)
 #define TINYGLTF_DOUBLE_EQUAL(a, b) (std::fabs((b) - (a)) < TINYGLTF_DOUBLE_EPS)
 
+namespace tinygltf {
+
 typedef enum {
   NULL_TYPE,
   REAL_TYPE,
@@ -195,10 +197,10 @@ class Value {
   explicit Value(const std::string &s) : type_(STRING_TYPE) {
     string_value_ = s;
   }
-  explicit Value(std::string &&s)
-      : type_(STRING_TYPE), string_value_(std::move(s)) {}
+  explicit Value(std::string &&s) : type_(STRING_TYPE), string_value_(std::move(s)) {}
   explicit Value(const char *s) : type_(STRING_TYPE) { string_value_ = s; }
-  explicit Value(const unsigned char *p, size_t n) : type_(BINARY_TYPE) {
+  explicit Value(const unsigned char *p, size_t n) : type_(BINARY_TYPE)
+  {
     binary_value_.resize(n);
     memcpy(binary_value_.data(), p, n);
   }
@@ -216,21 +218,13 @@ class Value {
   DEFAULT_METHODS(Value)
 
   char Type() const { return static_cast<char>(type_); }
-
   bool IsBool() const { return (type_ == BOOL_TYPE); }
-
   bool IsInt() const { return (type_ == INT_TYPE); }
-
   bool IsNumber() const { return (type_ == REAL_TYPE) || (type_ == INT_TYPE); }
-
   bool IsReal() const { return (type_ == REAL_TYPE); }
-
   bool IsString() const { return (type_ == STRING_TYPE); }
-
   bool IsBinary() const { return (type_ == BINARY_TYPE); }
-
   bool IsArray() const { return (type_ == ARRAY_TYPE); }
-
   bool IsObject() const { return (type_ == OBJECT_TYPE); }
 
   // Use this function if you want to have number value as double.
@@ -280,11 +274,7 @@ class Value {
   }
 
   // Valid only for object type.
-  bool Has(const std::string &key) const {
-    if (!IsObject()) return false;
-    Object::const_iterator it = object_value_.find(key);
-    return (it != object_value_.end()) ? true : false;
-  }
+  bool Has(const std::string &key) const;
 
   // List keys
   std::vector<std::string> Keys() const {
@@ -465,45 +455,42 @@ struct Accessor
         sparse.isSparse = false;
     }
     DEFAULT_METHODS(Accessor)
-    bool operator==(const tinygltf::Accessor &) const;
 
-    void dump(std::ostream &os)
-    {
-        os << name << " " << bufferView << " " << byteOffset << " " << normalized
-           << " " << componentType << " " << count << " " << type << "\r\n";
-    }
+    void serialize(std::ostream &os) const;
 };
 
 struct Primitive {
-  std::map<std::string, int> attributes;
-  int material{-1};
-  int indices{-1};
-  int mode{-1};
-  std::vector<std::map<std::string, int> > targets;  // array of morph targets,
-  ExtensionMap extensions;
-  Value extras;
+    std::map<std::string, int> attributes;
+    int material{-1};
+    int indices{-1};
+    int mode{-1};
+    std::vector<std::map<std::string, int> > targets;  // array of morph targets,
+    ExtensionMap extensions;
+    Value extras;
 
-  std::string extras_json_string;
-  std::string extensions_json_string;
+    std::string extras_json_string;
+    std::string extensions_json_string;
 
-  Primitive() = default;
-  DEFAULT_METHODS(Primitive)
-  bool operator==(const Primitive &) const;
+    Primitive() = default;
+    DEFAULT_METHODS(Primitive)
+
+    void serialize(std::ostream &os) const;
 };
 
 struct Mesh {
-  std::string name;
-  std::vector<Primitive> primitives;
-  std::vector<double> weights;  // weights to be applied to the Morph Targets
-  ExtensionMap extensions;
-  Value extras;
+    std::string name;
+    std::vector<Primitive> primitives;
+    std::vector<double> weights;  // weights to be applied to the Morph Targets
+    ExtensionMap extensions;
+    Value extras;
 
-  std::string extras_json_string;
-  std::string extensions_json_string;
+    std::string extras_json_string;
+    std::string extensions_json_string;
 
-  Mesh() = default;
-  DEFAULT_METHODS(Mesh)
-  bool operator==(const Mesh &) const;
+    Mesh() = default;
+    DEFAULT_METHODS(Mesh)
+
+    void serialize(std::ostream &os) const;
 };
 
 class Node {
@@ -511,8 +498,6 @@ class Node {
   Node() = default;
 
   DEFAULT_METHODS(Node)
-
-  bool operator==(const Node &) const;
 
   int camera{-1};  // the index of the camera referenced by this node
 
@@ -547,7 +532,6 @@ struct Buffer {
 
   Buffer() = default;
   DEFAULT_METHODS(Buffer)
-  bool operator==(const Buffer &) const;
 };
 
 struct Asset {
@@ -563,7 +547,6 @@ struct Asset {
 
   Asset() = default;
   DEFAULT_METHODS(Asset)
-  bool operator==(const Asset &) const;
 };
 
 struct Scene {
@@ -578,7 +561,6 @@ struct Scene {
 
   Scene() = default;
   DEFAULT_METHODS(Scene)
-  bool operator==(const Scene &) const;
 };
 
 class Model {

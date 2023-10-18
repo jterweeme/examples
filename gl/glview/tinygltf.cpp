@@ -25,9 +25,13 @@ void JsonParse(JsonDocument &doc, const char *str, size_t length, bool throwExc 
   doc = detail::json::parse(str, str + length, nullptr, throwExc);
 }
 }  // namespace detail
-}  // namespace tinygltf
 
-namespace tinygltf {
+bool Value::Has(const std::string &key) const
+{
+    if (!IsObject()) return false;
+    Object::const_iterator it = object_value_.find(key);
+    return (it != object_value_.end()) ? true : false;
+}
 
 static void swap4(unsigned int *val) {
 #ifdef TINYGLTF_LITTLE_ENDIAN
@@ -162,7 +166,7 @@ std::string base64_decode(std::string const &encoded_string) {
 
 namespace dlib {
 
-inline unsigned char from_hex(unsigned char ch) {
+inline uint8_t from_hex(uint8_t ch) {
   if (ch <= '9' && ch >= '0')
     ch -= '0';
   else if (ch <= 'f' && ch >= 'a')
@@ -182,11 +186,9 @@ static const std::string urldecode(const std::string &str) {
     if (str[i] == '+') {
       result += ' ';
     } else if (str[i] == '%' && str.size() > i + 2) {
-      const unsigned char ch1 =
-          from_hex(static_cast<unsigned char>(str[i + 1]));
-      const unsigned char ch2 =
-          from_hex(static_cast<unsigned char>(str[i + 2]));
-      const unsigned char ch = static_cast<unsigned char>((ch1 << 4) | ch2);
+      const uint8_t ch1 = from_hex(static_cast<unsigned char>(str[i + 1]));
+      const uint8_t ch2 = from_hex(static_cast<unsigned char>(str[i + 2]));
+      const uint8_t ch = static_cast<uint8_t>((ch1 << 4) | ch2);
       result += static_cast<char>(ch);
       i += 2;
     } else {
@@ -197,16 +199,15 @@ static const std::string urldecode(const std::string &str) {
 }
 
 }  // namespace dlib
-// --- dlib end --------------------------------------------------------------
 
-bool URIDecode(const std::string &in_uri, std::string *out_uri,
-               void *user_data) {
-  (void)user_data;
-  *out_uri = dlib::urldecode(in_uri);
-  return true;
+bool URIDecode(const std::string &in_uri, std::string *out_uri, void *user_data)
+{
+    (void)user_data;
+    *out_uri = dlib::urldecode(in_uri);
+    return true;
 }
 
-static bool LoadExternalFile(std::vector<unsigned char> *out, std::string *err,
+static bool LoadExternalFile(std::vector<uint8_t> *out, std::string *err,
                              std::string *warn, const std::string &filename,
                              const std::string &basedir, bool required,
                              size_t reqBytes, bool checkSize,
@@ -262,7 +263,7 @@ static bool LoadExternalFile(std::vector<unsigned char> *out, std::string *err,
     }
   }
 
-  std::vector<unsigned char> buf;
+  std::vector<uint8_t> buf;
   std::string fileReadErr;
   bool fileRead =
       fs->ReadWholeFile(&buf, &fileReadErr, filepath, fs->user_data);
@@ -777,9 +778,9 @@ static bool ParseNumberProperty(double *ret, std::string *err,
 }
 
 static bool ParseNumberArrayProperty(std::vector<double> *ret, std::string *err,
-                                     const detail::json &o,
-                                     const std::string &property, bool required,
-                                     const std::string &parent_node = "") {
+                 const detail::json &o, const std::string &property, bool required,
+                 const std::string &parent_node = "")
+{
   detail::json_const_iterator it;
   if (!detail::FindMember(o, property.c_str(), it)) {
     if (required) {
@@ -1172,9 +1173,9 @@ static void ParseAccessor(Accessor *accessor, JSONObject *o)
     //TODO: vector uitlezen
 }
 
-static bool
-ParsePrimitive(Primitive *primitive, std::string *err, const detail::json &o)
+static bool ParsePrimitive(Primitive *primitive, const detail::json &o)
 {
+  std::string *err = new std::string();
   int material = -1;
   ParseIntegerProperty(&material, err, o, "material", false);
   primitive->material = material;
@@ -1187,35 +1188,6 @@ ParsePrimitive(Primitive *primitive, std::string *err, const detail::json &o)
   ParseIntegerProperty(&indices, err, o, "indices", false);
   primitive->indices = indices;
   ParseStringIntegerProperty(&primitive->attributes, err, o, "attributes", true, "Primitive");
-
-  // Look for morph targets
-  detail::json_const_iterator targetsObject;
-  if (detail::FindMember(o, "targets", targetsObject) &&
-      detail::IsArray(detail::GetValue(targetsObject)))
-  {
-    auto targetsObjectEnd = detail::ArrayEnd(detail::GetValue(targetsObject));
-    for (detail::json_const_array_iterator i =
-             detail::ArrayBegin(detail::GetValue(targetsObject));
-         i != targetsObjectEnd; ++i)
-    {
-      std::map<std::string, int> targetAttribues;
-
-      const detail::json &dict = *i;
-      if (detail::IsObject(dict))
-      {
-        detail::json_const_iterator dictIt(detail::ObjectBegin(dict));
-        detail::json_const_iterator dictItEnd(detail::ObjectEnd(dict));
-
-        for (; dictIt != dictItEnd; ++dictIt) {
-          int iVal;
-          if (detail::GetInt(detail::GetValue(dictIt), iVal))
-            targetAttribues[detail::GetKey(dictIt)] = iVal;
-        }
-        primitive->targets.emplace_back(std::move(targetAttribues));
-      }
-    }
-  }
-
   return true;
 }
 
@@ -1229,16 +1201,13 @@ static void ParsePrimitive(Primitive &primitive, JSONObject *o)
     ParseIntegerProperty(primitive.indices, o, "indices", false);
 
     JSONObject *attrObj = dynamic_cast<JSONObject *>(o->getProperty("attributes")->value());
-    std::map<std::string, int> targetAttr;
 
     for (JSONProperty *p : *attrObj)
     {
         JSONNumber *nrn = dynamic_cast<JSONNumber *>(p->value());
         int nr = std::stoi(nrn->value());
-        targetAttr[p->key()] = nr;
+        primitive.attributes[p->key()] = nr;
     }
-
-    primitive.targets.emplace_back(std::move(targetAttr));
 }
 
 static void ParseMesh(Mesh *mesh, JSONObject *o)
@@ -1249,7 +1218,6 @@ static void ParseMesh(Mesh *mesh, JSONObject *o)
 
     if (p)
     {
-
         JSONArray *a = dynamic_cast<JSONArray *>(p->value());
 
         for (JSONNode *node : *a)
@@ -1279,7 +1247,7 @@ static bool ParseMesh(Mesh *mesh, std::string *err, const detail::json &o)
          i != primEnd; ++i)
     {
       Primitive primitive;
-      if (ParsePrimitive(&primitive, err, *i))
+      if (ParsePrimitive(&primitive, *i))
       {
         // Only add the primitive if the parsing succeeds.
         mesh->primitives.emplace_back(std::move(primitive));
@@ -1359,6 +1327,39 @@ bool ForEachInArray(const detail::json &_v, const char *member, Callback &&cb) {
 };
 
 }  // end of namespace detail
+
+void Accessor::serialize(std::ostream &os) const
+{
+    os << name << " " << bufferView << " " << byteOffset << " " << normalized
+       << " " << componentType << " " << count << " " << type << "\r\n";
+}
+
+void Mesh::serialize(std::ostream &os) const
+{
+    os.put('{');
+    os << "\"name\":\"" << name << "\"";
+    os.put(',');
+    os << "\"primitives\":[";
+    
+    for (Primitive primitive : primitives)
+        primitive.serialize(os);
+
+    os.put(']');
+}
+
+void Primitive::serialize(std::ostream &os) const
+{
+    os.put('{');
+    os << "\"attributes\":{\r\n";
+        
+    for (auto const& attr : attributes)
+    {
+        os << "\"" << attr.first << "\":" << attr.second << "\r\n";
+    }
+
+    os.put('}');
+    os.put('}');
+}
 
 bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
                               const char *json_str, unsigned int json_str_length,
@@ -1558,24 +1559,14 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
   // 6. Parse Mesh
   {
     JSONArray *a = dynamic_cast<JSONArray *>(rootObj->getProperty("meshes")->value());
-    std::vector<JSONNode *>::iterator it = a->begin();
 
     for (JSONNode *node : *a)
     {
         JSONObject *o = dynamic_cast<JSONObject *>(node);
         Mesh mesh;
         ParseMesh(&mesh, o);
-        //model->meshes.push_back(mesh);
+        model->meshes.push_back(mesh);
     }
-
-    bool success = ForEachInArray(v, "meshes", [&](const detail::json &o) {
-      Mesh mesh;
-      if (!ParseMesh(&mesh, err, o))
-        return false;
-
-      model->meshes.emplace_back(std::move(mesh));
-      return true;
-    });
   }
 
   // Assign missing bufferView target types
@@ -1613,7 +1604,6 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
         const auto accessorsIndex = size_t(attribute.second);
         if (accessorsIndex < model->accessors.size()) {
           const auto bufferView = model->accessors[accessorsIndex].bufferView;
-          // bufferView could be null(-1) for sparse morph target
           if (bufferView >= 0 && bufferView < (int)model->bufferViews.size()) {
             model->bufferViews[size_t(bufferView)].target =
                 TINYGLTF_TARGET_ARRAY_BUFFER;
@@ -1626,7 +1616,6 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
           const auto accessorsIndex = size_t(attribute.second);
           if (accessorsIndex < model->accessors.size()) {
             const auto bufferView = model->accessors[accessorsIndex].bufferView;
-            // bufferView could be null(-1) for sparse morph target
             if (bufferView >= 0 &&
                 bufferView < (int)model->bufferViews.size()) {
               model->bufferViews[size_t(bufferView)].target =
@@ -1689,17 +1678,6 @@ bool TinyGLTF::LoadASCIIFromFile(Model *model, std::string *err,
                                  std::string *warn, const std::string &filename,
                                  unsigned int check_sections) {
   std::stringstream ss;
-
-  if (fs.ReadWholeFile == nullptr) {
-    // Programmer error, assert() ?
-    ss << "Failed to read file: " << filename
-       << ": one or more FS callback not set" << std::endl;
-    if (err) {
-      (*err) = ss.str();
-    }
-    return false;
-  }
-
   std::vector<unsigned char> data;
   std::string fileerr;
   bool fileread = fs.ReadWholeFile(&data, &fileerr, filename, fs.user_data);
@@ -1778,29 +1756,16 @@ bool TinyGLTF::LoadBinaryFromMemory(Model *model, std::string *err,
     return false;
   }
 
-  // Padding check
-  // The start and the end of each chunk must be aligned to a 4-byte boundary.
-  // No padding check for chunk0 start since its 4byte-boundary is ensured.
   if ((header_and_json_size % 4) != 0) {
     if (err) {
       (*err) = "JSON Chunk end does not aligned to a 4-byte boundary.";
     }
   }
 
-  // std::cout << "header_and_json_size = " << header_and_json_size << "\n";
-  // std::cout << "length = " << length << "\n";
-
-  // Chunk1(BIN) data
-  // The spec says: When the binary buffer is empty or when it is stored by
-  // other means, this chunk SHOULD be omitted. So when header + JSON data ==
-  // binary size, Chunk1 is omitted.
   if (header_and_json_size == uint64_t(length)) {
     bin_data_ = nullptr;
     bin_size_ = 0;
   } else {
-    // Read Chunk1 info(BIN data)
-    // At least Chunk1 should have 12 bytes(8 bytes(header) + 4 bytes(bin
-    // payload could be 1~3 bytes, but need to be aligned to 4 bytes)
     if ((header_and_json_size + 12ull) > uint64_t(length)) {
       if (err) {
         (*err) =
