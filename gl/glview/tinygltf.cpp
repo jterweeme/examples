@@ -44,8 +44,8 @@ static void swap4(unsigned int *val) {
 #endif
 }
 
-static std::string JoinPath(const std::string &path0,
-                            const std::string &path1) {
+static std::string JoinPath(const std::string &path0, const std::string &path1)
+{
   if (path0.empty()) {
     return path1;
   } else {
@@ -654,114 +654,7 @@ detail::json &GetValue(detail::json_iterator &it) {
   return it.value();
 }
 
-std::string JsonToString(const detail::json &o, int spacing = -1) {
-  return o.dump(spacing);
-}
-
 }  // namespace detail
-
-static bool ParseJsonAsValue(Value *ret, const detail::json &o) {
-  Value val{};
-
-  switch (o.type()) {
-    case detail::json::value_t::object: {
-      Value::Object value_object;
-      for (auto it = o.begin(); it != o.end(); it++) {
-        Value entry;
-        ParseJsonAsValue(&entry, it.value());
-        if (entry.Type() != NULL_TYPE)
-          value_object.emplace(it.key(), std::move(entry));
-      }
-      if (value_object.size() > 0) val = Value(std::move(value_object));
-    } break;
-    case detail::json::value_t::array: {
-      Value::Array value_array;
-      value_array.reserve(o.size());
-      for (auto it = o.begin(); it != o.end(); it++) {
-        Value entry;
-        ParseJsonAsValue(&entry, it.value());
-        if (entry.Type() != NULL_TYPE)
-          value_array.emplace_back(std::move(entry));
-      }
-      if (value_array.size() > 0) val = Value(std::move(value_array));
-    } break;
-    case detail::json::value_t::string:
-      val = Value(o.get<std::string>());
-      break;
-    case detail::json::value_t::boolean:
-      val = Value(o.get<bool>());
-      break;
-    case detail::json::value_t::number_integer:
-    case detail::json::value_t::number_unsigned:
-      val = Value(static_cast<int>(o.get<int64_t>()));
-      break;
-    case detail::json::value_t::number_float:
-      val = Value(o.get<double>());
-      break;
-    case detail::json::value_t::null:
-    case detail::json::value_t::discarded:
-    case detail::json::value_t::binary:
-      // default:
-      break;
-  }
-  const bool isNotNull = val.Type() != NULL_TYPE;
-
-  if (ret) *ret = std::move(val);
-
-  return isNotNull;
-}
-
-static bool ParseExtrasProperty(Value *ret, const detail::json &o) {
-  detail::json_const_iterator it;
-  if (!detail::FindMember(o, "extras", it)) {
-    return false;
-  }
-
-  return ParseJsonAsValue(ret, detail::GetValue(it));
-}
-
-static bool ParseBooleanProperty(bool *ret, std::string *err,
-                                 const detail::json &o,
-                                 const std::string &property,
-                                 const bool required,
-                                 const std::string &parent_node = "") {
-  detail::json_const_iterator it;
-  if (!detail::FindMember(o, property.c_str(), it)) {
-    if (required) {
-      if (err) {
-        (*err) += "'" + property + "' property is missing";
-        if (!parent_node.empty()) {
-          (*err) += " in " + parent_node;
-        }
-        (*err) += ".\n";
-      }
-    }
-    return false;
-  }
-
-  auto &value = detail::GetValue(it);
-
-  bool isBoolean;
-  bool boolValue = false;
-  isBoolean = value.is_boolean();
-  if (isBoolean) {
-    boolValue = value.get<bool>();
-  }
-  if (!isBoolean) {
-    if (required) {
-      if (err) {
-        (*err) += "'" + property + "' property is not a bool type.\n";
-      }
-    }
-    return false;
-  }
-
-  if (ret) {
-    (*ret) = boolValue;
-  }
-
-  return true;
-}
 
 static bool
 ParseIntegerProperty(int *ret, std::string *err, const detail::json &o,
@@ -1075,87 +968,15 @@ static bool ParseStringIntegerProperty(std::map<std::string, int> *ret,
   return true;
 }
 
-static bool ParseExtensionsProperty(ExtensionMap *ret, std::string *err,
-                                    const detail::json &o) {
-  (void)err;
-
-  detail::json_const_iterator it;
-  if (!detail::FindMember(o, "extensions", it)) {
-    return false;
-  }
-
-  auto &obj = detail::GetValue(it);
-  if (!detail::IsObject(obj)) {
-    return false;
-  }
-  ExtensionMap extensions;
-  detail::json_const_iterator extIt =
-      detail::ObjectBegin(obj);  // it.value().begin();
-  detail::json_const_iterator extEnd = detail::ObjectEnd(obj);
-  for (; extIt != extEnd; ++extIt) {
-    auto &itObj = detail::GetValue(extIt);
-    if (!detail::IsObject(itObj)) continue;
-    std::string key(detail::GetKey(extIt));
-    if (!ParseJsonAsValue(&extensions[key], itObj)) {
-      if (!key.empty()) {
-        // create empty object so that an extension object is still of type
-        // object
-        extensions[key] = Value{Value::Object{}};
-      }
-    }
-  }
-  if (ret) {
-    (*ret) = std::move(extensions);
-  }
-  return true;
-}
-
-template <typename GltfType> static bool
-ParseExtrasAndExtensions(GltfType *target, std::string *err,
-                         const detail::json &o, bool store_json_strings)
-{
-  ParseExtensionsProperty(&target->extensions, err, o);
-  ParseExtrasProperty(&target->extras, o);
-
-  if (store_json_strings) {
-    {
-      detail::json_const_iterator it;
-      if (detail::FindMember(o, "extensions", it)) {
-        target->extensions_json_string =
-            detail::JsonToString(detail::GetValue(it));
-      }
-    }
-    {
-      detail::json_const_iterator it;
-      if (detail::FindMember(o, "extras", it)) {
-        target->extras_json_string = detail::JsonToString(detail::GetValue(it));
-      }
-    }
-  }
-  return true;
-}
-
-static bool ParseAsset(Asset *asset, std::string *err, const detail::json &o,
-                       bool store_original_json_for_extras_and_extensions) {
-  ParseStringProperty(&asset->version, err, o, "version", true, "Asset");
-  ParseStringProperty(&asset->generator, err, o, "generator", false, "Asset");
-  ParseStringProperty(&asset->minVersion, err, o, "minVersion", false, "Asset");
-  ParseStringProperty(&asset->copyright, err, o, "copyright", false, "Asset");
-  return true;
-}
-
-static bool ParseBuffer(Buffer *buffer, std::string *err, const detail::json &o,
-                        bool store_original_json_for_extras_and_extensions,
+static bool ParseBuffer(Buffer *buffer, std::string *err, const detail::json &o, bool,
                         FsCallbacks *fs, const URICallbacks *uri_cb,
                         const std::string &basedir,
                         const size_t max_buffer_size, bool is_binary = false,
                         const unsigned char *bin_data = nullptr,
-                        size_t bin_size = 0) {
+                        size_t bin_size = 0)
+{
   size_t byteLength;
-  if (!ParseUnsignedProperty(&byteLength, err, o, "byteLength", true,
-                             "Buffer")) {
-    return false;
-  }
+  ParseUnsignedProperty(&byteLength, err, o, "byteLength", true, "Buffer");
 
   // In glTF 2.0, uri is not mandatory anymore
   buffer->uri.clear();
@@ -1163,9 +984,7 @@ static bool ParseBuffer(Buffer *buffer, std::string *err, const detail::json &o,
 
   // having an empty uri for a non embedded image should not be valid
   if (!is_binary && buffer->uri.empty()) {
-    if (err) {
-      (*err) += "'uri' is missing from non binary glTF file buffer.\n";
-    }
+    throw "uri is missing from non binary glTF file buffer";
   }
 
   detail::json_const_iterator type;
@@ -1258,130 +1077,57 @@ static bool ParseBuffer(Buffer *buffer, std::string *err, const detail::json &o,
   }
 
   ParseStringProperty(&buffer->name, err, o, "name", false);
-
-  ParseExtrasAndExtensions(buffer, err, o,
-                           store_original_json_for_extras_and_extensions);
-
   return true;
 }
 
-static bool ParseBufferView(
-    BufferView *bufferView, std::string *err, const detail::json &o,
-    bool store_original_json_for_extras_and_extensions) {
-  int buffer = -1;
-  if (!ParseIntegerProperty(&buffer, err, o, "buffer", true, "BufferView")) {
-    return false;
-  }
+template <typename T>
+static void ParseIntegerProperty(T &i, JSONObject *o, std::string prop, bool req)
+{
+    JSONProperty *p = o->getProperty(prop);
+    
+    if (p == nullptr)
+    {
+        if (req)
+            throw "Cannot find required property";
 
-  size_t byteOffset = 0;
-  ParseUnsignedProperty(&byteOffset, err, o, "byteOffset", false);
-
-  size_t byteLength = 1;
-  if (!ParseUnsignedProperty(&byteLength, err, o, "byteLength", true,
-                             "BufferView")) {
-    return false;
-  }
-
-  size_t byteStride = 0;
-  if (!ParseUnsignedProperty(&byteStride, err, o, "byteStride", false)) {
-    byteStride = 0;
-  }
-
-  if ((byteStride > 252) || ((byteStride % 4) != 0)) {
-    if (err) {
-      std::stringstream ss;
-      ss << "Invalid `byteStride' value. `byteStride' must be the multiple of "
-            "4 : "
-         << byteStride << std::endl;
-
-      (*err) += ss.str();
+        return;
     }
-    return false;
-  }
 
-  int target = 0;
-  ParseIntegerProperty(&target, err, o, "target", false);
-  if ((target == TINYGLTF_TARGET_ARRAY_BUFFER) ||
-      (target == TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER)) {
-    // OK
-  } else {
-    target = 0;
-  }
-  bufferView->target = target;
+    JSONNumber *nr = dynamic_cast<JSONNumber *>(p->value());
 
-  ParseStringProperty(&bufferView->name, err, o, "name", false);
+    if (nr == nullptr)
+    {
+        if (req)
+            throw "Not the right type";
 
-  ParseExtrasAndExtensions(bufferView, err, o,
-                           store_original_json_for_extras_and_extensions);
+        return;
+    }
 
-  bufferView->buffer = buffer;
-  bufferView->byteOffset = byteOffset;
-  bufferView->byteLength = byteLength;
-  bufferView->byteStride = byteStride;
-  return true;
+    i = T(stoi(nr->value()));
 }
 
-static bool ParseSparseAccessor(
-    Accessor::Sparse *sparse, std::string *err, const detail::json &o,
-    bool store_original_json_for_extras_and_extensions) {
-  sparse->isSparse = true;
+static void ParseStringProperty(std::string &s, JSONObject *o, std::string prop, bool req)
+{
+    JSONProperty *p = o->getProperty(prop);
 
-  int count = 0;
-  if (!ParseIntegerProperty(&count, err, o, "count", true, "SparseAccessor")) {
-    return false;
-  }
+    if (p == nullptr)
+    {
+        if (req)
+            throw "Cannot find property";
+        
+        return;
+    }
 
-  ParseExtrasAndExtensions(sparse, err, o,
-                           store_original_json_for_extras_and_extensions);
+    JSONString *str = dynamic_cast<JSONString *>(p->value());
+    s = str->s();
+}
 
-  detail::json_const_iterator indices_iterator;
-  detail::json_const_iterator values_iterator;
-  if (!detail::FindMember(o, "indices", indices_iterator)) {
-    (*err) = "the sparse object of this accessor doesn't have indices";
-    return false;
-  }
-
-  if (!detail::FindMember(o, "values", values_iterator)) {
-    (*err) = "the sparse object of this accessor doesn't have values";
-    return false;
-  }
-
-  const detail::json &indices_obj = detail::GetValue(indices_iterator);
-  const detail::json &values_obj = detail::GetValue(values_iterator);
-
-  int indices_buffer_view = 0, indices_byte_offset = 0, component_type = 0;
-  if (!ParseIntegerProperty(&indices_buffer_view, err, indices_obj,
-                            "bufferView", true, "SparseAccessor")) {
-    return false;
-  }
-  ParseIntegerProperty(&indices_byte_offset, err, indices_obj, "byteOffset",
-                       false);
-  if (!ParseIntegerProperty(&component_type, err, indices_obj, "componentType",
-                            true, "SparseAccessor")) {
-    return false;
-  }
-
-  int values_buffer_view = 0, values_byte_offset = 0;
-  if (!ParseIntegerProperty(&values_buffer_view, err, values_obj, "bufferView",
-                            true, "SparseAccessor")) {
-    return false;
-  }
-  ParseIntegerProperty(&values_byte_offset, err, values_obj, "byteOffset",
-                       false);
-
-  sparse->count = count;
-  sparse->indices.bufferView = indices_buffer_view;
-  sparse->indices.byteOffset = indices_byte_offset;
-  sparse->indices.componentType = component_type;
-  ParseExtrasAndExtensions(&sparse->indices, err, indices_obj,
-                           store_original_json_for_extras_and_extensions);
-
-  sparse->values.bufferView = values_buffer_view;
-  sparse->values.byteOffset = values_byte_offset;
-  ParseExtrasAndExtensions(&sparse->values, err, values_obj,
-                           store_original_json_for_extras_and_extensions);
-
-  return true;
+static void ParseBufferView(BufferView *bufferView, JSONObject *o)
+{
+    ParseIntegerProperty<int>(bufferView->buffer, o, "buffer", true);
+    ParseIntegerProperty<size_t>(bufferView->byteOffset, o, "byteOffset", true);
+    ParseIntegerProperty<size_t>(bufferView->byteLength, o, "byteLength", true);
+    ParseIntegerProperty<int>(bufferView->target, o, "target", false);
 }
 
 static void ParseAccessor(Accessor *accessor, JSONObject *o)
@@ -1389,75 +1135,18 @@ static void ParseAccessor(Accessor *accessor, JSONObject *o)
     JSONNumber *nr;
     JSONString *s;
 
-    nr  = dynamic_cast<JSONNumber *>(o->getProperty("bufferView")->value());
-    int bufferView = stoi(nr->value());
-    accessor->bufferView = bufferView;
-
+    ParseIntegerProperty<int>(accessor->bufferView, o, "bufferView", true);
     int byteOffset = 0;
     accessor->byteOffset = byteOffset;
 
     bool normalized = false;
     accessor->normalized = normalized;
 
-    nr = dynamic_cast<JSONNumber *>(o->getProperty("componentType")->value());
-    size_t componentType = stoi(nr->value());
-    accessor->componentType = int(componentType);
-
-    nr = dynamic_cast<JSONNumber *>(o->getProperty("count")->value());
-    size_t count = stoi(nr->value());
-    accessor->count = count;
-
-    s = dynamic_cast<JSONString *>(o->getProperty("type")->value());
-    std::string type = s->s();
-
-    if (type.compare("SCALAR") == 0) {
-        accessor->type = TINYGLTF_TYPE_SCALAR;
-    } else if (type.compare("VEC2") == 0) {
-        accessor->type = TINYGLTF_TYPE_VEC2;
-    } else if (type.compare("VEC3") == 0) {
-        accessor->type = TINYGLTF_TYPE_VEC3;
-    } else if (type.compare("VEC4") == 0) {
-        accessor->type = TINYGLTF_TYPE_VEC4;
-    } else if (type.compare("MAT2") == 0) {
-        accessor->type = TINYGLTF_TYPE_MAT2;
-    } else if (type.compare("MAT3") == 0) {
-        accessor->type = TINYGLTF_TYPE_MAT3;
-    } else if (type.compare("MAT4") == 0) {
-        accessor->type = TINYGLTF_TYPE_MAT4;
-    } else {
-        throw "error";
-    }
-
-    accessor->minValues.clear();
-    accessor->maxValues.clear();
-}
-
-static void ParseAccessor(Accessor *accessor, const detail::json &o)
-{
-    std::string *err = new std::string();
-
-    int bufferView = -1;
-    ParseIntegerProperty(&bufferView, err, o, "bufferView", false, "Accessor");
-    accessor->bufferView = bufferView;
-
-    size_t byteOffset = 0;
-    ParseUnsignedProperty(&byteOffset, err, o, "byteOffset", false, "Accessor");
-    accessor->byteOffset = byteOffset;
-
-    bool normalized = false;
-    ParseBooleanProperty(&normalized, err, o, "normalized", false, "Accessor");
-    accessor->normalized = normalized;
-
-    size_t componentType = 0;
-    ParseUnsignedProperty(&componentType, err, o, "componentType", true, "Accessor");
-    accessor->componentType = int(componentType);
-
-    size_t count = 0;
-    ParseUnsignedProperty(&count, err, o, "count", true, "Accessor");
-    accessor->count = count;
+    ParseIntegerProperty<int>(accessor->componentType, o, "componentType", true);
+    ParseIntegerProperty<size_t>(accessor->count, o, "count", true);
 
     std::string type;
-    ParseStringProperty(&type, err, o, "type", true, "Accessor");
+    ParseStringProperty(type, o, "type", true);
 
     if (type.compare("SCALAR") == 0) {
         accessor->type = TINYGLTF_TYPE_SCALAR;
@@ -1477,15 +1166,14 @@ static void ParseAccessor(Accessor *accessor, const detail::json &o)
         throw "error";
     }
 
-    ParseStringProperty(&accessor->name, err, o, "name", false);
     accessor->minValues.clear();
-    //ParseNumberArrayProperty(&accessor->minValues, err, o, "min", false, "Accessor");
+    //TODO: vector uitlezen
     accessor->maxValues.clear();
-    //ParseNumberArrayProperty(&accessor->maxValues, err, o, "max", false, "Accessor");
+    //TODO: vector uitlezen
 }
 
-static bool ParsePrimitive(Primitive *primitive, Model *model, std::string *err,
-                const detail::json &o, bool store_original_json_for_extras_and_extensions)
+static bool
+ParsePrimitive(Primitive *primitive, std::string *err, const detail::json &o)
 {
   int material = -1;
   ParseIntegerProperty(&material, err, o, "material", false);
@@ -1498,23 +1186,23 @@ static bool ParsePrimitive(Primitive *primitive, Model *model, std::string *err,
   int indices = -1;
   ParseIntegerProperty(&indices, err, o, "indices", false);
   primitive->indices = indices;
-  if (!ParseStringIntegerProperty(&primitive->attributes, err, o, "attributes",
-                                  true, "Primitive")) {
-    return false;
-  }
+  ParseStringIntegerProperty(&primitive->attributes, err, o, "attributes", true, "Primitive");
 
   // Look for morph targets
   detail::json_const_iterator targetsObject;
   if (detail::FindMember(o, "targets", targetsObject) &&
-      detail::IsArray(detail::GetValue(targetsObject))) {
+      detail::IsArray(detail::GetValue(targetsObject)))
+  {
     auto targetsObjectEnd = detail::ArrayEnd(detail::GetValue(targetsObject));
     for (detail::json_const_array_iterator i =
              detail::ArrayBegin(detail::GetValue(targetsObject));
-         i != targetsObjectEnd; ++i) {
+         i != targetsObjectEnd; ++i)
+    {
       std::map<std::string, int> targetAttribues;
 
       const detail::json &dict = *i;
-      if (detail::IsObject(dict)) {
+      if (detail::IsObject(dict))
+      {
         detail::json_const_iterator dictIt(detail::ObjectBegin(dict));
         detail::json_const_iterator dictItEnd(detail::ObjectEnd(dict));
 
@@ -1528,49 +1216,83 @@ static bool ParsePrimitive(Primitive *primitive, Model *model, std::string *err,
     }
   }
 
-  ParseExtrasAndExtensions(primitive, err, o,
-                           store_original_json_for_extras_and_extensions);
-
-
-  (void)model;
-
   return true;
 }
 
-static bool ParseMesh(Mesh *mesh, Model *model, std::string *err, const detail::json &o,
-                      bool store_original_json_for_extras_and_extensions)
+static void ParsePrimitive(Primitive &primitive, JSONObject *o)
+{
+    primitive.material = -1;
+    ParseIntegerProperty(primitive.material, o, "material", false);
+    primitive.mode = TINYGLTF_MODE_TRIANGLES;
+    ParseIntegerProperty(primitive.mode, o, "mode", false);
+    primitive.indices = -1;
+    ParseIntegerProperty(primitive.indices, o, "indices", false);
+
+    JSONObject *attrObj = dynamic_cast<JSONObject *>(o->getProperty("attributes")->value());
+    std::map<std::string, int> targetAttr;
+
+    for (JSONProperty *p : *attrObj)
+    {
+        JSONNumber *nrn = dynamic_cast<JSONNumber *>(p->value());
+        int nr = std::stoi(nrn->value());
+        targetAttr[p->key()] = nr;
+    }
+
+    primitive.targets.emplace_back(std::move(targetAttr));
+}
+
+static void ParseMesh(Mesh *mesh, JSONObject *o)
+{
+    ParseStringProperty(mesh->name, o, "name", false);
+    mesh->primitives.clear();
+    JSONProperty *p = o->getProperty("primitives");
+
+    if (p)
+    {
+
+        JSONArray *a = dynamic_cast<JSONArray *>(p->value());
+
+        for (JSONNode *node : *a)
+        {
+            JSONObject *primitiveObj = dynamic_cast<JSONObject *>(node);
+            Primitive primitive;
+            ParsePrimitive(primitive, primitiveObj);
+            mesh->primitives.push_back(primitive);
+        }
+    }
+}
+
+static bool ParseMesh(Mesh *mesh, std::string *err, const detail::json &o)
 {
   ParseStringProperty(&mesh->name, err, o, "name", false);
 
   mesh->primitives.clear();
   detail::json_const_iterator primObject;
+
   if (detail::FindMember(o, "primitives", primObject) &&
-      detail::IsArray(detail::GetValue(primObject))) {
+      detail::IsArray(detail::GetValue(primObject)))
+  {
     detail::json_const_array_iterator primEnd =
         detail::ArrayEnd(detail::GetValue(primObject));
     for (detail::json_const_array_iterator i =
              detail::ArrayBegin(detail::GetValue(primObject));
-         i != primEnd; ++i) {
+         i != primEnd; ++i)
+    {
       Primitive primitive;
-      if (ParsePrimitive(&primitive, model, err, *i,
-                         store_original_json_for_extras_and_extensions)) {
+      if (ParsePrimitive(&primitive, err, *i))
+      {
         // Only add the primitive if the parsing succeeds.
         mesh->primitives.emplace_back(std::move(primitive));
       }
     }
   }
 
-  // Should probably check if has targets and if dimensions fit
   ParseNumberArrayProperty(&mesh->weights, err, o, "weights", false);
-
-  ParseExtrasAndExtensions(mesh, err, o,
-                           store_original_json_for_extras_and_extensions);
-
   return true;
 }
 
-static bool ParseNode(Node *node, std::string *err, const detail::json &o,
-                      bool store_original_json_for_extras_and_extensions) {
+static bool ParseNode(Node *node, std::string *err, const detail::json &o)
+{
   ParseStringProperty(&node->name, err, o, "name", false);
 
   int skin = -1;
@@ -1593,20 +1315,30 @@ static bool ParseNode(Node *node, std::string *err, const detail::json &o,
   node->children.clear();
   ParseIntegerArrayProperty(&node->children, err, o, "children", false);
   ParseNumberArrayProperty(&node->weights, err, o, "weights", false);
-  ParseExtrasAndExtensions(node, err, o, store_original_json_for_extras_and_extensions);
   return true;
 }
 
-static bool ParseScene(Scene *scene, std::string *err, const detail::json &o,
-                       bool store_original_json_for_extras_and_extensions)
+static void ParseNode(Node &node, JSONObject *o)
 {
-    ParseStringProperty(&scene->name, err, o, "name", false);
-    ParseIntegerArrayProperty(&scene->nodes, err, o, "nodes", false);
+    ParseStringProperty(node.name, o, "name", false);
+    node.skin = -1;
+    ParseIntegerProperty(node.skin, o, "skin", false);
+    node.mesh = -1;
+    ParseIntegerProperty(node.mesh, o, "mesh", false);
+}
 
-    ParseExtrasAndExtensions(scene, err, o,
-                           store_original_json_for_extras_and_extensions);
+static void ParseScene(Scene &scene, JSONObject *o)
+{
+    ParseStringProperty(scene.name, o, "name", false);
+    
+    JSONArray *a = dynamic_cast<JSONArray *>(o->getProperty("nodes")->value());
 
-    return true;
+    for (JSONNode *node : *a)
+    {
+        JSONNumber *nr = dynamic_cast<JSONNumber *>(node);
+        scene.nodes.push_back(stoi(nr->value()));
+    }
+    
 }
 
 namespace detail {
@@ -1650,15 +1382,6 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
     JSONRoot *jsonRoot = new JSONRoot();
     ::parse(tokens.cbegin(), tokens.cend(), jsonRoot);
     JSONObject *rootObj = dynamic_cast<JSONObject *>(jsonRoot->root());
-#if 0
-    std::vector<JSONProperty *>::iterator it = rootObj->begin();
-    
-    while (it != rootObj->end())
-    {
-        JSONProperty *prop = *it++;
-        std::cerr << prop->key() << "\r\n";
-    }
-#endif
 
     try {
         detail::JsonParse(v, json_str, json_str_length, true);
@@ -1775,6 +1498,14 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
 
   // 3. Parse Buffer
   {
+    JSONArray *a = dynamic_cast<JSONArray *>(rootObj->getProperty("buffers")->value());
+    std::vector<JSONNode *>::iterator it = a->begin();
+    while (it != a->end())
+    {
+        JSONObject *o = dynamic_cast<JSONObject *>(*it++);
+        Buffer buffer;
+    }
+
     bool success = ForEachInArray(v, "buffers", [&](const detail::json &o) {
       if (!detail::IsObject(o)) {
         if (err) {
@@ -1800,72 +1531,51 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
   }
   // 4. Parse BufferView
   {
-    bool success = ForEachInArray(v, "bufferViews", [&](const detail::json &o)
+    JSONArray *a = dynamic_cast<JSONArray *>(rootObj->getProperty("bufferViews")->value());
+
+    for (JSONNode *node : *a)
     {
-      BufferView bufferView;
-      if (!ParseBufferView(&bufferView, err, o,
-                           store_original_json_for_extras_and_extensions_)) {
-        return false;
-      }
-
-      model->bufferViews.emplace_back(std::move(bufferView));
-      return true;
-    });
-
-    if (!success) {
-      return false;
+        JSONObject *o = dynamic_cast<JSONObject *>(node);
+        BufferView bufferView;
+        ParseBufferView(&bufferView, o);
+        model->bufferViews.push_back(bufferView);
     }
   }
 
   // 5. Parse Accessor
   {
     JSONArray *a = dynamic_cast<JSONArray *>(rootObj->getProperty("accessors")->value());
-    std::vector<JSONNode *>::iterator it = a->begin();
-    while (it != a->end())
-    {
-        JSONObject *o = dynamic_cast<JSONObject *>(*it);
-        ++it;
-        Accessor accessor;
-        ParseAccessor(&accessor, o);
-        model->accessors.push_back(accessor);
-    }
-#if 0
-    bool success = ForEachInArray(v, "accessors", [&](const detail::json &o)
-    {
-        Accessor accessor;
-        ParseAccessor(&accessor, o);
-        model->accessors.push_back(accessor);
-        return true;
-    });
 
-    if (!success) {
-      return false;
+    for (JSONNode *node : *a)
+    {
+        JSONObject *o = dynamic_cast<JSONObject *>(node);
+        Accessor accessor;
+        ParseAccessor(&accessor, o);
+        model->accessors.push_back(accessor);
     }
-#endif
   }
 
   // 6. Parse Mesh
   {
+    JSONArray *a = dynamic_cast<JSONArray *>(rootObj->getProperty("meshes")->value());
+    std::vector<JSONNode *>::iterator it = a->begin();
+
+    for (JSONNode *node : *a)
+    {
+        JSONObject *o = dynamic_cast<JSONObject *>(node);
+        Mesh mesh;
+        ParseMesh(&mesh, o);
+        //model->meshes.push_back(mesh);
+    }
+
     bool success = ForEachInArray(v, "meshes", [&](const detail::json &o) {
-      if (!detail::IsObject(o)) {
-        if (err) {
-          (*err) += "`meshes' does not contain an JSON object.";
-        }
-        return false;
-      }
       Mesh mesh;
-      if (!ParseMesh(&mesh, model, err, o,
-                     store_original_json_for_extras_and_extensions_)) {
+      if (!ParseMesh(&mesh, err, o))
         return false;
-      }
 
       model->meshes.emplace_back(std::move(mesh));
       return true;
     });
-
-    if (!success) {
-      return false;
-    }
   }
 
   // Assign missing bufferView target types
@@ -1928,69 +1638,51 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
     }
   }
 
-  // 7. Parse Node
-  {
-    bool success = ForEachInArray(v, "nodes", [&](const detail::json &o) {
-      if (!detail::IsObject(o)) {
-        if (err) {
-          (*err) += "`nodes' does not contain an JSON object.";
+    // 7. Parse Node
+    {
+        JSONArray *a = dynamic_cast<JSONArray *>(rootObj->getProperty("nodes")->value());
+
+        for (JSONNode *node : *a)
+        {
+            JSONObject *o = dynamic_cast<JSONObject *>(node);
+            Node n;
+            ParseNode(n, o);
+            //model->nodes.push_back(n);
         }
-        return false;
-      }
-      Node node;
-      if (!ParseNode(&node, err, o,
-                     store_original_json_for_extras_and_extensions_)) {
-        return false;
-      }
 
-      model->nodes.emplace_back(std::move(node));
-      return true;
-    });
-
-    if (!success) {
-      return false;
+        bool success = ForEachInArray(v, "nodes", [&](const detail::json &o)
+        {
+            Node node;
+            ParseNode(&node, err, o);
+            model->nodes.emplace_back(std::move(node));
+            return true;
+        });
     }
-  }
 
-  // 8. Parse scenes.
-  {
-    bool success = ForEachInArray(v, "scenes", [&](const detail::json &o) {
-      if (!detail::IsObject(o)) {
-        if (err) {
-          (*err) += "`scenes' does not contain an JSON object.";
+    // 8. Parse scenes.
+    {
+        JSONArray *a = dynamic_cast<JSONArray *>(rootObj->getProperty("scenes")->value());
+
+        for (JSONNode *node : *a)
+        {
+            JSONObject *o = dynamic_cast<JSONObject *>(node);
+            Scene scene;
+            ParseScene(scene, o);
+            model->scenes.push_back(scene);
         }
-        return false;
-      }
-
-      Scene scene;
-      if (!ParseScene(&scene, err, o,
-                      store_original_json_for_extras_and_extensions_)) {
-        return false;
-      }
-
-      model->scenes.emplace_back(std::move(scene));
-      return true;
-    });
-
-    if (!success) {
-      return false;
     }
-  }
 
     return true;
 }
 
-bool TinyGLTF::LoadASCIIFromString(Model *model, std::string *err,
-                                   std::string *warn, const char *str,
-                                   unsigned int length,
-                                   const std::string &base_dir,
-                                   unsigned int check_sections) {
-  is_binary_ = false;
-  bin_data_ = nullptr;
-  bin_size_ = 0;
-
-  return LoadFromString(model, err, warn, str, length, base_dir,
-                        check_sections);
+bool TinyGLTF::LoadASCIIFromString(Model *model, std::string *err, std::string *warn,
+            const char *str, unsigned int length, const std::string &base_dir,
+                                   unsigned int check_sections)
+{
+    is_binary_ = false;
+    bin_data_ = nullptr;
+    bin_size_ = 0;
+    return LoadFromString(model, err, warn, str, length, base_dir, check_sections);
 }
 
 bool TinyGLTF::LoadASCIIFromFile(Model *model, std::string *err,
@@ -2037,11 +1729,10 @@ bool TinyGLTF::LoadASCIIFromFile(Model *model, std::string *err,
 }
 
 bool TinyGLTF::LoadBinaryFromMemory(Model *model, std::string *err,
-                                    std::string *warn,
-                                    const unsigned char *bytes,
-                                    unsigned int size,
-                                    const std::string &base_dir,
-                                    unsigned int check_sections) {
+                                    std::string *warn, const uint8_t *bytes,
+                                    unsigned int size, const std::string &base_dir,
+                                    unsigned int check_sections)
+{
   if (size < 20) {
     if (err) {
       (*err) = "Too short data size for glTF Binary.";
@@ -2168,8 +1859,7 @@ bool TinyGLTF::LoadBinaryFromMemory(Model *model, std::string *err,
   }
 
   // Extract JSON string.
-  std::string jsonString(reinterpret_cast<const char *>(&bytes[20]),
-                         chunk0_length);
+  std::string jsonString(reinterpret_cast<const char *>(&bytes[20]), chunk0_length);
 
   is_binary_ = true;
 

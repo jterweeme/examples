@@ -84,6 +84,8 @@ public:
     std::vector<JSONProperty *>::iterator begin() { return _properties.begin(); }
     std::vector<JSONProperty *>::iterator end() { return _properties.end(); }
     JSONProperty *getProperty(std::string key) const;
+    size_t size() const { return _properties.size(); }
+    JSONProperty *at(size_t pos) const { return _properties.at(pos); }
     void removeProperty(JSONProperty *property);
     bool removeProperty(std::string key);
     void serialize(std::ostream &os) override;
