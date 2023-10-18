@@ -494,28 +494,30 @@ struct Mesh {
 };
 
 class Node {
- public:
-  Node() = default;
+public:
+    Node() = default;
 
-  DEFAULT_METHODS(Node)
+    DEFAULT_METHODS(Node)
 
-  int camera{-1};  // the index of the camera referenced by this node
+    int camera{-1};  // the index of the camera referenced by this node
 
-  std::string name;
-  int skin{-1};
-  int mesh{-1};
-  std::vector<int> children;
-  std::vector<double> rotation;     // length must be 0 or 4
-  std::vector<double> scale;        // length must be 0 or 3
-  std::vector<double> translation;  // length must be 0 or 3
-  std::vector<double> matrix;       // length must be 0 or 16
-  std::vector<double> weights;  // The weights of the instantiated Morph Target
+    std::string name;
+    int skin{-1};
+    int mesh{-1};
+    std::vector<int> children;
+    std::vector<double> rotation;     // length must be 0 or 4
+    std::vector<double> scale;        // length must be 0 or 3
+    std::vector<double> translation;  // length must be 0 or 3
+    std::vector<double> matrix;       // length must be 0 or 16
+    std::vector<double> weights;  // The weights of the instantiated Morph Target
 
-  ExtensionMap extensions;
-  Value extras;
+    ExtensionMap extensions;
+    Value extras;
 
-  std::string extras_json_string;
-  std::string extensions_json_string;
+    std::string extras_json_string;
+    std::string extensions_json_string;
+
+    void serialize(std::ostream &os) const;
 };
 
 struct Buffer {

@@ -777,116 +777,7 @@ static bool ParseNumberProperty(double *ret, std::string *err,
   return true;
 }
 
-static bool ParseNumberArrayProperty(std::vector<double> *ret, std::string *err,
-                 const detail::json &o, const std::string &property, bool required,
-                 const std::string &parent_node = "")
-{
-  detail::json_const_iterator it;
-  if (!detail::FindMember(o, property.c_str(), it)) {
-    if (required) {
-      if (err) {
-        (*err) += "'" + property + "' property is missing";
-        if (!parent_node.empty()) {
-          (*err) += " in " + parent_node;
-        }
-        (*err) += ".\n";
-      }
-    }
-    return false;
-  }
-
-  if (!detail::IsArray(detail::GetValue(it))) {
-    if (required) {
-      if (err) {
-        (*err) += "'" + property + "' property is not an array";
-        if (!parent_node.empty()) {
-          (*err) += " in " + parent_node;
-        }
-        (*err) += ".\n";
-      }
-    }
-    return false;
-  }
-
-  ret->clear();
-  auto end = detail::ArrayEnd(detail::GetValue(it));
-  for (auto i = detail::ArrayBegin(detail::GetValue(it)); i != end; ++i) {
-    double numberValue;
-    const bool isNumber = detail::GetNumber(*i, numberValue);
-    if (!isNumber) {
-      if (required) {
-        if (err) {
-          (*err) += "'" + property + "' property is not a number.\n";
-          if (!parent_node.empty()) {
-            (*err) += " in " + parent_node;
-          }
-          (*err) += ".\n";
-        }
-      }
-      return false;
-    }
-    ret->push_back(numberValue);
-  }
-
-  return true;
-}
-
-static bool ParseIntegerArrayProperty(std::vector<int> *ret, std::string *err,
-                  const detail::json &o, const std::string &property,
-                  bool required, const std::string &parent_node = "")
-{
-  detail::json_const_iterator it;
-  if (!detail::FindMember(o, property.c_str(), it)) {
-    if (required) {
-      if (err) {
-        (*err) += "'" + property + "' property is missing";
-        if (!parent_node.empty()) {
-          (*err) += " in " + parent_node;
-        }
-        (*err) += ".\n";
-      }
-    }
-    return false;
-  }
-
-  if (!detail::IsArray(detail::GetValue(it))) {
-    if (required) {
-      if (err) {
-        (*err) += "'" + property + "' property is not an array";
-        if (!parent_node.empty()) {
-          (*err) += " in " + parent_node;
-        }
-        (*err) += ".\n";
-      }
-    }
-    return false;
-  }
-
-  ret->clear();
-  auto end = detail::ArrayEnd(detail::GetValue(it));
-  for (auto i = detail::ArrayBegin(detail::GetValue(it)); i != end; ++i) {
-    int numberValue;
-    bool isNumber = detail::GetInt(*i, numberValue);
-    if (!isNumber) {
-      if (required) {
-        if (err) {
-          (*err) += "'" + property + "' property is not an integer type.\n";
-          if (!parent_node.empty()) {
-            (*err) += " in " + parent_node;
-          }
-          (*err) += ".\n";
-        }
-      }
-      return false;
-    }
-    ret->push_back(numberValue);
-  }
-
-  return true;
-}
-
-static bool ParseStringProperty(
-    std::string *ret, std::string *err, const detail::json &o,
+static bool ParseStringProperty(std::string *ret, std::string *err, const detail::json &o,
     const std::string &property, bool required,
     const std::string &parent_node = std::string())
 {
@@ -912,60 +803,6 @@ static bool ParseStringProperty(
     (*ret) = std::move(strValue);
   }
 
-  return true;
-}
-
-static bool ParseStringIntegerProperty(std::map<std::string, int> *ret,
-                                       std::string *err, const detail::json &o,
-                                       const std::string &property,
-                                       bool required,
-                                       const std::string &parent = "") {
-  detail::json_const_iterator it;
-  if (!detail::FindMember(o, property.c_str(), it)) {
-    if (required) {
-      if (err) {
-        if (!parent.empty()) {
-          (*err) +=
-              "'" + property + "' property is missing in " + parent + ".\n";
-        } else {
-          (*err) += "'" + property + "' property is missing.\n";
-        }
-      }
-    }
-    return false;
-  }
-
-  const detail::json &dict = detail::GetValue(it);
-
-  // Make sure we are dealing with an object / dictionary.
-  if (!detail::IsObject(dict)) {
-    if (required) {
-      if (err) {
-        (*err) += "'" + property + "' property is not an object.\n";
-      }
-    }
-    return false;
-  }
-
-  ret->clear();
-
-  detail::json_const_iterator dictIt(detail::ObjectBegin(dict));
-  detail::json_const_iterator dictItEnd(detail::ObjectEnd(dict));
-
-  for (; dictIt != dictItEnd; ++dictIt) {
-    int intVal;
-    if (!detail::GetInt(detail::GetValue(dictIt), intVal)) {
-      if (required) {
-        if (err) {
-          (*err) += "'" + property + "' value is not an integer type.\n";
-        }
-      }
-      return false;
-    }
-
-    // Insert into the list.
-    (*ret)[detail::GetKey(dictIt)] = intVal;
-  }
   return true;
 }
 
@@ -1173,24 +1010,6 @@ static void ParseAccessor(Accessor *accessor, JSONObject *o)
     //TODO: vector uitlezen
 }
 
-static bool ParsePrimitive(Primitive *primitive, const detail::json &o)
-{
-  std::string *err = new std::string();
-  int material = -1;
-  ParseIntegerProperty(&material, err, o, "material", false);
-  primitive->material = material;
-
-  int mode = TINYGLTF_MODE_TRIANGLES;
-  ParseIntegerProperty(&mode, err, o, "mode", false);
-  primitive->mode = mode;  // Why only triangles were supported ?
-
-  int indices = -1;
-  ParseIntegerProperty(&indices, err, o, "indices", false);
-  primitive->indices = indices;
-  ParseStringIntegerProperty(&primitive->attributes, err, o, "attributes", true, "Primitive");
-  return true;
-}
-
 static void ParsePrimitive(Primitive &primitive, JSONObject *o)
 {
     primitive.material = -1;
@@ -1210,10 +1029,10 @@ static void ParsePrimitive(Primitive &primitive, JSONObject *o)
     }
 }
 
-static void ParseMesh(Mesh *mesh, JSONObject *o)
+static void ParseMesh(Mesh &mesh, JSONObject *o)
 {
-    ParseStringProperty(mesh->name, o, "name", false);
-    mesh->primitives.clear();
+    ParseStringProperty(mesh.name, o, "name", false);
+    mesh.primitives.clear();
     JSONProperty *p = o->getProperty("primitives");
 
     if (p)
@@ -1225,88 +1044,106 @@ static void ParseMesh(Mesh *mesh, JSONObject *o)
             JSONObject *primitiveObj = dynamic_cast<JSONObject *>(node);
             Primitive primitive;
             ParsePrimitive(primitive, primitiveObj);
-            mesh->primitives.push_back(primitive);
+            mesh.primitives.push_back(primitive);
         }
     }
 }
 
-static bool ParseMesh(Mesh *mesh, std::string *err, const detail::json &o)
+static void ParseDoubleArray(std::vector<double> &v, JSONArray *a)
 {
-  ParseStringProperty(&mesh->name, err, o, "name", false);
-
-  mesh->primitives.clear();
-  detail::json_const_iterator primObject;
-
-  if (detail::FindMember(o, "primitives", primObject) &&
-      detail::IsArray(detail::GetValue(primObject)))
-  {
-    detail::json_const_array_iterator primEnd =
-        detail::ArrayEnd(detail::GetValue(primObject));
-    for (detail::json_const_array_iterator i =
-             detail::ArrayBegin(detail::GetValue(primObject));
-         i != primEnd; ++i)
+    for (JSONNode *node : *a)
     {
-      Primitive primitive;
-      if (ParsePrimitive(&primitive, *i))
-      {
-        // Only add the primitive if the parsing succeeds.
-        mesh->primitives.emplace_back(std::move(primitive));
-      }
+        JSONNumber *nr = dynamic_cast<JSONNumber *>(node);
+        v.push_back(std::stod(nr->value()));
     }
-  }
-
-  ParseNumberArrayProperty(&mesh->weights, err, o, "weights", false);
-  return true;
 }
 
-static bool ParseNode(Node *node, std::string *err, const detail::json &o)
+static void
+ParseDoubleArrayProperty(std::vector<double> &v, JSONObject *o, std::string key, bool req)
 {
-  ParseStringProperty(&node->name, err, o, "name", false);
+    JSONProperty *p = dynamic_cast<JSONProperty *>(o->getProperty(key));
 
-  int skin = -1;
-  ParseIntegerProperty(&skin, err, o, "skin", false);
-  node->skin = skin;
+    if (p == nullptr)
+    {
+        if (req)
+            throw "No such property";
 
-  // Matrix and T/R/S are exclusive
-  if (!ParseNumberArrayProperty(&node->matrix, err, o, "matrix", false)) {
-    ParseNumberArrayProperty(&node->rotation, err, o, "rotation", false);
-    ParseNumberArrayProperty(&node->scale, err, o, "scale", false);
-    ParseNumberArrayProperty(&node->translation, err, o, "translation", false);
-  }
+        return;
+    }
 
-  int camera = -1;
-  ParseIntegerProperty(&camera, err, o, "camera", false);
-  node->camera = camera;
-  int mesh = -1;
-  ParseIntegerProperty(&mesh, err, o, "mesh", false);
-  node->mesh = mesh;
-  node->children.clear();
-  ParseIntegerArrayProperty(&node->children, err, o, "children", false);
-  ParseNumberArrayProperty(&node->weights, err, o, "weights", false);
-  return true;
+    JSONArray *a = dynamic_cast<JSONArray *>(p->value());
+
+    if (a == nullptr)
+    {
+        if (req)
+            throw "Property not an array";
+
+        return;
+    }
+
+    ParseDoubleArray(v, a);
+}
+
+static void ParseIntegerArray(std::vector<int> &v, JSONArray *a)
+{
+    for (JSONNode *node : *a)
+    {
+        JSONNumber *nr = dynamic_cast<JSONNumber *>(node);
+        v.push_back(stoi(nr->value()));
+    }
+}
+
+static void
+ParseIntegerArrayProperty(std::vector<int> &v, JSONObject *o, std::string key, bool req)
+{
+    JSONProperty *p = dynamic_cast<JSONProperty *>(o->getProperty(key));
+
+    if (p == nullptr)
+    {
+        if (req)
+            throw "No such property";
+
+        return;
+    }
+
+    JSONArray *a = dynamic_cast<JSONArray *>(p->value());
+    
+    if (a == nullptr)
+    {
+        if (req)
+            throw "Property not an array";
+
+        return;
+    }
+
+    ParseIntegerArray(v, a);
 }
 
 static void ParseNode(Node &node, JSONObject *o)
 {
+    JSONArray *a;
     ParseStringProperty(node.name, o, "name", false);
     node.skin = -1;
     ParseIntegerProperty(node.skin, o, "skin", false);
+
+    ParseDoubleArrayProperty(node.matrix, o, "matrix", false);
+    ParseDoubleArrayProperty(node.rotation, o, "rotation", false);
+    ParseDoubleArrayProperty(node.scale, o, "scale", false);
+    ParseDoubleArrayProperty(node.translation, o, "translation", false);
+    node.camera = -1;
+    ParseIntegerProperty(node.camera, o, "camera", false);
     node.mesh = -1;
     ParseIntegerProperty(node.mesh, o, "mesh", false);
+    node.children.clear();
+    ParseIntegerArrayProperty(node.children, o, "children", false);
+    ParseDoubleArrayProperty(node.weights, o, "weights", false);
 }
 
 static void ParseScene(Scene &scene, JSONObject *o)
 {
     ParseStringProperty(scene.name, o, "name", false);
-    
     JSONArray *a = dynamic_cast<JSONArray *>(o->getProperty("nodes")->value());
-
-    for (JSONNode *node : *a)
-    {
-        JSONNumber *nr = dynamic_cast<JSONNumber *>(node);
-        scene.nodes.push_back(stoi(nr->value()));
-    }
-    
+    ParseIntegerArray(scene.nodes, a);
 }
 
 namespace detail {
@@ -1332,6 +1169,32 @@ void Accessor::serialize(std::ostream &os) const
 {
     os << name << " " << bufferView << " " << byteOffset << " " << normalized
        << " " << componentType << " " << count << " " << type << "\r\n";
+}
+
+void Node::serialize(std::ostream &os) const
+{
+    os.put('{');
+    os << "\r\n\"name\":\"" << name << "\"\r\n";
+    os << "\"skin\":" << skin << "\r\n";
+    os << "\"mesh\":" << mesh << "\r\n";
+
+    os << "\"children:\":[\r\n";
+    for (int child : children)
+        os << child << "\r\n";
+    
+    os << "]\r\n";
+    os << "\"rotation\":[\r\n";
+    for (double rot : rotation)
+        os << rot << "\r\n";
+
+    os << "]\r\n";
+
+    os << "\"scale\":[";
+    for (double sc : scale)
+        os << sc << "\r\n";
+
+    os << "]\r\n";
+    os.put('}');
 }
 
 void Mesh::serialize(std::ostream &os) const
@@ -1366,10 +1229,10 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
                               const std::string &base_dir, unsigned int check_sections)
 {
     if (json_str_length < 4) {
-    if (err) {
-      (*err) = "JSON string too short.\n";
-    }
-    return false;
+        if (err) {
+            (*err) = "JSON string too short.\n";
+        }
+        return false;
     }
 
     detail::JsonDocument v;
@@ -1500,10 +1363,10 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
   // 3. Parse Buffer
   {
     JSONArray *a = dynamic_cast<JSONArray *>(rootObj->getProperty("buffers")->value());
-    std::vector<JSONNode *>::iterator it = a->begin();
-    while (it != a->end())
+
+    for (JSONNode *node : *a)
     {
-        JSONObject *o = dynamic_cast<JSONObject *>(*it++);
+        JSONObject *o = dynamic_cast<JSONObject *>(node);
         Buffer buffer;
     }
 
@@ -1564,7 +1427,7 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
     {
         JSONObject *o = dynamic_cast<JSONObject *>(node);
         Mesh mesh;
-        ParseMesh(&mesh, o);
+        ParseMesh(mesh, o);
         model->meshes.push_back(mesh);
     }
   }
@@ -1636,16 +1499,8 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
             JSONObject *o = dynamic_cast<JSONObject *>(node);
             Node n;
             ParseNode(n, o);
-            //model->nodes.push_back(n);
+            model->nodes.push_back(n);
         }
-
-        bool success = ForEachInArray(v, "nodes", [&](const detail::json &o)
-        {
-            Node node;
-            ParseNode(&node, err, o);
-            model->nodes.emplace_back(std::move(node));
-            return true;
-        });
     }
 
     // 8. Parse scenes.
