@@ -707,9 +707,6 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
     model->accessors.clear();
     model->meshes.clear();
     model->nodes.clear();
-    model->extensionsUsed.clear();
-    model->extensionsRequired.clear();
-    model->extensions.clear();
     model->defaultScene = -1;
 
     // 3. Parse Buffer

@@ -176,138 +176,10 @@ static inline int32_t GetNumComponentsInType(uint32_t ty) {
   }
 }
 
-// TODO(syoyo): Move these functions to TinyGLTF class
 bool IsDataURI(const std::string &in);
+
 bool DecodeDataURI(std::vector<unsigned char> *out, std::string &mime_type,
                    const std::string &in, size_t reqBytes, bool checkSize);
-
-#if 1
-class Value {
- public:
-  typedef std::vector<Value> Array;
-  typedef std::map<std::string, Value> Object;
-
-  Value() = default;
-
-  explicit Value(bool b) : type_(BOOL_TYPE) { boolean_value_ = b; }
-  explicit Value(int i) : type_(INT_TYPE) {
-    int_value_ = i;
-    real_value_ = i;
-  }
-  explicit Value(double n) : type_(REAL_TYPE) { real_value_ = n; }
-  explicit Value(const std::string &s) : type_(STRING_TYPE) {
-    string_value_ = s;
-  }
-  explicit Value(std::string &&s) : type_(STRING_TYPE), string_value_(std::move(s)) {}
-  explicit Value(const char *s) : type_(STRING_TYPE) { string_value_ = s; }
-  explicit Value(const unsigned char *p, size_t n) : type_(BINARY_TYPE)
-  {
-    binary_value_.resize(n);
-    memcpy(binary_value_.data(), p, n);
-  }
-  explicit Value(std::vector<unsigned char> &&v) noexcept
-      : type_(BINARY_TYPE),
-        binary_value_(std::move(v)) {}
-  explicit Value(const Array &a) : type_(ARRAY_TYPE) { array_value_ = a; }
-  explicit Value(Array &&a) noexcept : type_(ARRAY_TYPE),
-                                       array_value_(std::move(a)) {}
-
-  explicit Value(const Object &o) : type_(OBJECT_TYPE) { object_value_ = o; }
-  explicit Value(Object &&o) noexcept : type_(OBJECT_TYPE),
-                                        object_value_(std::move(o)) {}
-
-  DEFAULT_METHODS(Value)
-
-  char Type() const { return static_cast<char>(type_); }
-  bool IsBool() const { return (type_ == BOOL_TYPE); }
-  bool IsInt() const { return (type_ == INT_TYPE); }
-  bool IsNumber() const { return (type_ == REAL_TYPE) || (type_ == INT_TYPE); }
-  bool IsReal() const { return (type_ == REAL_TYPE); }
-  bool IsString() const { return (type_ == STRING_TYPE); }
-  bool IsBinary() const { return (type_ == BINARY_TYPE); }
-  bool IsArray() const { return (type_ == ARRAY_TYPE); }
-  bool IsObject() const { return (type_ == OBJECT_TYPE); }
-
-  // Use this function if you want to have number value as double.
-  double GetNumberAsDouble() const {
-    if (type_ == INT_TYPE) {
-      return double(int_value_);
-    } else {
-      return real_value_;
-    }
-  }
-
-  int GetNumberAsInt() const {
-    if (type_ == REAL_TYPE) {
-      return int(real_value_);
-    } else {
-      return int_value_;
-    }
-  }
-
-  // Accessor
-  template <typename T>
-  const T &Get() const;
-  template <typename T>
-  T &Get();
-
-  // Lookup value from an array
-  const Value &Get(int idx) const {
-    static Value null_value;
-    assert(IsArray());
-    assert(idx >= 0);
-    return (static_cast<size_t>(idx) < array_value_.size())
-               ? array_value_[static_cast<size_t>(idx)]
-               : null_value;
-  }
-
-  // Lookup value from a key-value pair
-  const Value &Get(const std::string &key) const {
-    static Value null_value;
-    assert(IsObject());
-    Object::const_iterator it = object_value_.find(key);
-    return (it != object_value_.end()) ? it->second : null_value;
-  }
-
-  size_t ArrayLen() const {
-    if (!IsArray()) return 0;
-    return array_value_.size();
-  }
-
-  // Valid only for object type.
-  bool Has(const std::string &key) const;
-
-  // List keys
-  std::vector<std::string> Keys() const {
-    std::vector<std::string> keys;
-    if (!IsObject()) return keys;  // empty
-
-    for (Object::const_iterator it = object_value_.begin();
-         it != object_value_.end(); ++it) {
-      keys.push_back(it->first);
-    }
-
-    return keys;
-  }
-
-  size_t Size() const { return (IsArray() ? ArrayLen() : Keys().size()); }
-
-  bool operator==(const tinygltf::Value &other) const;
-
- protected:
-  int type_ = NULL_TYPE;
-
-  int int_value_ = 0;
-  double real_value_ = 0.0;
-  std::string string_value_;
-  std::vector<unsigned char> binary_value_;
-  Array array_value_;
-  Object object_value_;
-  bool boolean_value_ = false;
-};
-#endif
-
-typedef std::map<std::string, Value> ExtensionMap;
 
 struct BufferView {
     std::string name;
@@ -453,10 +325,7 @@ class Model {
   std::vector<Node> nodes;
   std::vector<Scene> scenes;
   int defaultScene{-1};
-  std::vector<std::string> extensionsUsed;
-  std::vector<std::string> extensionsRequired;
   Asset asset;
-  ExtensionMap extensions;
 };
 
 enum SectionCheck {
