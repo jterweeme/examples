@@ -691,36 +691,50 @@ int main(int argc, char **argv) {
   std::string ext = GetFilePathExtension(input_filename);
 
   bool ret = false;
-  if (ext.compare("glb") == 0) {
-    // assume binary glTF.
-    ret =
-        loader.LoadBinaryFromFile(&model, &err, &warn, input_filename.c_str());
-  } else {
-    // assume ascii glTF.
-    ret = loader.LoadASCIIFromFile(&model, &err, &warn, input_filename.c_str());
-  }
 
-  if (!warn.empty()) {
-    printf("Warn: %s\n", warn.c_str());
-  }
+    try
+    {
+        if (ext.compare("glb") == 0) {
+            // assume binary glTF.
+            ret = loader.LoadBinaryFromFile(&model, &err, &warn, input_filename.c_str());
+        } else {
+            // assume ascii glTF.
+            ret = loader.LoadASCIIFromFile(&model, &err, &warn, input_filename.c_str());
+        }
+    }
+    catch (const char *e)
+    {
+        std::cerr << e << "\r\n";
+        return -1;
+    }
+    catch (...)
+    {
+        std::cerr << "Unknown error\r\n";
+        return -1;
+    }
 
-  if (!err.empty()) {
-    printf("ERR: %s\n", err.c_str());
-  }
-  if (!ret) {
-    printf("Failed to load .glTF : %s\n", argv[1]);
-    exit(-1);
-  }
+    if (!warn.empty()) {
+        printf("Warn: %s\n", warn.c_str());
+    }
 
-  Init();
+    if (!err.empty()) {
+        printf("ERR: %s\n", err.c_str());
+    }
 
-  // DBG
-  PrintNodes(model.scenes[model.defaultScene > -1 ? model.defaultScene : 0]);
+    if (!ret) {
+        printf("Failed to load .glTF : %s\n", argv[1]);
+        exit(-1);
+    }
 
-  if (!glfwInit()) {
-    std::cerr << "Failed to initialize GLFW." << std::endl;
-    return -1;
-  }
+    Init();
+
+    // DBG
+    PrintNodes(model.scenes[model.defaultScene > -1 ? model.defaultScene : 0]);
+
+    if (!glfwInit()) {
+        std::cerr << "Failed to initialize GLFW." << std::endl;
+        return -1;
+    }
 
   std::stringstream ss;
   ss << "Simple glTF viewer: " << input_filename;

@@ -5,26 +5,12 @@
 #include <cstdio>
 #include <fstream>
 #include <sstream>
-#include <nlohmann/json.hpp>
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #define TINYGLTF_LITTLE_ENDIAN 1
 #endif
 
 namespace tinygltf {
-namespace detail {
-
-using nlohmann::json;
-using json_iterator = json::iterator;
-using json_const_iterator = json::const_iterator;
-using json_const_array_iterator = json_const_iterator;
-using JsonDocument = json;
-
-void JsonParse(JsonDocument &doc, const char *str, size_t length, bool throwExc = false)
-{
-  doc = detail::json::parse(str, str + length, nullptr, throwExc);
-}
-}  // namespace detail
 
 bool Value::Has(const std::string &key) const
 {
@@ -64,7 +50,8 @@ static std::string JoinPath(const std::string &path0, const std::string &path1)
 }
 
 static std::string FindFile(const std::vector<std::string> &paths,
-                            const std::string &filepath, FsCallbacks *fs) {
+                            const std::string &filepath, FsCallbacks *fs)
+{
   if (fs == nullptr || fs->ExpandFilePath == nullptr ||
       fs->FileExists == nullptr) {
     // Error, fs callback[s] missing
@@ -211,7 +198,8 @@ static bool LoadExternalFile(std::vector<uint8_t> *out, std::string *err,
                              std::string *warn, const std::string &filename,
                              const std::string &basedir, bool required,
                              size_t reqBytes, bool checkSize,
-                             size_t maxFileSize, FsCallbacks *fs) {
+                             size_t maxFileSize, FsCallbacks *fs)
+{
   if (fs == nullptr || fs->FileExists == nullptr ||
       fs->ExpandFilePath == nullptr || fs->ReadWholeFile == nullptr) {
     // This is a developer error, assert() ?
@@ -567,272 +555,64 @@ bool DecodeDataURI(std::vector<unsigned char> *out, std::string &mime_type,
   return true;
 }
 
-namespace detail {
-bool GetInt(const detail::json &o, int &val) {
-  auto type = o.type();
-
-  if ((type == detail::json::value_t::number_integer) ||
-      (type == detail::json::value_t::number_unsigned)) {
-    val = static_cast<int>(o.get<int64_t>());
-    return true;
-  }
-
-  return false;
-}
-
-bool GetNumber(const detail::json &o, double &val) {
-  if (o.is_number()) {
-    val = o.get<double>();
-    return true;
-  }
-
-  return false;
-}
-
-bool GetString(const detail::json &o, std::string &val) {
-  if (o.type() == detail::json::value_t::string) {
-    val = o.get<std::string>();
-    return true;
-  }
-
-  return false;
-}
-
-bool IsArray(const detail::json &o) {
-  return o.is_array();
-}
-
-detail::json_const_array_iterator ArrayBegin(const detail::json &o) {
-  return o.begin();
-}
-
-detail::json_const_array_iterator ArrayEnd(const detail::json &o) {
-  return o.end();
-}
-
-bool IsObject(const detail::json &o) {
-  return o.is_object();
-}
-
-detail::json_const_iterator ObjectBegin(const detail::json &o) {
-  return o.begin();
-}
-
-detail::json_const_iterator ObjectEnd(const detail::json &o) {
-  return o.end();
-}
-
-std::string GetKey(detail::json_const_iterator &it) {
-  return it.key().c_str();
-}
-
-bool FindMember(const detail::json &o, const char *member,
-                detail::json_const_iterator &it)
+static void ParseStringProperty(std::string &s, JSONObject *o, std::string prop, bool req)
 {
-  it = o.find(member);
-  return it != o.end();
+    JSONProperty *p = o->getProperty(prop);
+
+    if (p == nullptr)
+    {
+        if (req)
+            throw "Cannot find property";
+        
+        return;
+    }
+
+    JSONString *str = dynamic_cast<JSONString *>(p->value());
+    s = str->s();
 }
 
-bool FindMember(detail::json &o, const char *member,
-                detail::json_iterator &it) {
-  it = o.find(member);
-  return it != o.end();
-}
+template <typename T>
+static void ParseIntegerProperty(T &i, JSONObject *o, std::string prop, bool req)
+{
+    JSONProperty *p = o->getProperty(prop);
+    
+    if (p == nullptr)
+    {
+        if (req)
+            throw "Cannot find required property";
 
-void Erase(detail::json &o, detail::json_iterator &it) {
-  o.erase(it);
-}
+        return;
+    }
 
-bool IsEmpty(const detail::json &o) {
-  return o.empty();
-}
+    JSONNumber *nr = dynamic_cast<JSONNumber *>(p->value());
 
-const detail::json &GetValue(detail::json_const_iterator &it) {
-  return it.value();
-}
+    if (nr == nullptr)
+    {
+        if (req)
+            throw "Not the right type";
 
-detail::json &GetValue(detail::json_iterator &it) {
-  return it.value();
-}
+        return;
+    }
 
-}  // namespace detail
+    i = T(stoi(nr->value()));
+}
 
 static bool
-ParseIntegerProperty(int *ret, std::string *err, const detail::json &o,
-     const std::string &property, const bool required, const std::string &parent_node = "")
+ParseBuffer(Buffer *buffer, std::string *err, JSONObject *o, FsCallbacks *fs,
+            const URICallbacks *uri_cb,
+            const std::string &basedir, const size_t max_buffer_size, bool is_binary,
+            const uint8_t *bin_data, size_t bin_size)
 {
-  detail::json_const_iterator it;
-  if (!detail::FindMember(o, property.c_str(), it)) {
-    if (required) {
-      if (err) {
-        (*err) += "'" + property + "' property is missing";
-        if (!parent_node.empty()) {
-          (*err) += " in " + parent_node;
-        }
-        (*err) += ".\n";
-      }
-    }
-    return false;
-  }
+    size_t byteLength;
+    ParseIntegerProperty<size_t>(byteLength, o, "byteLength", true);
 
-  int intValue;
-  bool isInt = detail::GetInt(detail::GetValue(it), intValue);
-  if (!isInt) {
-    if (required) {
-      if (err) {
-        (*err) += "'" + property + "' property is not an integer type.\n";
-      }
-    }
-    return false;
-  }
+    // In glTF 2.0, uri is not mandatory anymore
+    buffer->uri.clear();
+    ParseStringProperty(buffer->uri, o, "uri", false);
 
-  if (ret) {
-    (*ret) = intValue;
-  }
-
-  return true;
-}
-
-static bool ParseUnsignedProperty(size_t *ret, std::string *err,
-                                  const detail::json &o,
-                                  const std::string &property,
-                                  const bool required,
-                                  const std::string &parent_node = "")
-{
-  detail::json_const_iterator it;
-  if (!detail::FindMember(o, property.c_str(), it)) {
-    if (required) {
-      if (err) {
-        (*err) += "'" + property + "' property is missing";
-        if (!parent_node.empty()) {
-          (*err) += " in " + parent_node;
-        }
-        (*err) += ".\n";
-      }
-    }
-    return false;
-  }
-
-  auto &value = detail::GetValue(it);
-
-  size_t uValue = 0;
-  bool isUValue;
-
-  isUValue = value.is_number_unsigned();
-  if (isUValue) {
-    uValue = value.get<size_t>();
-  }
-  if (!isUValue) {
-    if (required) {
-      if (err) {
-        (*err) += "'" + property + "' property is not a positive integer.\n";
-      }
-    }
-    return false;
-  }
-
-  if (ret) {
-    (*ret) = uValue;
-  }
-
-  return true;
-}
-
-static bool ParseNumberProperty(double *ret, std::string *err,
-                                const detail::json &o,
-                                const std::string &property,
-                                const bool required,
-                                const std::string &parent_node = "") {
-  detail::json_const_iterator it;
-
-  if (!detail::FindMember(o, property.c_str(), it)) {
-    if (required) {
-      if (err) {
-        (*err) += "'" + property + "' property is missing";
-        if (!parent_node.empty()) {
-          (*err) += " in " + parent_node;
-        }
-        (*err) += ".\n";
-      }
-    }
-    return false;
-  }
-
-  double numberValue;
-  bool isNumber = detail::GetNumber(detail::GetValue(it), numberValue);
-
-  if (!isNumber) {
-    if (required) {
-      if (err) {
-        (*err) += "'" + property + "' property is not a number type.\n";
-      }
-    }
-    return false;
-  }
-
-  if (ret) {
-    (*ret) = numberValue;
-  }
-
-  return true;
-}
-
-static bool ParseStringProperty(std::string *ret, std::string *err, const detail::json &o,
-    const std::string &property, bool required,
-    const std::string &parent_node = std::string())
-{
-  detail::json_const_iterator it;
-  if (!detail::FindMember(o, property.c_str(), it)) {
-    if (required) {
-      throw "property is missing";
-    }
-    return false;
-  }
-
-  std::string strValue;
-  if (!detail::GetString(detail::GetValue(it), strValue)) {
-    if (required) {
-      if (err) {
-        (*err) += "'" + property + "' property is not a string type.\n";
-      }
-    }
-    return false;
-  }
-
-  if (ret) {
-    (*ret) = std::move(strValue);
-  }
-
-  return true;
-}
-
-static bool ParseBuffer(Buffer *buffer, std::string *err, const detail::json &o, bool,
-                        FsCallbacks *fs, const URICallbacks *uri_cb,
-                        const std::string &basedir,
-                        const size_t max_buffer_size, bool is_binary = false,
-                        const unsigned char *bin_data = nullptr,
-                        size_t bin_size = 0)
-{
-  size_t byteLength;
-  ParseUnsignedProperty(&byteLength, err, o, "byteLength", true, "Buffer");
-
-  // In glTF 2.0, uri is not mandatory anymore
-  buffer->uri.clear();
-  ParseStringProperty(&buffer->uri, err, o, "uri", false, "Buffer");
-
-  // having an empty uri for a non embedded image should not be valid
-  if (!is_binary && buffer->uri.empty()) {
-    throw "uri is missing from non binary glTF file buffer";
-  }
-
-  detail::json_const_iterator type;
-  if (detail::FindMember(o, "type", type)) {
-    std::string typeStr;
-    if (detail::GetString(detail::GetValue(type), typeStr)) {
-      if (typeStr.compare("arraybuffer") == 0) {
-        // buffer.type = "arraybuffer";
-      }
-    }
+    // having an empty uri for a non embedded image should not be valid
+    if (!is_binary && buffer->uri.empty()) {
+        throw "uri is missing from non binary glTF file buffer";
   }
 
   if (is_binary) {
@@ -841,8 +621,7 @@ static bool ParseBuffer(Buffer *buffer, std::string *err, const detail::json &o,
       // First try embedded data URI.
       if (IsDataURI(buffer->uri)) {
         std::string mime_type;
-        if (!DecodeDataURI(&buffer->data, mime_type, buffer->uri, byteLength,
-                           true)) {
+        if (!DecodeDataURI(&buffer->data, mime_type, buffer->uri, byteLength, true)) {
           if (err) {
             (*err) +=
                 "Failed to decode 'uri' : " + buffer->uri + " in Buffer\n";
@@ -913,51 +692,7 @@ static bool ParseBuffer(Buffer *buffer, std::string *err, const detail::json &o,
       }
     }
   }
-
-  ParseStringProperty(&buffer->name, err, o, "name", false);
   return true;
-}
-
-template <typename T>
-static void ParseIntegerProperty(T &i, JSONObject *o, std::string prop, bool req)
-{
-    JSONProperty *p = o->getProperty(prop);
-    
-    if (p == nullptr)
-    {
-        if (req)
-            throw "Cannot find required property";
-
-        return;
-    }
-
-    JSONNumber *nr = dynamic_cast<JSONNumber *>(p->value());
-
-    if (nr == nullptr)
-    {
-        if (req)
-            throw "Not the right type";
-
-        return;
-    }
-
-    i = T(stoi(nr->value()));
-}
-
-static void ParseStringProperty(std::string &s, JSONObject *o, std::string prop, bool req)
-{
-    JSONProperty *p = o->getProperty(prop);
-
-    if (p == nullptr)
-    {
-        if (req)
-            throw "Cannot find property";
-        
-        return;
-    }
-
-    JSONString *str = dynamic_cast<JSONString *>(p->value());
-    s = str->s();
 }
 
 static void ParseBufferView(BufferView *bufferView, JSONObject *o)
@@ -1146,25 +881,6 @@ static void ParseScene(Scene &scene, JSONObject *o)
     ParseIntegerArray(scene.nodes, a);
 }
 
-namespace detail {
-
-template <typename Callback>
-bool ForEachInArray(const detail::json &_v, const char *member, Callback &&cb) {
-  detail::json_const_iterator itm;
-  if (detail::FindMember(_v, member, itm) &&
-      detail::IsArray(detail::GetValue(itm))) {
-    const detail::json &root = detail::GetValue(itm);
-    auto it = detail::ArrayBegin(root);
-    auto end = detail::ArrayEnd(root);
-    for (; it != end; ++it) {
-      if (!cb(*it)) return false;
-    }
-  }
-  return true;
-};
-
-}  // end of namespace detail
-
 void Accessor::serialize(std::ostream &os) const
 {
     os << name << " " << bufferView << " " << byteOffset << " " << normalized
@@ -1235,207 +951,78 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
         return false;
     }
 
-    detail::JsonDocument v;
     std::stringstream ss(json_str);
     std::vector<std::string> tokens;
     ::tokenize(tokens, ss);
-#if 0
-    for (auto token : tokens)
-        std::cerr << token << "\r\n";
-#endif
     JSONRoot *jsonRoot = new JSONRoot();
     ::parse(tokens.cbegin(), tokens.cend(), jsonRoot);
     JSONObject *rootObj = dynamic_cast<JSONObject *>(jsonRoot->root());
 
-    try {
-        detail::JsonParse(v, json_str, json_str_length, true);
-    } catch (const std::exception &e) {
-        if (err) {
-          (*err) = e.what();
-        }
-        return false;
-    }
+    model->buffers.clear();
+    model->bufferViews.clear();
+    model->accessors.clear();
+    model->meshes.clear();
+    model->nodes.clear();
+    model->extensionsUsed.clear();
+    model->extensionsRequired.clear();
+    model->extensions.clear();
+    model->defaultScene = -1;
 
-    if (!detail::IsObject(v)) {
-    // root is not an object.
-    if (err) {
-      (*err) = "Root element is not a JSON object\n";
-    }
-    return false;
-    }
-
+    // 3. Parse Buffer
     {
-        bool version_found = false;
-        detail::json_const_iterator it;
-        if (detail::FindMember(v, "asset", it) && detail::IsObject(detail::GetValue(it)))
+        JSONArray *a = dynamic_cast<JSONArray *>(rootObj->getProperty("buffers")->value());
+
+        for (JSONNode *node : *a)
         {
-            auto &itObj = detail::GetValue(it);
-            detail::json_const_iterator version_it;
-            std::string versionStr;
+            JSONObject *o = dynamic_cast<JSONObject *>(node);
+            Buffer buffer;
 
-            if (detail::FindMember(itObj, "version", version_it) &&
-                detail::GetString(detail::GetValue(version_it), versionStr))
-            {
-                version_found = true;
-            }
-        }
-        if (version_found) {
-        // OK
-        } else if (check_sections & REQUIRE_VERSION) {
-            if (err) {
-                (*err) += "\"asset\" object not found in .gltf or not an object type\n";
-            }
-            return false;
+            ParseBuffer(&buffer, err, o, &fs, &uri_cb, base_dir, max_external_file_size_,
+                        is_binary_, bin_data_, bin_size_);
+        
+            model->buffers.push_back(buffer);
         }
     }
-
-  // scene is not mandatory.
-  // FIXME Maybe a better way to handle it than removing the code
-
-  auto IsArrayMemberPresent = [](const detail::json &_v,
-                                 const char *name) -> bool {
-    detail::json_const_iterator it;
-    return detail::FindMember(_v, name, it) &&
-           detail::IsArray(detail::GetValue(it));
-  };
-
-  {
-    if ((check_sections & REQUIRE_SCENES) &&
-        !IsArrayMemberPresent(v, "scenes")) {
-      if (err) {
-        (*err) += "\"scenes\" object not found in .gltf or not an array type\n";
-      }
-      return false;
-    }
-  }
-
-  {
-    if ((check_sections & REQUIRE_NODES) && !IsArrayMemberPresent(v, "nodes")) {
-      if (err) {
-        (*err) += "\"nodes\" object not found in .gltf\n";
-      }
-      return false;
-    }
-  }
-
-  {
-    if ((check_sections & REQUIRE_ACCESSORS) &&
-        !IsArrayMemberPresent(v, "accessors")) {
-      if (err) {
-        (*err) += "\"accessors\" object not found in .gltf\n";
-      }
-      return false;
-    }
-  }
-
-  {
-    if ((check_sections & REQUIRE_BUFFERS) &&
-        !IsArrayMemberPresent(v, "buffers")) {
-      if (err) {
-        (*err) += "\"buffers\" object not found in .gltf\n";
-      }
-      return false;
-    }
-  }
-
-  {
-    if ((check_sections & REQUIRE_BUFFER_VIEWS) &&
-        !IsArrayMemberPresent(v, "bufferViews")) {
-      if (err) {
-        (*err) += "\"bufferViews\" object not found in .gltf\n";
-      }
-      return false;
-    }
-  }
-
-  model->buffers.clear();
-  model->bufferViews.clear();
-  model->accessors.clear();
-  model->meshes.clear();
-  model->nodes.clear();
-  model->extensionsUsed.clear();
-  model->extensionsRequired.clear();
-  model->extensions.clear();
-  model->defaultScene = -1;
-
-  using detail::ForEachInArray;
-
-  // 3. Parse Buffer
-  {
-    JSONArray *a = dynamic_cast<JSONArray *>(rootObj->getProperty("buffers")->value());
-
-    for (JSONNode *node : *a)
+    // 4. Parse BufferView
     {
-        JSONObject *o = dynamic_cast<JSONObject *>(node);
-        Buffer buffer;
-    }
+        JSONArray *a = dynamic_cast<JSONArray *>(rootObj->getProperty("bufferViews")->value());
 
-    bool success = ForEachInArray(v, "buffers", [&](const detail::json &o) {
-      if (!detail::IsObject(o)) {
-        if (err) {
-          (*err) += "`buffers' does not contain an JSON object.";
-        }
-        return false;
-      }
-      Buffer buffer;
-      if (!ParseBuffer(&buffer, err, o,
-                       store_original_json_for_extras_and_extensions_, &fs,
-                       &uri_cb, base_dir, max_external_file_size_, is_binary_,
-                       bin_data_, bin_size_)) {
-        return false;
-      }
-
-      model->buffers.emplace_back(std::move(buffer));
-      return true;
-    });
-
-    if (!success) {
-      return false;
-    }
-  }
-  // 4. Parse BufferView
-  {
-    JSONArray *a = dynamic_cast<JSONArray *>(rootObj->getProperty("bufferViews")->value());
-
-    for (JSONNode *node : *a)
-    {
+        for (JSONNode *node : *a)
+        {
         JSONObject *o = dynamic_cast<JSONObject *>(node);
         BufferView bufferView;
         ParseBufferView(&bufferView, o);
         model->bufferViews.push_back(bufferView);
+        }
     }
-  }
 
-  // 5. Parse Accessor
-  {
-    JSONArray *a = dynamic_cast<JSONArray *>(rootObj->getProperty("accessors")->value());
-
-    for (JSONNode *node : *a)
+    // 5. Parse Accessor
     {
+        JSONArray *a = dynamic_cast<JSONArray *>(rootObj->getProperty("accessors")->value());
+
+        for (JSONNode *node : *a)
+        {
         JSONObject *o = dynamic_cast<JSONObject *>(node);
         Accessor accessor;
         ParseAccessor(&accessor, o);
         model->accessors.push_back(accessor);
+        }
     }
-  }
 
-  // 6. Parse Mesh
-  {
-    JSONArray *a = dynamic_cast<JSONArray *>(rootObj->getProperty("meshes")->value());
-
-    for (JSONNode *node : *a)
+    // 6. Parse Mesh
     {
+        JSONArray *a = dynamic_cast<JSONArray *>(rootObj->getProperty("meshes")->value());
+
+        for (JSONNode *node : *a)
+        {
         JSONObject *o = dynamic_cast<JSONObject *>(node);
         Mesh mesh;
         ParseMesh(mesh, o);
         model->meshes.push_back(mesh);
+        }
     }
-  }
 
-  // Assign missing bufferView target types
-  // - Look for missing Mesh indices
-  // - Look for missing Mesh attributes
-  for (auto &mesh : model->meshes) {
+    for (auto &mesh : model->meshes) {
     for (auto &primitive : mesh.primitives) {
       if (primitive.indices >
           -1)  // has indices from parsing step, must be Element Array Buffer
