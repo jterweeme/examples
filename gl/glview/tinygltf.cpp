@@ -1,4 +1,4 @@
-#include "tinygltf.h"
+#include "tools.h"
 #include "json_tools.h"
 #include <algorithm>
 #include <sys/stat.h>  // for is_directory check
@@ -8,72 +8,11 @@
 
 namespace tinygltf {
 
-static void swap4(unsigned int *val) {
-    //we doen alleen little endian nu
-    (void)val;
-}
-
-static std::string JoinPath(const std::string &path0, const std::string &path1)
-{
-  if (path0.empty()) {
-    return path1;
-  } else {
-    // check '/'
-    char lastChar = *path0.rbegin();
-    if (lastChar != '/') {
-      return path0 + std::string("/") + path1;
-    } else {
-      return path0 + path1;
-    }
-  }
-}
-
-static std::string FindFile(const std::vector<std::string> &paths,
-                            const std::string &filepath, FsCallbacks *fs)
-{
-  if (fs == nullptr || fs->ExpandFilePath == nullptr ||
-      fs->FileExists == nullptr) {
-    // Error, fs callback[s] missing
-    return std::string();
-  }
-
-  size_t slength = strlen(filepath.c_str());
-  if (slength == 0) {
-    return std::string();
-  }
-
-  std::string cleaned_filepath = std::string(filepath.c_str());
-
-  for (size_t i = 0; i < paths.size(); i++) {
-    std::string absPath =
-        fs->ExpandFilePath(JoinPath(paths[i], cleaned_filepath), fs->user_data);
-    if (fs->FileExists(absPath, fs->user_data)) {
-      return absPath;
-    }
-  }
-
-  return std::string();
-}
-
-static std::string GetFilePathExtension(const std::string &FileName) {
-  if (FileName.find_last_of(".") != std::string::npos)
-    return FileName.substr(FileName.find_last_of(".") + 1);
-  return "";
-}
-
-static std::string GetBaseDir(const std::string &filepath) {
-  if (filepath.find_last_of("/\\") != std::string::npos)
-    return filepath.substr(0, filepath.find_last_of("/\\"));
-  return "";
-}
-
 static std::string GetBaseFilename(const std::string &filepath) {
   auto idx = filepath.find_last_of("/\\");
   if (idx != std::string::npos) return filepath.substr(idx + 1);
   return filepath;
 }
-
-std::string base64_decode(std::string const &s);
 
 static inline bool is_base64(unsigned char c) {
   return (isalnum(c) || (c == '+') || (c == '/'));
@@ -742,67 +681,7 @@ static void ParseNode(Node &node, JSONObject *o)
 static void ParseScene(Scene &scene, JSONObject *o)
 {
     ParseStringProperty(scene.name, o, "name", false);
-    JSONArray *a = dynamic_cast<JSONArray *>(o->getProperty("nodes")->value());
-    ParseIntegerArray(scene.nodes, a);
-}
-
-void Accessor::serialize(std::ostream &os) const
-{
-    os << name << " " << bufferView << " " << byteOffset << " " << normalized
-       << " " << componentType << " " << count << " " << type << "\r\n";
-}
-
-void Node::serialize(std::ostream &os) const
-{
-    os.put('{');
-    os << "\r\n\"name\":\"" << name << "\"\r\n";
-    os << "\"skin\":" << skin << "\r\n";
-    os << "\"mesh\":" << mesh << "\r\n";
-
-    os << "\"children:\":[\r\n";
-    for (int child : children)
-        os << child << "\r\n";
-    
-    os << "]\r\n";
-    os << "\"rotation\":[\r\n";
-    for (double rot : rotation)
-        os << rot << "\r\n";
-
-    os << "]\r\n";
-
-    os << "\"scale\":[";
-    for (double sc : scale)
-        os << sc << "\r\n";
-
-    os << "]\r\n";
-    os.put('}');
-}
-
-void Mesh::serialize(std::ostream &os) const
-{
-    os.put('{');
-    os << "\"name\":\"" << name << "\"";
-    os.put(',');
-    os << "\"primitives\":[";
-    
-    for (Primitive primitive : primitives)
-        primitive.serialize(os);
-
-    os.put(']');
-}
-
-void Primitive::serialize(std::ostream &os) const
-{
-    os.put('{');
-    os << "\"attributes\":{\r\n";
-        
-    for (auto const& attr : attributes)
-    {
-        os << "\"" << attr.first << "\":" << attr.second << "\r\n";
-    }
-
-    os.put('}');
-    os.put('}');
+    ParseIntegerArrayProperty(scene.nodes, o, "nodes", false);
 }
 
 bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
@@ -899,8 +778,7 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
           return false;
         }
 
-        auto bufferView =
-            model->accessors[size_t(primitive.indices)].bufferView;
+        auto bufferView = model->accessors[size_t(primitive.indices)].bufferView;
         if (bufferView < 0 || size_t(bufferView) >= model->bufferViews.size()) {
           if (err) {
             (*err) += "accessor[" + std::to_string(primitive.indices) +
@@ -909,10 +787,7 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
           return false;
         }
 
-        model->bufferViews[size_t(bufferView)].target =
-            TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER;
-        // we could optionally check if accessors' bufferView type is Scalar, as
-        // it should be
+        model->bufferViews[size_t(bufferView)].target = TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER;
       }
 
       for (auto &attribute : primitive.attributes) {

@@ -181,6 +181,7 @@ bool IsDataURI(const std::string &in);
 bool DecodeDataURI(std::vector<unsigned char> *out, std::string &mime_type,
                    const std::string &in, size_t reqBytes, bool checkSize);
 
+#if 1
 class Value {
  public:
   typedef std::vector<Value> Array;
@@ -304,101 +305,50 @@ class Value {
   Object object_value_;
   bool boolean_value_ = false;
 };
+#endif
 
-using ColorValue = std::array<double, 4>;
-
-// === legacy interface ====
-// TODO(syoyo): Deprecate `Parameter` class.
-struct Parameter {
-  bool bool_value = false;
-  bool has_number_value = false;
-  std::string string_value;
-  std::vector<double> number_array;
-  std::map<std::string, double> json_double_value;
-  double number_value = 0.0;
-
-  double Factor() const { return number_value; }
-
-  ColorValue ColorFactor() const {
-    return {
-        {// this aggregate initialize the std::array object, and uses C++11 RVO.
-         number_array[0], number_array[1], number_array[2],
-         (number_array.size() > 3 ? number_array[3] : 1.0)}};
-  }
-
-  Parameter() = default;
-  DEFAULT_METHODS(Parameter)
-  bool operator==(const Parameter &) const;
-};
-
-typedef std::map<std::string, Parameter> ParameterMap;
 typedef std::map<std::string, Value> ExtensionMap;
 
 struct BufferView {
-  std::string name;
-  int buffer{-1};        // Required
-  size_t byteOffset{0};  // minimum 0, default 0
-  size_t byteLength{0};  // required, minimum 1. 0 = invalid
-  size_t byteStride{0};  // minimum 4, maximum 252 (multiple of 4), default 0 =
-  int target{0};
-  Value extras;
-  ExtensionMap extensions;
-  std::string extras_json_string;
-  std::string extensions_json_string;
-  BufferView() = default;
-  DEFAULT_METHODS(BufferView)
+    std::string name;
+    int buffer{-1};        // Required
+    size_t byteOffset{0};  // minimum 0, default 0
+    size_t byteLength{0};  // required, minimum 1. 0 = invalid
+    size_t byteStride{0};  // minimum 4, maximum 252 (multiple of 4), default 0 =
+    int target{0};
+    BufferView() = default;
+    DEFAULT_METHODS(BufferView)
 };
 
 struct Accessor
 {
-    int bufferView{-1};
+    int bufferView = -1;
     std::string name;
-    size_t byteOffset{0};
-    bool normalized{false};  // optional.
-    int componentType{-1};   // (required) One of TINYGLTF_COMPONENT_TYPE_***
-    size_t count{0};         // required
-    int type{-1};            // (required) One of TINYGLTF_TYPE_***   ..
-    Value extras;
-    ExtensionMap extensions;
-
-    std::string extras_json_string;
-    std::string extensions_json_string;
-
+    size_t byteOffset = 0;
+    bool normalized = false;
+    int componentType = -1;
+    size_t count{0};
+    int type{-1};
     std::vector<double> minValues;
     std::vector<double> maxValues;
 
-  struct Sparse {
-    int count;
-    bool isSparse;
-    struct {
-      int byteOffset;
-      int bufferView;
-      int componentType;  // a TINYGLTF_COMPONENT_TYPE_ value
-      Value extras;
-      ExtensionMap extensions;
-      std::string extras_json_string;
-      std::string extensions_json_string;
-    } indices;
-    struct {
-      int bufferView;
-      int byteOffset;
-      Value extras;
-      ExtensionMap extensions;
-      std::string extras_json_string;
-      std::string extensions_json_string;
-    } values;
-    Value extras;
-    ExtensionMap extensions;
-    std::string extras_json_string;
-    std::string extensions_json_string;
-  };
+    struct Sparse {
+        int count;
+        bool isSparse;
+        struct {
+            int byteOffset;
+            int bufferView;
+            int componentType;
+        } indices;
+
+        struct {
+        int bufferView;
+        int byteOffset;
+        } values;
+    };
 
   Sparse sparse;
 
-  ///
-  /// Utility function to compute byteStride for a given bufferView object.
-  /// Returns -1 upon invalid glTF value or parameter configuration.
-  ///
   int ByteStride(const BufferView &bufferViewObject) const {
     if (bufferViewObject.byteStride == 0) {
       // Assume data is tightly packed.
@@ -415,8 +365,6 @@ struct Accessor
 
       return componentSizeInBytes * numComponents;
     } else {
-      // Check if byteStride is a multiple of the size of the accessor's
-      // component type.
       int componentSizeInBytes =
           GetComponentSizeInBytes(static_cast<uint32_t>(componentType));
       if (componentSizeInBytes <= 0) {
@@ -432,13 +380,8 @@ struct Accessor
     // unreachable return 0;
     }
 
-    Accessor()
-    {
-        sparse.isSparse = false;
-    }
+    Accessor() { sparse.isSparse = false; }
     DEFAULT_METHODS(Accessor)
-
-    void serialize(std::ostream &os) const;
 };
 
 struct Primitive {
@@ -447,42 +390,23 @@ struct Primitive {
     int indices{-1};
     int mode{-1};
     std::vector<std::map<std::string, int> > targets;  // array of morph targets,
-    ExtensionMap extensions;
-    Value extras;
-
-    std::string extras_json_string;
-    std::string extensions_json_string;
-
     Primitive() = default;
     DEFAULT_METHODS(Primitive)
-
-    void serialize(std::ostream &os) const;
 };
 
 struct Mesh {
     std::string name;
     std::vector<Primitive> primitives;
     std::vector<double> weights;  // weights to be applied to the Morph Targets
-    ExtensionMap extensions;
-    Value extras;
-
-    std::string extras_json_string;
-    std::string extensions_json_string;
-
     Mesh() = default;
     DEFAULT_METHODS(Mesh)
-
-    void serialize(std::ostream &os) const;
 };
 
 class Node {
 public:
     Node() = default;
-
     DEFAULT_METHODS(Node)
-
     int camera{-1};  // the index of the camera referenced by this node
-
     std::string name;
     int skin{-1};
     int mesh{-1};
@@ -492,28 +416,12 @@ public:
     std::vector<double> translation;  // length must be 0 or 3
     std::vector<double> matrix;       // length must be 0 or 16
     std::vector<double> weights;  // The weights of the instantiated Morph Target
-
-    ExtensionMap extensions;
-    Value extras;
-
-    std::string extras_json_string;
-    std::string extensions_json_string;
-
-    void serialize(std::ostream &os) const;
 };
 
 struct Buffer {
   std::string name;
-  std::vector<unsigned char> data;
-  std::string
-      uri;  // considered as required here but not in the spec (need to clarify)
-            // uri is not decoded(e.g. whitespace may be represented as %20)
-  Value extras;
-  ExtensionMap extensions;
-
-  std::string extras_json_string;
-  std::string extensions_json_string;
-
+  std::vector<uint8_t> data;
+  std::string uri;
   Buffer() = default;
   DEFAULT_METHODS(Buffer)
 };
@@ -523,12 +431,6 @@ struct Asset {
   std::string generator;
   std::string minVersion;
   std::string copyright;
-  ExtensionMap extensions;
-  Value extras;
-
-  std::string extras_json_string;
-  std::string extensions_json_string;
-
   Asset() = default;
   DEFAULT_METHODS(Asset)
 };
@@ -536,13 +438,6 @@ struct Asset {
 struct Scene {
   std::string name;
   std::vector<int> nodes;
-
-  ExtensionMap extensions;
-  Value extras;
-
-  std::string extras_json_string;
-  std::string extensions_json_string;
-
   Scene() = default;
   DEFAULT_METHODS(Scene)
 };
@@ -551,27 +446,17 @@ class Model {
  public:
   Model() = default;
   DEFAULT_METHODS(Model)
-
-  bool operator==(const Model &) const;
-
   std::vector<Accessor> accessors;
   std::vector<Buffer> buffers;
   std::vector<BufferView> bufferViews;
   std::vector<Mesh> meshes;
   std::vector<Node> nodes;
   std::vector<Scene> scenes;
-
   int defaultScene{-1};
   std::vector<std::string> extensionsUsed;
   std::vector<std::string> extensionsRequired;
-
   Asset asset;
-
-  Value extras;
   ExtensionMap extensions;
-
-  std::string extras_json_string;
-  std::string extensions_json_string;
 };
 
 enum SectionCheck {
