@@ -2,8 +2,6 @@
 #define TINY_GLTF_H_
 
 #include <array>
-#include <cassert>
-#include <cmath>  // std::fabs
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -132,55 +130,6 @@ typedef enum {
   STRICT
 } ParseStrictness;
 
-static inline int32_t GetComponentSizeInBytes(uint32_t componentType) {
-  if (componentType == TINYGLTF_COMPONENT_TYPE_BYTE) {
-    return 1;
-  } else if (componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
-    return 1;
-  } else if (componentType == TINYGLTF_COMPONENT_TYPE_SHORT) {
-    return 2;
-  } else if (componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
-    return 2;
-  } else if (componentType == TINYGLTF_COMPONENT_TYPE_INT) {
-    return 4;
-  } else if (componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT) {
-    return 4;
-  } else if (componentType == TINYGLTF_COMPONENT_TYPE_FLOAT) {
-    return 4;
-  } else if (componentType == TINYGLTF_COMPONENT_TYPE_DOUBLE) {
-    return 8;
-  } else {
-    // Unknown component type
-    return -1;
-  }
-}
-
-static inline int32_t GetNumComponentsInType(uint32_t ty) {
-  if (ty == TINYGLTF_TYPE_SCALAR) {
-    return 1;
-  } else if (ty == TINYGLTF_TYPE_VEC2) {
-    return 2;
-  } else if (ty == TINYGLTF_TYPE_VEC3) {
-    return 3;
-  } else if (ty == TINYGLTF_TYPE_VEC4) {
-    return 4;
-  } else if (ty == TINYGLTF_TYPE_MAT2) {
-    return 4;
-  } else if (ty == TINYGLTF_TYPE_MAT3) {
-    return 9;
-  } else if (ty == TINYGLTF_TYPE_MAT4) {
-    return 16;
-  } else {
-    // Unknown component type
-    return -1;
-  }
-}
-
-bool IsDataURI(const std::string &in);
-
-bool DecodeDataURI(std::vector<unsigned char> *out, std::string &mime_type,
-                   const std::string &in, size_t reqBytes, bool checkSize);
-
 struct BufferView {
     std::string name;
     int buffer{-1};        // Required
@@ -219,39 +168,8 @@ struct Accessor
         } values;
     };
 
-  Sparse sparse;
-
-  int ByteStride(const BufferView &bufferViewObject) const {
-    if (bufferViewObject.byteStride == 0) {
-      // Assume data is tightly packed.
-      int componentSizeInBytes =
-          GetComponentSizeInBytes(static_cast<uint32_t>(componentType));
-      if (componentSizeInBytes <= 0) {
-        return -1;
-      }
-
-      int numComponents = GetNumComponentsInType(static_cast<uint32_t>(type));
-      if (numComponents <= 0) {
-        return -1;
-      }
-
-      return componentSizeInBytes * numComponents;
-    } else {
-      int componentSizeInBytes =
-          GetComponentSizeInBytes(static_cast<uint32_t>(componentType));
-      if (componentSizeInBytes <= 0) {
-        return -1;
-      }
-
-      if ((bufferViewObject.byteStride % uint32_t(componentSizeInBytes)) != 0) {
-        return -1;
-      }
-      return static_cast<int>(bufferViewObject.byteStride);
-    }
-
-    // unreachable return 0;
-    }
-
+    Sparse sparse;
+    int ByteStride(const BufferView &bufferViewObject) const;
     Accessor() { sparse.isSparse = false; }
     DEFAULT_METHODS(Accessor)
 };
@@ -328,18 +246,6 @@ class Model {
   Asset asset;
 };
 
-enum SectionCheck {
-  NO_REQUIRE = 0x00,
-  REQUIRE_VERSION = 0x01,
-  REQUIRE_SCENE = 0x02,
-  REQUIRE_SCENES = 0x04,
-  REQUIRE_NODES = 0x08,
-  REQUIRE_ACCESSORS = 0x10,
-  REQUIRE_BUFFERS = 0x20,
-  REQUIRE_BUFFER_VIEWS = 0x40,
-  REQUIRE_ALL = 0x7f
-};
-
 typedef bool (*URIEncodeFunction)(const std::string &in_uri,
                                   const std::string &object_type,
                                   std::string *out_uri, void *user_data);
@@ -402,79 +308,46 @@ bool GetFileSizeInBytes(size_t *filesize_out, std::string *err,
                         const std::string &filepath, void *);
 
 class TinyGLTF {
- public:
-  TinyGLTF() = default;
-  ~TinyGLTF() = default;
+public:
+    bool LoadASCIIFromFile(Model *model, std::string *err, std::string *warn,
+                         const std::string &filename);
 
-  bool LoadASCIIFromFile(Model *model, std::string *err, std::string *warn,
-                         const std::string &filename,
-                         unsigned int check_sections = REQUIRE_VERSION);
-
-  bool LoadASCIIFromString(Model *model, std::string *err, std::string *warn,
+    bool LoadASCIIFromString(Model *model, std::string *err, std::string *warn,
                            const char *str, const unsigned int length,
-                           const std::string &base_dir,
-                           unsigned int check_sections = REQUIRE_VERSION);
+                           const std::string &base_dir);
 
-  bool LoadBinaryFromFile(Model *model, std::string *err, std::string *warn,
-                          const std::string &filename,
-                          unsigned int check_sections = REQUIRE_VERSION);
+    bool LoadBinaryFromFile(Model *model, std::string *err, std::string *warn,
+                          const std::string &filename);
 
-  bool LoadBinaryFromMemory(Model *model, std::string *err, std::string *warn,
-                            const unsigned char *bytes,
-                            const unsigned int length,
-                            const std::string &base_dir = "",
-                            unsigned int check_sections = REQUIRE_VERSION);
+    bool LoadBinaryFromMemory(Model *model, std::string *err, std::string *warn,
+                            const unsigned char *bytes, const unsigned int length,
+                            const std::string &base_dir = "");
 
-  void SetParseStrictness(ParseStrictness strictness);
-
-  void SetURICallbacks(URICallbacks callbacks);
-
-  void SetSerializeDefaultValues(const bool enabled) {
-    serialize_default_values_ = enabled;
-  }
-
-  bool GetSerializeDefaultValues() const { return serialize_default_values_; }
-
-  bool GetStoreOriginalJSONForExtrasAndExtensions() const {
-    return store_original_json_for_extras_and_extensions_;
-  }
-
-  void SetPreserveImageChannels(bool onoff) {
-    preserve_image_channels_ = onoff;
-  }
-
-  void SetMaxExternalFileSize(size_t max_bytes) {
-    max_external_file_size_ = max_bytes;
-  }
-
-  size_t GetMaxExternalFileSize() const { return max_external_file_size_; }
-
-  bool GetPreserveImageChannels() const { return preserve_image_channels_; }
-
- private:
-  bool LoadFromString(Model *model, std::string *err, std::string *warn,
+    TinyGLTF() = default;
+    ~TinyGLTF() = default;
+    void SetParseStrictness(ParseStrictness strictness);
+    void SetURICallbacks(URICallbacks callbacks);
+    void SetSerializeDefaultValues(const bool enabled) { serialize_default_values_ = enabled; }
+    bool GetSerializeDefaultValues() const { return serialize_default_values_; }
+    void SetPreserveImageChannels(bool onoff) { preserve_image_channels_ = onoff; }
+    void SetMaxExternalFileSize(size_t max_bytes) { max_external_file_size_ = max_bytes; }
+    size_t GetMaxExternalFileSize() const { return max_external_file_size_; }
+    bool GetPreserveImageChannels() const { return preserve_image_channels_; }
+private:
+    bool LoadFromString(Model *model, std::string *err, std::string *warn,
                       const char *str, const unsigned int length,
                       const std::string &base_dir, unsigned int check_sections);
 
-  const unsigned char *bin_data_ = nullptr;
-  size_t bin_size_ = 0;
-  bool is_binary_ = false;
-
-  ParseStrictness strictness_ = ParseStrictness::STRICT;
-
-  bool serialize_default_values_ = false;  ///< Serialize default values?
-
-  bool store_original_json_for_extras_and_extensions_ = false;
-
-  bool preserve_image_channels_ = false;  /// Default false(expand channels to
-                                          /// RGBA) for backward compatibility.
-
-  size_t max_external_file_size_{
-      size_t((std::numeric_limits<int32_t>::max)())};  // Default 2GB
-
-  // Warning & error messages
-  std::string warn_;
-  std::string err_;
+    const unsigned char *bin_data_ = nullptr;
+    size_t bin_size_ = 0;
+    bool is_binary_ = false;
+    ParseStrictness strictness_ = ParseStrictness::STRICT;
+    bool serialize_default_values_ = false;  ///< Serialize default values?
+    bool store_original_json_for_extras_and_extensions_ = false;
+    bool preserve_image_channels_ = false;
+    size_t max_external_file_size_{ size_t((std::numeric_limits<int32_t>::max)())};
+    std::string warn_;
+    std::string err_;
 
   FsCallbacks fs = {
       &tinygltf::FileExists,
@@ -502,7 +375,6 @@ class TinyGLTF {
 };
 
 }  // namespace tinygltf
-
 #endif  // TINY_GLTF_H_
 
 
