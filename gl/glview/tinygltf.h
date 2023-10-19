@@ -305,24 +305,6 @@ class Value {
   bool boolean_value_ = false;
 };
 
-#define TINYGLTF_VALUE_GET(ctype, var)            \
-  template <>                                     \
-  inline const ctype &Value::Get<ctype>() const { \
-    return var;                                   \
-  }                                               \
-  template <>                                     \
-  inline ctype &Value::Get<ctype>() {             \
-    return var;                                   \
-  }
-TINYGLTF_VALUE_GET(bool, boolean_value_)
-TINYGLTF_VALUE_GET(double, real_value_)
-TINYGLTF_VALUE_GET(int, int_value_)
-TINYGLTF_VALUE_GET(std::string, string_value_)
-TINYGLTF_VALUE_GET(std::vector<unsigned char>, binary_value_)
-TINYGLTF_VALUE_GET(Value::Array, array_value_)
-TINYGLTF_VALUE_GET(Value::Object, object_value_)
-#undef TINYGLTF_VALUE_GET
-
 using ColorValue = std::array<double, 4>;
 
 // === legacy interface ====

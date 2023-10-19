@@ -1,37 +1,16 @@
 #include "tinygltf.h"
-#include "json.h"
+#include "json_tools.h"
 #include <algorithm>
 #include <sys/stat.h>  // for is_directory check
 #include <cstdio>
 #include <fstream>
 #include <sstream>
 
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#define TINYGLTF_LITTLE_ENDIAN 1
-#endif
-
 namespace tinygltf {
 
-bool Value::Has(const std::string &key) const
-{
-    if (!IsObject()) return false;
-    Object::const_iterator it = object_value_.find(key);
-    return (it != object_value_.end()) ? true : false;
-}
-
 static void swap4(unsigned int *val) {
-#ifdef TINYGLTF_LITTLE_ENDIAN
-  (void)val;
-#else
-  unsigned int tmp = *val;
-  unsigned char *dst = reinterpret_cast<unsigned char *>(val);
-  unsigned char *src = reinterpret_cast<unsigned char *>(&tmp);
-
-  dst[0] = src[3];
-  dst[1] = src[2];
-  dst[2] = src[1];
-  dst[3] = src[0];
-#endif
+    //we doen alleen little endian nu
+    (void)val;
 }
 
 static std::string JoinPath(const std::string &path0, const std::string &path1)
@@ -555,48 +534,6 @@ bool DecodeDataURI(std::vector<unsigned char> *out, std::string &mime_type,
   return true;
 }
 
-static void ParseStringProperty(std::string &s, JSONObject *o, std::string prop, bool req)
-{
-    JSONProperty *p = o->getProperty(prop);
-
-    if (p == nullptr)
-    {
-        if (req)
-            throw "Cannot find property";
-        
-        return;
-    }
-
-    JSONString *str = dynamic_cast<JSONString *>(p->value());
-    s = str->s();
-}
-
-template <typename T>
-static void ParseIntegerProperty(T &i, JSONObject *o, std::string prop, bool req)
-{
-    JSONProperty *p = o->getProperty(prop);
-    
-    if (p == nullptr)
-    {
-        if (req)
-            throw "Cannot find required property";
-
-        return;
-    }
-
-    JSONNumber *nr = dynamic_cast<JSONNumber *>(p->value());
-
-    if (nr == nullptr)
-    {
-        if (req)
-            throw "Not the right type";
-
-        return;
-    }
-
-    i = T(stoi(nr->value()));
-}
-
 static bool
 ParseBuffer(Buffer *buffer, std::string *err, JSONObject *o, FsCallbacks *fs,
             const URICallbacks *uri_cb,
@@ -784,83 +721,11 @@ static void ParseMesh(Mesh &mesh, JSONObject *o)
     }
 }
 
-static void ParseDoubleArray(std::vector<double> &v, JSONArray *a)
-{
-    for (JSONNode *node : *a)
-    {
-        JSONNumber *nr = dynamic_cast<JSONNumber *>(node);
-        v.push_back(std::stod(nr->value()));
-    }
-}
-
-static void
-ParseDoubleArrayProperty(std::vector<double> &v, JSONObject *o, std::string key, bool req)
-{
-    JSONProperty *p = dynamic_cast<JSONProperty *>(o->getProperty(key));
-
-    if (p == nullptr)
-    {
-        if (req)
-            throw "No such property";
-
-        return;
-    }
-
-    JSONArray *a = dynamic_cast<JSONArray *>(p->value());
-
-    if (a == nullptr)
-    {
-        if (req)
-            throw "Property not an array";
-
-        return;
-    }
-
-    ParseDoubleArray(v, a);
-}
-
-static void ParseIntegerArray(std::vector<int> &v, JSONArray *a)
-{
-    for (JSONNode *node : *a)
-    {
-        JSONNumber *nr = dynamic_cast<JSONNumber *>(node);
-        v.push_back(stoi(nr->value()));
-    }
-}
-
-static void
-ParseIntegerArrayProperty(std::vector<int> &v, JSONObject *o, std::string key, bool req)
-{
-    JSONProperty *p = dynamic_cast<JSONProperty *>(o->getProperty(key));
-
-    if (p == nullptr)
-    {
-        if (req)
-            throw "No such property";
-
-        return;
-    }
-
-    JSONArray *a = dynamic_cast<JSONArray *>(p->value());
-    
-    if (a == nullptr)
-    {
-        if (req)
-            throw "Property not an array";
-
-        return;
-    }
-
-    ParseIntegerArray(v, a);
-}
-
 static void ParseNode(Node &node, JSONObject *o)
 {
-    JSONArray *a;
     ParseStringProperty(node.name, o, "name", false);
     node.skin = -1;
     ParseIntegerProperty(node.skin, o, "skin", false);
-
     ParseDoubleArrayProperty(node.matrix, o, "matrix", false);
     ParseDoubleArrayProperty(node.rotation, o, "rotation", false);
     ParseDoubleArrayProperty(node.scale, o, "scale", false);
@@ -942,7 +807,7 @@ void Primitive::serialize(std::ostream &os) const
 
 bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
                               const char *json_str, unsigned int json_str_length,
-                              const std::string &base_dir, unsigned int check_sections)
+                              const std::string &base_dir, unsigned int)
 {
     if (json_str_length < 4) {
         if (err) {
@@ -1108,17 +973,18 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
 
 bool TinyGLTF::LoadASCIIFromString(Model *model, std::string *err, std::string *warn,
             const char *str, unsigned int length, const std::string &base_dir,
-                                   unsigned int check_sections)
+                                   unsigned int)
 {
     is_binary_ = false;
     bin_data_ = nullptr;
     bin_size_ = 0;
-    return LoadFromString(model, err, warn, str, length, base_dir, check_sections);
+    return LoadFromString(model, err, warn, str, length, base_dir, 0);
 }
 
 bool TinyGLTF::LoadASCIIFromFile(Model *model, std::string *err,
                                  std::string *warn, const std::string &filename,
-                                 unsigned int check_sections) {
+                                 unsigned int)
+{
   std::stringstream ss;
   std::vector<unsigned char> data;
   std::string fileerr;
@@ -1143,7 +1009,7 @@ bool TinyGLTF::LoadASCIIFromFile(Model *model, std::string *err,
 
   bool ret = LoadASCIIFromString(
       model, err, warn, reinterpret_cast<const char *>(&data.at(0)),
-      static_cast<unsigned int>(data.size()), basedir, check_sections);
+      static_cast<unsigned int>(data.size()), basedir, 0);
 
   return ret;
 }
@@ -1151,7 +1017,7 @@ bool TinyGLTF::LoadASCIIFromFile(Model *model, std::string *err,
 bool TinyGLTF::LoadBinaryFromMemory(Model *model, std::string *err,
                                     std::string *warn, const uint8_t *bytes,
                                     unsigned int size, const std::string &base_dir,
-                                    unsigned int check_sections)
+                                    unsigned int)
 {
   if (size < 20) {
     if (err) {
@@ -1257,22 +1123,15 @@ bool TinyGLTF::LoadBinaryFromMemory(Model *model, std::string *err,
       return false;
     }
 
-    // std::cout << "chunk1_length = " << chunk1_length << "\n";
-
-    bin_data_ = bytes + header_and_json_size +
-                8;  // 4 bytes (bin_buffer_length) + 4 bytes(bin_buffer_format)
-
+    bin_data_ = bytes + header_and_json_size + 8;
     bin_size_ = size_t(chunk1_length);
   }
 
-  // Extract JSON string.
   std::string jsonString(reinterpret_cast<const char *>(&bytes[20]), chunk0_length);
-
   is_binary_ = true;
 
-  bool ret = LoadFromString(model, err, warn,
-                            reinterpret_cast<const char *>(&bytes[20]),
-                            chunk0_length, base_dir, check_sections);
+  bool ret = LoadFromString(model, err, warn, reinterpret_cast<const char *>(&bytes[20]),
+                            chunk0_length, base_dir, 0);
   if (!ret) {
     return ret;
   }
@@ -1281,7 +1140,7 @@ bool TinyGLTF::LoadBinaryFromMemory(Model *model, std::string *err,
 }
 
 bool TinyGLTF::LoadBinaryFromFile(Model *model, std::string *err, std::string *warn,
-                                  const std::string &filename, unsigned int check_sections)
+                                  const std::string &filename, unsigned int)
 {
   std::stringstream ss;
 
@@ -1310,7 +1169,7 @@ bool TinyGLTF::LoadBinaryFromFile(Model *model, std::string *err, std::string *w
 
   bool ret = LoadBinaryFromMemory(model, err, warn, &data.at(0),
                                   static_cast<unsigned int>(data.size()),
-                                  basedir, check_sections);
+                                  basedir, 0);
 
   return ret;
 }
