@@ -115,21 +115,6 @@ static bool isOneOf(std::string s, char c)
     return s.find(c) == -1 ? false : true;
 }
 
-void tokenize(std::vector<std::string> &tokens, std::istream &is)
-{
-    Tokenizer tokenizer(&is);
-
-    while (true)
-    {
-        std::string token = tokenizer.next();
-        
-        if (token.size() == 0)
-            break;
-
-        tokens.push_back(token);
-    }
-}
-
 std::string Tokenizer::next()
 {
     while (true)
@@ -182,34 +167,36 @@ std::string Tokenizer::next()
     }   
 }
 
-void parse(cvecstrit it, cvecstrit end, JSONNode *parent)
+void parse(JSONNode *parent, Tokenizer &tokenizer)
 {
     std::vector<JSONNode *> stack;
     stack.push_back(parent);
-    std::string peek;
+    std::string peek_token = tokenizer.next();
 
-    while (it != end)
+    while (true)
     {
-        JSONProperty *prop = dynamic_cast<JSONProperty *>(stack.back());
-        std::string token = *it++;
-        peek.clear();
+        std::string token = peek_token;
+        peek_token = tokenizer.next();
 
-        if (it != end)
-            peek = *it;
+        if (token.size() == 0)
+            break;
+
+        JSONProperty *prop = dynamic_cast<JSONProperty *>(stack.back());
 
         if (token.compare(",") == 0)
         {
             if (prop)
                 stack.pop_back();
         }
-        else if (peek.compare(":") == 0)
+        else if (peek_token.compare(":") == 0)
         {
             std::string s = token.substr(1, token.length() - 2);
             JSONProperty *p = new JSONProperty(s);
             JSONObject *o = dynamic_cast<JSONObject *>(stack.back());
             o->appendProperty(p);
             stack.push_back(p);
-            ++it;
+            token = peek_token;
+            peek_token = tokenizer.next();
         }
         else if (token.compare("null") == 0)
         {
@@ -241,18 +228,10 @@ void parse(cvecstrit it, cvecstrit end, JSONNode *parent)
         }
         else if (token.compare("}") == 0)
         {
-            //in case of empty object
-            JSONObject *test = dynamic_cast<JSONObject *>(stack.back());
+            if (prop)
+                stack.pop_back();
 
-            if (test)
-            {
-                stack.pop_back();
-            }
-            else
-            {
-                stack.pop_back();
-                stack.pop_back();
-            }
+            stack.pop_back();
         }
         else if (token[0] == '\"')
         {
@@ -270,4 +249,5 @@ void parse(cvecstrit it, cvecstrit end, JSONNode *parent)
         }
     }
 }
+
 

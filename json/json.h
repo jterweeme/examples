@@ -118,12 +118,7 @@ public:
     std::string next();
 };
 
-typedef std::vector<std::string>::const_iterator cvecstrit;
-
-void tokenize(std::vector<std::string> &tokens, std::istream &is);
-void parse(cvecstrit it, cvecstrit end, JSONNode *parent);
-
-
+void parse(JSONNode *parent, Tokenizer &tokenizer);
 #endif
 
 
