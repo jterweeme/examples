@@ -676,14 +676,9 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
     }
 
     std::stringstream ss(json_str);
-    std::vector<std::string> tokens;
-    ::tokenize(tokens, ss);
-#if 0
-    for (auto token : tokens)
-        std::cerr << token << "\r\n";
-#endif
+    Tokenizer tokenizer(&ss);
     JSONRoot *jsonRoot = new JSONRoot();
-    ::parse(tokens.cbegin(), tokens.cend(), jsonRoot);
+    ::parse(jsonRoot, tokenizer);
     JSONObject *rootObj = dynamic_cast<JSONObject *>(jsonRoot->root());
 
     model->buffers.clear();

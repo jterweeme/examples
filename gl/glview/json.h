@@ -109,12 +109,16 @@ public:
     void serialize(std::ostream &os) { os << "null"; }
 };
 
-typedef std::vector<std::string>::const_iterator cvecstrit;
+class Tokenizer
+{
+private:
+    std::istream *_is;
+public:
+    Tokenizer(std::istream *is) : _is(is) { }
+    std::string next();
+};
 
-void tokenize(std::vector<std::string> &tokens, std::istream &is);
-void parse(cvecstrit it, cvecstrit end, JSONNode *parent);
-
-
+void parse(JSONNode *parent, Tokenizer &tokenizer);
 #endif
 
 
