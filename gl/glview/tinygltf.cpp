@@ -596,9 +596,9 @@ static void ParseAccessor(Accessor *accessor, JSONObject *o)
     }
 
     accessor->minValues.clear();
-    //TODO: vector uitlezen
+    ParseDoubleArrayProperty(accessor->minValues, o, "min", false);
     accessor->maxValues.clear();
-    //TODO: vector uitlezen
+    ParseDoubleArrayProperty(accessor->maxValues, o, "max", false);
 }
 
 static void ParsePrimitive(Primitive &primitive, JSONObject *o)
@@ -678,6 +678,10 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
     std::stringstream ss(json_str);
     std::vector<std::string> tokens;
     ::tokenize(tokens, ss);
+#if 0
+    for (auto token : tokens)
+        std::cerr << token << "\r\n";
+#endif
     JSONRoot *jsonRoot = new JSONRoot();
     ::parse(tokens.cbegin(), tokens.cend(), jsonRoot);
     JSONObject *rootObj = dynamic_cast<JSONObject *>(jsonRoot->root());

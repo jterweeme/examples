@@ -13,11 +13,6 @@
 #include <GLFW/glfw3.h>
 
 #include "trackball.h"
-
-#define TINYGLTF_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-
 #include "tinygltf.h"
 
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
@@ -701,6 +696,11 @@ int main(int argc, char **argv) {
             // assume ascii glTF.
             ret = loader.LoadASCIIFromFile(&model, &err, &warn, input_filename.c_str());
         }
+    }
+    catch (std::exception &e)
+    {
+        std::cerr << e.what() << "\r\n";
+        return -1;
     }
     catch (const char *e)
     {

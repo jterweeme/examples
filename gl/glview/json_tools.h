@@ -2,6 +2,7 @@
 #define JSON_TOOLS_H
 
 #include "json.h"
+#include <exception>
 
 static void ParseStringProperty(std::string &s, JSONObject *o, std::string prop, bool req)
 {
@@ -27,7 +28,11 @@ static void ParseIntegerProperty(T &i, JSONObject *o, std::string prop, bool req
     if (p == nullptr)
     {
         if (req)
-            throw "Cannot find required property";
+        {
+            std::string err("Cannot find required property: ");
+            err.append(prop);
+            throw std::runtime_error(err.c_str());
+        }
 
         return;
     }
