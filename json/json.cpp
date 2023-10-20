@@ -116,19 +116,31 @@ static bool isOneOf(std::string s, char c)
 }
 
 void tokenize(std::vector<std::string> &tokens, std::istream &is)
-{           
-    while (true)
-    {       
-        int c = is.get();
+{
+    Tokenizer tokenizer(&is);
 
-        if (c == EOF)
+    while (true)
+    {
+        std::string token = tokenizer.next();
+        
+        if (token.size() == 0)
             break;
 
+        tokens.push_back(token);
+    }
+}
+
+std::string Tokenizer::next()
+{
+    while (true)
+    {       
+        int c = _is->get();
+
+        if (c == EOF)
+            return std::string();
+
         if (isOneOf("[]{}:,", c))
-        {
-            tokens.push_back(std::string(1, c));
-            continue;
-        }
+            return std::string(1, c);
         
         //numbers -0.2e3, true, false, null
         if (isOneOf("0123456789-.aeflnrstu", c))
@@ -138,35 +150,36 @@ void tokenize(std::vector<std::string> &tokens, std::istream &is)
 
             while (true)
             {
-                c = is.peek();
+                c = _is->peek();
 
                 if (isOneOf("0123456789-.aeflnrstu", c) == false)
                     break;
 
                 token.push_back(c);
-                is.get();
+                _is->get();
             }
     
-            tokens.push_back(token);
-            continue;
+            return token;
         }
 
         if (c == '\"')
         {
             std::string token;
-            token.push_back(c);
-
-            do
+            token.push_back('\"');
+            
+            while (true)
             {
-                c = is.get();
+                int prev = c;
+                c = _is->get();
                 token.push_back(c);
-            }
-            while (c != '\"');
 
-            tokens.push_back(token);
-            continue;
+                if (c == '\"' && prev != '\\')
+                    break;
+            }
+
+            return token;
         }
-    }
+    }   
 }
 
 void parse(cvecstrit it, cvecstrit end, JSONNode *parent)

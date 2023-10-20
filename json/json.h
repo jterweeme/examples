@@ -109,6 +109,15 @@ public:
     void serialize(std::ostream &os) { os << "null"; }
 };
 
+class Tokenizer
+{
+private:
+    std::istream *_is;
+public:
+    Tokenizer(std::istream *is) : _is(is) { }
+    std::string next();
+};
+
 typedef std::vector<std::string>::const_iterator cvecstrit;
 
 void tokenize(std::vector<std::string> &tokens, std::istream &is);
