@@ -636,22 +636,6 @@ static void DrawModel(tinygltf::Model &model) {
 #endif
 }
 
-static void Init() {
-  trackball(curr_quat, 0, 0, 0, 0);
-
-  eye[0] = 0.0f;
-  eye[1] = 0.0f;
-  eye[2] = CAM_Z;
-
-  lookat[0] = 0.0f;
-  lookat[1] = 0.0f;
-  lookat[2] = 0.0f;
-
-  up[0] = 0.0f;
-  up[1] = 1.0f;
-  up[2] = 0.0f;
-}
-
 static void PrintNodes(const tinygltf::Scene &scene) {
   for (size_t i = 0; i < scene.nodes.size(); i++) {
     std::cout << "node.name : " << scene.nodes[i] << std::endl;
@@ -726,7 +710,19 @@ int main(int argc, char **argv) {
         exit(-1);
     }
 
-    Init();
+    trackball(curr_quat, 0, 0, 0, 0);
+
+    eye[0] = 0.0f;
+    eye[1] = 0.0f;
+    eye[2] = CAM_Z;
+
+    lookat[0] = 0.0f;
+    lookat[1] = 1.0f;
+    lookat[2] = 0.0f;
+
+    up[0] = 0.0f;
+    up[1] = 1.0f;
+    up[2] = 0.0f;
 
     // DBG
     PrintNodes(model.scenes[model.defaultScene > -1 ? model.defaultScene : 0]);

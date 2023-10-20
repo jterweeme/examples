@@ -28,7 +28,6 @@
  *****************************************************************************/
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <math.h>
 #include <GLFW/glfw3.h>
 
@@ -168,19 +167,19 @@ static void mat4x4_look_at(mat4x4 m, vec3 const eye, vec3 const center, vec3 con
 #define WALL_L_OFFSET   0.f
 #define WALL_R_OFFSET   5.f
 
-/* Animation speed (50.0 mimics the original GLUT demo speed) */
+// Animation speed (50.0 mimics the original GLUT demo speed)
 float ANIMATION_SPEED = 50.f;
 
-/* Maximum allowed delta time per physics iteration */
+// Maximum allowed delta time per physics iteration
 double MAX_DELTA_T = 0.02f;
 
-/* Draw ball, or its shadow */
+// Draw ball, or its shadow
 typedef enum { DRAW_BALL, DRAW_BALL_SHADOW } DRAW_BALL_ENUM;
 
-/* Vertex type */
+// Vertex type
 typedef struct {float x; float y; float z;} vertex_t;
 
-/* Global vars */
+// Global vars
 int windowed_xpos, windowed_ypos, windowed_width, windowed_height;
 int width, height;
 GLfloat deg_rot_y       = 0.f;
@@ -243,31 +242,21 @@ static double cos_deg( double deg )
  *****************************************************************************/
 static void CrossProduct( vertex_t a, vertex_t b, vertex_t c, vertex_t *n )
 {
-   GLfloat u1, u2, u3;
-   GLfloat v1, v2, v3;
+    GLfloat u1 = b.x - a.x;
+    GLfloat u2 = b.y - a.y;
+    GLfloat u3 = b.y - a.z;
 
-   u1 = b.x - a.x;
-   u2 = b.y - a.y;
-   u3 = b.y - a.z;
+    GLfloat v1 = c.x - a.x;
+    GLfloat v2 = c.y - a.y;
+    GLfloat v3 = c.z - a.z;
 
-   v1 = c.x - a.x;
-   v2 = c.y - a.y;
-   v3 = c.z - a.z;
-
-   n->x = u2 * v3 - v2 * u3;
-   n->y = u3 * v1 - v3 * u1;
-   n->z = u1 * v2 - v1 * u2;
+    n->x = u2 * v3 - v2 * u3;
+    n->y = u3 * v1 - v3 * u1;
+    n->z = u1 * v2 - v1 * u2;
 }
 
 
 #define BOING_DEBUG 0
-
-static void init( void )
-{
-   //Clear background.
-   glClearColor( 0.55f, 0.55f, 0.55f, 0.f );
-   glShadeModel( GL_FLAT );
-}
 
 static void reshape( GLFWwindow* window, int w, int h )
 {
@@ -364,34 +353,26 @@ static void DrawBoingBallBand(GLfloat long_lo, GLfloat long_hi)
    vertex_t vert_sw;
    vertex_t vert_se;
    vertex_t vert_norm;
-   GLfloat  lat_deg;
    static int colorToggle = 0;
 
   /*
    * Iterate through the points of a latitude circle.
    * A latitude circle is a 2D set of X,Z points.
    */
-   for ( lat_deg = 0;
-         lat_deg <= (360 - STEP_LATITUDE);
-         lat_deg += STEP_LATITUDE )
+   for (GLfloat lat_deg = 0; lat_deg <= (360 - STEP_LATITUDE); lat_deg += STEP_LATITUDE )
    {
-      //Color this polygon with red or white.
-      if ( colorToggle )
-         glColor3f( 0.8f, 0.1f, 0.1f );
-      else
-         glColor3f( 0.95f, 0.95f, 0.95f );
+        colorToggle ? glColor3f(0.8f, 0.1f, 0.1f) : glColor3f(0.95f, 0.95f, 0.95f);
+        colorToggle = ! colorToggle;
 
-      colorToggle = ! colorToggle;
+        //Change color if drawing shadow.
+        if ( drawBallHow == DRAW_BALL_SHADOW )
+            glColor3f( 0.35f, 0.35f, 0.35f );
 
-      //Change color if drawing shadow.
-      if ( drawBallHow == DRAW_BALL_SHADOW )
-         glColor3f( 0.35f, 0.35f, 0.35f );
+        //Assign each Y.
+        vert_ne.y = vert_nw.y = (float) cos_deg(long_hi) * RADIUS;
+        vert_sw.y = vert_se.y = (float) cos_deg(long_lo) * RADIUS;
 
-      //Assign each Y.
-      vert_ne.y = vert_nw.y = (float) cos_deg(long_hi) * RADIUS;
-      vert_sw.y = vert_se.y = (float) cos_deg(long_lo) * RADIUS;
-
-     /*
+        /*
       * Assign each X,Z with sin,cos values scaled by latitude radius indexed by longitude.
       * Eg, long=0 and long=180 are at the poles, so zero scale is sin(longitude),
       * while long=90 (sin(90)=1) is at equator.
@@ -406,9 +387,7 @@ static void DrawBoingBallBand(GLfloat long_lo, GLfloat long_hi)
       vert_nw.z = (float)sin_deg(lat_deg + STEP_LATITUDE ) * (RADIUS * (float) sin_deg( long_lo + STEP_LONGITUDE ));
       vert_sw.z = (float)sin_deg(lat_deg + STEP_LATITUDE ) * (RADIUS * (float) sin_deg( long_lo));
 
-     /*
-      * Draw the facet.
-      */
+      //Draw the facet.
       glBegin( GL_POLYGON );
 
       CrossProduct( vert_ne, vert_nw, vert_sw, &vert_norm );
@@ -432,60 +411,50 @@ static void DrawBoingBallBand(GLfloat long_lo, GLfloat long_hi)
 
    }
 
-  /*
-   * Toggle color so that next band will opposite red/white colors than this one.
-   */
+   //Toggle color so that next band will opposite red/white colors than this one.
    colorToggle = ! colorToggle;
-
-  /*
-   * This circular band is done.
-   */
-   return;
 }
 
-//Bounce the ball.
-void BounceBall( double delta_t )
+static void BounceBall(double delta_t)
 {
-   GLfloat sign;
-   GLfloat deg;
+    GLfloat sign, deg;
 
-   if ( override_pos )
-     return;
+    if (override_pos)
+        return;
 
-   /* Bounce on walls */
-   if ( ball_x >  (BOUNCE_WIDTH/2 + WALL_R_OFFSET ) )
-   {
-      ball_x_inc = -0.5f - 0.75f * (GLfloat)rand() / (GLfloat)RAND_MAX;
-      deg_rot_y_inc = -deg_rot_y_inc;
-   }
-   if ( ball_x < -(BOUNCE_HEIGHT/2 + WALL_L_OFFSET) )
-   {
-      ball_x_inc =  0.5f + 0.75f * (GLfloat)rand() / (GLfloat)RAND_MAX;
-      deg_rot_y_inc = -deg_rot_y_inc;
-   }
+    // Bounce on walls
+    if ( ball_x >  (BOUNCE_WIDTH/2 + WALL_R_OFFSET ) )
+    {
+        ball_x_inc = -0.5f - 0.75f * (GLfloat)rand() / (GLfloat)RAND_MAX;
+        deg_rot_y_inc = -deg_rot_y_inc;
+    }
 
-   /* Bounce on floor / roof */
-   if (ball_y >  BOUNCE_HEIGHT / 2)
+    if ( ball_x < -(BOUNCE_HEIGHT/2 + WALL_L_OFFSET) )
+    {
+        ball_x_inc =  0.5f + 0.75f * (GLfloat)rand() / (GLfloat)RAND_MAX;
+        deg_rot_y_inc = -deg_rot_y_inc;
+    }
+
+    // Bounce on floor / roof
+    if (ball_y >  BOUNCE_HEIGHT / 2)
       ball_y_inc = -0.75f - 1.f * (GLfloat)rand() / (GLfloat)RAND_MAX;
    
-   if (ball_y < -BOUNCE_HEIGHT / 2 * 0.85)
+    if (ball_y < -BOUNCE_HEIGHT / 2 * 0.85)
       ball_y_inc =  0.75f + 1.f * (GLfloat)rand() / (GLfloat)RAND_MAX;
    
 
-   /* Update ball position */
-   ball_x += ball_x_inc * ((float)delta_t*ANIMATION_SPEED);
-   ball_y += ball_y_inc * ((float)delta_t*ANIMATION_SPEED);
+    // Update ball position
+    ball_x += ball_x_inc * ((float)delta_t*ANIMATION_SPEED);
+    ball_y += ball_y_inc * ((float)delta_t*ANIMATION_SPEED);
 
-  /*
-   * Simulate the effects of gravity on Y movement.
-   */
-   if ( ball_y_inc < 0 ) sign = -1.0; else sign = 1.0;
+    //Simulate the effects of gravity on Y movement.
+    if ( ball_y_inc < 0 ) sign = -1.0; else sign = 1.0;
 
-   deg = (ball_y + BOUNCE_HEIGHT/2) * 90 / BOUNCE_HEIGHT;
-   if ( deg > 80 ) deg = 80;
-   if ( deg < 10 ) deg = 10;
+    deg = (ball_y + BOUNCE_HEIGHT/2) * 90 / BOUNCE_HEIGHT;
+    if ( deg > 80 ) deg = 80;
+    if ( deg < 10 ) deg = 10;
 
-   ball_y_inc = sign * 4.f * (float) sin_deg( deg );
+    ball_y_inc = sign * 4.f * (float) sin_deg( deg );
 }
 
 /*****************************************************************************
@@ -496,37 +465,33 @@ void BounceBall( double delta_t )
  * The ball is built by stacking latitudinal circles.  Each circle is composed
  * of a widely-separated set of points, so that each facet is noticeably large.
  *****************************************************************************/
-void DrawBoingBall( void )
+static void DrawBoingBall()
 {
-   GLfloat lon_deg;     /* degree of longitude */
-   double dt_total, dt2;
+    GLfloat lon_deg;     /* degree of longitude */
+    double dt_total, dt2;
 
-   glPushMatrix();
-   glMatrixMode( GL_MODELVIEW );
+    glPushMatrix();
+    glMatrixMode( GL_MODELVIEW );
 
-  /*
-   * Another relative Z translation to separate objects.
-   */
-   glTranslatef( 0.0, 0.0, DIST_BALL );
+    //Another relative Z translation to separate objects.
+    glTranslatef( 0.0, 0.0, DIST_BALL );
 
-   /* Update ball position and rotation (iterate if necessary) */
-   dt_total = dt;
-   while (dt_total > 0.0)
-   {
-       dt2 = dt_total > MAX_DELTA_T ? MAX_DELTA_T : dt_total;
-       dt_total -= dt2;
-       BounceBall( dt2 );
-       deg_rot_y = TruncateDeg( deg_rot_y + deg_rot_y_inc*((float)dt2*ANIMATION_SPEED) );
-   }
+    //Update ball position and rotation (iterate if necessary)
+    dt_total = dt;
+    while (dt_total > 0.0)
+    {
+        dt2 = dt_total > MAX_DELTA_T ? MAX_DELTA_T : dt_total;
+        dt_total -= dt2;
+        BounceBall( dt2 );
+        deg_rot_y = TruncateDeg( deg_rot_y + deg_rot_y_inc*((float)dt2*ANIMATION_SPEED) );
+    }
 
-   /* Set ball position */
-   glTranslatef( ball_x, ball_y, 0.0 );
+    //Set ball position
+    glTranslatef( ball_x, ball_y, 0.0 );
 
-  /*
-   * Offset the shadow.
-   */
-   if (drawBallHow == DRAW_BALL_SHADOW)
-      glTranslatef(SHADOW_OFFSET_X, SHADOW_OFFSET_Y, SHADOW_OFFSET_Z);
+    //Offset the shadow.
+    if (drawBallHow == DRAW_BALL_SHADOW)
+        glTranslatef(SHADOW_OFFSET_X, SHADOW_OFFSET_Y, SHADOW_OFFSET_Z);
 
     //Tilt the ball.
     glRotatef( -20.0, 0.0, 0.0, 1.0 );
@@ -539,19 +504,17 @@ void DrawBoingBall( void )
     glEnable( GL_CULL_FACE );
     glEnable( GL_NORMALIZE );
 
-  /*
-   * Build a faceted latitude slice of the Boing ball,
-   * stepping same-sized vertical bands of the sphere.
-   */
-   for (lon_deg = 0; lon_deg < 180; lon_deg += STEP_LONGITUDE)
-   {
-      //Draw a latitude circle at this longitude.
-      DrawBoingBallBand(lon_deg, lon_deg + STEP_LONGITUDE);
-   }
+    /*
+     * Build a faceted latitude slice of the Boing ball,
+     * stepping same-sized vertical bands of the sphere.
+     */
+    for (lon_deg = 0; lon_deg < 180; lon_deg += STEP_LONGITUDE)
+    {
+        //Draw a latitude circle at this longitude.
+        DrawBoingBallBand(lon_deg, lon_deg + STEP_LONGITUDE);
+    }
 
-   glPopMatrix();
-
-   return;
+    glPopMatrix();
 }
 
 /*****************************************************************************
@@ -642,17 +605,15 @@ static void display()
 
 int main()
 {
-    GLFWwindow* window;
+    if (!glfwInit())
+        return -1;
 
-    /* Init GLFW */
-    if( !glfwInit() )
-        exit( EXIT_FAILURE );
+    GLFWwindow *window = glfwCreateWindow(400, 400, "Boing (classic Amiga demo)", NULL, NULL);
 
-    window = glfwCreateWindow( 400, 400, "Boing (classic Amiga demo)", NULL, NULL );
     if (!window)
     {
         glfwTerminate();
-        exit( EXIT_FAILURE );
+        return -1;
     }
 
     glfwSetWindowAspectRatio(window, 1, 1);
@@ -671,7 +632,9 @@ int main()
 
     glfwSetTime( 0.0 );
 
-    init();
+    //Clear background.
+    glClearColor( 0.55f, 0.55f, 0.55f, 0.f );
+    glShadeModel( GL_FLAT );
 
     for (;;)
     {
@@ -693,7 +656,6 @@ int main()
     }
 
     glfwTerminate();
-    exit( EXIT_SUCCESS );
     return 0;
 }
 

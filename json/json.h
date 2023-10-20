@@ -51,6 +51,7 @@ public:
     JSONNumber() { }
     JSONNumber(int n) { _n = std::to_string(n); }
     JSONNumber(std::string n) : _n(n) { }
+    std::string value() const { return _n; }
     void serialize(std::ostream &os) override { os << _n; }
 };
 
@@ -65,6 +66,7 @@ public:
     JSONProperty(std::string key, JSONNode *val) : _key(key), _value(val) { }
     ~JSONProperty() { delete _value; }
     std::string key() const { return _key; }
+    JSONNode *value() const { return _value; }
     void append(JSONNode *n) override { _value = n; }
     void serialize(std::ostream &os) override;
 };
@@ -82,6 +84,8 @@ public:
     std::vector<JSONProperty *>::iterator begin() { return _properties.begin(); }
     std::vector<JSONProperty *>::iterator end() { return _properties.end(); }
     JSONProperty *getProperty(std::string key) const;
+    size_t size() const { return _properties.size(); }
+    JSONProperty *at(size_t pos) const { return _properties.at(pos); }
     void removeProperty(JSONProperty *property);
     bool removeProperty(std::string key);
     void serialize(std::ostream &os) override;
@@ -93,6 +97,8 @@ private:
     std::vector<JSONNode *> _nodes;
 public:
     ~JSONArray();
+    std::vector<JSONNode *>::iterator begin() { return _nodes.begin(); }
+    std::vector<JSONNode *>::iterator end() { return _nodes.end(); }
     void append(JSONNode *child);
     void serialize(std::ostream &os);
 };

@@ -19,7 +19,7 @@ void JSONProperty::serialize(std::ostream &os)
 
 void JSONObject::removeProperty(JSONProperty *property)
 {   
-    
+    throw "to be implemented";
 }
 
 bool JSONObject::removeProperty(std::string key)
@@ -169,8 +169,6 @@ void tokenize(std::vector<std::string> &tokens, std::istream &is)
     }
 }
 
-typedef std::vector<std::string>::const_iterator cvecstrit;
-
 void parse(cvecstrit it, cvecstrit end, JSONNode *parent)
 {
     std::vector<JSONNode *> stack;
@@ -190,11 +188,8 @@ void parse(cvecstrit it, cvecstrit end, JSONNode *parent)
         {
             if (prop)
                 stack.pop_back();
-
-            continue;
         }
-
-        if (peek.compare(":") == 0)
+        else if (peek.compare(":") == 0)
         {
             std::string s = token.substr(1, token.length() - 2);
             JSONProperty *p = new JSONProperty(s);
@@ -202,51 +197,38 @@ void parse(cvecstrit it, cvecstrit end, JSONNode *parent)
             o->appendProperty(p);
             stack.push_back(p);
             ++it;
-            continue;
         }
-
-        if (token.compare("null") == 0)
+        else if (token.compare("null") == 0)
         {
             stack.back()->append(new JSONNull());
-            continue;
         }
-
-        if (token.compare("true") == 0)
+        else if (token.compare("true") == 0)
         {
             stack.back()->append(new JSONBool(true));
-            continue;
         }
-
-        if (token.compare("false") == 0)
+        else if (token.compare("false") == 0)
         {
             stack.back()->append(new JSONBool(false));
-            continue;
         }
-
-        if (token.compare("[") == 0)
+        else if (token.compare("[") == 0)
         {
             JSONArray *a = new JSONArray();
             stack.back()->append(a);
             stack.push_back(a);
-            continue;
         }
-
-        if (token.compare("]") == 0)
+        else if (token.compare("]") == 0)
         {
             stack.pop_back();
-            continue;
         }
-
-        if (token.compare("{") == 0)
+        else if (token.compare("{") == 0)
         {
             JSONObject *o = new JSONObject();
             stack.back()->append(o);
             stack.push_back(o);
-            continue;
         }
-
-        if (token.compare("}") == 0)
+        else if (token.compare("}") == 0)
         {
+            //in case of empty object
             JSONObject *test = dynamic_cast<JSONObject *>(stack.back());
 
             if (test)
@@ -258,24 +240,21 @@ void parse(cvecstrit it, cvecstrit end, JSONNode *parent)
                 stack.pop_back();
                 stack.pop_back();
             }
-            continue;
         }
-
-        if (token[0] == '\"')
+        else if (token[0] == '\"')
         {
             std::string s = token.substr(1, token.length() - 2);
             stack.back()->append(new JSONString(s));
-            continue;
         }
-
-        if (isdigit(token[0]) || token[0] == '-')
+        else if (isdigit(token[0]) || token[0] == '-')
         {
             stack.back()->append(new JSONNumber(token));
-            continue;
         }
-
-        std::cerr << "Onbekend token: " << token << "\r\n";
-        throw "Onbekend token!";
+        else
+        {
+            std::cerr << "Onbekend token: " << token << "\r\n";
+            throw "Onbekend token!";
+        }
     }
 }
 
