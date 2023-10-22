@@ -3,11 +3,9 @@
 
 int main()
 {
-    Tokenizer tokenizer(&std::cin);
-
     while (true)
     {
-        std::string token = tokenizer.next();
+        std::string token = next_token(std::cin);
 
         if (token.size() == 0)
             break;

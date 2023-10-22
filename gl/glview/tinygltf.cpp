@@ -6,25 +6,19 @@
 #include <fstream>
 #include <sstream>
 #include <cassert>
+#include <iterator>
 
 namespace tinygltf {
 
 static inline int32_t GetNumComponentsInType(uint32_t ty)
 {
-    if (ty == TINYGLTF_TYPE_SCALAR)
-        return 1;
-    if (ty == TINYGLTF_TYPE_VEC2)
-        return 2;
-    if (ty == TINYGLTF_TYPE_VEC3)
-        return 3;
-    if (ty == TINYGLTF_TYPE_VEC4)
-        return 4;
-    if (ty == TINYGLTF_TYPE_MAT2)
-        return 4;
-    if (ty == TINYGLTF_TYPE_MAT3)
-        return 9;
-    if (ty == TINYGLTF_TYPE_MAT4)
-        return 16;
+    if (ty == TINYGLTF_TYPE_SCALAR) return 1;
+    if (ty == TINYGLTF_TYPE_VEC2) return 2;
+    if (ty == TINYGLTF_TYPE_VEC3) return 3;
+    if (ty == TINYGLTF_TYPE_VEC4) return 4;
+    if (ty == TINYGLTF_TYPE_MAT2) return 4;
+    if (ty == TINYGLTF_TYPE_MAT3) return 9;
+    if (ty == TINYGLTF_TYPE_MAT4) return 16;
   
     // Unknown component type
     return -1;
@@ -32,26 +26,17 @@ static inline int32_t GetNumComponentsInType(uint32_t ty)
 
 static inline int32_t GetComponentSizeInBytes(uint32_t componentType)
 {
-  if (componentType == TINYGLTF_COMPONENT_TYPE_BYTE) {
-    return 1;
-  } else if (componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) {
-    return 1;
-  } else if (componentType == TINYGLTF_COMPONENT_TYPE_SHORT) {
-    return 2;
-  } else if (componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
-    return 2;
-  } else if (componentType == TINYGLTF_COMPONENT_TYPE_INT) {
-    return 4;
-  } else if (componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT) {
-    return 4;
-  } else if (componentType == TINYGLTF_COMPONENT_TYPE_FLOAT) {
-    return 4;
-  } else if (componentType == TINYGLTF_COMPONENT_TYPE_DOUBLE) {
-    return 8;
-  } else {
-    // Unknown component type
-    return -1;
-  }
+  if (componentType == TINYGLTF_COMPONENT_TYPE_BYTE) return 1;
+  if (componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) return 1;
+  if (componentType == TINYGLTF_COMPONENT_TYPE_SHORT) return 2;
+  if (componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) return 2;
+  if (componentType == TINYGLTF_COMPONENT_TYPE_INT) return 4;
+  if (componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT) return 4;
+  if (componentType == TINYGLTF_COMPONENT_TYPE_FLOAT) return 4;
+  if (componentType == TINYGLTF_COMPONENT_TYPE_DOUBLE) return 8;
+
+  // Unknown component type
+  return -1;
 }
 
 bool URIDecode(const std::string &in_uri, std::string *out_uri, void *user_data)
@@ -67,15 +52,6 @@ static bool LoadExternalFile(std::vector<uint8_t> *out, std::string *err,
                              size_t reqBytes, bool checkSize,
                              size_t maxFileSize, FsCallbacks *fs)
 {
-  if (fs == nullptr || fs->FileExists == nullptr ||
-      fs->ExpandFilePath == nullptr || fs->ReadWholeFile == nullptr) {
-    // This is a developer error, assert() ?
-    if (err) {
-      (*err) += "FS callback[s] not set\n";
-    }
-    return false;
-  }
-
   std::string *failMsgOut = required ? err : warn;
 
   out->clear();
@@ -92,73 +68,52 @@ static bool LoadExternalFile(std::vector<uint8_t> *out, std::string *err,
     return false;
   }
 
-  // Check file size
-  if (fs->GetFileSizeInBytes) {
-    size_t file_size{0};
-    std::string _err;
-    bool ok =
-        fs->GetFileSizeInBytes(&file_size, &_err, filepath, fs->user_data);
-    if (!ok) {
-      if (_err.size()) {
+    std::vector<uint8_t> buf;
+
+    std::ifstream ifs(filepath);
+
+    while (true)
+    {
+        int c = ifs.get();
+
+        if (c == EOF)
+            break;
+
+        buf.push_back(c);
+    }
+
+    ifs.close();
+
+    std::string fileReadErr;
+    size_t sz = buf.size();
+    if (sz == 0)
+    {
         if (failMsgOut) {
-          (*failMsgOut) += "Getting file size failed : " + filename +
-                           ", err = " + _err + "\n";
+            (*failMsgOut) += "File is empty : " + filepath + "\n";
         }
-      }
-      return false;
+        return false;
     }
 
-    if (file_size > maxFileSize) {
-      if (failMsgOut) {
-        (*failMsgOut) += "File size " + std::to_string(file_size) +
-                         " exceeds maximum allowed file size " +
-                         std::to_string(maxFileSize) + " : " + filepath + "\n";
-      }
-      return false;
+    if (checkSize)
+    {
+        if (reqBytes == sz) {
+            out->swap(buf);
+            return true;
+        } else {
+            std::stringstream ss;
+
+            ss << "File size mismatch : " << filepath << ", requestedBytes "
+               << reqBytes << ", but got " << sz << std::endl;
+
+            if (failMsgOut) {
+                (*failMsgOut) += ss.str();
+            }
+            return false;
+        }
     }
-  }
 
-  std::vector<uint8_t> buf;
-  std::string fileReadErr;
-  bool fileRead =
-      fs->ReadWholeFile(&buf, &fileReadErr, filepath, fs->user_data);
-  if (!fileRead) {
-    if (failMsgOut) {
-      (*failMsgOut) +=
-          "File read error : " + filepath + " : " + fileReadErr + "\n";
-    }
-    return false;
-  }
-
-  size_t sz = buf.size();
-  if (sz == 0) {
-    if (failMsgOut) {
-      (*failMsgOut) += "File is empty : " + filepath + "\n";
-    }
-    return false;
-  }
-
-  if (checkSize) {
-    if (reqBytes == sz) {
-      out->swap(buf);
-      return true;
-    } else {
-      std::stringstream ss;
-      ss << "File size mismatch : " << filepath << ", requestedBytes "
-         << reqBytes << ", but got " << sz << std::endl;
-      if (failMsgOut) {
-        (*failMsgOut) += ss.str();
-      }
-      return false;
-    }
-  }
-
-  out->swap(buf);
-  return true;
-}
-
-void TinyGLTF::SetParseStrictness(ParseStrictness strictness) {
-  strictness_ = strictness;
+    out->swap(buf);
+    return true;
 }
 
 void TinyGLTF::SetURICallbacks(URICallbacks callbacks) {
@@ -191,131 +146,6 @@ bool FileExists(const std::string &abs_filename, void *)
 
 std::string ExpandFilePath(const std::string &filepath, void *) {
   return filepath;
-}
-
-bool GetFileSizeInBytes(size_t *filesize_out, std::string *err,
-                        const std::string &filepath, void *userdata) {
-  (void)userdata;
-
-  std::ifstream f(filepath.c_str(), std::ifstream::binary);
-  if (!f) {
-    if (err) {
-      (*err) += "File open error : " + filepath + "\n";
-    }
-    return false;
-  }
-
-  // For directory(and pipe?), peek() will fail(Posix gnustl/libc++ only)
-  f.peek();
-  if (!f) {
-    if (err) {
-      (*err) +=
-          "File read error. Maybe empty file or invalid file : " + filepath +
-          "\n";
-    }
-    return false;
-  }
-
-  f.seekg(0, f.end);
-  size_t sz = static_cast<size_t>(f.tellg());
-
-  // std::cout << "sz = " << sz << "\n";
-  f.seekg(0, f.beg);
-
-  if (int64_t(sz) < 0) {
-    if (err) {
-      (*err) += "Invalid file size : " + filepath +
-                " (does the path point to a directory?)";
-    }
-    return false;
-  } else if (sz == 0) {
-    if (err) {
-      (*err) += "File is empty : " + filepath + "\n";
-    }
-    return false;
-  } else if (sz >= (std::numeric_limits<std::streamoff>::max)()) {
-    if (err) {
-      (*err) += "Invalid file size : " + filepath + "\n";
-    }
-    return false;
-  }
-
-  (*filesize_out) = sz;
-  return true;
-}
-
-bool ReadWholeFile(std::vector<unsigned char> *out, std::string *err,
-                   const std::string &filepath, void *) {
-  std::ifstream f(filepath.c_str(), std::ifstream::binary);
-  if (!f) {
-    if (err) {
-      (*err) += "File open error : " + filepath + "\n";
-    }
-    return false;
-  }
-
-  // For directory(and pipe?), peek() will fail(Posix gnustl/libc++ only)
-  f.peek();
-  if (!f) {
-    if (err) {
-      (*err) +=
-          "File read error. Maybe empty file or invalid file : " + filepath +
-          "\n";
-    }
-    return false;
-  }
-
-  f.seekg(0, f.end);
-  size_t sz = static_cast<size_t>(f.tellg());
-
-  // std::cout << "sz = " << sz << "\n";
-  f.seekg(0, f.beg);
-
-  if (int64_t(sz) < 0) {
-    if (err) {
-      (*err) += "Invalid file size : " + filepath +
-                " (does the path point to a directory?)";
-    }
-    return false;
-  } else if (sz == 0) {
-    if (err) {
-      (*err) += "File is empty : " + filepath + "\n";
-    }
-    return false;
-  } else if (sz >= (std::numeric_limits<std::streamoff>::max)()) {
-    if (err) {
-      (*err) += "Invalid file size : " + filepath + "\n";
-    }
-    return false;
-  }
-
-  out->resize(sz);
-  f.read(reinterpret_cast<char *>(&out->at(0)),
-         static_cast<std::streamsize>(sz));
-
-  return true;
-}
-
-bool WriteWholeFile(std::string *err, const std::string &filepath,
-                    const std::vector<unsigned char> &contents, void *) {
-  std::ofstream f(filepath.c_str(), std::ofstream::binary);
-  if (!f) {
-    if (err) {
-      (*err) += "File open error for writing : " + filepath + "\n";
-    }
-    return false;
-  }
-
-  f.write(reinterpret_cast<const char *>(&contents.at(0)),
-          static_cast<std::streamsize>(contents.size()));
-  if (!f) {
-    if (err) {
-      (*err) += "File write error: " + filepath + "\n";
-    }
-    return false;
-  }
-
-  return true;
 }
 
 bool IsDataURI(const std::string &in) {
@@ -438,86 +268,86 @@ ParseBuffer(Buffer *buffer, std::string *err, JSONObject *o, FsCallbacks *fs,
     // having an empty uri for a non embedded image should not be valid
     if (!is_binary && buffer->uri.empty()) {
         throw "uri is missing from non binary glTF file buffer";
-  }
+    }
 
-  if (is_binary) {
-    // Still binary glTF accepts external dataURI.
-    if (!buffer->uri.empty()) {
-      // First try embedded data URI.
-      if (IsDataURI(buffer->uri)) {
-        std::string mime_type;
-        if (!DecodeDataURI(&buffer->data, mime_type, buffer->uri, byteLength, true)) {
-          if (err) {
-            (*err) +=
-                "Failed to decode 'uri' : " + buffer->uri + " in Buffer\n";
-          }
-          return false;
-        }
-      } else {
-        // External .bin file.
-        std::string decoded_uri;
-        if (!uri_cb->decode(buffer->uri, &decoded_uri, uri_cb->user_data)) {
-          return false;
-        }
-        if (!LoadExternalFile(&buffer->data, err, /* warn */ nullptr,
+    if (is_binary)
+    {
+        // Still binary glTF accepts external dataURI.
+        if (!buffer->uri.empty())
+        {
+            // First try embedded data URI.
+            if (IsDataURI(buffer->uri))
+            {
+                std::string mime_type;
+                if (!DecodeDataURI(&buffer->data, mime_type, buffer->uri, byteLength, true))
+                {
+                    if (err) {
+                        (*err) += "Failed to decode 'uri' : " + buffer->uri + " in Buffer\n";
+                    }
+                    return false;
+                }
+            } else {
+                // External .bin file.
+                std::string decoded_uri;
+                if (!uri_cb->decode(buffer->uri, &decoded_uri, uri_cb->user_data)) {
+                    return false;
+                }
+                if (!LoadExternalFile(&buffer->data, err, /* warn */ nullptr,
                               decoded_uri, basedir, /* required */ true,
                               byteLength, /* checkSize */ true,
-                              /* max_file_size */ max_buffer_size, fs)) {
-          return false;
+                              /* max_file_size */ max_buffer_size, fs))
+                {
+                    return false;
+                }
+            }
         }
-      }
-    } else {
-      // load data from (embedded) binary data
+        else
+        {
+            // load data from (embedded) binary data
+            if (byteLength > bin_size) {
+                if (err) {
+                    std::stringstream ss;
+                    ss << "Invalid `byteLength'. Must be equal or less than binary size: "
+                          "`byteLength' = "
+                       << byteLength << ", binary size = " << bin_size << std::endl;
+                    (*err) += ss.str();
+                }
+                return false;
+            }
 
-      if ((bin_size == 0) || (bin_data == nullptr)) {
-        if (err) {
-          (*err) +=
-              "Invalid binary data in `Buffer', or GLB with empty BIN chunk.\n";
+            // Read buffer data
+            buffer->data.resize(static_cast<size_t>(byteLength));
+            memcpy(&(buffer->data.at(0)), bin_data, static_cast<size_t>(byteLength));
         }
-        return false;
-      }
 
-      if (byteLength > bin_size) {
-        if (err) {
-          std::stringstream ss;
-          ss << "Invalid `byteLength'. Must be equal or less than binary size: "
-                "`byteLength' = "
-             << byteLength << ", binary size = " << bin_size << std::endl;
-          (*err) += ss.str();
-        }
-        return false;
-      }
-
-      // Read buffer data
-      buffer->data.resize(static_cast<size_t>(byteLength));
-      memcpy(&(buffer->data.at(0)), bin_data, static_cast<size_t>(byteLength));
     }
-
-  } else {
-    if (IsDataURI(buffer->uri)) {
-      std::string mime_type;
-      if (!DecodeDataURI(&buffer->data, mime_type, buffer->uri, byteLength,
-                         true)) {
-        if (err) {
-          (*err) += "Failed to decode 'uri' : " + buffer->uri + " in Buffer\n";
-        }
-        return false;
-      }
-    } else {
-      // Assume external .bin file.
-      std::string decoded_uri;
-      if (!uri_cb->decode(buffer->uri, &decoded_uri, uri_cb->user_data)) {
-        return false;
-      }
-      if (!LoadExternalFile(&buffer->data, err, /* warn */ nullptr, decoded_uri,
+    else
+    {
+        if (IsDataURI(buffer->uri))
+        {
+            std::string mime_type;
+            if (!DecodeDataURI(&buffer->data, mime_type, buffer->uri, byteLength, true)) {
+                if (err) {
+                    (*err) += "Failed to decode 'uri' : " + buffer->uri + " in Buffer\n";
+                }
+                return false;
+            }
+        } else {
+            // Assume external .bin file.
+            std::string decoded_uri;
+            if (!uri_cb->decode(buffer->uri, &decoded_uri, uri_cb->user_data)) {
+                return false;
+            }
+            if (!LoadExternalFile(&buffer->data, err, /* warn */ nullptr, decoded_uri,
                             basedir, /* required */ true, byteLength,
                             /* checkSize */ true,
-                            /* max file size */ max_buffer_size, fs)) {
-        return false;
-      }
+                            /* max file size */ max_buffer_size, fs))
+            {
+                return false;
+            }
+        }
     }
-  }
-  return true;
+    return true;
 }
 
 static void ParseBufferView(BufferView *bufferView, JSONObject *o)
@@ -664,9 +494,9 @@ static void ParseScene(Scene &scene, JSONObject *o)
     ParseIntegerArrayProperty(scene.nodes, o, "nodes", false);
 }
 
-bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
+bool TinyGLTF::LoadFromString(Model *model, std::string *err,
                               const char *json_str, unsigned int json_str_length,
-                              const std::string &base_dir, unsigned int)
+                              const std::string &base_dir)
 {
     if (json_str_length < 4) {
         if (err) {
@@ -676,9 +506,8 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
     }
 
     std::stringstream ss(json_str);
-    Tokenizer tokenizer(&ss);
     JSONRoot *jsonRoot = new JSONRoot();
-    ::parse(jsonRoot, tokenizer);
+    ::parse(jsonRoot, ss);
     JSONObject *rootObj = dynamic_cast<JSONObject *>(jsonRoot->root());
 
     model->buffers.clear();
@@ -742,56 +571,65 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err, std::string *warn,
         }
     }
 
-    for (auto &mesh : model->meshes) {
-    for (auto &primitive : mesh.primitives) {
-      if (primitive.indices >
-          -1)  // has indices from parsing step, must be Element Array Buffer
-      {
-        if (size_t(primitive.indices) >= model->accessors.size()) {
-          if (err) {
-            (*err) += "primitive indices accessor out of bounds";
-          }
-          return false;
-        }
+    for (auto &mesh : model->meshes)
+    {
+        for (auto &primitive : mesh.primitives)
+        {
+            if (primitive.indices > -1)
+            {
+                if (size_t(primitive.indices) >= model->accessors.size())
+                {
+                    throw "primitive indices accessor out of bounds";
+                }
 
-        auto bufferView = model->accessors[size_t(primitive.indices)].bufferView;
-        if (bufferView < 0 || size_t(bufferView) >= model->bufferViews.size()) {
-          if (err) {
-            (*err) += "accessor[" + std::to_string(primitive.indices) +
-                      "] invalid bufferView";
-          }
-          return false;
-        }
+                auto bufferView = model->accessors[size_t(primitive.indices)].bufferView;
 
-        model->bufferViews[size_t(bufferView)].target = TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER;
-      }
+                if (bufferView < 0 || size_t(bufferView) >= model->bufferViews.size())
+                {
+                    if (err)
+                    {
+                        (*err) += "accessor[" + std::to_string(primitive.indices) +
+                                    "] invalid bufferView";
+                    }
+                    return false;
+                }
 
-      for (auto &attribute : primitive.attributes) {
-        const auto accessorsIndex = size_t(attribute.second);
-        if (accessorsIndex < model->accessors.size()) {
-          const auto bufferView = model->accessors[accessorsIndex].bufferView;
-          if (bufferView >= 0 && bufferView < (int)model->bufferViews.size()) {
-            model->bufferViews[size_t(bufferView)].target =
-                TINYGLTF_TARGET_ARRAY_BUFFER;
-          }
-        }
-      }
-
-      for (auto &target : primitive.targets) {
-        for (auto &attribute : target) {
-          const auto accessorsIndex = size_t(attribute.second);
-          if (accessorsIndex < model->accessors.size()) {
-            const auto bufferView = model->accessors[accessorsIndex].bufferView;
-            if (bufferView >= 0 &&
-                bufferView < (int)model->bufferViews.size()) {
-              model->bufferViews[size_t(bufferView)].target =
-                  TINYGLTF_TARGET_ARRAY_BUFFER;
+                model->bufferViews[size_t(bufferView)].target =
+                        TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER;
             }
-          }
+
+            for (auto &attribute : primitive.attributes)
+            {
+                const auto accessorsIndex = size_t(attribute.second);
+                if (accessorsIndex < model->accessors.size())
+                {
+                    const auto bufferView = model->accessors[accessorsIndex].bufferView;
+                    if (bufferView >= 0 && bufferView < (int)model->bufferViews.size())
+                    {
+                        model->bufferViews[size_t(bufferView)].target =
+                            TINYGLTF_TARGET_ARRAY_BUFFER;
+                    }
+                }
+            }
+
+            for (auto &target : primitive.targets)
+            {
+                for (auto &attribute : target)
+                {
+                    const auto accessorsIndex = size_t(attribute.second);
+                    if (accessorsIndex < model->accessors.size())
+                    {
+                        const auto bufferView = model->accessors[accessorsIndex].bufferView;
+                        if (bufferView >= 0 && bufferView < (int)model->bufferViews.size())
+                        {
+                              model->bufferViews[size_t(bufferView)].target =
+                                      TINYGLTF_TARGET_ARRAY_BUFFER;
+                        }
+                    }
+                }
+            }
         }
-      }
     }
-  }
 
     // 7. Parse Node
     {
@@ -828,82 +666,65 @@ bool TinyGLTF::LoadASCIIFromString(Model *model, std::string *err, std::string *
     is_binary_ = false;
     bin_data_ = nullptr;
     bin_size_ = 0;
-    return LoadFromString(model, err, warn, str, length, base_dir, 0);
+    return LoadFromString(model, err, str, length, base_dir);
 }
 
 bool TinyGLTF::LoadASCIIFromFile(Model *model, std::string *err,
                                  std::string *warn, const std::string &filename)
 {
-  std::stringstream ss;
-  std::vector<unsigned char> data;
-  std::string fileerr;
-  bool fileread = fs.ReadWholeFile(&data, &fileerr, filename, fs.user_data);
-  if (!fileread) {
-    ss << "Failed to read file: " << filename << ": " << fileerr << std::endl;
-    if (err) {
-      (*err) = ss.str();
+    std::stringstream ss;
+    std::vector<unsigned char> data;
+    std::string fileerr;
+    std::ifstream ifs(filename);
+
+    while (true)
+    {
+        int c = ifs.get();
+        
+        if (c == EOF)
+            break;
+
+        data.push_back(c);
     }
-    return false;
-  }
 
-  size_t sz = data.size();
-  if (sz == 0) {
-    if (err) {
-      (*err) = "Empty file.";
-    }
-    return false;
-  }
+    ifs.close();
+    std::string basedir = GetBaseDir(filename);
 
-  std::string basedir = GetBaseDir(filename);
-
-  bool ret = LoadASCIIFromString(
-      model, err, warn, reinterpret_cast<const char *>(&data.at(0)),
-      static_cast<unsigned int>(data.size()), basedir);
-
-  return ret;
+    return LoadASCIIFromString(model, err, warn, reinterpret_cast<const char *>(&data.at(0)),
+                    static_cast<unsigned int>(data.size()), basedir);
 }
 
-bool TinyGLTF::LoadBinaryFromMemory(Model *model, std::string *err,
+bool
+TinyGLTF::LoadBinaryFromMemory(Model *model, std::string *err,
                                     std::string *warn, const uint8_t *bytes,
                                     unsigned int size, const std::string &base_dir)
 {
-  if (size < 20) {
-    if (err) {
-      (*err) = "Too short data size for glTF Binary.";
+    if (size < 20)
+        throw "Too short data size for glTF Binary";
+
+    if (bytes[0] == 'g' && bytes[1] == 'l' && bytes[2] == 'T' && bytes[3] == 'F')
+    {
+        // ok
     }
-    return false;
-  }
-
-  if (bytes[0] == 'g' && bytes[1] == 'l' && bytes[2] == 'T' &&
-      bytes[3] == 'F') {
-    // ok
-  } else {
-    if (err) {
-      (*err) = "Invalid magic.";
+    else {
+        throw "invalid magic";
     }
-    return false;
-  }
 
-  unsigned int version;        // 4 bytes
-  unsigned int length;         // 4 bytes
-  unsigned int chunk0_length;  // 4 bytes
-  unsigned int chunk0_format;  // 4 bytes;
-  memcpy(&version, bytes + 4, 4);
-  swap4(&version);
-  memcpy(&length, bytes + 8, 4);
-  swap4(&length);
-  memcpy(&chunk0_length, bytes + 12, 4);  // JSON data length
-  swap4(&chunk0_length);
-  memcpy(&chunk0_format, bytes + 16, 4);
-  swap4(&chunk0_format);
-  uint64_t header_and_json_size = 20ull + uint64_t(chunk0_length);
+    uint32_t version;        // 4 bytes
+    uint32_t length;         // 4 bytes
+    uint32_t chunk0_length;  // 4 bytes
+    uint32_t chunk0_format;  // 4 bytes;
+    memcpy(&version, bytes + 4, 4);
+    swap4(&version);
+    memcpy(&length, bytes + 8, 4);
+    swap4(&length);
+    memcpy(&chunk0_length, bytes + 12, 4);  // JSON data length
+    swap4(&chunk0_length);
+    memcpy(&chunk0_format, bytes + 16, 4);
+    swap4(&chunk0_format);
+    uint64_t header_and_json_size = 20ull + uint64_t(chunk0_length);
 
-  if (header_and_json_size > std::numeric_limits<uint32_t>::max()) {
-    // Do not allow 4GB or more GLB data.
-    (*err) = "Invalid glTF binary. GLB data exceeds 4GB.";
-  }
-
-  if ((header_and_json_size > uint64_t(size)) || (chunk0_length < 1) ||
+    if ((header_and_json_size > uint64_t(size)) || (chunk0_length < 1) ||
       (length > size) || (header_and_json_size > uint64_t(length)) ||
       (chunk0_format != 0x4E4F534A)) {  // 0x4E4F534A = JSON format.
     if (err) {
@@ -933,22 +754,12 @@ bool TinyGLTF::LoadBinaryFromMemory(Model *model, std::string *err,
       return false;
     }
 
-    unsigned int chunk1_length;  // 4 bytes
-    unsigned int chunk1_format;  // 4 bytes;
-    memcpy(&chunk1_length, bytes + header_and_json_size,
-           4);  // JSON data length
+    uint32_t chunk1_length;  // 4 bytes
+    uint32_t chunk1_format;  // 4 bytes;
+    memcpy(&chunk1_length, bytes + header_and_json_size, 4);  // JSON data length
     swap4(&chunk1_length);
     memcpy(&chunk1_format, bytes + header_and_json_size + 4, 4);
     swap4(&chunk1_format);
-
-    // std::cout << "chunk1_length = " << chunk1_length << "\n";
-
-    if (chunk1_length < 4) {
-      if (err) {
-        (*err) = "Insufficient Chunk1(BIN) data size.";
-      }
-      return false;
-    }
 
     if ((chunk1_length % 4) != 0) {
       if (err) {
@@ -973,52 +784,40 @@ bool TinyGLTF::LoadBinaryFromMemory(Model *model, std::string *err,
 
     bin_data_ = bytes + header_and_json_size + 8;
     bin_size_ = size_t(chunk1_length);
-  }
+    }
 
-  std::string jsonString(reinterpret_cast<const char *>(&bytes[20]), chunk0_length);
-  is_binary_ = true;
+    std::string jsonString(reinterpret_cast<const char *>(&bytes[20]), chunk0_length);
+    std::cerr << jsonString << "\r\n";
+    is_binary_ = true;
 
-  bool ret = LoadFromString(model, err, warn, reinterpret_cast<const char *>(&bytes[20]),
-                            chunk0_length, base_dir, 0);
-  if (!ret) {
+    bool ret = LoadFromString(model, err, reinterpret_cast<const char *>(&bytes[20]),
+                            chunk0_length, base_dir);
     return ret;
-  }
-
-  return true;
 }
 
 bool TinyGLTF::LoadBinaryFromFile(Model *model, std::string *err, std::string *warn,
                                   const std::string &filename)
 {
-  std::stringstream ss;
+    std::vector<uint8_t> data;
+    std::ifstream ifs(filename);
 
-  if (fs.ReadWholeFile == nullptr) {
-    // Programmer error, assert() ?
-    ss << "Failed to read file: " << filename
-       << ": one or more FS callback not set" << std::endl;
-    if (err) {
-      (*err) = ss.str();
+    while (true)
+    {
+        int c = ifs.get();
+
+        if (c == EOF)
+            break;
+
+        data.push_back(c);
     }
-    return false;
-  }
 
-  std::vector<unsigned char> data;
-  std::string fileerr;
-  bool fileread = fs.ReadWholeFile(&data, &fileerr, filename, fs.user_data);
-  if (!fileread) {
-    ss << "Failed to read file: " << filename << ": " << fileerr << std::endl;
-    if (err) {
-      (*err) = ss.str();
-    }
-    return false;
-  }
+    ifs.close();
+    std::string basedir = GetBaseDir(filename);
 
-  std::string basedir = GetBaseDir(filename);
-
-  bool ret = LoadBinaryFromMemory(model, err, warn, &data.at(0),
+    bool ret = LoadBinaryFromMemory(model, err, warn, &data.at(0),
                                   static_cast<unsigned int>(data.size()), basedir);
 
-  return ret;
+    return ret;
 }
 
 }  // namespace tinygltf

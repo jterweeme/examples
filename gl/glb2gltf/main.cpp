@@ -14,10 +14,11 @@ int main(int argc, char **argv)
     std::ifstream ifs(argv[1]);
     uint32_t magic = readX<uint32_t>(ifs);
     uint32_t version = readX<uint32_t>(ifs);
+    std::cout << "version: " << version << "\r\n";
     uint32_t filelength = readX<uint32_t>(ifs);
-    std::cout << filelength << "\r\n";
+    std::cout << "filelength: " << filelength << "\r\n";
     uint32_t chunklength = readX<uint32_t>(ifs);
-    std::cout << chunklength << "\r\n";
+    std::cout << "chunk length: " << chunklength << "\r\n";
     uint32_t json = readX<uint32_t>(ifs);
     char chunk[chunklength];
     ifs.read(chunk, chunklength);

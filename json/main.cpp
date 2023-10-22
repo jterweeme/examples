@@ -4,8 +4,7 @@
 int main(int argc, char **argv)
 {
     JSONRoot *root = new JSONRoot();
-    Tokenizer tokenizer(&std::cin);
-    parse(root, tokenizer);
+    parse(root, std::cin);
     root->serialize(std::cout);
     std::cout << "\r\n\r\n\r\n";
     delete root;

@@ -109,6 +109,7 @@ public:
     void serialize(std::ostream &os) { os << "null"; }
 };
 
+#if 0
 class Tokenizer
 {
 private:
@@ -117,8 +118,10 @@ public:
     Tokenizer(std::istream *is) : _is(is) { }
     std::string next();
 };
+#endif
 
-void parse(JSONNode *parent, Tokenizer &tokenizer);
+std::string next_token(std::istream &is);
+void parse(JSONNode *parent, std::istream &is);
 #endif
 
 

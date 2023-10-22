@@ -115,11 +115,11 @@ static bool isOneOf(std::string s, char c)
     return s.find(c) == -1 ? false : true;
 }
 
-std::string Tokenizer::next()
+std::string next_token(std::istream &is)
 {
     while (true)
     {       
-        int c = _is->get();
+        int c = is.get();
 
         if (c == EOF)
             return std::string();
@@ -135,13 +135,13 @@ std::string Tokenizer::next()
 
             while (true)
             {
-                c = _is->peek();
+                c = is.peek();
 
                 if (isOneOf("0123456789-.aeflnrstu", c) == false)
                     break;
 
                 token.push_back(c);
-                _is->get();
+                is.get();
             }
     
             return token;
@@ -155,7 +155,7 @@ std::string Tokenizer::next()
             while (true)
             {
                 int prev = c;
-                c = _is->get();
+                c = is.get();
                 token.push_back(c);
 
                 if (c == '\"' && prev != '\\')
@@ -167,16 +167,16 @@ std::string Tokenizer::next()
     }   
 }
 
-void parse(JSONNode *parent, Tokenizer &tokenizer)
+void parse(JSONNode *parent, std::istream &is)
 {
     std::vector<JSONNode *> stack;
     stack.push_back(parent);
-    std::string peek_token = tokenizer.next();
+    std::string peek_token = next_token(is);
 
     while (true)
     {
         std::string token = peek_token;
-        peek_token = tokenizer.next();
+        peek_token = next_token(is);
 
         if (token.size() == 0)
             break;
@@ -196,7 +196,7 @@ void parse(JSONNode *parent, Tokenizer &tokenizer)
             o->appendProperty(p);
             stack.push_back(p);
             token = peek_token;
-            peek_token = tokenizer.next();
+            peek_token = next_token(is);
         }
         else if (token.compare("null") == 0)
         {
@@ -245,7 +245,7 @@ void parse(JSONNode *parent, Tokenizer &tokenizer)
         else
         {
             std::cerr << "Onbekend token: " << token << "\r\n";
-            throw "Onbekend token!";
+            return;
         }
     }
 }
