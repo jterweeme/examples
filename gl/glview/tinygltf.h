@@ -1,10 +1,7 @@
 #ifndef TINY_GLTF_H_
 #define TINY_GLTF_H_
 
-#include <array>
 #include <cstdint>
-#include <cstdlib>
-#include <cstring>
 #include <limits>
 #include <map>
 #include <string>
@@ -46,11 +43,6 @@ static constexpr int TINYGLTF_TARGET_ELEMENT_ARRAY_BUFFER = 34963;
 #define TINYGLTF_DOUBLE_EQUAL(a, b) (std::fabs((b) - (a)) < TINYGLTF_DOUBLE_EPS)
 
 namespace tinygltf {
-
-typedef enum {
-  PERMISSIVE,
-  STRICT
-} ParseStrictness;
 
 struct BufferView {
     std::string name;
@@ -167,18 +159,6 @@ struct URICallbacks {
     void *user_data;  // An argument that is passed to all uri callbacks
 };
 
-typedef bool (*FileExistsFunction)(const std::string &abs_filename, void *);
-typedef std::string (*ExpandFilePathFunction)(const std::string &, void *);
-
-struct FsCallbacks {
-    FileExistsFunction FileExists;
-    ExpandFilePathFunction ExpandFilePath;
-    void *user_data;  // An argument that is passed to all fs callbacks
-};
-
-bool FileExists(const std::string &abs_filename, void *);
-std::string ExpandFilePath(const std::string &filepath, void *userdata);
-
 class TinyGLTF {
 public:
     bool LoadASCIIFromFile(Model *model, std::string *err, std::string *warn,
@@ -192,10 +172,8 @@ public:
                           const std::string &filename);
 
     bool LoadBinaryFromMemory(Model *model, std::string *err, std::string *warn,
-                            const unsigned char *bytes, const unsigned int length,
+                            const uint8_t *bytes, const unsigned int length,
                             const std::string &base_dir = "");
-
-    void SetURICallbacks(URICallbacks callbacks);
 private:
     bool LoadFromString(Model *model, std::string *err,
                       const char *str, const unsigned int length, const std::string &base_dir);
@@ -208,12 +186,6 @@ private:
     size_t max_external_file_size_{ size_t((std::numeric_limits<int32_t>::max)())};
     std::string warn_;
     std::string err_;
-
-    FsCallbacks fs = {
-      &tinygltf::FileExists,
-      &tinygltf::ExpandFilePath,
-      nullptr  // Fs callback user data
-    };
 
     URICallbacks uri_cb = {
       // Use paths as-is by default. This will use JSON string escaping.

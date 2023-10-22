@@ -1,14 +1,74 @@
-#include "tools.h"
+#include "tinygltf.h"
 #include "json_tools.h"
-#include <algorithm>
-#include <sys/stat.h>  // for is_directory check
-#include <cstdio>
+#include <sys/stat.h>
 #include <fstream>
 #include <sstream>
-#include <cassert>
-#include <iterator>
+#include <cstring>
 
-namespace tinygltf {
+static inline bool is_base64(unsigned char c)
+{
+    return isalnum(c) || (c == '+') || (c == '/');
+}
+
+static std::string base64_decode(std::string const &encoded_string)
+{
+    int in_len = static_cast<int>(encoded_string.size());
+    int i = 0;
+    int j = 0;
+    int in_ = 0;
+    uint8_t char_array_4[4], char_array_3[3];
+    std::string ret;
+
+    const std::string base64_chars =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      "abcdefghijklmnopqrstuvwxyz"
+      "0123456789+/";
+
+    while (in_len-- && (encoded_string[in_] != '=') && is_base64(encoded_string[in_]))
+    {
+        char_array_4[i++] = encoded_string[in_];
+        in_++;
+        if (i == 4)
+        {
+            for (i = 0; i < 4; i++)
+                char_array_4[i] = static_cast<uint8_t>(base64_chars.find(char_array_4[i]));
+
+            char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
+            char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
+            char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
+
+            for (i = 0; (i < 3); i++)
+                ret += char_array_3[i];
+
+            i = 0;
+        }
+    }
+
+    if (i)
+    {
+        for (j = i; j < 4; j++)
+            char_array_4[j] = 0;
+
+        for (j = 0; j < 4; j++)
+            char_array_4[j] = static_cast<uint8_t>(base64_chars.find(char_array_4[j]));
+
+        char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
+        char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
+        char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
+
+        for (j = 0; (j < i - 1); j++)
+            ret += char_array_3[j];
+    }
+
+    return ret;
+}
+
+static std::string GetBaseDir(const std::string &filepath)
+{
+    if (filepath.find_last_of("/\\") != std::string::npos)
+        return filepath.substr(0, filepath.find_last_of("/\\"));
+    return "";
+}
 
 static inline int32_t GetNumComponentsInType(uint32_t ty)
 {
@@ -39,34 +99,60 @@ static inline int32_t GetComponentSizeInBytes(uint32_t componentType)
   return -1;
 }
 
-bool URIDecode(const std::string &in_uri, std::string *out_uri, void *user_data)
+static inline uint8_t from_hex(uint8_t ch)
 {
-    (void)user_data;
-    *out_uri = dlib::urldecode(in_uri);
-    return true;
+    if (ch <= '9' && ch >= '0')
+        ch -= '0';
+    else if (ch <= 'f' && ch >= 'a')
+        ch -= 'a' - 10;
+    else if (ch <= 'F' && ch >= 'A')
+        ch -= 'A' - 10;
+    else
+        ch = 0;
+    return ch;
 }
 
-static bool LoadExternalFile(std::vector<uint8_t> *out, std::string *err,
-                             std::string *warn, const std::string &filename,
-                             const std::string &basedir, bool required,
-                             size_t reqBytes, bool checkSize,
-                             size_t maxFileSize, FsCallbacks *fs)
+static const std::string urldecode(const std::string &str)
 {
-  std::string *failMsgOut = required ? err : warn;
-
-  out->clear();
-
-  std::vector<std::string> paths;
-  paths.push_back(basedir);
-  paths.push_back(".");
-
-  std::string filepath = FindFile(paths, filename, fs);
-  if (filepath.empty() || filename.empty()) {
-    if (failMsgOut) {
-      (*failMsgOut) += "File not found : " + filename + "\n";
+  using namespace std;
+  string result;
+  string::size_type i;
+  for (i = 0; i < str.size(); ++i) {
+    if (str[i] == '+') {
+      result += ' ';
+    } else if (str[i] == '%' && str.size() > i + 2) {
+      const uint8_t ch1 = from_hex(static_cast<unsigned char>(str[i + 1]));
+      const uint8_t ch2 = from_hex(static_cast<unsigned char>(str[i + 2]));
+      const uint8_t ch = static_cast<uint8_t>((ch1 << 4) | ch2);
+      result += static_cast<char>(ch);
+      i += 2;
+    } else {
+      result += str[i];
     }
-    return false;
   }
+  return result;
+}
+
+static std::string JoinPath(const std::string &path0, const std::string &path1)
+{
+    if (path0.empty())
+        return path1;
+
+    // check '/'
+    char lastChar = *path0.rbegin();
+    if (lastChar != '/')
+        return path0 + std::string("/") + path1;
+
+    return path0 + path1;
+}
+
+static bool
+LoadExternalFile(std::vector<uint8_t> *out, const std::string &filename, std::string basedir)
+{
+    basedir.push_back('/');
+    out->clear();
+
+    std::string filepath = basedir + filename;
 
     std::vector<uint8_t> buf;
 
@@ -84,71 +170,21 @@ static bool LoadExternalFile(std::vector<uint8_t> *out, std::string *err,
 
     ifs.close();
 
-    std::string fileReadErr;
-    size_t sz = buf.size();
-    if (sz == 0)
-    {
-        if (failMsgOut) {
-            (*failMsgOut) += "File is empty : " + filepath + "\n";
-        }
-        return false;
-    }
-
-    if (checkSize)
-    {
-        if (reqBytes == sz) {
-            out->swap(buf);
-            return true;
-        } else {
-            std::stringstream ss;
-
-            ss << "File size mismatch : " << filepath << ", requestedBytes "
-               << reqBytes << ", but got " << sz << std::endl;
-
-            if (failMsgOut) {
-                (*failMsgOut) += ss.str();
-            }
-            return false;
-        }
-    }
-
     out->swap(buf);
     return true;
 }
 
-void TinyGLTF::SetURICallbacks(URICallbacks callbacks) {
-  assert(callbacks.decode);
-  if (callbacks.decode) {
-    uri_cb = callbacks;
-  }
-}
+namespace tinygltf {
 
-bool FileExists(const std::string &abs_filename, void *)
+bool URIDecode(const std::string &in_uri, std::string *out_uri, void *user_data)
 {
-  bool ret;
-  struct stat sb;
-  if (stat(abs_filename.c_str(), &sb)) {
-    return false;
-  }
-  if (S_ISDIR(sb.st_mode)) {
-    return false;
-  }
-
-  FILE *fp = fopen(abs_filename.c_str(), "rb");
-  if (fp) {
-    ret = true;
-    fclose(fp);
-  } else {
-    ret = false;
-  }
-  return ret;
+    (void)user_data;
+    *out_uri = urldecode(in_uri);
+    return true;
 }
 
-std::string ExpandFilePath(const std::string &filepath, void *) {
-  return filepath;
-}
-
-bool IsDataURI(const std::string &in) {
+static bool IsDataURI(const std::string &in)
+{
   std::string header = "data:application/octet-stream;base64,";
   if (in.find(header) == 0)
     return true;
@@ -180,8 +216,9 @@ bool IsDataURI(const std::string &in) {
   return false;
 }
 
-bool DecodeDataURI(std::vector<unsigned char> *out, std::string &mime_type,
-                   const std::string &in, size_t reqBytes, bool checkSize) {
+static bool DecodeDataURI(std::vector<unsigned char> *out, std::string &mime_type,
+                   const std::string &in, size_t reqBytes, bool checkSize)
+{
   std::string header = "data:application/octet-stream;base64,";
   std::string data;
   if (in.find(header) == 0) {
@@ -253,7 +290,7 @@ bool DecodeDataURI(std::vector<unsigned char> *out, std::string &mime_type,
 }
 
 static bool
-ParseBuffer(Buffer *buffer, std::string *err, JSONObject *o, FsCallbacks *fs,
+ParseBuffer(Buffer *buffer, std::string *err, JSONObject *o,
             const URICallbacks *uri_cb,
             const std::string &basedir, const size_t max_buffer_size, bool is_binary,
             const uint8_t *bin_data, size_t bin_size)
@@ -279,26 +316,19 @@ ParseBuffer(Buffer *buffer, std::string *err, JSONObject *o, FsCallbacks *fs,
             if (IsDataURI(buffer->uri))
             {
                 std::string mime_type;
+
                 if (!DecodeDataURI(&buffer->data, mime_type, buffer->uri, byteLength, true))
-                {
-                    if (err) {
-                        (*err) += "Failed to decode 'uri' : " + buffer->uri + " in Buffer\n";
-                    }
-                    return false;
-                }
-            } else {
+                    throw "Failed to decode uri";
+            }
+            else
+            {
                 // External .bin file.
                 std::string decoded_uri;
-                if (!uri_cb->decode(buffer->uri, &decoded_uri, uri_cb->user_data)) {
+
+                if (!uri_cb->decode(buffer->uri, &decoded_uri, uri_cb->user_data))
                     return false;
-                }
-                if (!LoadExternalFile(&buffer->data, err, /* warn */ nullptr,
-                              decoded_uri, basedir, /* required */ true,
-                              byteLength, /* checkSize */ true,
-                              /* max_file_size */ max_buffer_size, fs))
-                {
-                    return false;
-                }
+                
+                LoadExternalFile(&buffer->data, decoded_uri, basedir);
             }
         }
         else
@@ -335,16 +365,9 @@ ParseBuffer(Buffer *buffer, std::string *err, JSONObject *o, FsCallbacks *fs,
         } else {
             // Assume external .bin file.
             std::string decoded_uri;
-            if (!uri_cb->decode(buffer->uri, &decoded_uri, uri_cb->user_data)) {
+            if (!uri_cb->decode(buffer->uri, &decoded_uri, uri_cb->user_data))
                 return false;
-            }
-            if (!LoadExternalFile(&buffer->data, err, /* warn */ nullptr, decoded_uri,
-                            basedir, /* required */ true, byteLength,
-                            /* checkSize */ true,
-                            /* max file size */ max_buffer_size, fs))
-            {
-                return false;
-            }
+            LoadExternalFile(&buffer->data, decoded_uri, basedir);
         }
     }
     return true;
@@ -526,7 +549,7 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err,
             JSONObject *o = dynamic_cast<JSONObject *>(node);
             Buffer buffer;
 
-            ParseBuffer(&buffer, err, o, &fs, &uri_cb, base_dir, max_external_file_size_,
+            ParseBuffer(&buffer, err, o, &uri_cb, base_dir, max_external_file_size_,
                         is_binary_, bin_data_, bin_size_);
         
             model->buffers.push_back(buffer);
@@ -538,10 +561,10 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err,
 
         for (JSONNode *node : *a)
         {
-        JSONObject *o = dynamic_cast<JSONObject *>(node);
-        BufferView bufferView;
-        ParseBufferView(&bufferView, o);
-        model->bufferViews.push_back(bufferView);
+            JSONObject *o = dynamic_cast<JSONObject *>(node);
+            BufferView bufferView;
+            ParseBufferView(&bufferView, o);
+            model->bufferViews.push_back(bufferView);
         }
     }
 
@@ -551,10 +574,10 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err,
 
         for (JSONNode *node : *a)
         {
-        JSONObject *o = dynamic_cast<JSONObject *>(node);
-        Accessor accessor;
-        ParseAccessor(&accessor, o);
-        model->accessors.push_back(accessor);
+            JSONObject *o = dynamic_cast<JSONObject *>(node);
+            Accessor accessor;
+            ParseAccessor(&accessor, o);
+            model->accessors.push_back(accessor);
         }
     }
 
@@ -564,10 +587,10 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err,
 
         for (JSONNode *node : *a)
         {
-        JSONObject *o = dynamic_cast<JSONObject *>(node);
-        Mesh mesh;
-        ParseMesh(mesh, o);
-        model->meshes.push_back(mesh);
+            JSONObject *o = dynamic_cast<JSONObject *>(node);
+            Mesh mesh;
+            ParseMesh(mesh, o);
+            model->meshes.push_back(mesh);
         }
     }
 
@@ -578,9 +601,7 @@ bool TinyGLTF::LoadFromString(Model *model, std::string *err,
             if (primitive.indices > -1)
             {
                 if (size_t(primitive.indices) >= model->accessors.size())
-                {
                     throw "primitive indices accessor out of bounds";
-                }
 
                 auto bufferView = model->accessors[size_t(primitive.indices)].bufferView;
 
@@ -692,6 +713,11 @@ bool TinyGLTF::LoadASCIIFromFile(Model *model, std::string *err,
 
     return LoadASCIIFromString(model, err, warn, reinterpret_cast<const char *>(&data.at(0)),
                     static_cast<unsigned int>(data.size()), basedir);
+}
+
+static void swap4(unsigned int *val) {
+    //we doen alleen little endian nu
+    (void)val;
 }
 
 bool

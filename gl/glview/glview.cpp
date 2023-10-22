@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <limits>
 #include <string>
@@ -451,8 +452,7 @@ static void DrawMesh(tinygltf::Model &model, const tinygltf::Mesh &mesh) {
           (it->first.compare("TEXCOORD_0") == 0)) {
         if (gGLProgramState.attribs[it->first] >= 0) {
           // Compute byteStride from Accessor + BufferView combination.
-          int byteStride =
-              accessor.ByteStride(model.bufferViews[accessor.bufferView]);
+          int byteStride = accessor.ByteStride(model.bufferViews[accessor.bufferView]);
           assert(byteStride != -1);
           glVertexAttribPointer(gGLProgramState.attribs[it->first], size,
                                 accessor.componentType,
@@ -697,10 +697,10 @@ int main(int argc, char **argv) {
     eye[0] = 0.0f;
     eye[1] = 0.0f;
     //eye[2] = 3.0f;
-    eye[2] = 3.0f;
+    eye[2] = 4.0f;
 
     lookat[0] = 0.0f;
-    lookat[1] = 0.1f;
+    lookat[1] = 0.0f;
     lookat[2] = 0.0f;
 
     up[0] = 0.0f;
