@@ -491,10 +491,8 @@ static void DrawMesh(tinygltf::Model &model, const tinygltf::Mesh &mesh) {
     CheckErrors("draw elements");
 
     {
-      std::map<std::string, int>::const_iterator it(
-          primitive.attributes.begin());
-      std::map<std::string, int>::const_iterator itEnd(
-          primitive.attributes.end());
+      std::map<std::string, int>::const_iterator it(primitive.attributes.begin());
+      std::map<std::string, int>::const_iterator itEnd(primitive.attributes.end());
 
       for (; it != itEnd; it++) {
         if ((it->first.compare("POSITION") == 0) ||

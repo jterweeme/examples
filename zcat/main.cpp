@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <cstring>
 #include <iostream>
 #include <vector>
@@ -8,36 +9,30 @@
 #include <fcntl.h>
 #endif
 
-static constexpr uint8_t BLOCK_MODE = 0x80, BITS = 16, INIT_BITS = 9, BIT_MASK = 0x1f;
-static constexpr uint32_t HSIZE = 1<<17;
-static constexpr uint16_t CLEAR = 256;
-static constexpr uint32_t BFSZ = 999999;
+
 
 class Decomp
 {
 private:
-    std::istream *_is;
-    std::ostream *_os;
+    static constexpr uint8_t BLOCK_MODE = 0x80, BITS = 16, INIT_BITS = 9, BIT_MASK = 0x1f;
+    static constexpr uint16_t CLEAR = 256;
+    static constexpr uint32_t HSIZE = 1<<17, BFSZ = 999999;
+
     int _posbits = 0;
-    uint8_t _htab[HSIZE];
-    uint16_t g_codetab[HSIZE];
-    uint32_t _code(uint32_t mask);
-    void reset();
     char _inbuf[BFSZ + 64];
     int _insize = 0;
     int _rsize = 0;
     int _inbits = 0;
     int _n_bits = INIT_BITS;
-    void dinges();
-    bool _block_mode;
-    int _maxbits;
+
+    void _dinges();
+    uint32_t _code(uint32_t mask);
+    void _reset(std::istream *is);
 public:
-    Decomp(std::istream *is, std::ostream *os);
-    void init();
-    int decompress();
+    void decompress(std::istream *is, std::ostream *os);
 };
 
-void Decomp::dinges()
+void Decomp::_dinges()
 {
     _posbits = (_posbits-1) + (_n_bits * 8 - (_posbits - 1 + _n_bits * 8) % (_n_bits<<3));
 }
@@ -50,21 +45,21 @@ uint32_t Decomp::_code(uint32_t mask)
     return ret;
 }
 
-void Decomp::reset()
+void Decomp::_reset(std::istream *is)
 {
     int o = _posbits >> 3;
     int e = o <= _insize ? _insize - o : 0;
 
     for (int i = 0 ; i < e ; ++i)
-        _inbuf[i] = _inbuf[i+o];
+        _inbuf[i] = _inbuf[i + o];
 
     _insize = e;
     _posbits = 0;
 
     if (_insize < 64)
     {
-        std::cin.read(_inbuf + _insize, BFSZ);
-        _rsize = std::cin.gcount();
+        is->read(_inbuf + _insize, BFSZ);
+        _rsize = is->gcount();
 
         if (_rsize < 0)
             throw "read error";
@@ -72,40 +67,36 @@ void Decomp::reset()
         _insize += _rsize;
     }
 
-    _inbits = _rsize > 0 ? _insize - _insize % _n_bits << 3 : (_insize<<3)-(_n_bits-1);
+    _inbits = _rsize > 0 ? _insize - _insize % _n_bits << 3 : (_insize << 3) - (_n_bits - 1);
 }
 
-Decomp::Decomp(std::istream *is, std::ostream *os) : _is(is), _os(os)
+void Decomp::decompress(std::istream *is, std::ostream *os)
 {
-}
-
-void Decomp::init()
-{
-    if (std::cin.get() != 0x1f)
-        throw "invalid magic";
-
-    if (std::cin.get() != 0x9d)
-        throw "invalid magic";
-
-    uint8_t tmp = std::cin.get();
-    _block_mode = tmp & BLOCK_MODE ? true : false;
-    _maxbits = tmp & BIT_MASK;
+    uint16_t g_codetab[HSIZE];
+    uint8_t htab[HSIZE];
 
     for (uint16_t i = 0; i < 256; ++i)
-        _htab[i] = uint8_t(i);
-}
+        htab[i] = uint8_t(i);
 
-int Decomp::decompress()
-{
+    if (is->get() != 0x1f)
+        throw "invalid magic";
+
+    if (is->get() != 0x9d)
+        throw "invalid magic";
+
+    uint8_t tmp = is->get();
+    bool block_mode = tmp & BLOCK_MODE ? true : false;
+    int maxbits = tmp & BIT_MASK;
+
     uint32_t bitmask, maxcode;
     maxcode = bitmask = (1<<_n_bits) - 1;
     long oldcode = -1;
     int finchar = 0;
-    uint32_t free_ent = _block_mode ? 257 : 256;
+    uint32_t free_ent = block_mode ? 257 : 256;
 
     do
     {
-        reset();
+        _reset(is);
 
         if (oldcode == -1)
         {
@@ -114,36 +105,36 @@ int Decomp::decompress()
             if (code >= 256)
                 throw "corrupt input";
 
-            _os->put(uint8_t(finchar = int(oldcode = code)));
+            os->put(uint8_t(finchar = int(oldcode = code)));
         }
 
         while (_inbits > _posbits)
         {
             if (free_ent > maxcode)
             {
-                dinges();
+                _dinges();
                 ++_n_bits;
-                maxcode = _n_bits == _maxbits ? 1 << _maxbits : (1 << _n_bits) - 1;
+                maxcode = _n_bits == maxbits ? 1 << maxbits : (1 << _n_bits) - 1;
                 bitmask = (1 << _n_bits)-1;
-                reset();
+                _reset(is);
             }
 
             uint32_t code = _code(bitmask);
 
-            if (code == CLEAR && _block_mode)
+            if (code == CLEAR && block_mode)
             {
                 memset(g_codetab, 0, 256);
                 free_ent = 256;
-                dinges();
+                _dinges();
                 _n_bits = INIT_BITS;
                 maxcode = (1<<_n_bits) - 1;
                 bitmask = (1<<_n_bits) - 1;
-                reset();
+                _reset(is);
                 continue;
             }
 
             long incode = code;
-            uint8_t *stackp = _htab + HSIZE - 1;
+            uint8_t *stackp = htab + HSIZE - 1;
 
             if (code >= free_ent)
             {
@@ -156,26 +147,26 @@ int Decomp::decompress()
 
             while (code >= 256)
             {
-                *--stackp = _htab[code];
+                *--stackp = htab[code];
                 code = g_codetab[code];
             }
 
-            *--stackp = uint8_t(finchar = _htab[code]);
+            *--stackp = uint8_t(finchar = htab[code]);
 
-            int i = 0;
-
-            do
+            for (int i = 0;;)
             {
-                _os->write((const char *)(stackp), i);
+                os->write((const char *)(stackp), i);
                 stackp += i;
-                i = (_htab + HSIZE - 1) - stackp;
-            }
-            while (i > 0);
+                i = (htab + HSIZE - 1) - stackp;
 
-            if ((code = free_ent) < (1 << _maxbits))
+                if (i <= 0)
+                    break;
+            }
+
+            if ((code = free_ent) < (1 << maxbits))
             {
                 g_codetab[code] = uint16_t(oldcode);
-                _htab[code] = uint8_t(finchar);
+                htab[code] = uint8_t(finchar);
                 free_ent = code + 1;
             }
 
@@ -183,8 +174,6 @@ int Decomp::decompress()
         }
     }
     while (_rsize > 0);
-
-    return 0;
 }
 
 int main(int argc, char **argv)
@@ -196,9 +185,9 @@ int main(int argc, char **argv)
     _setmode(_fileno(stdin), _O_BINARY);
     _setmode(_fileno(stdout), _O_BINARY);
 #endif
-    Decomp d(&std::cin, &std::cout);
-    d.init();
-    return d.decompress();
+    Decomp d;
+    d.decompress(&std::cin, &std::cout);
+    return 0;
 }
 
 
