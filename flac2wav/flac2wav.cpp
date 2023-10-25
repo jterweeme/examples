@@ -489,8 +489,8 @@ int main(int argc, char **argv)
 
     try
     {
-        std::istream *is;
-        std::ostream *os;
+        std::istream *is = &std::cin;
+        std::ostream *os = &std::cout;
         std::ifstream ifs;
         std::ofstream ofs;
 
@@ -500,11 +500,6 @@ int main(int argc, char **argv)
             ofs.open(argv[2]);
             is = &ifs;
             os = &ofs;
-        }
-        else
-        {
-            is = &std::cin;
-            os = &std::cout;
         }
 
         BitInputStream bin(is);
