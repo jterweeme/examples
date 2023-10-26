@@ -7,14 +7,15 @@
  */
 
 #include <bitset>
-#include <filesystem>
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <sstream>
+#include <iomanip>
 #include <vector>
 #include <cassert>
 #include <climits>
-#include <optional>
+#include <cstdint>
 #include <unordered_map>
 
 class BitInputStream
@@ -35,7 +36,8 @@ class CanonicalCode final
 private:
     std::unordered_map<long, int> codeBitsToSymbol;
 public:
-    explicit CanonicalCode(const std::vector<int> &codeLengths);
+    CanonicalCode() {}
+    CanonicalCode(const std::vector<int> &codeLengths);
     int decodeNextSymbol(BitInputStream &in) const;
     static const int MAX_CODE_LENGTH = 15;
 };
@@ -47,7 +49,7 @@ private:
     std::vector<std::uint8_t> data;
     std::size_t index;
 public:
-    explicit ByteHistory(std::size_t size);
+    ByteHistory(std::size_t sz) : size(sz), index(0) { }
     void append(std::uint8_t b);
     void copy(long dist, int len, std::ostream &out);
 };
@@ -55,24 +57,21 @@ public:
 class Decompressor final
 {
 private:
-    BitInputStream &input;
+    BitInputStream *_bis;
     std::ostream *_os;
     ByteHistory dictionary;
     static const CanonicalCode FIXED_LITERAL_LENGTH_CODE;
     static std::vector<int> makeFixedLiteralLengthCode();
     static const CanonicalCode FIXED_DISTANCE_CODE;
     static std::vector<int> makeFixedDistanceCode();
-    std::pair<CanonicalCode, std::optional<CanonicalCode>> decodeHuffmanCodes();
+    std::pair<CanonicalCode, CanonicalCode> decodeHuffmanCodes();
     void decompressUncompressedBlock();
-    void decompressHuffmanBlock(
-        const CanonicalCode &litLenCode, const CanonicalCode &distCode);
-    
+    void decompressHuffmanBlock(const CanonicalCode &litLenCode, const CanonicalCode &distCode);
     int decodeRunLength(int sym);
     long decodeDistance(int sym);
 public:
-    Decompressor(BitInputStream &in, std::ostream *os);
-    void decompress();
-    static void decompress(BitInputStream &in, std::vector<uint8_t> &out, uint32_t &n_decomp);
+    Decompressor() : dictionary(32U * 1024) { }
+    void decompress(BitInputStream *bis, std::ostream *os, uint32_t &n_decomp, uint32_t &crc);
 };
 
 BitInputStream::BitInputStream(std::istream &in)
@@ -136,10 +135,6 @@ int BitInputStream::readUint(int numBits)
 
 CanonicalCode::CanonicalCode(const std::vector<int> &codeLengths)
 {
-    // Check argument values
-    if (codeLengths.size() > INT_MAX)
-        throw std::domain_error("Too many symbols");
-
     for (int x : codeLengths)
     {
         if (x < 0)
@@ -177,8 +172,8 @@ CanonicalCode::CanonicalCode(const std::vector<int> &codeLengths)
 
 int CanonicalCode::decodeNextSymbol(BitInputStream &in) const
 {
-    long codeBits = 1;  // The start bit
-    while (true) {
+    for (long codeBits = 1;;)
+    {
         codeBits = (codeBits << 1) | in.readUint(1);
         auto it = codeBitsToSymbol.find(codeBits);
         if (it != codeBitsToSymbol.end())
@@ -186,11 +181,7 @@ int CanonicalCode::decodeNextSymbol(BitInputStream &in) const
     }
 }
 
-ByteHistory::ByteHistory(size_t sz) : size(sz), index(0)
-{
-    if (sz < 1)
-        throw std::domain_error("Size must be positive");
-}
+
 
 void ByteHistory::append(uint8_t b)
 {
@@ -216,29 +207,25 @@ void ByteHistory::copy(long dist, int len, std::ostream &out)
     }
 }
 
-void Decompressor::decompress(BitInputStream &in, std::vector<uint8_t> &out, uint32_t &n_decomp)
+static std::string toHex(uint32_t val, int digits)
 {
-    std::stringstream ss;
-    Decompressor d(in, &ss);
-    d.decompress();
-
-    while (true)
-    {
-        int b = ss.get();
-        if (b == std::char_traits<char>::eof())
-            break;
-        out.push_back(static_cast<uint8_t>(b));
-        ++n_decomp;
-    }
+    std::ostringstream s;
+    s << std::hex << std::setw(digits) << std::setfill('0') << val;
+    return s.str();
 }
 
-void Decompressor::decompress()
+void Decompressor::decompress(BitInputStream *bis, std::ostream *os,
+    uint32_t &n_decomp, uint32_t &crc)
 {
-    bool isFinal;
-    do {
+    std::stringstream ss;
+    _os = &ss;
+    _bis = bis;
+
+    for (bool isFinal = false; !isFinal;)
+    {
         // Read the block header
-        isFinal = input.readUint(1) != 0;  // bfinal
-        int type = input.readUint(2);  // btype
+        isFinal = _bis->readUint(1) != 0;  // bfinal
+        int type = _bis->readUint(2);  // btype
         
         // Decompress rest of block based on the type
         if (type == 0)
@@ -246,23 +233,30 @@ void Decompressor::decompress()
         else if (type == 1)
             decompressHuffmanBlock(FIXED_LITERAL_LENGTH_CODE, FIXED_DISTANCE_CODE);
         else if (type == 2) {
-            std::pair<CanonicalCode,std::optional<CanonicalCode>> litLenAndDist =
-                    decodeHuffmanCodes();
-
-            decompressHuffmanBlock(litLenAndDist.first, litLenAndDist.second.value());
+            std::pair<CanonicalCode, CanonicalCode> litLenAndDist = decodeHuffmanCodes();
+            decompressHuffmanBlock(litLenAndDist.first, litLenAndDist.second);
         } else if (type == 3)
             throw std::domain_error("Reserved block type");
         else
             throw std::logic_error("Unreachable value");
-    } while (!isFinal);
-}
+    }
 
-Decompressor::Decompressor(BitInputStream &in, std::ostream *os)
-  :
-    input(in),
-    _os(os),
-    dictionary(32U * 1024)
-{
+    crc = ~UINT32_C(0);
+
+    while (true)
+    {
+        int b = ss.get();
+        if (b == std::char_traits<char>::eof())
+            break;
+        os->put(b);
+        //out.push_back(static_cast<uint8_t>(b));
+        ++n_decomp;
+        crc ^= uint8_t(b);
+        for (int i = 0; i < 8; ++i)
+            crc = (crc >> 1) ^ ((crc & 1) * UINT32_C(0xEDB88320));
+    }
+
+    crc = ~crc;
 }
 
 const CanonicalCode Decompressor::FIXED_LITERAL_LENGTH_CODE(makeFixedLiteralLengthCode());
@@ -284,21 +278,21 @@ std::vector<int> Decompressor::makeFixedDistanceCode() {
     return std::vector<int>(32, 5);
 }
 
-std::pair<CanonicalCode,std::optional<CanonicalCode>> Decompressor::decodeHuffmanCodes()
+std::pair<CanonicalCode, CanonicalCode> Decompressor::decodeHuffmanCodes()
 {
-    int numLitLenCodes = input.readUint(5) + 257;  // hlit + 257
-    int numDistCodes = input.readUint(5) + 1;      // hdist + 1
-    int numCodeLenCodes = input.readUint(4) + 4;   // hclen + 4
+    int numLitLenCodes = _bis->readUint(5) + 257;  // hlit + 257
+    int numDistCodes = _bis->readUint(5) + 1;      // hdist + 1
+    int numCodeLenCodes = _bis->readUint(4) + 4;   // hclen + 4
     std::vector<int> codeLenCodeLen(19, 0);  // This array is filled in a strange order
-    codeLenCodeLen[16] = input.readUint(3);
-    codeLenCodeLen[17] = input.readUint(3);
-    codeLenCodeLen[18] = input.readUint(3);
-    codeLenCodeLen[ 0] = input.readUint(3);
+    codeLenCodeLen[16] = _bis->readUint(3);
+    codeLenCodeLen[17] = _bis->readUint(3);
+    codeLenCodeLen[18] = _bis->readUint(3);
+    codeLenCodeLen[ 0] = _bis->readUint(3);
 
     for (int i = 0; i < numCodeLenCodes - 4; i++)
     {
         int j = (i % 2 == 0) ? (8 + i / 2) : (7 - i / 2);
-        codeLenCodeLen[j] = input.readUint(3);
+        codeLenCodeLen[j] = _bis->readUint(3);
     }
     
     // Create the code length code
@@ -308,7 +302,7 @@ std::pair<CanonicalCode,std::optional<CanonicalCode>> Decompressor::decodeHuffma
     std::vector<int> codeLens;
     while (codeLens.size() < static_cast<unsigned int>(numLitLenCodes + numDistCodes))
     {
-        int sym = codeLenCode.decodeNextSymbol(input);
+        int sym = codeLenCode.decodeNextSymbol(*_bis);
         if (0 <= sym && sym <= 15)
             codeLens.push_back(sym);
         else {
@@ -320,12 +314,12 @@ std::pair<CanonicalCode,std::optional<CanonicalCode>> Decompressor::decodeHuffma
                 if (codeLens.empty())
                     throw std::domain_error("No code length value to copy");
 
-                runLen = input.readUint(2) + 3;
+                runLen = _bis->readUint(2) + 3;
                 runVal = codeLens.back();
             } else if (sym == 17) {
-                runLen = input.readUint(3) + 3;
+                runLen = _bis->readUint(3) + 3;
             } else if (sym == 18) {
-                runLen = input.readUint(7) + 11;
+                runLen = _bis->readUint(7) + 11;
             } else {
                 throw std::logic_error("Symbol out of range");
             }
@@ -345,10 +339,15 @@ std::pair<CanonicalCode,std::optional<CanonicalCode>> Decompressor::decodeHuffma
     
     // Create distance code tree with some extra processing
     std::vector<int> distCodeLen(codeLens.begin() + numLitLenCodes, codeLens.end());
-    std::optional<CanonicalCode> distCode;
+    CanonicalCode distCode;
+
     if (distCodeLen.size() == 1 && distCodeLen[0] == 0)
-        distCode = std::nullopt;  // Empty distance code; the block shall be all literal symbols
-    else {
+    {
+        // Empty distance code; the block shall be all literal symbols
+        distCode = CanonicalCode();  
+    }
+    else
+    {
         // Get statistics for upcoming logic
         size_t oneCount = 0;
         size_t otherPositiveCount = 0;
@@ -366,30 +365,31 @@ std::pair<CanonicalCode,std::optional<CanonicalCode>> Decompressor::decodeHuffma
                 distCodeLen.push_back(0);
             distCodeLen[31] = 1;
         }
-        distCode = std::optional<CanonicalCode>(distCodeLen);
+        distCode = CanonicalCode(distCodeLen);
     }
     
-    return std::pair<CanonicalCode,std::optional<CanonicalCode>>(
-        litLenCode, std::move(distCode));
+    return std::pair<CanonicalCode, CanonicalCode>(litLenCode, distCode);
 }
-
 
 void Decompressor::decompressUncompressedBlock()
 {
     // Discard bits to align to byte boundary
-    while (input.getBitPosition() != 0)
-        input.readUint(1);
+    while (_bis->getBitPosition() != 0)
+        _bis->readUint(1);
     
     // Read length
-    long  len = static_cast<long>(input.readUint(8)) << 8;   len |= input.readUint(8);
-    long nlen = static_cast<long>(input.readUint(8)) << 8;  nlen |= input.readUint(8);
+    long  len = static_cast<long>(_bis->readUint(8)) << 8;
+    len |= _bis->readUint(8);
+    long nlen = static_cast<long>(_bis->readUint(8)) << 8;
+    nlen |= _bis->readUint(8);
+
     if ((len ^ 0xFFFF) != nlen)
         throw std::domain_error("Invalid length in uncompressed block");
     
     // Copy bytes
     for (long i = 0; i < len; i++)
     {
-        int b = input.readUint(8);  // Byte is aligned
+        int b = _bis->readUint(8);  // Byte is aligned
         _os->put(static_cast<char>(b));
         dictionary.append(b);
     }
@@ -400,7 +400,7 @@ void Decompressor::decompressHuffmanBlock(
 {
     while (true)
     {
-        int sym = litLenCode.decodeNextSymbol(input);
+        int sym = litLenCode.decodeNextSymbol(*_bis);
 
         //end of block
         if (sym == 256)
@@ -421,7 +421,7 @@ void Decompressor::decompressHuffmanBlock(
         if (run < 3 || run > 258)
             throw std::logic_error("Invalid run length");
 
-        int distSym = distCode.decodeNextSymbol(input);
+        int distSym = distCode.decodeNextSymbol(*_bis);
         long dist = decodeDistance(distSym);
 
         if (dist < 1 || dist > 32768)
@@ -443,7 +443,7 @@ int Decompressor::decodeRunLength(int sym)
     if (sym <= 284)
     {
         int numExtraBits = (sym - 261) / 4;
-        return (((sym - 265) % 4 + 4) << numExtraBits) + 3 + input.readUint(numExtraBits);
+        return (((sym - 265) % 4 + 4) << numExtraBits) + 3 + _bis->readUint(numExtraBits);
     }
 
     if (sym == 285)
@@ -463,7 +463,7 @@ long Decompressor::decodeDistance(int sym)
     if (sym <= 29)
     {
         int numExtraBits = sym / 2 - 1;
-        return ((sym % 2 + 2L) << numExtraBits) + 1 + input.readUint(numExtraBits);
+        return ((sym % 2 + 2L) << numExtraBits) + 1 + _bis->readUint(numExtraBits);
     }
 
     throw std::domain_error("Reserved distance symbol");
@@ -511,26 +511,7 @@ public:
         }
         return result;
     }
-    
 };
-
-static uint32_t getCrc32(const std::vector<uint8_t> &data) {
-    uint32_t crc = ~UINT32_C(0);
-    for (uint8_t b : data) {
-        crc ^= b;
-        for (int i = 0; i < 8; i++)
-            crc = (crc >> 1) ^ ((crc & 1) * UINT32_C(0xEDB88320));
-    }
-    return ~crc;
-}
-
-
-static std::string toHex(uint32_t val, int digits)
-{
-    std::ostringstream s;
-    s << std::hex << std::setw(digits) << std::setfill('0') << val;
-    return s.str();
-}
 
 static void submain(std::istream &is, std::ostream &os)
 {
@@ -577,22 +558,14 @@ static void submain(std::istream &is, std::ostream &os)
     }
         
     BitInputStream in2(is);
-    std::vector<uint8_t> decomp;
     uint32_t n_decomp = 0;
-    Decompressor::decompress(in2, decomp, n_decomp);
+    uint32_t crc32 = 0;
+    Decompressor d;
+    d.decompress(&in2, &os, n_decomp, crc32);
     uint32_t crc = in1.readLittleEndianUint32();
-    std::cerr << "CRC: 0x" << toHex(crc, 8) << "\r\n";
+    std::cerr << "CRC: 0x" << toHex(crc, 8) << " 0x" << toHex(crc, 8) << "\r\n";
     uint32_t size = in1.readLittleEndianUint32();
     std::cerr << "size: " << size << " " << n_decomp << "\r\n";
-    
-    if (size != static_cast<uint32_t>(decomp.size()))
-        throw "size mismatch";
-
-    if (crc != getCrc32(decomp))
-        throw "crc32 mismatch";
-        
-    for (uint8_t b : decomp)
-        os.put(b);
 }
 
 int main(int argc, char *argv[])
