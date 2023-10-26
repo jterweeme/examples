@@ -65,7 +65,7 @@ private:
     std::pair<CanonicalCode, std::optional<CanonicalCode>> decodeHuffmanCodes();
     void decompressUncompressedBlock();
     void decompressHuffmanBlock(
-        const CanonicalCode &litLenCode, const std::optional<CanonicalCode> &distCode);
+        const CanonicalCode &litLenCode, const CanonicalCode &distCode);
     
     int decodeRunLength(int sym);
     long decodeDistance(int sym);
@@ -249,7 +249,7 @@ void Decompressor::decompress()
             std::pair<CanonicalCode,std::optional<CanonicalCode>> litLenAndDist =
                     decodeHuffmanCodes();
 
-            decompressHuffmanBlock(litLenAndDist.first, litLenAndDist.second);
+            decompressHuffmanBlock(litLenAndDist.first, litLenAndDist.second.value());
         } else if (type == 3)
             throw std::domain_error("Reserved block type");
         else
@@ -370,7 +370,7 @@ std::pair<CanonicalCode,std::optional<CanonicalCode>> Decompressor::decodeHuffma
     }
     
     return std::pair<CanonicalCode,std::optional<CanonicalCode>>(
-        std::move(litLenCode), std::move(distCode));
+        litLenCode, std::move(distCode));
 }
 
 
@@ -396,7 +396,7 @@ void Decompressor::decompressUncompressedBlock()
 }
 
 void Decompressor::decompressHuffmanBlock(
-        const CanonicalCode &litLenCode, const std::optional<CanonicalCode> &distCode)
+        const CanonicalCode &litLenCode, const CanonicalCode &distCode)
 {
     while (true)
     {
@@ -412,25 +412,22 @@ void Decompressor::decompressHuffmanBlock(
             uint8_t b = static_cast<uint8_t>(sym);
             _os->put(static_cast<char>(b));
             dictionary.append(b);
+            continue;
         }
-        else
-        {  // Length and distance for copying
-            int run = decodeRunLength(sym);
 
-            if (run < 3 || run > 258)
-                throw std::logic_error("Invalid run length");
+        // Length and distance for copying
+        int run = decodeRunLength(sym);
 
-            if (!distCode.has_value())
-                throw std::domain_error("Length symbol encountered with empty distance code");
+        if (run < 3 || run > 258)
+            throw std::logic_error("Invalid run length");
 
-            int distSym = distCode->decodeNextSymbol(input);
-            long dist = decodeDistance(distSym);
+        int distSym = distCode.decodeNextSymbol(input);
+        long dist = decodeDistance(distSym);
 
-            if (dist < 1 || dist > 32768)
-                throw std::logic_error("Invalid distance");
+        if (dist < 1 || dist > 32768)
+            throw std::logic_error("Invalid distance");
 
-            dictionary.copy(dist, run, *_os);
-        }
+        dictionary.copy(dist, run, *_os);
     }
 }
 
