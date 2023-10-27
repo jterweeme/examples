@@ -21,14 +21,27 @@
 class BitInputStream
 {
 private:
-    std::istream &input;
-    int currentByte;
+    std::istream &_input;
+    int _currentByte;
     int numBitsRemaining;
+    int readBitMaybe();
 public:
     explicit BitInputStream(std::istream &in);
     int getBitPosition() const;
-    int readBitMaybe();
     int readUint(int numBits);
+};
+
+class OutputStream
+{
+private:
+    std::ostream *_os;
+    uint32_t _crc = 0xffffffff;
+    uint32_t _cnt = 0;
+public:
+    OutputStream(std::ostream *os) : _os(os) { }
+    void put(uint8_t b);
+    uint32_t crc() const { return ~_crc; }
+    uint32_t cnt() const { return _cnt; }
 };
 
 class CanonicalCode final
@@ -51,14 +64,14 @@ private:
 public:
     ByteHistory(std::size_t sz) : size(sz), index(0) { }
     void append(std::uint8_t b);
-    void copy(long dist, int len, std::ostream &out);
+    void copy(long dist, int len, OutputStream *out);
 };
 
 class Decompressor final
 {
 private:
     BitInputStream *_bis;
-    std::ostream *_os;
+    OutputStream *_os;
     ByteHistory dictionary;
     static const CanonicalCode FIXED_LITERAL_LENGTH_CODE;
     static std::vector<int> makeFixedLiteralLengthCode();
@@ -71,13 +84,22 @@ private:
     long decodeDistance(int sym);
 public:
     Decompressor() : dictionary(32U * 1024) { }
-    void decompress(BitInputStream *bis, std::ostream *os, uint32_t &n_decomp, uint32_t &crc);
+    void decompress(BitInputStream *bis, OutputStream *os);
 };
+
+void OutputStream::put(uint8_t b)
+{
+    _os->put(b);
+    ++_cnt;
+    _crc ^= b;
+    for (int i = 0; i < 8; ++i)
+        _crc = (_crc >> 1) ^ ((_crc & 1) * UINT32_C(0xEDB88320));
+}
 
 BitInputStream::BitInputStream(std::istream &in)
   :
-    input(in),
-    currentByte(0),
+    _input(in),
+    _currentByte(0),
     numBitsRemaining(0)
 {}
 
@@ -91,17 +113,17 @@ int BitInputStream::getBitPosition() const
 
 int BitInputStream::readBitMaybe()
 {
-    if (currentByte == std::char_traits<char>::eof())
+    if (_currentByte == std::char_traits<char>::eof())
         return -1;
 
     if (numBitsRemaining == 0)
     {
-        currentByte = input.get();
+        _currentByte = _input.get();
 
-        if (currentByte == std::char_traits<char>::eof())
+        if (_currentByte == std::char_traits<char>::eof())
             return -1;
 
-        if (currentByte < 0 || currentByte > 255)
+        if (_currentByte < 0 || _currentByte > 255)
             throw std::logic_error("Unreachable value");
 
         numBitsRemaining = 8;
@@ -111,7 +133,7 @@ int BitInputStream::readBitMaybe()
         throw std::logic_error("Unreachable state");
 
     numBitsRemaining--;
-    return (currentByte >> (7 - numBitsRemaining)) & 1;
+    return (_currentByte >> (7 - numBitsRemaining)) & 1;
 }
 
 int BitInputStream::readUint(int numBits)
@@ -181,8 +203,6 @@ int CanonicalCode::decodeNextSymbol(BitInputStream &in) const
     }
 }
 
-
-
 void ByteHistory::append(uint8_t b)
 {
     if (data.size() < size)
@@ -193,7 +213,7 @@ void ByteHistory::append(uint8_t b)
     index = (index + 1U) % size;
 }
 
-void ByteHistory::copy(long dist, int len, std::ostream &out)
+void ByteHistory::copy(long dist, int len, OutputStream *out)
 {
     if (len < 0 || dist < 1 || static_cast<unsigned long>(dist) > data.size())
         throw std::domain_error("Invalid length or distance");
@@ -202,7 +222,7 @@ void ByteHistory::copy(long dist, int len, std::ostream &out)
     for (int i = 0; i < len; i++) {
         uint8_t b = data[readIndex];
         readIndex = (readIndex + 1U) % size;
-        out.put(static_cast<char>(b));
+        out->put(static_cast<char>(b));
         append(b);
     }
 }
@@ -214,11 +234,9 @@ static std::string toHex(uint32_t val, int digits)
     return s.str();
 }
 
-void Decompressor::decompress(BitInputStream *bis, std::ostream *os,
-    uint32_t &n_decomp, uint32_t &crc)
+void Decompressor::decompress(BitInputStream *bis, OutputStream *os)
 {
-    std::stringstream ss;
-    _os = &ss;
+    _os = os;
     _bis = bis;
 
     for (bool isFinal = false; !isFinal;)
@@ -240,23 +258,6 @@ void Decompressor::decompress(BitInputStream *bis, std::ostream *os,
         else
             throw std::logic_error("Unreachable value");
     }
-
-    crc = ~UINT32_C(0);
-
-    while (true)
-    {
-        int b = ss.get();
-        if (b == std::char_traits<char>::eof())
-            break;
-        os->put(b);
-        //out.push_back(static_cast<uint8_t>(b));
-        ++n_decomp;
-        crc ^= uint8_t(b);
-        for (int i = 0; i < 8; ++i)
-            crc = (crc >> 1) ^ ((crc & 1) * UINT32_C(0xEDB88320));
-    }
-
-    crc = ~crc;
 }
 
 const CanonicalCode Decompressor::FIXED_LITERAL_LENGTH_CODE(makeFixedLiteralLengthCode());
@@ -427,7 +428,7 @@ void Decompressor::decompressHuffmanBlock(
         if (dist < 1 || dist > 32768)
             throw std::logic_error("Invalid distance");
 
-        dictionary.copy(dist, run, *_os);
+        dictionary.copy(dist, run, _os);
     }
 }
 
@@ -558,14 +559,13 @@ static void submain(std::istream &is, std::ostream &os)
     }
         
     BitInputStream in2(is);
-    uint32_t n_decomp = 0;
-    uint32_t crc32 = 0;
+    OutputStream os2(&os);
     Decompressor d;
-    d.decompress(&in2, &os, n_decomp, crc32);
+    d.decompress(&in2, &os2);
     uint32_t crc = in1.readLittleEndianUint32();
-    std::cerr << "CRC: 0x" << toHex(crc, 8) << " 0x" << toHex(crc, 8) << "\r\n";
+    std::cerr << "CRC: 0x" << toHex(crc, 8) << " 0x" << toHex(os2.crc(), 8) << "\r\n";
     uint32_t size = in1.readLittleEndianUint32();
-    std::cerr << "size: " << size << " " << n_decomp << "\r\n";
+    std::cerr << "size: " << size << " " << os2.cnt() << "\r\n";
 }
 
 int main(int argc, char *argv[])
