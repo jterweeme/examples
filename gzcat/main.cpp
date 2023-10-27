@@ -434,8 +434,6 @@ void Decompressor::decompressHuffmanBlock(
 
 int Decompressor::decodeRunLength(int sym)
 {
-    // Symbols outside the range cannot occur in the bit stream;
-    // they would indicate that the decompressor is buggy
     assert(257 <= sym && sym <= 287);
     
     if (sym <= 264)
@@ -450,7 +448,6 @@ int Decompressor::decodeRunLength(int sym)
     if (sym == 285)
         return 258;
 
-    // sym is 286 or 287
     throw std::domain_error("Reserved length symbol");
 }
 
