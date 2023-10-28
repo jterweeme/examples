@@ -104,12 +104,6 @@ public class GZcat
 
             return r;
         }
-
-        void dump(java.io.PrintStream p)
-        {
-            p.format("Length: %d, Max: %d\n", _a.length, max());
-            for (int x : _a) p.format("%d ", x);
-        }
     }
 
     //dependencies: none
@@ -190,8 +184,6 @@ public class GZcat
             }
             return new Node(nodes.get(0), nodes.get(1));
         }
-
-
 
         void extractTo(java.io.OutputStream os) throws IOException
         {
@@ -400,7 +392,10 @@ public class GZcat
         bis.close();
     }
 
-    public static void main(String[] args) throws Exception { new GZcat().run(args); }
+    public static void main(String[] args) throws Exception
+    {
+        new GZcat().run(args);
+    }
 }
 
 

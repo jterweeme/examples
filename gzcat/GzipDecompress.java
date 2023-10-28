@@ -19,9 +19,6 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -31,13 +28,13 @@ import java.util.zip.DataFormatException;
 
 class GzipDecompress
 {
-    static class ByteBitInputStream implements java.io.Closeable
+    class ByteBitInputStream implements java.io.Closeable
     {
         InputStream input;
         int currentByte;
         int numBitsRemaining;
 
-        public int readUint(int numBits) throws IOException
+        int readUint(int numBits) throws IOException
         {
             if (numBits < 0 || numBits > 31)
                 throw new IllegalArgumentException("Number of bits out of range");
@@ -52,7 +49,7 @@ class GzipDecompress
             return result;
         }
    
-        public ByteBitInputStream(InputStream in)
+        ByteBitInputStream(InputStream in)
         {
             input = Objects.requireNonNull(in);
             currentByte = 0;
@@ -89,7 +86,7 @@ class GzipDecompress
         }
     }
 
-    static class CRCOutputStream extends OutputStream
+    class CRCOutputStream extends OutputStream
     {
         OutputStream _os;
         int _cnt = 0;
@@ -110,6 +107,7 @@ class GzipDecompress
     static class CanonicalCode
     {
         int[] symbolCodeBits, symbolValues;
+        private static final int MAX_CODE_LENGTH = 15;
     
         public CanonicalCode(int[] codeLengths)
         {
@@ -166,29 +164,16 @@ class GzipDecompress
                     return symbolValues[index];
             }
         }
-    
-        @Override public String toString()
-        {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < symbolCodeBits.length; i++)
-            {
-                sb.append(String.format("Code %s: Symbol %d%n",
-                    Integer.toBinaryString(symbolCodeBits[i]).substring(1),
-                    symbolValues[i]));
-            }
-            return sb.toString();
-        }
-    
-        private static final int MAX_CODE_LENGTH = 15;
+
     }
 
-    static final class ByteHistory
+    class ByteHistory
     {
         byte[] data;
         int index;
         int length;
     
-        public ByteHistory(int size)
+        ByteHistory(int size)
         {
             if (size < 1)
                 throw new IllegalArgumentException("Size must be positive");
@@ -197,7 +182,7 @@ class GzipDecompress
             length = 0;
         }
     
-        public void append(int b)
+        void append(int b)
         {
             assert 0 <= index && index < data.length : "Unreachable state";
             data[index] = (byte)b;
@@ -206,7 +191,7 @@ class GzipDecompress
                 length++;
         }
     
-        public void copy(int dist, int len, OutputStream out) throws IOException
+        void copy(int dist, int len, OutputStream out) throws IOException
         {
             Objects.requireNonNull(out);
             if (len < 0 || dist < 1 || dist > length)
@@ -225,20 +210,14 @@ class GzipDecompress
         }
     }
     
-    static public final class Decompressor
+    class Decompressor
     {
-        public static void
-        decompress(ByteBitInputStream in, OutputStream out)
-            throws IOException, DataFormatException
-        {
-            new Decompressor(in, out);
-        }
-    
         ByteBitInputStream input;
         OutputStream output;
         ByteHistory dictionary;
+        private static final CanonicalCode FIXED_LITERAL_LENGTH_CODE;
+        private static final CanonicalCode FIXED_DISTANCE_CODE;
     
-        private
         Decompressor(ByteBitInputStream in, OutputStream out)
             throws IOException, DataFormatException
         {
@@ -247,15 +226,11 @@ class GzipDecompress
             output = Objects.requireNonNull(out);
             dictionary = new ByteHistory(32 * 1024);
         
-            // Process the stream of blocks
             boolean isFinal;
             do
             {
-                // Read the block header
                 isFinal = input.readUint(1) != 0;  // bfinal
                 int type = input.readUint(2);  // btype
-            
-                // Decompress rest of block based on the type
                 if (type == 0)
                     decompressUncompressedBlock();
                 else if (type == 1)
@@ -270,11 +245,6 @@ class GzipDecompress
             }
             while (!isFinal);
         }
-    
-    
-        /*-- Constants: The code trees for static Huffman codes (btype = 1) --*/
-        private static final CanonicalCode FIXED_LITERAL_LENGTH_CODE;
-        private static final CanonicalCode FIXED_DISTANCE_CODE;
     
         static
         {
@@ -397,23 +367,14 @@ class GzipDecompress
             return new CanonicalCode[]{litLenCode, distCode};
         }
     
-    
-        /*-- Methods: Block decompression --*/
-    
-        // Handles and copies an uncompressed block from the bit input stream.
-        private void decompressUncompressedBlock() throws IOException, DataFormatException
+        void decompressUncompressedBlock() throws IOException, DataFormatException
         {
-            // Discard bits to align to byte boundary
             while (input.getBitPosition() != 0)
                 input.readUint(1);
-        
-            // Read length
             int  len = input.readUint(16);
             int nlen = input.readUint(16);
             if ((len ^ 0xFFFF) != nlen)
                 throw new DataFormatException("Invalid length in uncompressed block");
-        
-            // Copy bytes
             for (int i = 0; i < len; i++)
             {
                 int b = input.readUint(8);  // Byte is aligned
@@ -422,14 +383,10 @@ class GzipDecompress
             }
         }
     
-    
-        // Decompresses a Huffman-coded block from the bit
-        // input stream based on the given Huffman codes.
-        private void decompressHuffmanBlock(CanonicalCode litLenCode, CanonicalCode distCode)
+        void decompressHuffmanBlock(CanonicalCode litLenCode, CanonicalCode distCode)
             throws IOException, DataFormatException
         {
             Objects.requireNonNull(litLenCode);
-            // distCode is allowed to be null
         
             while (true)
             {
@@ -459,7 +416,7 @@ class GzipDecompress
             }
         }
     
-        private int decodeRunLength(int sym) throws IOException, DataFormatException
+        int decodeRunLength(int sym) throws IOException, DataFormatException
         {
             assert 257 <= sym && sym <= 287 : "Invalid run length symbol: " + sym;
         
@@ -478,7 +435,7 @@ class GzipDecompress
             throw new DataFormatException("Reserved length symbol: " + sym);
         }
     
-        private int decodeDistance(int sym) throws IOException, DataFormatException
+        int decodeDistance(int sym) throws IOException, DataFormatException
         {
             assert 0 <= sym && sym <= 31 : "Invalid distance symbol: " + sym;
         
@@ -495,7 +452,7 @@ class GzipDecompress
         }
     }
     
-    private static String readNullTerminatedString(DataInput in) throws IOException
+    String readNullTerminatedString(DataInput in) throws IOException
     {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
 
@@ -509,39 +466,23 @@ class GzipDecompress
         return new String(bout.toByteArray(), StandardCharsets.UTF_8);
     }
     
-    
-    private static int getCrc32(byte[] data)
-    {
-        CRC32 crc = new CRC32();
-        crc.update(data);
-        return (int)crc.getValue();
+    int readLittleEndianUint16(DataInput in) throws IOException
+    {   return Integer.reverseBytes(in.readUnsignedShort()) >>> 16;
     }
     
-    
-    private static int readLittleEndianUint16(DataInput in) throws IOException
-    {
-        return Integer.reverseBytes(in.readUnsignedShort()) >>> 16;
-    }
-    
-    
-    private static int readLittleEndianInt32(DataInput in) throws IOException
-    {
-        return Integer.reverseBytes(in.readInt());
+    int readLittleEndianInt32(DataInput in) throws IOException
+    {   return Integer.reverseBytes(in.readInt());
     }
 
-    static String submain(String[] args)
+    String submain(String[] args)
     {
-        // Handle command line arguments
-        if (args.length != 2)
-            return "Usage: java GzipDecompress InputFile.gz OutputFile";
+        java.io.PrintStream msgOut = System.err;
+        if (args.length != 1)
+        {
+            msgOut.println("Usage: java GzipDecompress InputFile.gz OutputFile");
+            System.exit(1);
+        }
         File inFile = new File(args[0]);
-        if (!inFile.exists())
-            return "Input file does not exist: " + inFile;
-        if (inFile.isDirectory())
-            return "Input file is a directory: " + inFile;
-        //Path outFile = Paths.get(args[1]);
-        File outFile = new File(args[1]);
-        
         try
         {
             DataInputStream in = new DataInputStream(
@@ -563,40 +504,33 @@ class GzipDecompress
             // Modification time
             int mtime = readLittleEndianInt32(in);
             if (mtime != 0)
-                System.out.println("Last modified: " + Instant.EPOCH.plusSeconds(mtime));
+                msgOut.println("Last modified: " + Instant.EPOCH.plusSeconds(mtime));
             else
-                System.out.println("Last modified: N/A");
+                msgOut.println("Last modified: N/A");
             
             in.readUnsignedByte();
             in.readUnsignedByte();
             
             if (flags.get(0))
-                System.out.println("Flag: Text");
+                msgOut.println("Flag: Text");
             if (flags.get(2)) {
-                System.out.println("Flag: Extra");
+                msgOut.println("Flag: Extra");
                 in.skipNBytes(readLittleEndianUint16(in));
             }
             if (flags.get(3))
-                System.out.println("File name: " + readNullTerminatedString(in));
+                msgOut.println("File name: " + readNullTerminatedString(in));
             if (flags.get(4))
-                System.out.println("Comment: " + readNullTerminatedString(in));
+                msgOut.println("Comment: " + readNullTerminatedString(in));
             if (flags.get(1))
-                System.out.printf("Header CRC-16: %04X%n", readLittleEndianUint16(in));
+                msgOut.printf("Header CRC-16: %04X%n", readLittleEndianUint16(in));
  
-            //ByteArrayOutputStream out = new ByteArrayOutputStream();
-            FileOutputStream out = new FileOutputStream(outFile);
-            BufferedOutputStream bufOut = new BufferedOutputStream(out);
-            CRCOutputStream output = new CRCOutputStream(bufOut);
-            Decompressor.decompress(new ByteBitInputStream(in), output);
-            //byte[] decomp = out.toByteArray();
+            CRCOutputStream output = new CRCOutputStream(System.out);
+            new Decompressor(new ByteBitInputStream(in), output);
+            System.out.flush();
             int crc  = readLittleEndianInt32(in);
             int size = readLittleEndianInt32(in);
-            System.err.println("size: " + size + " " + output.cnt());
-            System.err.println("crc: " + crc + " " + output.crc());
-            
-            // Write decompressed data to output file
-            //Files.write(outFile, decomp);
-            
+            msgOut.println("size: " + size + " " + output.cnt());
+            msgOut.println("crc: " + crc + " " + output.crc());
         } catch (IOException e) {
             return "I/O exception: " + e.getMessage();
         } catch (DataFormatException e)
@@ -608,7 +542,7 @@ class GzipDecompress
 
     public static void main(String[] args)
     {
-        String msg = submain(args);
+        String msg = new GzipDecompress().submain(args);
 
         if (msg != null)
         {
