@@ -18,12 +18,7 @@ public class GZcat
 
         int readBit() throws IOException
         {
-            if (_bitPos == 8)
-            {
-                _nextBits = _is.read();
-                _bitPos = 0;
-            }
-
+            if (_bitPos == 8) { _nextBits = _is.read(); _bitPos = 0; }
             return _nextBits >>> _bitPos++ & 1;
         }
 
@@ -214,10 +209,11 @@ public class GZcat
         {
             _dict = new CircularDict(32 * 1024);
             int[] llcodelens = new int[288];
-            java.util.Arrays.fill(llcodelens,   0, 144, 8);
-            java.util.Arrays.fill(llcodelens, 144, 256, 9);
-            java.util.Arrays.fill(llcodelens, 256, 280, 7);
-            java.util.Arrays.fill(llcodelens, 280, 288, 8);
+            int i = 0;
+            for (; i < 144; i++) llcodelens[i] = 8;
+            for (; i < 256; i++) llcodelens[i] = 9;
+            for (; i < 280; i++) llcodelens[i] = 7;
+            for (; i < 288; i++) llcodelens[i] = 8;
             Nau llcodeLens2 = new Nau(llcodelens);
             _lit = _toct(llcodeLens2);
             Nau distCodeLens2 = new Nau(32, 5);

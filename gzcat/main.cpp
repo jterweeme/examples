@@ -47,7 +47,8 @@ public:
 class CanonicalCode final
 {
 private:
-    std::unordered_map<long, int> codeBitsToSymbol;
+    int *_symbolCodeBits;
+    int *_symbolValues;
 public:
     CanonicalCode() {}
     CanonicalCode(const std::vector<int> &codeLengths);
@@ -166,14 +167,17 @@ CanonicalCode::CanonicalCode(const std::vector<int> &codeLengths)
             throw std::domain_error("Maximum code length exceeded");
     }
     
+    _symbolCodeBits = new int[codeLengths.size()];
+    _symbolValues = new int[codeLengths.size()];
+    int numSymbolsAllocated = 0;
     long nextCode = 0;
 
     for (int codeLength = 1; codeLength <= MAX_CODE_LENGTH; ++codeLength)
     {
         nextCode <<= 1;
-        long startBit = 1L << codeLength;
+        int startBit = 1L << codeLength;
 
-        for (int symbol = 0; symbol < static_cast<int>(codeLengths.size()); symbol++)
+        for (int symbol = 0; symbol < codeLengths.size(); ++symbol)
         {
             if (codeLengths[symbol] != codeLength)
                 continue;
@@ -183,13 +187,17 @@ CanonicalCode::CanonicalCode(const std::vector<int> &codeLengths)
                 throw std::domain_error(
                         "This canonical code produces an over-full Huffman code tree");
             }
-            codeBitsToSymbol[startBit | nextCode] = symbol;
+            _symbolCodeBits[numSymbolsAllocated] = startBit | nextCode;
+            _symbolValues[numSymbolsAllocated] = symbol;
+            ++numSymbolsAllocated;
             ++nextCode;
         }
     }
 
-    if (nextCode != 1L << MAX_CODE_LENGTH)
+    if (nextCode != 1 << MAX_CODE_LENGTH)
         throw std::domain_error("This canonical code produces an under-full Huffman code tree");
+
+    for (int i = 0; i < numSymbolsAllocated)
 }
 
 int CanonicalCode::decodeNextSymbol(BitInputStream &in) const

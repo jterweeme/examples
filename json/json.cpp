@@ -55,10 +55,8 @@ JSONObject::~JSONObject()
 JSONProperty *JSONObject::getProperty(std::string key) const
 {
     for (auto property : _properties)
-    {
         if (property->key().compare(key) == 0)
             return property;
-    }
 
     return nullptr;
 }
@@ -130,27 +128,20 @@ std::string next_token(std::istream &is)
         //numbers -0.2e3, true, false, null
         if (isOneOf("0123456789-.aeflnrstu", c))
         {
-            std::string token;
-            token.push_back(c);
+            std::string token(1, c);
 
-            while (true)
+            while (isOneOf("0123456789-.aeflnrstu", c = is.peek()))
             {
-                c = is.peek();
-
-                if (isOneOf("0123456789-.aeflnrstu", c) == false)
-                    break;
-
                 token.push_back(c);
                 is.get();
             }
-    
+
             return token;
         }
 
         if (c == '\"')
         {
-            std::string token;
-            token.push_back('\"');
+            std::string token(1, '\"');
             
             while (true)
             {
