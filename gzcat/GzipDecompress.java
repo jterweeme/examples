@@ -83,13 +83,13 @@ class GzipDecompress
         }
     }
 
-    static class CanonicalCode
+    class CanonicalCode
     {
         int[] symbolCodeBits, symbolValues;
         int _numSymbolsAllocated = 0;
         static final int MAX_CODE_LENGTH = 15;
     
-        CanonicalCode(int[] codeLengths)
+        CanonicalCode(int[] codeLengths, int n)
         {
             symbolCodeBits = new int[codeLengths.length];
             symbolValues = new int[codeLengths.length];
@@ -123,42 +123,42 @@ class GzipDecompress
 
     class ByteHistory
     {
-        byte[] data;
-        int index = 0, length = 0;
-        ByteHistory(int size) { data = new byte[size]; }
+        byte[] _data;
+        int _index = 0, _length = 0, _size;
+        ByteHistory(int size) { _size = size; _data = new byte[size]; }
     
         void append(int b)
         {
-            data[index] = (byte)b;
-            index = (index + 1) % data.length;
-            if (length < data.length) length++;
+            _data[_index] = (byte)b;
+            _index = (_index + 1) % _size;
+            if (_length < _size) _length++;
         }
     
         void copy(int dist, int len, OutputStream out) throws IOException
         {
-            int readIndex = (index - dist + data.length) % data.length;
+            int readIndex = (_index - dist + _size) % _size;
             for (int i = 0; i < len; i++)
             {
-                byte b = data[readIndex];
-                readIndex = (readIndex + 1) % data.length;
+                byte b = _data[readIndex];
+                readIndex = (readIndex + 1) % _size;
                 out.write(b);
                 append(b);
             }
         }
     }
     
-    class Decompressor
+    class Inflater
     {
-        final ByteBitInputStream input;
+        final ByteBitInputStream _bis;
         final OutputStream output;
         final ByteHistory dictionary;
         CanonicalCode FIXED_LITERAL_LENGTH_CODE;
         CanonicalCode FIXED_DISTANCE_CODE;
 
-        Decompressor(ByteBitInputStream in, OutputStream out)
+        Inflater(ByteBitInputStream in, OutputStream out)
             throws IOException, DataFormatException
         {
-            input = Objects.requireNonNull(in);
+            _bis = Objects.requireNonNull(in);
             output = Objects.requireNonNull(out);
             dictionary = new ByteHistory(32 * 1024);
             int[] llcodelens = new int[288];
@@ -167,18 +167,18 @@ class GzipDecompress
             for (; i < 256; i++) llcodelens[i] = 9;
             for (; i < 280; i++) llcodelens[i] = 7;
             for (; i < 288; i++) llcodelens[i] = 8;
-            FIXED_LITERAL_LENGTH_CODE = new CanonicalCode(llcodelens);
+            FIXED_LITERAL_LENGTH_CODE = new CanonicalCode(llcodelens, 288);
             int[] distcodelens = new int[32];
             Arrays.fill(distcodelens, 5);
-            FIXED_DISTANCE_CODE = new CanonicalCode(distcodelens);
+            FIXED_DISTANCE_CODE = new CanonicalCode(distcodelens, 32);
         }
 
-        void decompress() throws IOException, DataFormatException
+        void inflate() throws IOException, DataFormatException
         {
             for (boolean isFinal = false; !isFinal;)
             {
-                isFinal = input.readUint(1) != 0;  // bfinal
-                int type = input.readUint(2);  // btype
+                isFinal = _bis.readUint(1) != 0;  // bfinal
+                int type = _bis.readUint(2);  // btype
                 if (type == 0)
                     decompressUncompressedBlock();
                 else if (type == 1)
@@ -195,25 +195,25 @@ class GzipDecompress
 
         private CanonicalCode[] decodeHuffmanCodes() throws IOException, DataFormatException
         {
-            int numLitLenCodes = input.readUint(5) + 257;  // hlit + 257
-            int numDistCodes = input.readUint(5) + 1;      // hdist + 1
-            int numCodeLenCodes = input.readUint(4) + 4;   // hclen + 4
+            int numLitLenCodes = _bis.readUint(5) + 257;  // hlit + 257
+            int numDistCodes = _bis.readUint(5) + 1;      // hdist + 1
+            int numCodeLenCodes = _bis.readUint(4) + 4;   // hclen + 4
             int[] codeLenCodeLen = new int[19];  // This array is filled in a strange order
-            codeLenCodeLen[16] = input.readUint(3);
-            codeLenCodeLen[17] = input.readUint(3);
-            codeLenCodeLen[18] = input.readUint(3);
-            codeLenCodeLen[ 0] = input.readUint(3);
+            codeLenCodeLen[16] = _bis.readUint(3);
+            codeLenCodeLen[17] = _bis.readUint(3);
+            codeLenCodeLen[18] = _bis.readUint(3);
+            codeLenCodeLen[ 0] = _bis.readUint(3);
             for (int i = 0; i < numCodeLenCodes - 4; i++)
             {
                 int j = (i % 2 == 0) ? (8 + i / 2) : (7 - i / 2);
-                codeLenCodeLen[j] = input.readUint(3);
+                codeLenCodeLen[j] = _bis.readUint(3);
             }
         
-            CanonicalCode codeLenCode = new CanonicalCode(codeLenCodeLen);
+            CanonicalCode codeLenCode = new CanonicalCode(codeLenCodeLen, 19);
             int[] codeLens = new int[numLitLenCodes + numDistCodes];
             for (int codeLensIndex = 0; codeLensIndex < codeLens.length; )
             {
-                int sym = codeLenCode.decodeNextSymbol(input);
+                int sym = codeLenCode.decodeNextSymbol(_bis);
                 if (0 <= sym && sym <= 15)
                 {
                     codeLens[codeLensIndex] = sym;
@@ -224,29 +224,34 @@ class GzipDecompress
                     int runLen, runVal = 0;
                     if (sym == 16)
                     {
-                        runLen = input.readUint(2) + 3;
+                        runLen = _bis.readUint(2) + 3;
                         runVal = codeLens[codeLensIndex - 1];
                     } else if (sym == 17) {
-                        runLen = input.readUint(3) + 3;
+                        runLen = _bis.readUint(3) + 3;
                     }
                     else if (sym == 18)
-                        runLen = input.readUint(7) + 11;
+                        runLen = _bis.readUint(7) + 11;
                     else
                         throw new AssertionError("Symbol out of range");
                     int end = codeLensIndex + runLen;
-                    Arrays.fill(codeLens, codeLensIndex, end, runVal);
+                    for (int i = codeLensIndex; i < end; ++i)
+                        codeLens[i] = runVal;
                     codeLensIndex = end;
                 }
             }
-        
-            int[] litLenCodeLen = Arrays.copyOf(codeLens, numLitLenCodes);
-            CanonicalCode litLenCode = new CanonicalCode(litLenCodeLen);
-            int[] distCodeLen = Arrays.copyOfRange(codeLens, numLitLenCodes, codeLens.length);
+            int[] litLenCodeLen = new int[numLitLenCodes];
+            for (int i = 0; i < numLitLenCodes; i++)
+                litLenCodeLen[i] = codeLens[i];
+            CanonicalCode litLenCode = new CanonicalCode(litLenCodeLen, numLitLenCodes);
+            int n = codeLens.length - numLitLenCodes;
+            int[] distCodeLen = new int[n];
+            for (int i = 0, j = numLitLenCodes; j < codeLens.length; i++, j++)
+                distCodeLen[i] = codeLens[j];
             CanonicalCode distCode;
-            if (distCodeLen.length == 1 && distCodeLen[0] == 0)
+            if (n == 1 && distCodeLen[0] == 0)
             {
                 //distCode = null;
-                distCode = new CanonicalCode(distCodeLen);  //bogus CanonicalCode
+                distCode = new CanonicalCode(distCodeLen, n);  //bogus CanonicalCode
             }
             else
             {
@@ -263,7 +268,7 @@ class GzipDecompress
                     distCodeLen = Arrays.copyOf(distCodeLen, 32);
                     distCodeLen[31] = 1;
                 }
-                distCode = new CanonicalCode(distCodeLen);
+                distCode = new CanonicalCode(distCodeLen, 32);
             }
         
             return new CanonicalCode[]{litLenCode, distCode};
@@ -271,15 +276,15 @@ class GzipDecompress
     
         void decompressUncompressedBlock() throws IOException, DataFormatException
         {
-            while (input.getBitPosition() != 0)
-                input.readUint(1);
-            int  len = input.readUint(16);
-            int nlen = input.readUint(16);
+            while (_bis.getBitPosition() != 0)
+                _bis.readUint(1);
+            int  len = _bis.readUint(16);
+            int nlen = _bis.readUint(16);
             if ((len ^ 0xFFFF) != nlen)
                 throw new DataFormatException("Invalid length in uncompressed block");
             for (int i = 0; i < len; i++)
             {
-                int b = input.readUint(8);  // Byte is aligned
+                int b = _bis.readUint(8);  // Byte is aligned
                 output.write(b);
                 dictionary.append(b);
             }
@@ -288,7 +293,7 @@ class GzipDecompress
         void decompressHuffmanBlock(CanonicalCode litLenCode, CanonicalCode distCode)
             throws IOException, DataFormatException
         {
-            for (int sym; (sym = litLenCode.decodeNextSymbol(input)) != 256;)
+            for (int sym; (sym = litLenCode.decodeNextSymbol(_bis)) != 256;)
             {
                 if (sym < 256)
                 {
@@ -298,7 +303,7 @@ class GzipDecompress
                 else
                 {
                     int run = decodeRunLength(sym);
-                    int distSym = distCode.decodeNextSymbol(input);
+                    int distSym = distCode.decodeNextSymbol(_bis);
                     int dist = decodeDistance(distSym);
                     dictionary.copy(dist, run, output);
                 }
@@ -313,7 +318,7 @@ class GzipDecompress
             if (sym <= 284)
             {
                 int numExtraBits = (sym - 261) / 4;
-                return (((sym - 265) % 4 + 4) << numExtraBits) + 3 + input.readUint(numExtraBits);
+                return (((sym - 265) % 4 + 4) << numExtraBits) + 3 + _bis.readUint(numExtraBits);
             }
 
             if (sym == 285)
@@ -330,7 +335,7 @@ class GzipDecompress
             if (sym <= 29)
             {
                 int numExtraBits = sym / 2 - 1;
-                return ((sym % 2 + 2) << numExtraBits) + 1 + input.readUint(numExtraBits);
+                return ((sym % 2 + 2) << numExtraBits) + 1 + _bis.readUint(numExtraBits);
             }
 
             throw new DataFormatException("Reserved distance symbol: " + sym);
@@ -399,8 +404,8 @@ class GzipDecompress
                 msgOut.printf("Header CRC-16: %04X%n", readLittleEndianUint16(in));
  
             CRCOutputStream output = new CRCOutputStream(os);
-            Decompressor dec = new Decompressor(new ByteBitInputStream(in), output);
-            dec.decompress();
+            Inflater dec = new Inflater(new ByteBitInputStream(in), output);
+            dec.inflate();
             os.flush();
             int crc  = readLittleEndianInt32(in);
             int size = readLittleEndianInt32(in);
