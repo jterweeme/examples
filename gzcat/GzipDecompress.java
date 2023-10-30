@@ -91,13 +91,13 @@ class GzipDecompress
     
         CanonicalCode(int[] codeLengths, int n)
         {
-            symbolCodeBits = new int[codeLengths.length];
-            symbolValues = new int[codeLengths.length];
+            symbolCodeBits = new int[n];
+            symbolValues = new int[n];
             for (int codeLength = 1, nextCode = 0; codeLength <= MAX_CODE_LENGTH; codeLength++)
             {
                 nextCode <<= 1;
                 int startBit = 1 << codeLength;
-                for (int symbol = 0; symbol < codeLengths.length; symbol++)
+                for (int symbol = 0; symbol < n; symbol++)
                 {
                     if (codeLengths[symbol] != codeLength)
                         continue;
@@ -169,7 +169,7 @@ class GzipDecompress
             for (; i < 288; i++) llcodelens[i] = 8;
             FIXED_LITERAL_LENGTH_CODE = new CanonicalCode(llcodelens, 288);
             int[] distcodelens = new int[32];
-            Arrays.fill(distcodelens, 5);
+            for (i = 0; i < 32; i++) distcodelens[i] = 5;
             FIXED_DISTANCE_CODE = new CanonicalCode(distcodelens, 32);
         }
 
@@ -210,8 +210,9 @@ class GzipDecompress
             }
         
             CanonicalCode codeLenCode = new CanonicalCode(codeLenCodeLen, 19);
-            int[] codeLens = new int[numLitLenCodes + numDistCodes];
-            for (int codeLensIndex = 0; codeLensIndex < codeLens.length; )
+            int nCodeLens = numLitLenCodes + numDistCodes;
+            int[] codeLens = new int[nCodeLens];
+            for (int codeLensIndex = 0; codeLensIndex < nCodeLens; )
             {
                 int sym = codeLenCode.decodeNextSymbol(_bis);
                 if (0 <= sym && sym <= 15)
@@ -243,15 +244,15 @@ class GzipDecompress
             for (int i = 0; i < numLitLenCodes; i++)
                 litLenCodeLen[i] = codeLens[i];
             CanonicalCode litLenCode = new CanonicalCode(litLenCodeLen, numLitLenCodes);
-            int n = codeLens.length - numLitLenCodes;
-            int[] distCodeLen = new int[n];
-            for (int i = 0, j = numLitLenCodes; j < codeLens.length; i++, j++)
+            int nDistCodeLen = nCodeLens - numLitLenCodes;
+            int[] distCodeLen = new int[nDistCodeLen];
+            for (int i = 0, j = numLitLenCodes; j < nCodeLens; i++, j++)
                 distCodeLen[i] = codeLens[j];
             CanonicalCode distCode;
-            if (n == 1 && distCodeLen[0] == 0)
+            if (nDistCodeLen == 1 && distCodeLen[0] == 0)
             {
                 //distCode = null;
-                distCode = new CanonicalCode(distCodeLen, n);  //bogus CanonicalCode
+                distCode = new CanonicalCode(distCodeLen, nDistCodeLen);  //bogus CanonicalCode
             }
             else
             {
@@ -265,10 +266,10 @@ class GzipDecompress
                 }
             
                 if (oneCount == 1 && otherPositiveCount == 0) {
-                    distCodeLen = Arrays.copyOf(distCodeLen, 32);
+                    nDistCodeLen = 32;
                     distCodeLen[31] = 1;
                 }
-                distCode = new CanonicalCode(distCodeLen, 32);
+                distCode = new CanonicalCode(distCodeLen, nDistCodeLen);
             }
         
             return new CanonicalCode[]{litLenCode, distCode};

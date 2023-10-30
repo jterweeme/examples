@@ -22,11 +22,11 @@ class BitInputStream
 private:
     std::istream &_input;
     int _currentByte = 0;
-    int numBitsRemaining = 0;
+    int _nBitsRemaining = 0;
     int readBitMaybe();
 public:
     BitInputStream(std::istream &in) : _input(in) { }
-    int getBitPosition() const { return (8 - numBitsRemaining) % 8; }
+    int getBitPosition() const { return (8 - _nBitsRemaining) % 8; }
     int readUint(int numBits);
 };
 
@@ -34,15 +34,15 @@ int BitInputStream::readBitMaybe()
 {
     if (_currentByte == std::char_traits<char>::eof())
         return -1;
-    if (numBitsRemaining == 0)
+    if (_nBitsRemaining == 0)
     {
         _currentByte = _input.get();
         if (_currentByte == std::char_traits<char>::eof())
             return -1;
-        numBitsRemaining = 8;
+        _nBitsRemaining = 8;
     }
-    --numBitsRemaining;
-    return (_currentByte >> (7 - numBitsRemaining)) & 1;
+    --_nBitsRemaining;
+    return (_currentByte >> (7 - _nBitsRemaining)) & 1;
 }
 
 int BitInputStream::readUint(int numBits)
@@ -244,9 +244,9 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
     }
     
     CanonicalCode codeLenCode(codeLenCodeLen, 19);
-    int n = numLitLenCodes + numDistCodes;
-    int codeLens[n];
-    for (int codeLensIndex = 0; codeLensIndex < n;)
+    int nCodeLens = numLitLenCodes + numDistCodes;
+    int codeLens[nCodeLens];
+    for (int codeLensIndex = 0; codeLensIndex < nCodeLens;)
     {
         int sym = codeLenCode.decodeNextSymbol(*_bis);
         if (0 <= sym && sym <= 15)
@@ -280,31 +280,32 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
     for (int i = 0; i < numLitLenCodes; ++i)
         litLenCodeLen[i] = codeLens[i];
     litLenCode = CanonicalCode(litLenCodeLen, numLitLenCodes);
-    int distCodeLen[n - numLitLenCodes];
-    //for (int i = 0; i < n
+    int nDistCodeLen = nCodeLens - numLitLenCodes;
+    int distCodeLen[nDistCodeLen];
+    for (int i = 0, j = numLitLenCodes; j < nCodeLens; ++i, ++j)
+        distCodeLen[i] = codeLens[j];
 
-    if (n - numLitLenCodes == 1 && distCodeLen[0] == 0)
+    if (nDistCodeLen == 1 && distCodeLen[0] == 0)
     {
         // Empty distance code; the block shall be all literal symbols
-        distCode = CanonicalCode();  
+        distCode = CanonicalCode(distCodeLen, nDistCodeLen);
     }
     else
     {
-        // Get statistics for upcoming logic
-        size_t oneCount = 0;
-        size_t otherPositiveCount = 0;
-        for (int x : distCodeLen) {
+        int oneCount = 0, otherPositiveCount = 0;
+        for (int x : distCodeLen)
+        {
             if (x == 1)
                 oneCount++;
             else if (x > 1)
                 otherPositiveCount++;
         }
         
-        // Handle the case where only one distance code is defined
         if (oneCount == 1 && otherPositiveCount == 0) {
+            nDistCodeLen = 32;
             distCodeLen[31] = 1;
         }
-        distCode = CanonicalCode(distCodeLen, n);
+        distCode = CanonicalCode(distCodeLen, nDistCodeLen);
     }
 }
 
