@@ -49,7 +49,14 @@ int BitInputStream::readUint(int numBits)
 {
     int result = 0;
     for (int i = 0; i < numBits; i++)
-        result |= readBitMaybe() << i;
+    {
+        int c = readBitMaybe();
+        
+        if (c == -1)
+            throw "end of file";
+
+        result |= c << i;
+    }
     return result;
 }
 
@@ -78,16 +85,31 @@ void CRCOutputStream::put(uint8_t b)
 class CanonicalCode final
 {
 private:
-    int *_symbolCodeBits, *_symbolValues;
+    int *_symbolCodeBits = nullptr, *_symbolValues = nullptr;
     int _numSymbolsAllocated = 0;
     static const int MAX_CODE_LENGTH = 15;
 public:
     CanonicalCode() {}
-    CanonicalCode(int *codeLengths, size_t n);
+    ~CanonicalCode();
+    void init(int *codeLengths, size_t n);
     int decodeNextSymbol(BitInputStream &in) const;
 };
 
-CanonicalCode::CanonicalCode(int *codeLengths, size_t n)
+CanonicalCode::~CanonicalCode()
+{
+    if (_symbolCodeBits)
+    {
+        delete[] _symbolCodeBits;
+        _symbolCodeBits = nullptr;
+    }
+    if (_symbolValues)
+    {
+        delete[] _symbolValues;
+        _symbolValues = nullptr;
+    }
+}
+
+void CanonicalCode::init(int *codeLengths, size_t n)
 {
     _symbolCodeBits = new int[n];
     _symbolValues = new int[n];
@@ -134,6 +156,7 @@ private:
     size_t _index = 0, _length = 0, _size;
 public:
     ByteHistory(size_t size) : _size(size) { _data = new uint8_t[size]; }
+    ~ByteHistory() { delete[] _data; }
     void append(int b);
     void copy(int dist, int len, CRCOutputStream &out);
 };
@@ -189,11 +212,11 @@ Inflater::Inflater(BitInputStream *bis, CRCOutputStream *os)
         llcodelens[i] = 7;
     for (; i < 288; ++i)
         llcodelens[i] = 8;
-    _FIXED_LITERAL_LENGTH_CODE = CanonicalCode(llcodelens, 288);
+    _FIXED_LITERAL_LENGTH_CODE.init(llcodelens, 288);
     int distcodelens[32];
     for (i = 0; i < 32; ++i)
         distcodelens[i] = 5;
-    _FIXED_DISTANCE_CODE = CanonicalCode(distcodelens, 32);
+    _FIXED_DISTANCE_CODE.init(distcodelens, 32);
 }
 
 static std::string toHex(uint32_t val, int digits)
@@ -205,8 +228,12 @@ static std::string toHex(uint32_t val, int digits)
 
 void Inflater::inflate()
 {
+    int i = 0;
+
     for (bool isFinal = false; !isFinal;)
     {
+        //std::cerr << i << "\r\n";
+        ++i;
         isFinal = _bis->readUint(1) != 0;  // bfinal
         int type = _bis->readUint(2);  // btype
         
@@ -231,7 +258,7 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
     int numLitLenCodes = _bis->readUint(5) + 257;  // hlit + 257
     int numDistCodes = _bis->readUint(5) + 1;      // hdist + 1
     int numCodeLenCodes = _bis->readUint(4) + 4;   // hclen + 4
-    int codeLenCodeLen[19];
+    int codeLenCodeLen[19] = {0};
     codeLenCodeLen[16] = _bis->readUint(3);
     codeLenCodeLen[17] = _bis->readUint(3);
     codeLenCodeLen[18] = _bis->readUint(3);
@@ -243,7 +270,8 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
         codeLenCodeLen[j] = _bis->readUint(3);
     }
     
-    CanonicalCode codeLenCode(codeLenCodeLen, 19);
+    CanonicalCode codeLenCode;
+    codeLenCode.init(codeLenCodeLen, 19);
     int nCodeLens = numLitLenCodes + numDistCodes;
     int codeLens[nCodeLens];
     for (int codeLensIndex = 0; codeLensIndex < nCodeLens;)
@@ -279,7 +307,7 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
     int litLenCodeLen[numLitLenCodes];
     for (int i = 0; i < numLitLenCodes; ++i)
         litLenCodeLen[i] = codeLens[i];
-    litLenCode = CanonicalCode(litLenCodeLen, numLitLenCodes);
+    litLenCode.init(litLenCodeLen, numLitLenCodes);
     int nDistCodeLen = nCodeLens - numLitLenCodes;
     int distCodeLen[nDistCodeLen];
     for (int i = 0, j = numLitLenCodes; j < nCodeLens; ++i, ++j)
@@ -288,7 +316,7 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
     if (nDistCodeLen == 1 && distCodeLen[0] == 0)
     {
         // Empty distance code; the block shall be all literal symbols
-        distCode = CanonicalCode(distCodeLen, nDistCodeLen);
+        distCode.init(distCodeLen, nDistCodeLen);
     }
     else
     {
@@ -305,7 +333,7 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
             nDistCodeLen = 32;
             distCodeLen[31] = 1;
         }
-        distCode = CanonicalCode(distCodeLen, nDistCodeLen);
+        distCode.init(distCodeLen, nDistCodeLen);
     }
 }
 
