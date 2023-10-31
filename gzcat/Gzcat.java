@@ -25,7 +25,7 @@ import java.util.Objects;
 import java.util.zip.CRC32;
 import java.util.zip.DataFormatException;
 
-class GzipDecompress
+class Gzcat
 {
     class ByteBitInputStream implements java.io.Closeable
     {
@@ -428,7 +428,7 @@ class GzipDecompress
             System.err.println("Usage: java GzipDecompress InputFile.gz OutputFile");
             System.exit(1);
         }
-        String msg = new GzipDecompress().submain(new File(args[0]), System.out, System.err);
+        String msg = new Gzcat().submain(new File(args[0]), System.out, System.err);
 
         if (msg != null)
         {
