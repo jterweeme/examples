@@ -106,78 +106,23 @@ public class Bzcat
         }
     }
 
-    interface BZip2Constants {
-
-    /**
-     * First three bytes of the block header marker
-     */
-    static final int BLOCK_HEADER_MARKER_1 = 0x314159;
-
-    /**
-     * Last three bytes of the block header marker
-     */
-    static final int BLOCK_HEADER_MARKER_2 = 0x265359;
-
-    /**
-     * Number of symbols decoded after which a new Huffman table is selected
-     */
-    static final int HUFFMAN_GROUP_RUN_LENGTH = 50;
-
-    /**
-     * Maximum possible Huffman alphabet size
-     */
-    static final int HUFFMAN_MAXIMUM_ALPHABET_SIZE = 258;
-
-    /**
-     * The longest Huffman code length created by the encoder
-     */
-    static final int HUFFMAN_ENCODE_MAXIMUM_CODE_LENGTH = 20;
-
-    /**
-     * The longest Huffman code length accepted by the decoder
-     */
-    static final int HUFFMAN_DECODE_MAXIMUM_CODE_LENGTH = 23;
-
-    /**
-     * Minimum number of alternative Huffman tables
-     */
-    static final int HUFFMAN_MINIMUM_TABLES = 2;
-static final int HUFFMAN_MAXIMUM_TABLES = 6;
-
-    /**
-     * Maximum possible number of Huffman table selectors
-     */
-    static final int HUFFMAN_MAXIMUM_SELECTORS = (900000 / HUFFMAN_GROUP_RUN_LENGTH) + 1;
-
-    /**
-     * Huffman symbol used for run-length encoding
-     */
-    static final int HUFFMAN_SYMBOL_RUNA = 0;
-
-    /**
-     * Huffman symbol used for run-length encoding
-     */
-    static final int HUFFMAN_SYMBOL_RUNB = 1;
-
-    /**
-     * First three bytes of the end of stream marker
-     */
-    static final int STREAM_END_MARKER_1 = 0x177245;
-
-    /**
-     * Last three bytes of the end of stream marker
-     */
-    static final int STREAM_END_MARKER_2 = 0x385090;
-
-    /**
-     * 'B' 'Z' that marks the start of a BZip2 stream
-     */
-    static final int STREAM_START_MARKER_1 = 0x425a;
-
-    /**
-     * 'h' that distinguishes BZip from BZip2
-     */
-    static final int STREAM_START_MARKER_2 = 0x68;
+    interface BZip2Constants
+    {
+        static final int BLOCK_HEADER_MARKER_1 = 0x314159;
+        static final int BLOCK_HEADER_MARKER_2 = 0x265359;
+        static final int HUFFMAN_GROUP_RUN_LENGTH = 50;
+        static final int HUFFMAN_MAXIMUM_ALPHABET_SIZE = 258;
+        static final int HUFFMAN_ENCODE_MAXIMUM_CODE_LENGTH = 20;
+        static final int HUFFMAN_DECODE_MAXIMUM_CODE_LENGTH = 23;
+        static final int HUFFMAN_MINIMUM_TABLES = 2;
+        static final int HUFFMAN_MAXIMUM_TABLES = 6;
+        static final int HUFFMAN_MAXIMUM_SELECTORS = (900000 / HUFFMAN_GROUP_RUN_LENGTH) + 1;
+        static final int HUFFMAN_SYMBOL_RUNA = 0;
+        static final int HUFFMAN_SYMBOL_RUNB = 1;
+        static final int STREAM_END_MARKER_1 = 0x177245;
+        static final int STREAM_END_MARKER_2 = 0x385090;
+        static final int STREAM_START_MARKER_1 = 0x425a;
+        static final int STREAM_START_MARKER_2 = 0x68;
     }
 
     public class BZip2HuffmanStageDecoder
@@ -565,14 +510,20 @@ static final int HUFFMAN_MAXIMUM_TABLES = 6;
             {
                 final int nextSymbol = huffmanDecoder.nextSymbol();
 
-                if (nextSymbol == BZip2Constants.HUFFMAN_SYMBOL_RUNA) {
-                repeatCount += repeatIncrement;
-                repeatIncrement <<= 1;
-                } else if (nextSymbol == BZip2Constants.HUFFMAN_SYMBOL_RUNB) {
-                repeatCount += repeatIncrement << 1;
-                repeatIncrement <<= 1;
-                } else {
-                if (repeatCount > 0) {
+                if (nextSymbol == BZip2Constants.HUFFMAN_SYMBOL_RUNA)
+                {
+                    repeatCount += repeatIncrement;
+                    repeatIncrement <<= 1;
+                }
+                else if (nextSymbol == BZip2Constants.HUFFMAN_SYMBOL_RUNB)
+                {
+                    repeatCount += repeatIncrement << 1;
+                    repeatIncrement <<= 1;
+                }
+                else
+                {
+                    if (repeatCount > 0)
+                    {
                     if (bwtBlockLength + repeatCount > streamBlockSize) {
                         throw new BZip2Exception ("BZip2 block exceeds declared block size");
                     }
@@ -584,20 +535,20 @@ static final int HUFFMAN_MAXIMUM_TABLES = 6;
 
                     repeatCount = 0;
                     repeatIncrement = 1;
-                }
+                    }
 
-                if (nextSymbol == huffmanEndOfBlockSymbol)
-                    break;
+                    if (nextSymbol == huffmanEndOfBlockSymbol)
+                        break;
 
-                if (bwtBlockLength >= streamBlockSize) {
-                    throw new BZip2Exception ("BZip2 block exceeds declared block size");
-                }
+                    if (bwtBlockLength >= streamBlockSize) {
+                        throw new BZip2Exception ("BZip2 block exceeds declared block size");
+                    }
 
-                mtfValue = symbolMTF.indexToFront (nextSymbol - 1) & 0xff;
+                    mtfValue = symbolMTF.indexToFront (nextSymbol - 1) & 0xff;
 
-                final byte nextByte = huffmanSymbolMap[mtfValue];
-                bwtByteCounts[nextByte & 0xff]++;
-                bwtBlock[bwtBlockLength++] = nextByte;
+                    final byte nextByte = huffmanSymbolMap[mtfValue];
+                    bwtByteCounts[nextByte & 0xff]++;
+                    bwtBlock[bwtBlockLength++] = nextByte;
                 }
             }
 
@@ -642,7 +593,9 @@ static final int HUFFMAN_MAXIMUM_TABLES = 6;
         int nextDecodedByte =  mergedPointer & 0xff;
         this.bwtCurrentMergedPointer = this.bwtMergedPointers[mergedPointer >>> 8];
 
-        if (this.blockRandomised) {
+        if (this.blockRandomised)
+        {
+            System.err.println("block randomised");
             if (--this.randomCount == 0) {
                 nextDecodedByte ^= 1;
                 this.randomIndex = (this.randomIndex + 1) % 512;
@@ -852,12 +805,17 @@ static final int HUFFMAN_MAXIMUM_TABLES = 6;
                 }
                 return true;
             }
-            else if (marker1 == BZip2Constants.STREAM_END_MARKER_1 &&
-                     marker2 == BZip2Constants.STREAM_END_MARKER_2)
+
+            if (marker1 == BZip2Constants.STREAM_END_MARKER_1 &&
+                marker2 == BZip2Constants.STREAM_END_MARKER_2)
             {
                 // Read and verify the end-of-stream CRC
                 this.streamComplete = true;
-                final int storedCombinedCRC = this.bitInputStream.readInteger();
+                final int crc = this.bitInputStream.readInteger();
+                final int storedCombinedCRC = crc;
+
+                System.err.println(String.format("0x%08X 0x%08X", storedCombinedCRC, crc));
+
                 if (storedCombinedCRC != this.streamCRC) {
                     throw new BZip2Exception ("BZip2 stream CRC error");
                 }
@@ -895,31 +853,20 @@ static final int HUFFMAN_MAXIMUM_TABLES = 6;
             System.exit (1);
         }
 
-        File outputFile = new File (args[0].substring (0, args[0].length() - 4));
-        if (outputFile.exists()) {
-            System.err.println ("File " + outputFile.getPath() + " already exists");
-            System.exit (1);
-        }
-
         InputStream fileInputStream = new BufferedInputStream (new FileInputStream (inputFile));
         BZip2InputStream inputStream = new BZip2InputStream (fileInputStream, false);
-        OutputStream fileOutputStream = new BufferedOutputStream (new FileOutputStream (outputFile), 524288);
 
         byte[] decoded = new byte [524288];
         int bytesRead;
         while ((bytesRead = inputStream.read (decoded)) != -1) {
-            fileOutputStream.write (decoded, 0, bytesRead) ;
+            System.out.write (decoded, 0, bytesRead) ;
         }
-        fileOutputStream.close();
     }
 
     public static void main (String[] args) throws IOException
     {
         new Bzcat().submain(args);
-
-
     }
-
 }
 
 
