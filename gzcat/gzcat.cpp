@@ -6,15 +6,13 @@
  * https://www.nayuki.io/page/simple-deflate-decompressor
  */
 
+// current version by Jasper ter Weeme
+
 #include <bitset>
 #include <iostream>
 #include <fstream>
-#include <string>
 #include <sstream>
 #include <iomanip>
-#include <vector>
-#include <cassert>
-#include <climits>
 #include <cstdint>
 
 class BitInputStream
@@ -130,20 +128,36 @@ void CanonicalCode::init(int *codeLengths, size_t n)
     }
 }
 
+//https://www.geeksforgeeks.org/binary-search/
+static int binarySearch(int *arr, int l, int r, int x)
+{
+    while (l <= r)
+    {
+        int m = l + (r - l) / 2;
+ 
+        // Check if x is present at mid
+        if (arr[m] == x)
+            return m;
+ 
+        // If x greater, ignore left half
+        if (arr[m] < x)
+            l = m + 1;
+ 
+        // If x is smaller, ignore right half
+        else
+            r = m - 1;
+    }
+ 
+    // If we reach here, then element was not present
+    return -1;
+}
+
 int CanonicalCode::decodeNextSymbol(BitInputStream &in) const
 {
     for (int codeBits = 1; true;)
     {
         codeBits = (codeBits << 1) | in.readUint(1);
-        int index = -1;
-        
-        for (int i = 0; i < _numSymbolsAllocated; ++i)
-        {
-            if (_symbolCodeBits[i] == codeBits)
-            {   index = i;
-                break;
-            }
-        }
+        int index = binarySearch(_symbolCodeBits, 0, _numSymbolsAllocated - 1, codeBits);
         if (index >= 0)
             return _symbolValues[index];
     }
@@ -180,23 +194,30 @@ void ByteHistory::copy(int dist, int len, CRCOutputStream &out)
     }
 }
 
-class Inflater final
+class Inflater
 {
 private:
-    BitInputStream *_bis;
-    CRCOutputStream *_os;
+    BitInputStream * const _bis;
+    CRCOutputStream * const _os;
     ByteHistory _dictionary;
     CanonicalCode _FIXED_LITERAL_LENGTH_CODE;
     CanonicalCode _FIXED_DISTANCE_CODE;
     void decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &distCode);
-    void decompressUncompressedBlock();
-    void decompressHuffmanBlock(const CanonicalCode &litLenCode, const CanonicalCode &distCode);
+    void inflateUncompressedBlock();
+    void inflateHuffmanBlock(const CanonicalCode &litLenCode, const CanonicalCode &distCode);
     int decodeRunLength(int sym);
     long decodeDistance(int sym);
-public:
     Inflater(BitInputStream *bis, CRCOutputStream *os);
     void inflate();
+public:
+    static void inflate(BitInputStream *bis, CRCOutputStream *os);
 };
+
+void Inflater::inflate(BitInputStream *bis, CRCOutputStream *os)
+{
+    Inflater inflater(bis, os);
+    inflater.inflate();
+}
 
 Inflater::Inflater(BitInputStream *bis, CRCOutputStream *os)
   :
@@ -228,24 +249,20 @@ static std::string toHex(uint32_t val, int digits)
 
 void Inflater::inflate()
 {
-    int i = 0;
-
     for (bool isFinal = false; !isFinal;)
     {
-        //std::cerr << i << "\r\n";
-        ++i;
         isFinal = _bis->readUint(1) != 0;  // bfinal
         int type = _bis->readUint(2);  // btype
         
         if (type == 0)
-            decompressUncompressedBlock();
+            inflateUncompressedBlock();
         else if (type == 1)
-            decompressHuffmanBlock(_FIXED_LITERAL_LENGTH_CODE, _FIXED_DISTANCE_CODE);
+            inflateHuffmanBlock(_FIXED_LITERAL_LENGTH_CODE, _FIXED_DISTANCE_CODE);
         else if (type == 2)
         {
             CanonicalCode litLen, dist;
             decodeHuffmanCodes(litLen, dist);
-            decompressHuffmanBlock(litLen, dist);
+            inflateHuffmanBlock(litLen, dist);
         } else if (type == 3)
             throw std::domain_error("Reserved block type");
         else
@@ -266,7 +283,7 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
 
     for (int i = 0; i < numCodeLenCodes - 4; ++i)
     {
-        int j = (i % 2 == 0) ? (8 + i / 2) : (7 - i / 2);
+        int j = i % 2 == 0 ? 8 + i / 2 : 7 - i / 2;
         codeLenCodeLen[j] = _bis->readUint(3);
     }
     
@@ -281,27 +298,25 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
         {
             codeLens[codeLensIndex] = sym;
             ++codeLensIndex;
+            continue;
         }
-        else
+        int runLen, runVal = 0;
+        if (sym == 16)
         {
-            int runLen, runVal = 0;
-            if (sym == 16)
-            {
-                runLen = _bis->readUint(2) + 3;
-                runVal = codeLens[codeLensIndex - 1];
-            } else if (sym == 17) {
-                runLen = _bis->readUint(3) + 3;
-            } else if (sym == 18) {
-                runLen = _bis->readUint(7) + 11;
-            } else {
-                throw std::logic_error("Symbol out of range");
-            }
-
-            int end = codeLensIndex + runLen;
-            for (int i = codeLensIndex; i < end; ++i)
-                codeLens[i] = runVal;
-            codeLensIndex = end;
+            runLen = _bis->readUint(2) + 3;
+            runVal = codeLens[codeLensIndex - 1];
+        } else if (sym == 17) {
+            runLen = _bis->readUint(3) + 3;
+        } else if (sym == 18) {
+            runLen = _bis->readUint(7) + 11;
+        } else {
+            throw std::logic_error("Symbol out of range");
         }
+
+        int end = codeLensIndex + runLen;
+        for (int i = codeLensIndex; i < end; ++i)
+            codeLens[i] = runVal;
+        codeLensIndex = end;
     }
     
     int litLenCodeLen[numLitLenCodes];
@@ -314,30 +329,24 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
         distCodeLen[i] = codeLens[j];
 
     if (nDistCodeLen == 1 && distCodeLen[0] == 0)
+        return;
+    
+    int oneCount = 0, otherPositiveCount = 0;
+    for (int x : distCodeLen)
     {
-        // Empty distance code; the block shall be all literal symbols
-        distCode.init(distCodeLen, nDistCodeLen);
+        if (x == 1)
+            oneCount++;
+        else if (x > 1)
+            otherPositiveCount++;
     }
-    else
-    {
-        int oneCount = 0, otherPositiveCount = 0;
-        for (int x : distCodeLen)
-        {
-            if (x == 1)
-                oneCount++;
-            else if (x > 1)
-                otherPositiveCount++;
-        }
-        
-        if (oneCount == 1 && otherPositiveCount == 0) {
-            nDistCodeLen = 32;
-            distCodeLen[31] = 1;
-        }
-        distCode.init(distCodeLen, nDistCodeLen);
-    }
+    
+    if (oneCount == 1 && otherPositiveCount == 0)
+        nDistCodeLen = 32, distCodeLen[31] = 1;
+
+    distCode.init(distCodeLen, nDistCodeLen);
 }
 
-void Inflater::decompressUncompressedBlock()
+void Inflater::inflateUncompressedBlock()
 {
     // Discard bits to align to byte boundary
     while (_bis->getBitPosition() != 0)
@@ -359,7 +368,7 @@ void Inflater::decompressUncompressedBlock()
     }
 }
 
-void Inflater::decompressHuffmanBlock(
+void Inflater::inflateHuffmanBlock(
         const CanonicalCode &litLenCode, const CanonicalCode &distCode)
 {
     for (int sym; (sym = litLenCode.decodeNextSymbol(*_bis)) != 256;)
@@ -500,8 +509,7 @@ static void submain(std::istream &is, std::ostream &os)
         
     BitInputStream in2(is);
     CRCOutputStream os2(&os);
-    Inflater d(&in2, &os2);
-    d.inflate();
+    Inflater::inflate(&in2, &os2);
     uint32_t crc = in1.readLittleEndianUint32();
     std::cerr << "CRC: 0x" << toHex(crc, 8) << " 0x" << toHex(os2.crc(), 8) << "\r\n";
     uint32_t size = in1.readLittleEndianUint32();
