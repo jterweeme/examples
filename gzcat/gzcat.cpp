@@ -11,8 +11,6 @@
 #include <bitset>
 #include <iostream>
 #include <fstream>
-#include <sstream>
-#include <iomanip>
 #include <cstdint>
 
 class BitInputStream
@@ -96,15 +94,10 @@ public:
 CanonicalCode::~CanonicalCode()
 {
     if (_symbolCodeBits)
-    {
         delete[] _symbolCodeBits;
-        _symbolCodeBits = nullptr;
-    }
+    
     if (_symbolValues)
-    {
         delete[] _symbolValues;
-        _symbolValues = nullptr;
-    }
 }
 
 void CanonicalCode::init(int *codeLengths, size_t n)
@@ -240,11 +233,23 @@ Inflater::Inflater(BitInputStream *bis, CRCOutputStream *os)
     _FIXED_DISTANCE_CODE.init(distcodelens, 32);
 }
 
-static std::string toHex(uint32_t val, int digits)
+static char nibble(uint8_t n)
 {
-    std::ostringstream s;
-    s << std::hex << std::setw(digits) << std::setfill('0') << val;
-    return s.str();
+    return n <= 9 ? '0' + char(n) : 'a' + char(n - 10);
+}
+
+static std::string hex32(uint32_t dw)
+{
+    std::string ret;
+    ret.push_back(nibble(dw >> 28 & 0xf));
+    ret.push_back(nibble(dw >> 24 & 0xf));
+    ret.push_back(nibble(dw >> 20 & 0xf));
+    ret.push_back(nibble(dw >> 16 & 0xf));
+    ret.push_back(nibble(dw >> 12 & 0xf));
+    ret.push_back(nibble(dw >>  8 & 0xf));
+    ret.push_back(nibble(dw >>  4 & 0xf));
+    ret.push_back(nibble(dw >>  0 & 0xf));
+    return ret;
 }
 
 void Inflater::inflate()
@@ -496,22 +501,22 @@ static void submain(std::istream &is, std::ostream &os)
     }
 
     if (flags[3])
-        std::cerr << "File name: " + in1.readNullTerminatedString() << std::endl;
+        std::cerr << "File name: " + in1.readNullTerminatedString() << "\r\n";
 
     if (flags[4])
-        std::cerr << "Comment: " + in1.readNullTerminatedString() << std::endl;
+        std::cerr << "Comment: " + in1.readNullTerminatedString() << "\r\n";
 
     if (flags[1])
     {
-        std::cerr << "Header CRC-16: "
-                  << toHex(in1.readLittleEndianUint16(), 4) << std::endl;
+        in1.readLittleEndianUint16();
+        std::cerr << "16bit CRC present\r\n";
     }
         
     BitInputStream in2(is);
     CRCOutputStream os2(&os);
     Inflater::inflate(&in2, &os2);
     uint32_t crc = in1.readLittleEndianUint32();
-    std::cerr << "CRC: 0x" << toHex(crc, 8) << " 0x" << toHex(os2.crc(), 8) << "\r\n";
+    std::cerr << "CRC: 0x" << hex32(crc) << " 0x" << hex32(os2.crc()) << "\r\n";
     uint32_t size = in1.readLittleEndianUint32();
     std::cerr << "size: " << size << " " << os2.cnt() << "\r\n";
 }

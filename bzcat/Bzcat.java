@@ -342,22 +342,22 @@ public class Bzcat
 
         public int valueToFront (final byte value)
         {
-
-        final byte[] mtf = this.mtf;
-
-        int index = 0;
-        byte temp = mtf[0];
-        if (value != temp) {
-            mtf[0] = value;
-            while (value != temp) {
-                index++;
-                final byte temp2 = temp;
-                temp = mtf[index];
-                mtf[index] = temp2;
+            final byte[] mtf = this.mtf;
+            int index = 0;
+            byte temp = mtf[0];
+            if (value != temp)
+            {
+                mtf[0] = value;
+                while (value != temp)
+                {
+                    index++;
+                    final byte temp2 = temp;
+                    temp = mtf[index];
+                    mtf[index] = temp2;
+                }
             }
-        }
 
-        return index;
+            return index;
         }
 
         public byte indexToFront (final int index)
@@ -555,35 +555,30 @@ public class Bzcat
             this.bwtBlockLength = bwtBlockLength;
         }
 
-        private void initialiseInverseBWT (final int bwtStartPointer) throws IOException {
+        private void initialiseInverseBWT (final int bwtStartPointer) throws IOException
+        {
+            final byte[] bwtBlock  = this.bwtBlock;
+            final int[] bwtMergedPointers = new int[this.bwtBlockLength];
+            final int[] characterBase = new int[256];
 
-        final byte[] bwtBlock  = this.bwtBlock;
-        final int[] bwtMergedPointers = new int[this.bwtBlockLength];
-        final int[] characterBase = new int[256];
+            if ((bwtStartPointer < 0) || (bwtStartPointer >= this.bwtBlockLength)) {
+                throw new BZip2Exception ("BZip2 start pointer invalid");
+            }
 
-        if ((bwtStartPointer < 0) || (bwtStartPointer >= this.bwtBlockLength)) {
-            throw new BZip2Exception ("BZip2 start pointer invalid");
-        }
+            // Cumulatise character counts
+            System.arraycopy (this.bwtByteCounts, 0, characterBase, 1, 255);
+            for (int i = 2; i <= 255; i++) {
+                characterBase[i] += characterBase[i - 1];
+            }
 
-        // Cumulatise character counts
-        System.arraycopy (this.bwtByteCounts, 0, characterBase, 1, 255);
-        for (int i = 2; i <= 255; i++) {
-            characterBase[i] += characterBase[i - 1];
-        }
+            for (int i = 0; i < this.bwtBlockLength; i++) {
+                int value = bwtBlock[i] & 0xff;
+                bwtMergedPointers[characterBase[value]++] = (i << 8) + value;
+            }
 
-        // Merged-Array Inverse Burrows-Wheeler Transform
-        // Combining the output characters and forward pointers into a single array here, where we
-        // have already read both of the corresponding values, cuts down on memory accesses in the
-        // final walk through the array
-        for (int i = 0; i < this.bwtBlockLength; i++) {
-            int value = bwtBlock[i] & 0xff;
-            bwtMergedPointers[characterBase[value]++] = (i << 8) + value;
-        }
-
-        this.bwtBlock = null;
-        this.bwtMergedPointers = bwtMergedPointers;
-        this.bwtCurrentMergedPointer = bwtMergedPointers[bwtStartPointer];
-
+            this.bwtBlock = null;
+            this.bwtMergedPointers = bwtMergedPointers;
+            this.bwtCurrentMergedPointer = bwtMergedPointers[bwtStartPointer];
         }
 
         private int decodeNextBWTByte()
