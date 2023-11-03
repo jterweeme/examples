@@ -22,7 +22,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Objects;
-import java.util.zip.CRC32;
 import java.util.zip.DataFormatException;
 
 class Gzcat
@@ -66,13 +65,34 @@ class Gzcat
         }
     }
 
+    class CRC32
+    {
+        int _table[] = new int[256];
+        int _crc = 0xffffffff;
+
+        void _makeTable()
+        {
+            for (int n = 0; n < 256; ++n)
+            {
+                int c = n;
+                for (int k = 0; k < 8; ++k)
+                    c = (c & 1) != 0 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+                _table[n] = c;
+            }
+        }
+
+        CRC32() { _makeTable(); }
+        void update(int c) { _crc = _table[(_crc ^ c) & 0xff] ^ (_crc >>> 8); }
+        int crc() { return ~_crc; }
+    }
+
     class CRCOutputStream extends OutputStream
     {
         OutputStream _os;
         int _cnt = 0;
         CRC32 _crc = new CRC32();
         public CRCOutputStream(OutputStream os) { _os = os; }
-        public int crc() { return (int)_crc.getValue(); }
+        public int crc() { return _crc.crc(); }
         public int cnt() { return _cnt; }
 
         public void write(int b) throws IOException
@@ -411,7 +431,7 @@ class Gzcat
             int crc  = readLittleEndianInt32(in);
             int size = readLittleEndianInt32(in);
             msgOut.println("size: " + size + " " + output.cnt());
-            msgOut.println("crc: " + crc + " " + output.crc());
+            msgOut.println(String.format("CRC32: 0x%08X 0x%08X", crc, output.crc()));
         } catch (IOException e) {
             return "I/O exception: " + e.getMessage();
         } catch (DataFormatException e)

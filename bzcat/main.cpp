@@ -1,9 +1,7 @@
 #include <fstream>
-#include <sstream>
 #include <vector>
 #include <array>
 #include <iostream>
-#include <iomanip>
 #include <cstdint>
 
 #ifdef WIN32
@@ -177,9 +175,37 @@ public:
     uint32_t base(uint8_t i) const { return _bases.at(i); }
 };
 
+class CRC32
+{
+private:
+    uint32_t _table[256];
+    uint32_t _crc = 0xffffffff;
+public:
+    CRC32();
+    void reset() { _crc = 0xffffffff; }
+    void update(int c) { _crc = (_crc << 8) ^ _table[((_crc >> 24) ^ c) & 0xff]; }
+    uint32_t crc() const { return ~_crc; }
+};
+
+CRC32::CRC32()
+{
+    //https://github.com/gcc-mirror/gcc/blob/master/libiberty/crc32.c
+    for (uint32_t i = 0, j, c; i < 256; ++i)
+    {
+        for (c = i << 24, j = 8; j > 0; --j)
+            c = c & 0x80000000 ? (c << 1) ^ 0x04c11db7 : c << 1;
+        _table[i] = c;
+    }
+#if 0
+    for (uint32_t x : _table)
+        std::cerr << "0x" << hex32(x) << "\r\n";
+#endif
+}
+
 class Block
 {
 private:
+    CRC32 _crc;
     int32_t *_merged = nullptr;
     int32_t _curTbl, _grpIdx, _grpPos, _last, _acc, _repeat, _curp, _length, _dec;
     uint32_t _nextByte();
@@ -222,17 +248,30 @@ uint32_t Block::_nextByte()
 
 int Block::read()
 {       
-    for (int nextByte; _repeat < 1;)
+    while (_repeat < 1)
     {           
         if (_dec == _length)
             return -1;
 
-        if ((nextByte = _nextByte()) != _last)
+        int nextByte = _nextByte();
+
+        if (nextByte != _last)
+        {
             _last = nextByte, _repeat = 1, _acc = 1;
+            _crc.update(nextByte);
+        }
         else if (++_acc == 4)
+        {
             _repeat = _nextByte() + 1, _acc = 0;
+
+            for (int i = 0; i < _repeat; ++i)
+                _crc.update(nextByte);
+        }
         else
+        {
             _repeat = 1;
+            _crc.update(nextByte);
+        }
     }
 
     _repeat--;
@@ -241,6 +280,7 @@ int Block::read()
 
 void Block::reset()
 {
+    _crc.reset();
     _grpIdx = _grpPos = _last = -1;
     _acc = _repeat = _length = _curp = _dec = _curTbl = 0;
 }
@@ -251,8 +291,12 @@ void Block::init(BitInputBase *bi)
     int32_t _bwtByteCounts[256] = {0};
     uint8_t _symbolMap[256] = {0};
     Fugt _bwtBlock2(9000000);
-    bi->readInt();
-    bi->readBool();
+    uint32_t blockCRC = bi->readInt();
+    bool randomised = bi->readBool();
+
+    if (randomised)
+        throw "Randomised blocks not supported.";
+
     uint32_t bwtStartPointer = bi->readBits(24), symbolCount = 0;
 
     for (uint16_t i = 0, ranges = bi->readBits(16); i < 16; i++)
@@ -386,6 +430,25 @@ void Table::calc()
                 _symbols.at(i++) = symbol;
 }
 
+static char nibble(uint8_t n)
+{
+    return n <= 9 ? '0' + char(n) : 'a' + char(n - 10);
+}
+
+static std::string hex32(uint32_t dw)
+{
+    std::string ret;
+    ret.push_back(nibble(dw >> 28 & 0xf));
+    ret.push_back(nibble(dw >> 24 & 0xf));
+    ret.push_back(nibble(dw >> 20 & 0xf));
+    ret.push_back(nibble(dw >> 16 & 0xf));
+    ret.push_back(nibble(dw >> 12 & 0xf));
+    ret.push_back(nibble(dw >>  8 & 0xf));
+    ret.push_back(nibble(dw >>  4 & 0xf));
+    ret.push_back(nibble(dw >>  0 & 0xf));
+    return ret;
+}
+
 class DecStream
 {
 private:
@@ -393,9 +456,10 @@ private:
     Block _bd;
     uint32_t _streamComplete = false;
     bool _initNextBlock();
-public:
     int read();
     DecStream(BitInputBase *bi) : _bi(bi) { _bi->ignore(32); }
+public:
+    static void decode(std::istream &is, std::ostream &os);
 };
 
 int DecStream::read()
@@ -421,7 +485,7 @@ bool DecStream::_initNextBlock()
     {
         _streamComplete = true;
         uint32_t crc = _bi->readInt();
-        std::cerr << "0x" << std::hex << std::setw(8) << std::setfill('0') << crc << "\r\n";
+        std::cerr << "0x" << hex32(crc) << "\r\n";
         return false;
     }
 
@@ -429,11 +493,31 @@ bool DecStream::_initNextBlock()
     throw "BZip2 stream format error";
 }
 
+void DecStream::decode(std::istream &is, std::ostream &os)
+{
+    BitInputStream bi(&is);
+    DecStream ds(&bi);
+
+    for (int b; (b = ds.read()) != -1;)
+    {
+        os.put(b);
+    }
+}
+
+
 int main(int argc, char **argv)
 {
-    BitInputStream bi(&std::cin);
-    DecStream ds(&bi);
-    for (int b; (b = ds.read()) != -1; std::cout.put(b));
+    std::istream *is = &std::cin;
+    std::ifstream ifs;
+
+    if (argc == 2)
+    {
+        ifs.open(argv[1]);
+        is = &ifs;
+    }
+
+    DecStream::decode(*is, std::cout);
+    ifs.close();
     return 0;
 }
 
