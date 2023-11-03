@@ -127,24 +127,24 @@ public class Bzcat
 
     public class BZip2HuffmanStageDecoder
     {
-        private final BZip2BitInputStream bitInputStream;
-        private final byte[] selectors;
-        private final int[] minimumLengths = new int[BZip2Constants.HUFFMAN_MAXIMUM_TABLES];
+        final BZip2BitInputStream bitInputStream;
+        final byte[] selectors;
+        final int[] minimumLengths = new int[BZip2Constants.HUFFMAN_MAXIMUM_TABLES];
 
-        private final int[][] codeBases = new int[BZip2Constants.HUFFMAN_MAXIMUM_TABLES][
+        final int[][] codeBases = new int[BZip2Constants.HUFFMAN_MAXIMUM_TABLES][
                             BZip2Constants.HUFFMAN_DECODE_MAXIMUM_CODE_LENGTH + 2];
 
-        private final int[][] codeLimits = new int[BZip2Constants.HUFFMAN_MAXIMUM_TABLES][
+        final int[][] codeLimits = new int[BZip2Constants.HUFFMAN_MAXIMUM_TABLES][
                                 BZip2Constants.HUFFMAN_DECODE_MAXIMUM_CODE_LENGTH + 1];
 
-        private final int[][] codeSymbols = new int[BZip2Constants.HUFFMAN_MAXIMUM_TABLES][
+        final int[][] codeSymbols = new int[BZip2Constants.HUFFMAN_MAXIMUM_TABLES][
                                 BZip2Constants.HUFFMAN_MAXIMUM_ALPHABET_SIZE];
 
-        private int currentTable;
-        private int groupIndex = -1;
-        private int groupPosition = -1;
+        int currentTable;
+        int groupIndex = -1;
+        int groupPosition = -1;
 
-        private void createHuffmanDecodingTables (final int alphabetSize,
+        void _createHuffmanDecodingTables(final int alphabetSize,
             final byte[][] tableCodeLengths)
         {
             for (int table = 0; table < tableCodeLengths.length; table++)
@@ -165,12 +165,11 @@ public class Bzcat
                 this.minimumLengths[table] = minimumLength;
 
                 // Calculate the first output symbol for each code length
-                for (int i = 0; i < alphabetSize; i++) {
+                for (int i = 0; i < alphabetSize; i++)
                     tableBases[codeLengths[i] + 1]++;
-                }
-                for (int i = 1; i < BZip2Constants.HUFFMAN_DECODE_MAXIMUM_CODE_LENGTH + 2; i++) {
+                
+                for (int i = 1; i < BZip2Constants.HUFFMAN_DECODE_MAXIMUM_CODE_LENGTH + 2; i++)
                     tableBases[i] += tableBases[i - 1];
-                }
 
                 // Calculate the first and last Huffman code for each code length (codes at a given
                 // length are sequential in value)
@@ -239,13 +238,13 @@ public class Bzcat
             this.bitInputStream = bitInputStream;
             this.selectors = selectors;
             this.currentTable = this.selectors[0];
-            createHuffmanDecodingTables (alphabetSize, tableCodeLengths);
+            _createHuffmanDecodingTables (alphabetSize, tableCodeLengths);
         }
     }
 
     public final class CRC32
     {
-        private static final int crc32Lookup[] = {
+        private static final int _table[] = {
         0x00000000,0x04c11db7,0x09823b6e,0x0d4326d9,0x130476dc,0x17c56b6b,0x1a864db2,0x1e475005,
         0x2608edb8,0x22c9f00f,0x2f8ad6d6,0x2b4bcb61,0x350c9b64,0x31cd86d3,0x3c8ea00a,0x384fbdbd,
         0x4c11db70,0x48d0c6c7,0x4593e01e,0x4152fda9,0x5f15adac,0x5bd4b01b,0x569796c2,0x52568b75,
@@ -280,27 +279,37 @@ public class Bzcat
         0xafb010b1,0xab710d06,0xa6322bdf,0xa2f33668,0xbcb4666d,0xb8757bda,0xb5365d03,0xb1f740b4
         };
 
-        private int crc = 0xffffffff;
-
-        public int getCRC()
+        //private int _table[] = new int[256];
+        private int _crc = 0xffffffff;
+        public int getCRC() { return ~_crc; }
+/*
+        CRC32()
         {
-            return ~this.crc;
+            System.err.println("Debug bericht");
+
+            //https://github.com/gcc-mirror/gcc/blob/master/libiberty/crc32.c
+            for (int i = 0, j, c; i < 256; i++)
+            {
+                for (c = i << 24, j = 8; j > 0; --j)
+                    c = (c & 0x80000000) > 0 ? (c << 1) ^ 0x04c11db7 : (c << 1);
+                _table[i] = c;
+            }
+
+            for (int i = 0; i < 256; i++)
+            {
+                System.err.println(String.format("0x%08X", _table[i]));
+            }
+        }
+*/
+        public void updateCRC(final int value)
+        {
+            _crc = (_crc << 8) ^ _table[((_crc >> 24) ^ value) & 0xff];
         }
 
-        public void updateCRC (final int value)
+        public void updateCRC(final int value, int count)
         {
-            final int crc = this.crc;
-            this.crc = (crc << 8) ^ crc32Lookup[((crc >> 24) ^ value) & 0xff];
-        }
-
-        public void updateCRC (final int value, int count)
-        {
-            int crc = this.crc;
-
             while (count-- > 0)
-                crc = (crc << 8) ^ crc32Lookup[((crc >> 24) ^ value) & 0xff];
-
-            this.crc = crc;
+                _crc = (_crc << 8) ^ _table[((_crc >> 24) ^ value) & 0xff];
         }
     }
 
@@ -362,15 +371,11 @@ public class Bzcat
 
         public byte indexToFront (final int index)
         {
-
-        final byte[] mtf = this.mtf;
-
-        final byte value = mtf[index];
-        System.arraycopy (mtf, 0, mtf, 1, index);
-        mtf[0] = value;
-
-        return value;
-
+            final byte[] mtf = this.mtf;
+            final byte value = mtf[index];
+            System.arraycopy (mtf, 0, mtf, 1, index);
+            mtf[0] = value;
+            return value;
         }
 
     }
@@ -412,23 +417,23 @@ public class Bzcat
             203, 50, 668, 108, 645, 990, 626, 197, 510, 357, 358, 850, 858, 364, 936, 638
         };
 
-        private final BZip2BitInputStream bitInputStream;
-        private final CRC32 crc = new CRC32();
-        private final int blockCRC;
-        private final boolean blockRandomised;
-        private int huffmanEndOfBlockSymbol;
-        private final byte[] huffmanSymbolMap = new byte[256];
-        private final int[] bwtByteCounts = new int[256];
-        private byte[] bwtBlock;
-        private int[] bwtMergedPointers;
-        private int bwtCurrentMergedPointer;
-        private int bwtBlockLength;
-        private int bwtBytesDecoded;
-        private int rleLastDecodedByte = -1;
-        private int rleAccumulator;
-        private int rleRepeat;
-        private int randomIndex = 0;
-        private int randomCount = RNUMS[0] - 1;
+        final BZip2BitInputStream bitInputStream;
+        final CRC32 crc = new CRC32();
+        final int blockCRC;
+        final boolean blockRandomised;
+        int huffmanEndOfBlockSymbol;
+        final byte[] huffmanSymbolMap = new byte[256];
+        final int[] bwtByteCounts = new int[256];
+        byte[] bwtBlock;
+        int[] bwtMergedPointers;
+        int bwtCurrentMergedPointer;
+        int bwtBlockLength;
+        int bwtBytesDecoded;
+        int rleLastDecodedByte = -1;
+        int rleAccumulator;
+        int rleRepeat;
+        int randomIndex = 0;
+        int randomCount = RNUMS[0] - 1;
 
         private BZip2HuffmanStageDecoder readHuffmanTables() throws IOException
         {
@@ -442,17 +447,11 @@ public class Bzcat
             int huffmanSymbolCount = 0;
 
             for (int i = 0; i < 16; i++)
-            {
                 if ((huffmanUsedRanges & ((1 << 15) >>> i)) != 0)
-                {
                     for (int j = 0, k = i << 4; j < 16; j++, k++)
-                    {
-                        if (bitInputStream.readBoolean()) {
+                        if (bitInputStream.readBoolean())
                             huffmanSymbolMap[huffmanSymbolCount++] = (byte)k;
-                        }
-                    }
-                }
-            }
+            
             int endOfBlockSymbol = huffmanSymbolCount + 1;
             this.huffmanEndOfBlockSymbol = endOfBlockSymbol;
 
@@ -466,7 +465,7 @@ public class Bzcat
                 || (totalSelectors > BZip2Constants.HUFFMAN_MAXIMUM_SELECTORS)
             )
             {
-            throw new BZip2Exception ("BZip2 block Huffman tables invalid");
+                throw new BZip2Exception ("BZip2 block Huffman tables invalid");
             }
 
             /* Read and decode MTFed Huffman selector list */
@@ -514,42 +513,40 @@ public class Bzcat
                 {
                     repeatCount += repeatIncrement;
                     repeatIncrement <<= 1;
+                    continue;
                 }
-                else if (nextSymbol == BZip2Constants.HUFFMAN_SYMBOL_RUNB)
+                if (nextSymbol == BZip2Constants.HUFFMAN_SYMBOL_RUNB)
                 {
                     repeatCount += repeatIncrement << 1;
                     repeatIncrement <<= 1;
+                    continue;
                 }
-                else
+                
+                if (repeatCount > 0)
                 {
-                    if (repeatCount > 0)
-                    {
-                    if (bwtBlockLength + repeatCount > streamBlockSize) {
+                    if (bwtBlockLength + repeatCount > streamBlockSize)
                         throw new BZip2Exception ("BZip2 block exceeds declared block size");
-                    }
+                
                     final byte nextByte = huffmanSymbolMap[mtfValue];
                     bwtByteCounts[nextByte & 0xff] += repeatCount;
-                    while (--repeatCount >= 0) {
+                    while (--repeatCount >= 0)
                         bwtBlock[bwtBlockLength++] = nextByte;
-                    }
 
                     repeatCount = 0;
                     repeatIncrement = 1;
-                    }
-
-                    if (nextSymbol == huffmanEndOfBlockSymbol)
-                        break;
-
-                    if (bwtBlockLength >= streamBlockSize) {
-                        throw new BZip2Exception ("BZip2 block exceeds declared block size");
-                    }
-
-                    mtfValue = symbolMTF.indexToFront (nextSymbol - 1) & 0xff;
-
-                    final byte nextByte = huffmanSymbolMap[mtfValue];
-                    bwtByteCounts[nextByte & 0xff]++;
-                    bwtBlock[bwtBlockLength++] = nextByte;
                 }
+
+                if (nextSymbol == huffmanEndOfBlockSymbol)
+                    break;
+
+                if (bwtBlockLength >= streamBlockSize)
+                    throw new BZip2Exception ("BZip2 block exceeds declared block size");
+
+                mtfValue = symbolMTF.indexToFront (nextSymbol - 1) & 0xff;
+                final byte nextByte = huffmanSymbolMap[mtfValue];
+                bwtByteCounts[nextByte & 0xff]++;
+                bwtBlock[bwtBlockLength++] = nextByte;
+            
             }
 
             this.bwtBlockLength = bwtBlockLength;
@@ -561,17 +558,16 @@ public class Bzcat
             final int[] bwtMergedPointers = new int[this.bwtBlockLength];
             final int[] characterBase = new int[256];
 
-            if ((bwtStartPointer < 0) || (bwtStartPointer >= this.bwtBlockLength)) {
+            if ((bwtStartPointer < 0) || (bwtStartPointer >= this.bwtBlockLength))
                 throw new BZip2Exception ("BZip2 start pointer invalid");
-            }
 
             // Cumulatise character counts
             System.arraycopy (this.bwtByteCounts, 0, characterBase, 1, 255);
-            for (int i = 2; i <= 255; i++) {
+            for (int i = 2; i <= 255; i++)
                 characterBase[i] += characterBase[i - 1];
-            }
 
-            for (int i = 0; i < this.bwtBlockLength; i++) {
+            for (int i = 0; i < this.bwtBlockLength; i++)
+            {
                 int value = bwtBlock[i] & 0xff;
                 bwtMergedPointers[characterBase[value]++] = (i << 8) + value;
             }
@@ -583,29 +579,28 @@ public class Bzcat
 
         private int decodeNextBWTByte()
         {
+            int mergedPointer = this.bwtCurrentMergedPointer;
+            int nextDecodedByte =  mergedPointer & 0xff;
+            this.bwtCurrentMergedPointer = this.bwtMergedPointers[mergedPointer >>> 8];
 
-        int mergedPointer = this.bwtCurrentMergedPointer;
-        int nextDecodedByte =  mergedPointer & 0xff;
-        this.bwtCurrentMergedPointer = this.bwtMergedPointers[mergedPointer >>> 8];
-
-        if (this.blockRandomised)
-        {
-            System.err.println("block randomised");
-            if (--this.randomCount == 0) {
-                nextDecodedByte ^= 1;
-                this.randomIndex = (this.randomIndex + 1) % 512;
-                this.randomCount = RNUMS[this.randomIndex];
+            if (this.blockRandomised)
+            {
+                System.err.println("block randomised");
+                if (--this.randomCount == 0)
+                {
+                    nextDecodedByte ^= 1;
+                    this.randomIndex = (this.randomIndex + 1) % 512;
+                    this.randomCount = RNUMS[this.randomIndex];
+                }
             }
-        }
 
-        this.bwtBytesDecoded++;
-
-        return nextDecodedByte;
+            this.bwtBytesDecoded++;
+            return nextDecodedByte;
         }
 
         public int read()
         {
-        while (this.rleRepeat < 1) {
+            while (this.rleRepeat < 1) {
 
             if (this.bwtBytesDecoded == this.bwtBlockLength) {
                 return -1;
@@ -631,26 +626,23 @@ public class Bzcat
                     this.crc.updateCRC (nextByte);
                 }
             }
+            }
 
-        }
-
-        this.rleRepeat--;
-
-        return this.rleLastDecodedByte;
+            this.rleRepeat--;
+            return this.rleLastDecodedByte;
         }
 
         public int read (final byte[] destination, int offset, final int length)
         {
-
-        int i;
-        for (i = 0; i < length; i++, offset++) {
+            int i;
+            for (i = 0; i < length; i++, offset++) {
             int decoded = read();
             if (decoded == -1) {
                 return (i == 0) ? -1 : i;
             }
             destination[offset] = (byte)decoded;
-        }
-        return i;
+            }
+            return i;
         }
 
         public int checkCRC() throws IOException {
@@ -665,33 +657,32 @@ public class Bzcat
         public BZip2BlockDecompressor(final BZip2BitInputStream bitInputStream,
                             final int blockSize) throws IOException
         {
+            this.bitInputStream = bitInputStream;
+            this.bwtBlock = new byte[blockSize];
 
-        this.bitInputStream = bitInputStream;
-        this.bwtBlock = new byte[blockSize];
+            final int bwtStartPointer;
 
-        final int bwtStartPointer;
+            // Read block header
+            this.blockCRC = this.bitInputStream.readInteger();
+            this.blockRandomised = this.bitInputStream.readBoolean();
+            bwtStartPointer = this.bitInputStream.readBits (24);
 
-        // Read block header
-        this.blockCRC = this.bitInputStream.readInteger();
-        this.blockRandomised = this.bitInputStream.readBoolean();
-        bwtStartPointer = this.bitInputStream.readBits (24);
-
-        // Read block data and decode through to the Inverse Burrows Wheeler Transform stage
-        BZip2HuffmanStageDecoder huffmanDecoder = readHuffmanTables();
-        decodeHuffmanData (huffmanDecoder);
-        initialiseInverseBWT (bwtStartPointer);
+            // Read block data and decode through to the Inverse Burrows Wheeler Transform stage
+            BZip2HuffmanStageDecoder huffmanDecoder = readHuffmanTables();
+            decodeHuffmanData (huffmanDecoder);
+            initialiseInverseBWT (bwtStartPointer);
         }
     }
 
     class BZip2InputStream extends InputStream
     {
-        private InputStream inputStream;
-        private BZip2BitInputStream bitInputStream;
-        private final boolean headerless;
-        private boolean streamComplete = false;
-        private int streamBlockSize;
-        private int streamCRC = 0;
-        private BZip2BlockDecompressor blockDecompressor = null;
+        InputStream inputStream;
+        BZip2BitInputStream bitInputStream;
+        final boolean headerless;
+        boolean streamComplete = false;
+        int streamBlockSize;
+        int streamCRC = 0;
+        BZip2BlockDecompressor blockDecompressor = null;
     
         @Override public int read() throws IOException
         {

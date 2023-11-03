@@ -56,16 +56,40 @@ int BitInputStream::readUint(int numBits)
     return result;
 }
 
+class CRC32
+{
+private:
+    uint32_t _table[256];
+    uint32_t _crc = 0xffffffff;
+    void _makeTable();
+public:
+    CRC32() { _makeTable(); }
+    void update(char c) { _crc = _table[(_crc ^ c) & 0xff] ^ (_crc >> 8); }
+    uint32_t crc() const { return ~_crc; }
+};
+
+void CRC32::_makeTable()
+{
+    uint32_t c;
+    for (uint32_t n = 0; n < 256; ++n)
+    {
+        c = n;
+        for (uint32_t k = 0; k < 8; ++k)
+            c = c & 1 ? 0xedb88320 ^ (c >> 1) : c >> 1;
+        _table[n] = c;
+    }
+}
+
 class CRCOutputStream
 {
 private:
     std::ostream *_os;
-    uint32_t _crc = 0xffffffff;
+    CRC32 _crc;
     uint32_t _cnt = 0;
 public:
     CRCOutputStream(std::ostream *os) : _os(os) { }
     void put(uint8_t b);
-    uint32_t crc() const { return ~_crc; }
+    uint32_t crc() const { return _crc.crc(); }
     uint32_t cnt() const { return _cnt; }
 };
 
@@ -73,9 +97,7 @@ void CRCOutputStream::put(uint8_t b)
 {
     _os->put(b);
     ++_cnt;
-    _crc ^= b;
-    for (int i = 0; i < 8; ++i)
-        _crc = (_crc >> 1) ^ ((_crc & 1) * UINT32_C(0xEDB88320));
+    _crc.update(b);
 }
 
 class CanonicalCode final
