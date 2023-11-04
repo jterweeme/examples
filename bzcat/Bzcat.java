@@ -581,9 +581,8 @@ public class Bzcat
         }
     }
 
-    class BZip2InputStream extends InputStream
+    class BZip2InputStream
     {
-        InputStream inputStream;
         BZip2BitInputStream bitInputStream;
         final boolean headerless;
         boolean streamComplete = false;
@@ -591,7 +590,7 @@ public class Bzcat
         int _streamCRC = 0;
         BZip2BlockDecompressor _blockDecompressor = null;
     
-        @Override public int read() throws IOException
+        public int read() throws IOException
         {
             int nextByte = -1;
             if (_blockDecompressor == null)
@@ -606,7 +605,6 @@ public class Bzcat
             return nextByte;
         }
     
-        @Override
         public int read (final byte[] destination, final int offset, final int length)
             throws IOException
         {
@@ -623,21 +621,14 @@ public class Bzcat
             return bytesRead;
         }
 
-        @Override public void close() throws IOException
+        public void close() throws IOException
         {
             if (this.bitInputStream != null)
             {
                 this.streamComplete = true;
                 _blockDecompressor = null;
                 this.bitInputStream = null;
-
-                try {
-                    this.inputStream.close();
-                } finally {
-                    this.inputStream = null;
-                }
             }
-
         }
 
         private void initialiseStream() throws IOException
@@ -716,25 +707,27 @@ public class Bzcat
             throw new BZip2Exception ("BZip2 stream format error");
         }
 
-        public BZip2InputStream (final InputStream inputStream, final boolean headerless)
+        public BZip2InputStream(BZip2BitInputStream inputStream)
         {
-            if (inputStream == null)
-                throw new IllegalArgumentException ("Null input stream");
+            this.bitInputStream = inputStream;
+            this.headerless = false;
+        }
 
-            this.inputStream = inputStream;
-            this.bitInputStream = new BZip2BitInputStream (inputStream);
-            this.headerless = headerless;
+        void decompress(OutputStream os) throws IOException
+        {
+            byte[] decoded = new byte [524288];
+            int bytesRead;
+            while ((bytesRead = read (decoded, 0, decoded.length)) != -1)
+                os.write(decoded, 0, bytesRead) ;
         }
     }
 
     void decompress(InputStream is, OutputStream os) throws IOException
     {
-        BZip2InputStream inputStream = new BZip2InputStream(is, false);
-        byte[] decoded = new byte [524288];
-        int bytesRead;
-        while ((bytesRead = inputStream.read (decoded)) != -1) {
-            System.out.write (decoded, 0, bytesRead) ;
-        }
+        BZip2BitInputStream bis = new BZip2BitInputStream(is);
+        BZip2InputStream inputStream = new BZip2InputStream(bis);
+        inputStream.decompress(os);
+
     }
 
     void submain(String[] args) throws IOException
