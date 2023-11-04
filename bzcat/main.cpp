@@ -95,11 +95,16 @@ uint8_t MoveToFront::indexToFront(uint32_t index)
     return set(0, value);
 }
 
-class BitInputBase
+class BitInputStream
 {
+private:
+    std::istream *_is;
+    int _getc() { return _is->get(); }
+    uint32_t _bitBuffer = 0, _bitCount = 0;
 public:
-    virtual uint32_t readBit() = 0;
-    virtual uint32_t readBits(uint32_t n) = 0;
+    BitInputStream(std::istream *is) : _is(is) { }
+    uint32_t readBits(uint32_t count);
+    uint32_t readBit() { return readBits(1); }
     bool readBool() { return readBit() == 1; }
     void ignore(int n) { while (n--) readBool(); }
     uint8_t readByte();
@@ -110,24 +115,14 @@ public:
     uint32_t readInt() { return readUInt32(); }
 };
 
-uint32_t BitInputBase::readUnary()
+uint32_t BitInputStream::readUnary()
 {
     uint32_t u = 0;
     while (readBool()) u++;
     return u;
 }
 
-class BitInput : public BitInputBase
-{
-protected:
-    uint32_t _bitBuffer = 0, _bitCount = 0;
-    virtual int _getc() = 0;
-public:
-    uint32_t readBits(uint32_t count);
-    uint32_t readBit();
-};
-
-uint32_t BitInput::readBits(uint32_t count)
+uint32_t BitInputStream::readBits(uint32_t count)
 {
     if (count > 24)
         throw "Maximaal 24 bits";
@@ -138,20 +133,6 @@ uint32_t BitInput::readBits(uint32_t count)
     _bitCount -= count;
     return _bitBuffer >> _bitCount & ((1 << count) - 1);
 }
-
-class BitInputStream : public BitInput
-{
-private:
-    std::istream *_is;
-public:
-    BitInputStream(std::istream *is);
-protected:
-    int _getc() override;
-};
-
-uint32_t BitInput::readBit() { return readBits(1); }
-BitInputStream::BitInputStream(std::istream *is) : _is(is) { }
-int BitInputStream::_getc() { return _is->get(); }
 
 class Table
 {
@@ -174,6 +155,41 @@ public:
     uint32_t symbol(uint16_t i) const { return _symbols.at(i); }
     uint32_t base(uint8_t i) const { return _bases.at(i); }
 };
+
+Table::Table(uint32_t symbolCount) : _codeLengths(258), _symbolCount(symbolCount)
+{
+    _bases.fill(0);
+    _limits.fill(0);
+    _symbols.fill(0);
+}   
+
+void Table::calc()
+{
+    for (uint32_t i = 0; i < _symbolCount + 2; i++)
+        _bases[_codeLengths.at(i) + 1]++;
+
+    for (uint32_t i = 1; i < 25; i++)
+        _bases.at(i) += _bases.at(i - 1);
+
+    uint8_t minLength2 = minLength();
+    uint8_t maxLength2 = maxLength();
+
+    for (int32_t i = minLength2, code = 0; i <= maxLength2; i++)
+    {
+        int32_t base = code;
+        code += _bases.at(i + 1) - _bases.at(i);
+        _bases.at(i) = base - _bases.at(i);
+        _limits.at(i) = code - 1;
+        code <<= 1;
+    }
+
+    uint8_t n = minLength2;
+
+    for (uint32_t i = 0; n <= maxLength2; n++)
+        for (uint32_t symbol = 0; symbol < _symbolCount + 2; symbol++)
+            if (_codeLengths.at(symbol) == n)
+                _symbols.at(i++) = symbol;
+}
 
 class CRC32
 {
@@ -209,30 +225,30 @@ private:
     int32_t *_merged = nullptr;
     int32_t _curTbl, _grpIdx, _grpPos, _last, _acc, _repeat, _curp, _length, _dec;
     uint32_t _nextByte();
-    uint32_t _nextSymbol(BitInputBase *bi, const std::vector<Table> &t, const Fugt &selectors);
+    uint32_t _nextSymbol(BitInputStream &bi, const std::vector<Table> &t, const Fugt &selectors);
 public:
     void reset();
     Block() { reset(); }
     ~Block() { delete[] _merged; }
     int read();
-    void init(BitInputBase *bi);
+    void init(BitInputStream &bi);
 };
 
-uint32_t Block::_nextSymbol(BitInputBase *bi, const std::vector<Table> &t, const Fugt &selectors)
+uint32_t Block::_nextSymbol(BitInputStream &bi, const std::vector<Table> &t, const Fugt &selectors)
 {
     if (++_grpPos % 50 == 0)
         _curTbl = selectors.at(++_grpIdx);
 
     Table table = t.at(_curTbl);
     uint32_t n = table.minLength();
-    int32_t codeBits = bi->readBits(n);
+    int32_t codeBits = bi.readBits(n);
 
     for (; n <= 23; n++)
     {
         if (codeBits <= table.limit(n))
             return table.symbol(codeBits - table.base(n));
 
-        codeBits = codeBits << 1 | bi->readBits(1);
+        codeBits = codeBits << 1 | bi.readBits(1);
     }   
     
     return 0;
@@ -285,33 +301,33 @@ void Block::reset()
     _acc = _repeat = _length = _curp = _dec = _curTbl = 0;
 }
 
-void Block::init(BitInputBase *bi)
+void Block::init(BitInputStream &bi)
 {
     reset();
     int32_t _bwtByteCounts[256] = {0};
     uint8_t _symbolMap[256] = {0};
     Fugt _bwtBlock2(9000000);
-    uint32_t blockCRC = bi->readInt();
-    bool randomised = bi->readBool();
+    uint32_t blockCRC = bi.readInt();
+    bool randomised = bi.readBool();
 
     if (randomised)
         throw "Randomised blocks not supported.";
 
-    uint32_t bwtStartPointer = bi->readBits(24), symbolCount = 0;
+    uint32_t bwtStartPointer = bi.readBits(24), symbolCount = 0;
 
-    for (uint16_t i = 0, ranges = bi->readBits(16); i < 16; i++)
+    for (uint16_t i = 0, ranges = bi.readBits(16); i < 16; i++)
         if ((ranges & (1 << 15 >> i)) != 0)
             for (int j = 0, k = i << 4; j < 16; j++, k++)
-                if (bi->readBool())
+                if (bi.readBool())
                     _symbolMap[symbolCount++] = (uint8_t)k;
 
-    uint32_t eob = symbolCount + 1, tables = bi->readBits(3), selectors_n = bi->readBits(15);
+    uint32_t eob = symbolCount + 1, tables = bi.readBits(3), selectors_n = bi.readBits(15);
     MoveToFront tableMTF2;
     Fugt selectors2(selectors_n);
 
     for (uint32_t i = 0; i < selectors_n; i++)
     {
-        uint32_t x = bi->readUnary();
+        uint32_t x = bi.readUnary();
         uint8_t y = tableMTF2.indexToFront(x);
         selectors2.set(i, y);
     }
@@ -322,9 +338,9 @@ void Block::init(BitInputBase *bi)
     {
         Table table(symbolCount);
 
-        for (uint32_t i = 0, c = bi->readBits(5); i <= eob; i++)
+        for (uint32_t i = 0, c = bi.readBits(5); i <= eob; i++)
         {
-            while (bi->readBool()) c += bi->readBool() ? -1 : 1;
+            while (bi.readBool()) c += bi.readBool() ? -1 : 1;
             table.add(c);
         }
 
@@ -395,41 +411,6 @@ void Block::init(BitInputBase *bi)
     _curp = _merged[bwtStartPointer];
 }
 
-Table::Table(uint32_t symbolCount) : _codeLengths(258), _symbolCount(symbolCount)
-{
-    _bases.fill(0);
-    _limits.fill(0);
-    _symbols.fill(0);
-}   
-
-void Table::calc()
-{
-    for (uint32_t i = 0; i < _symbolCount + 2; i++)
-        _bases[_codeLengths.at(i) + 1]++;
-
-    for (uint32_t i = 1; i < 25; i++)
-        _bases.at(i) += _bases.at(i - 1);
-
-    uint8_t minLength2 = minLength();
-    uint8_t maxLength2 = maxLength();
-
-    for (int32_t i = minLength2, code = 0; i <= maxLength2; i++)
-    {
-        int32_t base = code;
-        code += _bases.at(i + 1) - _bases.at(i);
-        _bases.at(i) = base - _bases.at(i);
-        _limits.at(i) = code - 1;
-        code <<= 1;
-    }
-
-    uint8_t n = minLength2;
-
-    for (uint32_t i = 0; n <= maxLength2; n++)
-        for (uint32_t symbol = 0; symbol < _symbolCount + 2; symbol++)
-            if (_codeLengths.at(symbol) == n)
-                _symbols.at(i++) = symbol;
-}
-
 static char nibble(uint8_t n)
 {
     return n <= 9 ? '0' + char(n) : 'a' + char(n - 10);
@@ -449,61 +430,36 @@ static std::string hex32(uint32_t dw)
     return ret;
 }
 
-class DecStream
-{
-private:
-    BitInputBase *_bi;
-    Block _bd;
-    uint32_t _streamComplete = false;
-    bool _initNextBlock();
-    int read();
-    DecStream(BitInputBase *bi) : _bi(bi) { _bi->ignore(32); }
-public:
-    static void decode(std::istream &is, std::ostream &os);
-};
-
-int DecStream::read()
-{
-    int nextByte = _bd.read();
-    return nextByte == -1 && _initNextBlock() ? _bd.read() : nextByte;
-}
-
-bool DecStream::_initNextBlock()
-{
-    if (_streamComplete)
-        return false;
-
-    uint32_t marker1 = _bi->readBits(24), marker2 = _bi->readBits(24);
-
-    if (marker1 == 0x314159 && marker2 == 0x265359)
-    {
-        _bd.init(_bi);
-        return true;
-    }
-
-    if (marker1 == 0x177245 && marker2 == 0x385090)
-    {
-        _streamComplete = true;
-        uint32_t crc = _bi->readInt();
-        std::cerr << "0x" << hex32(crc) << "\r\n";
-        return false;
-    }
-
-    _streamComplete = true;
-    throw "BZip2 stream format error";
-}
-
-void DecStream::decode(std::istream &is, std::ostream &os)
+static void decompress(std::istream &is, std::ostream &os)
 {
     BitInputStream bi(&is);
-    DecStream ds(&bi);
+    bi.ignore(32);
+    Block bd;
 
-    for (int b; (b = ds.read()) != -1;)
+    while (true)
     {
-        os.put(b);
+        uint32_t marker1 = bi.readBits(24), marker2 = bi.readBits(24);
+
+        if (marker1 == 0x314159 && marker2 == 0x265359)
+        {
+            bd.init(bi);
+
+            for (int c; (c = bd.read()) != -1;)
+                os.put(c);
+
+            continue;
+        }
+
+        if (marker1 == 0x177245 && marker2 == 0x385090)
+        {
+            uint32_t crc = bi.readInt();
+            std::cerr << "0x" << hex32(crc) << "\r\n";
+            return;
+        }
+
+        throw "format error!";
     }
 }
-
 
 int main(int argc, char **argv)
 {
@@ -516,7 +472,7 @@ int main(int argc, char **argv)
         is = &ifs;
     }
 
-    DecStream::decode(*is, std::cout);
+    decompress(*is, std::cout);
     ifs.close();
     return 0;
 }
