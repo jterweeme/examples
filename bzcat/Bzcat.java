@@ -581,153 +581,54 @@ public class Bzcat
         }
     }
 
-    class BZip2InputStream
-    {
-        BZip2BitInputStream bitInputStream;
-        final boolean headerless;
-        boolean streamComplete = false;
-        int streamBlockSize;
-        int _streamCRC = 0;
-        BZip2BlockDecompressor _blockDecompressor = null;
-    
-        public int read() throws IOException
-        {
-            int nextByte = -1;
-            if (_blockDecompressor == null)
-                initialiseStream();
-            else
-                nextByte = _blockDecompressor.read();
-    
-            if (nextByte == -1)
-                if (initialiseNextBlock())
-                    nextByte = _blockDecompressor.read();
-    
-            return nextByte;
-        }
-    
-        public int read (final byte[] destination, final int offset, final int length)
-            throws IOException
-        {
-            int bytesRead = -1;
-            if (_blockDecompressor == null)
-                initialiseStream();
-            else
-                bytesRead = _blockDecompressor.read (destination, offset, length);
-    
-            if (bytesRead == -1)
-                if (initialiseNextBlock())
-                    bytesRead = _blockDecompressor.read (destination, offset, length);
-    
-            return bytesRead;
-        }
-
-        public void close() throws IOException
-        {
-            if (this.bitInputStream != null)
-            {
-                this.streamComplete = true;
-                _blockDecompressor = null;
-                this.bitInputStream = null;
-            }
-        }
-
-        private void initialiseStream() throws IOException
-        {
-    
-            if (this.bitInputStream == null)
-                throw new BZip2Exception ("Stream closed");
-    
-            if (this.streamComplete)
-                return;
-    
-            try {
-                int marker1 = this.headerless ? 0 : this.bitInputStream.readBits (16);
-                int marker2 = this.bitInputStream.readBits (8);
-                int blockSize = (this.bitInputStream.readBits (8) - '0');
-    
-                if ((!this.headerless && (marker1 != BZip2Constants.STREAM_START_MARKER_1))
-                        || (marker2 != BZip2Constants.STREAM_START_MARKER_2)
-                        || (blockSize < 1) || (blockSize > 9))
-                {
-                    throw new BZip2Exception ("Invalid BZip2 header");
-                }
-    
-                this.streamBlockSize = blockSize * 100000;
-            } catch (IOException e) {
-                // If the stream header was not valid, stop trying to read more data
-                this.streamComplete = true;
-                throw e;
-            }
-        }
-
-        private boolean initialiseNextBlock() throws IOException
-        {
-            if (this.streamComplete)
-                return false;
-
-            if (_blockDecompressor != null) {
-                int blockCRC = _blockDecompressor.checkCRC();
-                _streamCRC = ((_streamCRC << 1) | (_streamCRC >>> 31)) ^ blockCRC;
-            }
-
-            /* Read block-header or end-of-stream marker */
-            final int marker1 = this.bitInputStream.readBits (24);
-            final int marker2 = this.bitInputStream.readBits (24);
-
-            if (marker1 == BZip2Constants.BLOCK_HEADER_MARKER_1 &&
-                marker2 == BZip2Constants.BLOCK_HEADER_MARKER_2)
-            {
-                // Initialise a new block
-                try {
-                    _blockDecompressor = new BZip2BlockDecompressor(
-                                                    this.bitInputStream, this.streamBlockSize);
-                } catch (IOException e) {
-                    // If the block could not be decoded, stop trying to read more data
-                    this.streamComplete = true;
-                    throw e;
-                }
-                return true;
-            }
-
-            if (marker1 == 0x177245 && marker2 == 0x385090)
-            {
-                // Read and verify the end-of-stream CRC
-                this.streamComplete = true;
-                final int crc = this.bitInputStream.readInteger();
-
-                System.err.println(String.format("0x%08X 0x%08X", _streamCRC, crc));
-
-                if (crc != _streamCRC)
-                    throw new BZip2Exception ("BZip2 stream CRC error");
-                
-                return false;
-            }
-
-            this.streamComplete = true;
-            throw new BZip2Exception ("BZip2 stream format error");
-        }
-
-        public BZip2InputStream(BZip2BitInputStream inputStream)
-        {
-            this.bitInputStream = inputStream;
-            this.headerless = false;
-        }
-
-        void decompress(OutputStream os) throws IOException
-        {
-            byte[] decoded = new byte [524288];
-            int bytesRead;
-            while ((bytesRead = read (decoded, 0, decoded.length)) != -1)
-                os.write(decoded, 0, bytesRead) ;
-        }
-    }
-
     void decompress(InputStream is, OutputStream os) throws IOException
     {
         BZip2BitInputStream bis = new BZip2BitInputStream(is);
-        BZip2InputStream inputStream = new BZip2InputStream(bis);
-        inputStream.decompress(os);
 
+        int smarker1 = bis.readBits(16);
+        int smarker2 = bis.readBits(8);
+        int blockSize = (bis.readBits(8) - '0');
+        int streamBlockSize = blockSize * 100000;
+        int _streamCRC = 0;
+        BZip2BlockDecompressor _blockDecompressor = null;
+
+        while (true)
+        {
+            if (_blockDecompressor != null)
+            {
+                int blockCRC = _blockDecompressor.checkCRC();
+                _streamCRC = ((_streamCRC << 1) | (_streamCRC >>> 31)) ^ blockCRC;
+            }
+ 
+            int marker1 = bis.readBits(24);
+            int marker2 = bis.readBits(24);
+ 
+            if (marker1 == 0x314159 && marker2 == 0x265359)
+            {
+                _blockDecompressor = new BZip2BlockDecompressor(bis, streamBlockSize);
+                
+                int c;
+
+                while ((c = _blockDecompressor.read()) != -1)
+                    os.write(c);
+
+                continue;
+            }
+ 
+            if (marker1 == 0x177245 && marker2 == 0x385090)
+            {
+                os.flush();
+                int crc = bis.readInteger();
+                System.err.println(String.format("0x%08X 0x%08X", _streamCRC, crc));
+ 
+                if (crc != _streamCRC)
+                    throw new BZip2Exception ("BZip2 stream CRC error");
+                 
+                break;
+            }
+ 
+            throw new BZip2Exception ("BZip2 stream format error");
+        }
     }
 
     void submain(String[] args) throws IOException
