@@ -15,8 +15,8 @@ private:
     uint32_t _size;
     uint32_t _pos = 0;
     T *_buf;
-    T _max(T a, T b) { return a > b ? a : b; }
-    T _min(T a, T b) { return a < b ? a : b; }
+    T _max(T a, T b) const { return a > b ? a : b; }
+    T _min(T a, T b) const { return a < b ? a : b; }
 public:
     typedef T *iterator;
     typedef T *const_iterator; 
@@ -43,7 +43,7 @@ public:
     T at(uint32_t i) const { return _buf[i]; }
     T set(uint32_t i, T val) { return _buf[i] = val; }
 
-    T max(uint32_t range)
+    T max(uint32_t range) const
     {
         T a = 0;
 
@@ -53,7 +53,7 @@ public:
         return a;
     }
 
-    T min(uint32_t range)
+    T min(uint32_t range) const
     {
         T a = 0;
         for (uint32_t i = 0; i < range; i++) a = _min(_buf[i], a);
@@ -143,13 +143,13 @@ private:
     std::array<uint32_t, 25> _bases;
     std::array<int32_t, 24> _limits;
     std::array<uint32_t, 258> _symbols;
-    uint8_t _minLength(uint32_t n) { return _codeLengths.min(n); }
-    uint8_t _maxLength(uint32_t n) { return _codeLengths.max(n); }
+    uint8_t _minLength(uint32_t n) const { return _codeLengths.min(n); }
+    uint8_t _maxLength(uint32_t n) const { return _codeLengths.max(n); }
 public:
     Table(uint32_t symbolCount);
     void calc();
-    uint8_t maxLength() { return _maxLength(_symbolCount + 2); }
-    uint8_t minLength() { return _minLength(_symbolCount + 2); }
+    uint8_t maxLength() const { return _maxLength(_symbolCount + 2); }
+    uint8_t minLength() const { return _minLength(_symbolCount + 2); }
     void add(uint8_t v) { _codeLengths.set(_pos++, v); }
     int32_t limit(uint8_t i) const { return _limits.at(i); }
     uint32_t symbol(uint16_t i) const { return _symbols.at(i); }
@@ -165,16 +165,16 @@ Table::Table(uint32_t symbolCount) : _codeLengths(258), _symbolCount(symbolCount
 
 void Table::calc()
 {
-    for (uint32_t i = 0; i < _symbolCount + 2; i++)
+    for (uint32_t i = 0; i < _symbolCount + 2; ++i)
         _bases[_codeLengths.at(i) + 1]++;
 
-    for (uint32_t i = 1; i < 25; i++)
+    for (uint32_t i = 1; i < 25; ++i)
         _bases.at(i) += _bases.at(i - 1);
 
     uint8_t minLength2 = minLength();
     uint8_t maxLength2 = maxLength();
 
-    for (int32_t i = minLength2, code = 0; i <= maxLength2; i++)
+    for (int32_t i = minLength2, code = 0; i <= maxLength2; ++i)
     {
         int32_t base = code;
         code += _bases.at(i + 1) - _bases.at(i);
@@ -185,8 +185,8 @@ void Table::calc()
 
     uint8_t n = minLength2;
 
-    for (uint32_t i = 0; n <= maxLength2; n++)
-        for (uint32_t symbol = 0; symbol < _symbolCount + 2; symbol++)
+    for (uint32_t i = 0; n <= maxLength2; ++n)
+        for (uint32_t symbol = 0; symbol < _symbolCount + 2; ++symbol)
             if (_codeLengths.at(symbol) == n)
                 _symbols.at(i++) = symbol;
 }
