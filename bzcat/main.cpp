@@ -222,6 +222,7 @@ class Block
 {
 private:
     CRC32 _crc;
+    uint32_t _blockCRC;
     int32_t *_merged = nullptr;
     int32_t _curTbl, _grpIdx, _grpPos, _last, _acc, _repeat, _curp, _length, _dec;
     uint32_t _nextByte();
@@ -232,7 +233,16 @@ public:
     ~Block() { delete[] _merged; }
     int read();
     void init(BitInputStream &bi);
+    uint32_t checkCRC() const;
 };
+
+uint32_t Block::checkCRC() const
+{
+    if (_blockCRC != _crc.crc())
+        throw "Block CRC mismatch";
+
+    return _crc.crc();
+}
 
 uint32_t Block::_nextSymbol(BitInputStream &bi, const std::vector<Table> &t, const Fugt &selectors)
 {
@@ -307,7 +317,7 @@ void Block::init(BitInputStream &bi)
     int32_t _bwtByteCounts[256] = {0};
     uint8_t _symbolMap[256] = {0};
     Fugt _bwtBlock2(9000000);
-    uint32_t blockCRC = bi.readInt();
+    _blockCRC = bi.readInt();
     bool randomised = bi.readBool();
 
     if (randomised)
@@ -435,6 +445,7 @@ static void decompress(std::istream &is, std::ostream &os)
     BitInputStream bi(&is);
     bi.ignore(32);
     Block bd;
+    uint32_t streamCRC = 0;
 
     while (true)
     {
@@ -446,14 +457,16 @@ static void decompress(std::istream &is, std::ostream &os)
 
             for (int c; (c = bd.read()) != -1;)
                 os.put(c);
-
+            
+            uint32_t blockCRC = bd.checkCRC();
+            streamCRC = ((streamCRC << 1) | (streamCRC >> 31)) ^ blockCRC;
             continue;
         }
 
         if (marker1 == 0x177245 && marker2 == 0x385090)
         {
             uint32_t crc = bi.readInt();
-            std::cerr << "0x" << hex32(crc) << "\r\n";
+            std::cerr << "0x" << hex32(crc) << " " << hex32(streamCRC) << "\r\n";
             return;
         }
 

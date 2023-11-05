@@ -535,20 +535,6 @@ public class Bzcat
             return this.rleLastDecodedByte;
         }
 
-        public int read (final byte[] destination, int offset, final int length)
-        {
-            int i;
-            for (i = 0; i < length; i++, offset++)
-            {
-                int decoded = read();
-                if (decoded == -1) {
-                    return (i == 0) ? -1 : i;
-                }
-                destination[offset] = (byte)decoded;
-            }
-            return i;
-        }
-
         public int checkCRC() throws IOException
         {
             if (_blockCRC != _crc.getCRC())
@@ -589,29 +575,22 @@ public class Bzcat
         int smarker2 = bis.readBits(8);
         int blockSize = (bis.readBits(8) - '0');
         int streamBlockSize = blockSize * 100000;
-        int _streamCRC = 0;
-        BZip2BlockDecompressor _blockDecompressor = null;
+        int streamCRC = 0;
 
         while (true)
         {
-            if (_blockDecompressor != null)
-            {
-                int blockCRC = _blockDecompressor.checkCRC();
-                _streamCRC = ((_streamCRC << 1) | (_streamCRC >>> 31)) ^ blockCRC;
-            }
- 
             int marker1 = bis.readBits(24);
             int marker2 = bis.readBits(24);
  
             if (marker1 == 0x314159 && marker2 == 0x265359)
             {
-                _blockDecompressor = new BZip2BlockDecompressor(bis, streamBlockSize);
+                BZip2BlockDecompressor block = new BZip2BlockDecompressor(bis, streamBlockSize);
                 
-                int c;
-
-                while ((c = _blockDecompressor.read()) != -1)
+                for (int c; (c = block.read()) != -1;)
                     os.write(c);
 
+                int blockCRC = block.checkCRC();
+                streamCRC = ((streamCRC << 1) | (streamCRC >>> 31)) ^ blockCRC;
                 continue;
             }
  
@@ -619,9 +598,9 @@ public class Bzcat
             {
                 os.flush();
                 int crc = bis.readInteger();
-                System.err.println(String.format("0x%08X 0x%08X", _streamCRC, crc));
+                System.err.println(String.format("0x%08X 0x%08X", streamCRC, crc));
  
-                if (crc != _streamCRC)
+                if (crc != streamCRC)
                     throw new BZip2Exception ("BZip2 stream CRC error");
                  
                 break;
