@@ -224,9 +224,8 @@ private:
     CRC32 _crc;
     uint32_t _blockCRC;
     int32_t *_merged = nullptr;
-    int32_t _curTbl, _grpIdx, _grpPos, _last, _acc, _repeat, _curp, _length, _dec;
+    int32_t _grpIdx, _grpPos, _last, _acc, _repeat, _curp, _length, _dec;
     uint32_t _nextByte();
-    uint32_t _nextSymbol(BitInputStream &bi, const std::vector<Table> &t, const Fugt &selectors);
 public:
     void reset();
     Block() { reset(); }
@@ -244,26 +243,6 @@ uint32_t Block::checkCRC() const
     return _crc.crc();
 }
 
-uint32_t Block::_nextSymbol(BitInputStream &bi, const std::vector<Table> &t, const Fugt &selectors)
-{
-    if (++_grpPos % 50 == 0)
-        _curTbl = selectors.at(++_grpIdx);
-
-    Table table = t.at(_curTbl);
-    uint32_t n = table.minLength();
-    int32_t codeBits = bi.readBits(n);
-
-    for (; n <= 23; n++)
-    {
-        if (codeBits <= table.limit(n))
-            return table.symbol(codeBits - table.base(n));
-
-        codeBits = codeBits << 1 | bi.readBits(1);
-    }   
-    
-    return 0;
-}           
-                
 uint32_t Block::_nextByte()
 {       
     int r = _curp & 0xff;
@@ -308,7 +287,7 @@ void Block::reset()
 {
     _crc.reset();
     _grpIdx = _grpPos = _last = -1;
-    _acc = _repeat = _length = _curp = _dec = _curTbl = 0;
+    _acc = _repeat = _length = _curp = _dec = 0;
 }
 
 void Block::init(BitInputStream &bi)
@@ -358,13 +337,34 @@ void Block::init(BitInputStream &bi)
         tables2.push_back(table);
     }
 
-    _curTbl = selectors2.at(0);
+    int32_t curTbl = selectors2.at(0);
     MoveToFront symbolMTF2;
     _length = 0;
 
     for (int n = 0, inc = 1, mtfValue = 0;;)
     {
-        uint32_t nextSymbol = _nextSymbol(bi, tables2, selectors2);
+        uint32_t nextSymbol;
+        
+        {
+            if (++_grpPos % 50 == 0)
+                curTbl = selectors2.at(++_grpIdx);
+    
+            Table table = tables2.at(curTbl);
+            uint32_t i = table.minLength();
+            int32_t codeBits = bi.readBits(i);
+    
+            while (i <= 23)
+            {
+                if (codeBits <= table.limit(i))
+                {
+                    nextSymbol = table.symbol(codeBits - table.base(i));
+                    break;
+                }
+    
+                codeBits = codeBits << 1 | bi.readBits(1);
+                ++i;
+            }
+        }
 
         if (nextSymbol == 0)
         {

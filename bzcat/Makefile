@@ -1,5 +1,5 @@
 all:
-	g++ -O2 -o bzcat main.cpp
+	g++ -O2 -o bzcat bzcat.cpp
 	javac Bzcat.java
 
 clean:
