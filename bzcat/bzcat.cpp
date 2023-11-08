@@ -19,7 +19,6 @@ public:
     uint32_t readBit() { return readBits(1); }
     bool readBool() { return readBit() == 1; }
     void ignore(int n) { while (n--) readBool(); }
-    uint8_t readByte();
     uint32_t readUnary();
     void read(uint8_t *s, int n);
     uint32_t readUInt32() { return readBits(16) << 16 | readBits(16); }
@@ -73,8 +72,7 @@ private:
     int32_t _limits[24] = {0};
     uint32_t _symbols[258] = {0};
 public:
-    void symbolCount(uint32_t n) { _symbolCount = n; }
-    void calc();
+    void read(BitInputStream &bis, uint32_t symbolCount);
     uint8_t minLength()
     {
         uint8_t ret = 23;
@@ -83,14 +81,22 @@ public:
         return ret;
     }
 
-    void add(uint8_t v) { _codeLengths[_pos++] = v; }
     int32_t limit(uint8_t i) const { return _limits[i]; }
     uint32_t symbol(uint16_t i) const { return _symbols[i]; }
     uint32_t base(uint8_t i) const { return _bases[i]; }
 };
 
-void Table::calc()
+void Table::read(BitInputStream &bis, uint32_t symbolCount)
 {
+    _symbolCount = symbolCount;
+
+    for (uint32_t i = 0, c = bis.readBits(5); i <= symbolCount + 1; ++i)
+    {
+        while (bis.readBool())
+            c += bis.readBool() ? -1 : 1;
+        _codeLengths[_pos++] = c;
+    }
+
     for (uint32_t i = 0; i < _symbolCount + 2; ++i)
         _bases[_codeLengths[i] + 1]++;
 
@@ -250,19 +256,7 @@ void Block::init(BitInputStream &bi, size_t blockSize)
 
     //read the canonical Huffman code lengths for each table
     for (uint32_t t = 0; t < nTables; ++t)
-    {
-        Table *table = &tables[t];
-        table->symbolCount(symbolCount);
-
-        for (uint32_t i = 0, c = bi.readBits(5); i <= eob; ++i)
-        {
-            while (bi.readBool())
-                c += bi.readBool() ? -1 : 1;
-            table->add(c);
-        }
-
-        table->calc();
-    }
+        tables[t].read(bi, symbolCount);
 
     int32_t curTbl = selectors2[0];
     MoveToFront symbolMTF2;
@@ -278,15 +272,14 @@ void Block::init(BitInputStream &bi, size_t blockSize)
             if (grpPos++ % 50 == 0)
                 curTbl = selectors2[grpIdx++];
     
-            Table *table = &tables[curTbl];
-            uint32_t i = table->minLength();
+            uint32_t i = tables[curTbl].minLength();
             int32_t codeBits = bi.readBits(i);
     
             while (i <= 23)
             {
-                if (codeBits <= table->limit(i))
+                if (codeBits <= tables[curTbl].limit(i))
                 {
-                    nextSymbol = table->symbol(codeBits - table->base(i));
+                    nextSymbol = tables[curTbl].symbol(codeBits - tables[curTbl].base(i));
                     break;
                 }
     
