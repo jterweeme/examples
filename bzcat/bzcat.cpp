@@ -22,9 +22,7 @@ public:
     uint8_t readByte();
     uint32_t readUnary();
     void read(uint8_t *s, int n);
-    void ignoreBytes(int n);
     uint32_t readUInt32() { return readBits(16) << 16 | readBits(16); }
-    uint32_t readInt() { return readUInt32(); }
 };
 
 uint32_t BitInputStream::readUnary()
@@ -226,7 +224,7 @@ void Block::init(BitInputStream &bi, size_t blockSize)
     _acc = _length = _curp = 0;
     int32_t _bwtByteCounts[256] = {0};
     uint8_t _symbolMap[256] = {0};
-    _blockCRC = bi.readInt();
+    _blockCRC = bi.readUInt32();
     bool randomised = bi.readBool();
 
     if (randomised)
@@ -247,13 +245,13 @@ void Block::init(BitInputStream &bi, size_t blockSize)
     for (uint32_t i = 0; i < selectors_n; ++i)
         selectors2[i] = tableMTF2.indexToFront(bi.readUnary());
 
-    Table *tables2[nTables];
+    Table tables[nTables];
     uint8_t _bwtBlock2[blockSize];
 
     //read the canonical Huffman code lengths for each table
     for (uint32_t t = 0; t < nTables; ++t)
     {
-        Table *table = new Table();
+        Table *table = &tables[t];
         table->symbolCount(symbolCount);
 
         for (uint32_t i = 0, c = bi.readBits(5); i <= eob; ++i)
@@ -264,7 +262,6 @@ void Block::init(BitInputStream &bi, size_t blockSize)
         }
 
         table->calc();
-        tables2[t] = table;
     }
 
     int32_t curTbl = selectors2[0];
@@ -281,7 +278,7 @@ void Block::init(BitInputStream &bi, size_t blockSize)
             if (grpPos++ % 50 == 0)
                 curTbl = selectors2[grpIdx++];
     
-            Table *table = tables2[curTbl];
+            Table *table = &tables[curTbl];
             uint32_t i = table->minLength();
             int32_t codeBits = bi.readBits(i);
     
@@ -331,9 +328,6 @@ void Block::init(BitInputStream &bi, size_t blockSize)
         _bwtByteCounts[nextByte]++;
         _bwtBlock2[_length++] = nextByte;
     }
-
-    for (Table *t : tables2)
-        delete t;
 
     if (_merged)
         delete[] _merged;
@@ -398,7 +392,7 @@ static void decompress(std::istream &is, std::ostream &os)
 
         if (marker1 == 0x177245 && marker2 == 0x385090)
         {
-            uint32_t crc = bi.readInt();
+            uint32_t crc = bi.readUInt32();
             Toolbox t;
             std::cerr << "0x" << t.hex32(crc) << " 0x" << t.hex32(streamCRC) << "\r\n";
             break;
