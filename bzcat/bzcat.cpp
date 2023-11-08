@@ -71,16 +71,11 @@ private:
     uint32_t _bases[25] = {0};
     int32_t _limits[24] = {0};
     uint32_t _symbols[258] = {0};
+    uint8_t _minLen = 23;
+    uint8_t _maxLen = 0;
 public:
     void read(BitInputStream &bis, uint32_t symbolCount);
-    uint8_t minLength()
-    {
-        uint8_t ret = 23;
-        for (uint32_t i = 0; i < _symbolCount + 2; ++i)
-            ret = std::min(_codeLengths[i], ret);
-        return ret;
-    }
-
+    uint8_t minLength() const { return _minLen; }
     int32_t limit(uint8_t i) const { return _limits[i]; }
     uint32_t symbol(uint16_t i) const { return _symbols[i]; }
     uint32_t base(uint8_t i) const { return _bases[i]; }
@@ -103,16 +98,13 @@ void Table::read(BitInputStream &bis, uint32_t symbolCount)
     for (uint32_t i = 1; i < 25; ++i)
         _bases[i] += _bases[i - 1];
 
-    uint8_t minLength2 = 23;
-    uint8_t maxLength2 = 0;
-
     for (uint32_t i = 0; i < _symbolCount + 2; ++i)
     {
-        minLength2 = std::min(_codeLengths[i], minLength2);
-        maxLength2 = std::max(_codeLengths[i], maxLength2);
+        _minLen = std::min(_codeLengths[i], _minLen);
+        _maxLen = std::max(_codeLengths[i], _maxLen);
     }
 
-    for (int32_t i = minLength2, code = 0; i <= maxLength2; ++i)
+    for (int32_t i = _minLen, code = 0; i <= _maxLen; ++i)
     {
         int32_t base = code;
         code += _bases[i + 1] - _bases[i];
@@ -121,9 +113,9 @@ void Table::read(BitInputStream &bis, uint32_t symbolCount)
         code <<= 1;
     }
 
-    for (uint32_t i = 0; minLength2 <= maxLength2; ++minLength2)
+    for (uint32_t i = 0, minLen = _minLen; minLen <= _maxLen; ++minLen)
         for (uint32_t symbol = 0; symbol < _symbolCount + 2; ++symbol)
-            if (_codeLengths[symbol] == minLength2)
+            if (_codeLengths[symbol] == minLen)
                 _symbols[i++] = symbol;
 }
 
@@ -365,7 +357,7 @@ static void decompress(std::istream &is, std::ostream &os)
     if (magic != 0x425a)
         throw "invalid magic";
 
-    uint8_t foo = bi.readBits(8);
+    bi.readBits(8);
     uint8_t blockSize = bi.readBits(8) - '0';
     Block bd;
     uint32_t streamCRC = 0;
