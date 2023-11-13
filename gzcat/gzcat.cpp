@@ -6,7 +6,7 @@
  * https://www.nayuki.io/page/simple-deflate-decompressor
  */
 
-// current version by Jasper ter Weeme
+// adapted by Jasper ter Weeme
 
 #include <bitset>
 #include <iostream>
@@ -223,8 +223,6 @@ class Inflater
     void decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &distCode);
     void inflateUncompressedBlock();
     void inflateHuffmanBlock(const CanonicalCode &litLenCode, const CanonicalCode &distCode);
-    int decodeRunLength(int sym);
-    long decodeDistance(int sym);
 public:
     Inflater(std::istream &is, std::ostream &os, std::ostream &msg);
     void inflate();
@@ -355,46 +353,37 @@ void Inflater::inflateHuffmanBlock(
         {
             _os.put(sym);
             _dictionary.append(sym);
+            continue;
+        }
+        
+        int run, dist;
+
+        if (sym <= 264)
+            run = sym - 254;
+        else if (sym <= 284)
+        {
+            uint32_t nExtraBits = (sym - 261) / 4;
+            run = ((sym - 265) % 4 + 4 << nExtraBits) + 3 + _bis.readUint(nExtraBits);
+        }
+        else if (sym == 285)
+            run = 258;
+        else
+            throw std::domain_error("Reserved length symbol");
+
+        int distSym = distCode.decodeNextSymbol(_bis);
+
+        if (distSym <= 3)
+            dist = distSym + 1;
+        else if (distSym <= 29)
+        {
+            int nExtraBits = distSym / 2 - 1;
+            dist = ((distSym % 2 + 2) << nExtraBits) + 1 + _bis.readUint(nExtraBits);
         }
         else
-        {
-            int run = decodeRunLength(sym);
-            int distSym = distCode.decodeNextSymbol(_bis);
-            int dist = decodeDistance(distSym);
-            _dictionary.copy(dist, run, _os);
-        }
+            throw std::domain_error("Reserved distance symbol");
+
+        _dictionary.copy(dist, run, _os);
     }
-}
-
-int Inflater::decodeRunLength(int sym)
-{
-    if (sym <= 264)
-        return sym - 254;
-
-    if (sym <= 284)
-    {
-        uint32_t numExtraBits = (sym - 261) / 4;
-        return ((sym - 265) % 4 + 4 << numExtraBits) + 3 + _bis.readUint(numExtraBits);
-    }
-
-    if (sym == 285)
-        return 258;
-
-    throw std::domain_error("Reserved length symbol");
-}
-
-long Inflater::decodeDistance(int sym)
-{
-    if (sym <= 3)
-        return sym + 1;
-
-    if (sym <= 29)
-    {
-        int numExtraBits = sym / 2 - 1;
-        return ((sym % 2 + 2L) << numExtraBits) + 1 + _bis.readUint(numExtraBits);
-    }
-
-    throw std::domain_error("Reserved distance symbol");
 }
 
 void Inflater::inflate()
