@@ -13,44 +13,86 @@
 #include <fstream>
 #include <cstdint>
 
-class BitInputStream
+class Toolbox
 {
-private:
-    std::istream &_input;
-    int _currentByte = 0;
-    int _nBitsRemaining = 0;
-    int readBitMaybe();
 public:
-    BitInputStream(std::istream &in) : _input(in) { }
-    int getBitPosition() const { return (8 - _nBitsRemaining) % 8; }
-    int readUint(int numBits);
+    static char nibble(uint8_t n)
+    {
+        return n <= 9 ? '0' + char(n) : 'a' + char(n - 10);
+    }
+    
+    static std::string hex32(uint32_t dw)
+    {
+        std::string ret;
+        for (uint32_t i = 0; i <= 28; i += 4)
+            ret.push_back(nibble(dw >> (28 - i) & 0xf));
+        return ret;
+    }
+
+    //https://www.geeksforgeeks.org/binary-search/
+    template <typename T> static T binarySearch(T *arr, T l, T r, T x)
+    {
+        while (l <= r)
+        {
+            int m = l + (r - l) / 2;
+     
+            // Check if x is present at mid
+            if (arr[m] == x)
+                return m;
+     
+            // If x greater, ignore left half
+            if (arr[m] < x)
+                l = m + 1;
+     
+            // If x is smaller, ignore right half
+            else
+                r = m - 1;
+        }
+     
+        // If we reach here, then element was not present
+        return -1;
+    }
 };
 
-int BitInputStream::readBitMaybe()
+class BitInputStream
 {
-    if (_currentByte == std::char_traits<char>::eof())
-        return -1;
+    std::istream &_input;
+    uint8_t _currentByte = 0;
+    uint8_t _nBitsRemaining = 0;
+public:
+    BitInputStream(std::istream &in) : _input(in) { }
+    uint8_t getBitPosition() const { return (8 - _nBitsRemaining) % 8; }
+    uint8_t readBit();
+    void align() { while (getBitPosition() != 0) readBit(); }
+    uint32_t readUint(uint32_t numBits);
+    std::string readNullTerminatedString()
+    {
+        std::string ret;
+        for (char c; (c = readUint(8)) != 0;)
+            ret.push_back(c);
+        return ret;
+    }
+};
+
+//read single bit
+uint8_t BitInputStream::readBit()
+{
     if (_nBitsRemaining == 0)
     {
         _currentByte = _input.get();
-        if (_currentByte == std::char_traits<char>::eof())
-            return -1;
         _nBitsRemaining = 8;
     }
     --_nBitsRemaining;
-    return (_currentByte >> (7 - _nBitsRemaining)) & 1;
+    return (_currentByte >> 7 - _nBitsRemaining) & 1;
 }
 
-int BitInputStream::readUint(int numBits)
+//read multiple bits
+uint32_t BitInputStream::readUint(uint32_t numBits)
 {
-    int result = 0;
-    for (int i = 0; i < numBits; i++)
+    uint32_t result = 0;
+    for (uint32_t i = 0; i < numBits; ++i)
     {
-        int c = readBitMaybe();
-        
-        if (c == -1)
-            throw "end of file";
-
+        uint32_t c = readBit();
         result |= c << i;
     }
     return result;
@@ -58,56 +100,47 @@ int BitInputStream::readUint(int numBits)
 
 class CRC32
 {
-private:
     uint32_t _table[256];
     uint32_t _crc = 0xffffffff;
-    void _makeTable();
 public:
-    CRC32() { _makeTable(); }
-    void update(char c) { _crc = _table[(_crc ^ c) & 0xff] ^ (_crc >> 8); }
+    void update(char c) { _crc = _table[(_crc ^ c) & 0xff] ^ _crc >> 8; }
     uint32_t crc() const { return ~_crc; }
-};
 
-void CRC32::_makeTable()
-{
-    uint32_t c;
-    for (uint32_t n = 0; n < 256; ++n)
+    CRC32()
     {
-        c = n;
-        for (uint32_t k = 0; k < 8; ++k)
-            c = c & 1 ? 0xedb88320 ^ (c >> 1) : c >> 1;
-        _table[n] = c;
+        for (uint32_t n = 0; n < 256; ++n)
+        {
+            uint32_t c = n;
+            for (uint32_t k = 0; k < 8; ++k)
+                c = c & 1 ? 0xedb88320 ^ c >> 1 : c >> 1;
+            _table[n] = c;
+        }
     }
-}
+};
 
 class CRCOutputStream
 {
-private:
     std::ostream *_os;
     CRC32 _crc;
     uint32_t _cnt = 0;
 public:
     CRCOutputStream(std::ostream *os) : _os(os) { }
-    void put(uint8_t b);
     uint32_t crc() const { return _crc.crc(); }
     uint32_t cnt() const { return _cnt; }
-};
 
-void CRCOutputStream::put(uint8_t b)
-{
-    _os->put(b);
-    ++_cnt;
-    _crc.update(b);
-}
+    void put(uint8_t b)
+    {
+        _os->put(b);
+        ++_cnt;
+        _crc.update(b);
+    }
+};
 
 class CanonicalCode final
 {
-private:
     int *_symbolCodeBits = nullptr, *_symbolValues = nullptr;
     int _numSymbolsAllocated = 0;
-    static const int MAX_CODE_LENGTH = 15;
 public:
-    CanonicalCode() {}
     ~CanonicalCode();
     void init(int *codeLengths, size_t n);
     int decodeNextSymbol(BitInputStream &in) const;
@@ -127,11 +160,11 @@ void CanonicalCode::init(int *codeLengths, size_t n)
     _symbolCodeBits = new int[n];
     _symbolValues = new int[n];
 
-    for (int codeLength = 1, nextCode = 0; codeLength <= MAX_CODE_LENGTH; ++codeLength)
+    for (int codeLength = 1, nextCode = 0; codeLength <= 15; ++codeLength)
     {
         nextCode <<= 1;
-        int startBit = 1 << codeLength;
-        for (int symbol = 0; symbol < n; ++symbol)
+        uint32_t startBit = 1 << codeLength;
+        for (uint32_t symbol = 0; symbol < n; ++symbol)
         {
             if (codeLengths[symbol] != codeLength)
                 continue;
@@ -143,36 +176,13 @@ void CanonicalCode::init(int *codeLengths, size_t n)
     }
 }
 
-//https://www.geeksforgeeks.org/binary-search/
-static int binarySearch(int *arr, int l, int r, int x)
-{
-    while (l <= r)
-    {
-        int m = l + (r - l) / 2;
- 
-        // Check if x is present at mid
-        if (arr[m] == x)
-            return m;
- 
-        // If x greater, ignore left half
-        if (arr[m] < x)
-            l = m + 1;
- 
-        // If x is smaller, ignore right half
-        else
-            r = m - 1;
-    }
- 
-    // If we reach here, then element was not present
-    return -1;
-}
-
 int CanonicalCode::decodeNextSymbol(BitInputStream &in) const
 {
     for (int codeBits = 1; true;)
     {
-        codeBits = (codeBits << 1) | in.readUint(1);
-        int index = binarySearch(_symbolCodeBits, 0, _numSymbolsAllocated - 1, codeBits);
+        codeBits = codeBits << 1 | in.readUint(1);
+        Toolbox t;
+        int index = t.binarySearch<int>(_symbolCodeBits, 0, _numSymbolsAllocated - 1, codeBits);
         if (index >= 0)
             return _symbolValues[index];
     }
@@ -180,7 +190,6 @@ int CanonicalCode::decodeNextSymbol(BitInputStream &in) const
 
 class ByteHistory
 {
-private:
     uint8_t *_data;
     size_t _index = 0, _length = 0, _size;
 public:
@@ -211,9 +220,9 @@ void ByteHistory::copy(int dist, int len, CRCOutputStream &out)
 
 class Inflater
 {
-private:
     BitInputStream * const _bis;
     CRCOutputStream * const _os;
+    std::ostream &_msg;
     ByteHistory _dictionary;
     CanonicalCode _FIXED_LITERAL_LENGTH_CODE;
     CanonicalCode _FIXED_DISTANCE_CODE;
@@ -222,21 +231,15 @@ private:
     void inflateHuffmanBlock(const CanonicalCode &litLenCode, const CanonicalCode &distCode);
     int decodeRunLength(int sym);
     long decodeDistance(int sym);
-    Inflater(BitInputStream *bis, CRCOutputStream *os);
-    void inflate();
 public:
-    static void inflate(BitInputStream *bis, CRCOutputStream *os);
+    Inflater(BitInputStream *bis, CRCOutputStream *os, std::ostream &msg);
+    void inflate();
+    static void inflate(std::istream &is, std::ostream &os, std::ostream &msg);
 };
 
-void Inflater::inflate(BitInputStream *bis, CRCOutputStream *os)
-{
-    Inflater inflater(bis, os);
-    inflater.inflate();
-}
-
-Inflater::Inflater(BitInputStream *bis, CRCOutputStream *os)
+Inflater::Inflater(BitInputStream *bis, CRCOutputStream *os, std::ostream &msg)
   :
-    _bis(bis), _os(os), _dictionary(32 * 1024)
+    _bis(bis), _os(os), _msg(msg), _dictionary(32 * 1024)
 {
     int llcodelens[288];
     int i = 0;
@@ -255,27 +258,45 @@ Inflater::Inflater(BitInputStream *bis, CRCOutputStream *os)
     _FIXED_DISTANCE_CODE.init(distcodelens, 32);
 }
 
-static char nibble(uint8_t n)
-{
-    return n <= 9 ? '0' + char(n) : 'a' + char(n - 10);
-}
-
-static std::string hex32(uint32_t dw)
-{
-    std::string ret;
-    ret.push_back(nibble(dw >> 28 & 0xf));
-    ret.push_back(nibble(dw >> 24 & 0xf));
-    ret.push_back(nibble(dw >> 20 & 0xf));
-    ret.push_back(nibble(dw >> 16 & 0xf));
-    ret.push_back(nibble(dw >> 12 & 0xf));
-    ret.push_back(nibble(dw >>  8 & 0xf));
-    ret.push_back(nibble(dw >>  4 & 0xf));
-    ret.push_back(nibble(dw >>  0 & 0xf));
-    return ret;
-}
-
 void Inflater::inflate()
 {
+    if (_bis->readUint(16) != 0x8b1f)
+        throw "invalid magic";
+
+    if (_bis->readUint(8) != 8)
+        throw "unsupported compression method";
+
+    std::bitset<8> flags = _bis->readUint(8);
+    uint32_t mtime = _bis->readUint(32);
+
+    if (mtime != 0)
+        _msg << "Last modified: " << mtime << " (Unix time)\r\n";
+    else
+        _msg << "Last modified: N/A";
+        
+    _bis->readUint(16);
+        
+    if (flags[2])
+    {
+        _msg << "Flag: Extra\r\n";
+        uint16_t len = _bis->readUint(16);
+
+        for (uint16_t i = 0; i < len; ++i)
+            _bis->readUint(8);
+    }
+
+    if (flags[3])
+        _msg << "File name: " + _bis->readNullTerminatedString() << "\r\n";
+
+    if (flags[4])
+        _msg << "Comment: " + _bis->readNullTerminatedString() << "\r\n";
+
+    if (flags[1])
+    {
+        _bis->readUint(16);
+        _msg << "16bit CRC present\r\n";
+    }
+
     for (bool isFinal = false; !isFinal;)
     {
         isFinal = _bis->readUint(1) != 0;  // bfinal
@@ -295,22 +316,28 @@ void Inflater::inflate()
         else
             throw std::logic_error("Unreachable value");
     }
+
+    _bis->align();
+    uint32_t crc = _bis->readUint(32);
+    uint32_t size = _bis->readUint(32);
+    _msg << "CRC: 0x" << Toolbox::hex32(crc) << " 0x" << Toolbox::hex32(_os->crc()) << "\r\n";
+    _msg << "size: " << size << " " << _os->cnt() << "\r\n";
 }
 
 void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &distCode)
 {
-    int numLitLenCodes = _bis->readUint(5) + 257;  // hlit + 257
-    int numDistCodes = _bis->readUint(5) + 1;      // hdist + 1
-    int numCodeLenCodes = _bis->readUint(4) + 4;   // hclen + 4
+    uint32_t numLitLenCodes = _bis->readUint(5) + 257;  // hlit + 257
+    uint32_t numDistCodes = _bis->readUint(5) + 1;      // hdist + 1
+    uint32_t numCodeLenCodes = _bis->readUint(4) + 4;   // hclen + 4
     int codeLenCodeLen[19] = {0};
     codeLenCodeLen[16] = _bis->readUint(3);
     codeLenCodeLen[17] = _bis->readUint(3);
     codeLenCodeLen[18] = _bis->readUint(3);
     codeLenCodeLen[ 0] = _bis->readUint(3);
 
-    for (int i = 0; i < numCodeLenCodes - 4; ++i)
+    for (uint32_t i = 0; i < numCodeLenCodes - 4; ++i)
     {
-        int j = i % 2 == 0 ? 8 + i / 2 : 7 - i / 2;
+        uint32_t j = i % 2 == 0 ? 8 + i / 2 : 7 - i / 2;
         codeLenCodeLen[j] = _bis->readUint(3);
     }
     
@@ -347,7 +374,7 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
     }
     
     int litLenCodeLen[numLitLenCodes];
-    for (int i = 0; i < numLitLenCodes; ++i)
+    for (uint32_t i = 0; i < numLitLenCodes; ++i)
         litLenCodeLen[i] = codeLens[i];
     litLenCode.init(litLenCodeLen, numLitLenCodes);
     int nDistCodeLen = nCodeLens - numLitLenCodes;
@@ -375,21 +402,17 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
 
 void Inflater::inflateUncompressedBlock()
 {
-    // Discard bits to align to byte boundary
-    while (_bis->getBitPosition() != 0)
-        _bis->readUint(1);
-    
-    // Read length
-    int len = _bis->readUint(16);
-    int nlen = _bis->readUint(16);
+    _bis->align();
+    const uint16_t len = _bis->readUint(16);
+    const uint16_t nlen = _bis->readUint(16);
 
     if ((len ^ 0xFFFF) != nlen)
         throw std::domain_error("Invalid length in uncompressed block");
     
     // Copy bytes
-    for (int i = 0; i < len; ++i)
+    for (uint16_t i = 0; i < len; ++i)
     {
-        int b = _bis->readUint(8);  // Byte is aligned
+        uint8_t b = _bis->readUint(8);  // Byte is aligned
         _os->put(b);
         _dictionary.append(b);
     }
@@ -422,8 +445,8 @@ int Inflater::decodeRunLength(int sym)
 
     if (sym <= 284)
     {
-        int numExtraBits = (sym - 261) / 4;
-        return (((sym - 265) % 4 + 4) << numExtraBits) + 3 + _bis->readUint(numExtraBits);
+        uint32_t numExtraBits = (sym - 261) / 4;
+        return ((sym - 265) % 4 + 4 << numExtraBits) + 3 + _bis->readUint(numExtraBits);
     }
 
     if (sym == 285)
@@ -446,103 +469,6 @@ long Inflater::decodeDistance(int sym)
     throw std::domain_error("Reserved distance symbol");
 }
 
-class DataInput final
-{
-private:
-    std::istream &input;
-public:
-    DataInput(std::istream &in) : input(in) {}
-    
-    uint8_t readUint8() {
-        int b = input.get();
-        if (b == std::char_traits<char>::eof())
-            throw std::runtime_error("Unexpected end of stream");
-        return static_cast<uint8_t>(b);
-    }
-    
-    uint16_t readLittleEndianUint16() {
-        uint16_t result = 0;
-        for (int i = 0; i < 2; i++)
-            result |= static_cast<uint16_t>(readUint8()) << (i * 8);
-        return result;
-    }
-    
-    uint32_t readLittleEndianUint32() {
-        uint32_t result = 0;
-        for (int i = 0; i < 4; i++)
-            result |= static_cast<uint32_t>(readUint8()) << (i * 8);
-        return result;
-    }
-    
-    std::string readNullTerminatedString()
-    {
-        std::string result;
-        while (true) {
-            int b = input.get();
-            if (b == std::char_traits<char>::eof())
-                throw std::runtime_error("Unexpected end of stream");
-            else if (b == '\0')
-                break;
-            else
-                result.push_back(static_cast<char>(b));
-        }
-        return result;
-    }
-};
-
-static void submain(std::istream &is, std::ostream &os)
-{
-    DataInput in1(is);
-
-    if (in1.readLittleEndianUint16() != 0x8B1F)
-        throw "invalid magic";
-
-    int compMeth = in1.readUint8();
-
-    if (compMeth != 8)
-        throw "unsupported compression method";
-
-    std::bitset<8> flags = in1.readUint8();
-    uint32_t mtime = in1.readLittleEndianUint32();
-
-    if (mtime != 0)
-        std::cerr << "Last modified: " << mtime << " (Unix time)" << std::endl;
-    else
-        std::cerr << "Last modified: N/A";
-        
-    int extraFlags = in1.readUint8();
-    in1.readUint8();
-        
-    if (flags[2])
-    {
-        std::cerr << "Flag: Extra" << std::endl;
-        long len = in1.readLittleEndianUint16();
-
-        for (long i = 0; i < len; i++)
-            in1.readUint8();
-    }
-
-    if (flags[3])
-        std::cerr << "File name: " + in1.readNullTerminatedString() << "\r\n";
-
-    if (flags[4])
-        std::cerr << "Comment: " + in1.readNullTerminatedString() << "\r\n";
-
-    if (flags[1])
-    {
-        in1.readLittleEndianUint16();
-        std::cerr << "16bit CRC present\r\n";
-    }
-        
-    BitInputStream in2(is);
-    CRCOutputStream os2(&os);
-    Inflater::inflate(&in2, &os2);
-    uint32_t crc = in1.readLittleEndianUint32();
-    std::cerr << "CRC: 0x" << hex32(crc) << " 0x" << hex32(os2.crc()) << "\r\n";
-    uint32_t size = in1.readLittleEndianUint32();
-    std::cerr << "size: " << size << " " << os2.cnt() << "\r\n";
-}
-
 int main(int argc, char *argv[])
 {
     std::istream *is = &std::cin;
@@ -554,6 +480,11 @@ int main(int argc, char *argv[])
         is = &ifs;
     }
 
-    submain(*is, std::cout);
+    BitInputStream bis(*is);
+    CRCOutputStream cos(&std::cout);
+    Inflater inflater(&bis, &cos, std::cerr);
+    inflater.inflate();
     return 0;
 }
+
+

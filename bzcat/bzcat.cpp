@@ -18,7 +18,6 @@ public:
 
 class BitInputStream
 {
-private:
     std::istream *_is;
     uint32_t _bitBuffer = 0, _bitCount = 0;
 public:
@@ -42,7 +41,6 @@ public:
 
 class MoveToFront
 {
-private:
     uint8_t _buf[256];
 public:
     MoveToFront() { for (uint16_t i = 0; i < 256; ++i) _buf[i] = i; }
@@ -60,7 +58,6 @@ public:
 
 class CRC32
 {
-private:
     uint32_t _table[256];
     uint32_t _crc = 0xffffffff;
 public:
@@ -81,7 +78,6 @@ public:
 
 class Table
 {
-private:
     uint8_t _codeLengths[258];
     uint16_t _pos = 0;
     uint32_t _bases[25] = {0};
@@ -136,7 +132,6 @@ void Table::read(BitInputStream &bis, uint32_t symbolCount)
 
 class Block
 {
-private:
     CRC32 _crc;
     uint32_t _blockCRC;
     uint32_t *_merged = nullptr;

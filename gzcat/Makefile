@@ -1,5 +1,5 @@
 all:
-	g++ -O2 -o gzcat gzcat.cpp
+	g++ -Wall -Wno-parentheses -O2 -o gzcat gzcat.cpp
 	javac Gzcat.java
 
 
