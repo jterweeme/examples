@@ -25,7 +25,7 @@ public:
     {
         std::string ret;
         for (uint32_t i = 0; i <= 28; i += 4)
-            ret.push_back(nibble(dw >> (28 - i) & 0xf));
+            ret.push_back(nibble(dw >> 28 - i & 0xf));
         return ret;
     }
 
@@ -120,20 +120,14 @@ public:
 
 class CRCOutputStream
 {
-    std::ostream *_os;
+    std::ostream &_os;
     CRC32 _crc;
     uint32_t _cnt = 0;
 public:
-    CRCOutputStream(std::ostream *os) : _os(os) { }
+    CRCOutputStream(std::ostream &os) : _os(os) { }
     uint32_t crc() const { return _crc.crc(); }
     uint32_t cnt() const { return _cnt; }
-
-    void put(uint8_t b)
-    {
-        _os->put(b);
-        ++_cnt;
-        _crc.update(b);
-    }
+    void put(uint8_t b) { _os.put(b); ++_cnt; _crc.update(b); }
 };
 
 class CanonicalCode final
@@ -220,8 +214,8 @@ void ByteHistory::copy(int dist, int len, CRCOutputStream &out)
 
 class Inflater
 {
-    BitInputStream * const _bis;
-    CRCOutputStream * const _os;
+    BitInputStream _bis;
+    CRCOutputStream _os;
     std::ostream &_msg;
     ByteHistory _dictionary;
     CanonicalCode _FIXED_LITERAL_LENGTH_CODE;
@@ -232,14 +226,14 @@ class Inflater
     int decodeRunLength(int sym);
     long decodeDistance(int sym);
 public:
-    Inflater(BitInputStream *bis, CRCOutputStream *os, std::ostream &msg);
+    Inflater(std::istream &is, std::ostream &os, std::ostream &msg);
     void inflate();
     static void inflate(std::istream &is, std::ostream &os, std::ostream &msg);
 };
 
-Inflater::Inflater(BitInputStream *bis, CRCOutputStream *os, std::ostream &msg)
+Inflater::Inflater(std::istream &is, std::ostream &os, std::ostream &msg)
   :
-    _bis(bis), _os(os), _msg(msg), _dictionary(32 * 1024)
+    _bis(is), _os(os), _msg(msg), _dictionary(32 * 1024)
 {
     int llcodelens[288];
     int i = 0;
@@ -258,87 +252,21 @@ Inflater::Inflater(BitInputStream *bis, CRCOutputStream *os, std::ostream &msg)
     _FIXED_DISTANCE_CODE.init(distcodelens, 32);
 }
 
-void Inflater::inflate()
-{
-    if (_bis->readUint(16) != 0x8b1f)
-        throw "invalid magic";
-
-    if (_bis->readUint(8) != 8)
-        throw "unsupported compression method";
-
-    std::bitset<8> flags = _bis->readUint(8);
-    uint32_t mtime = _bis->readUint(32);
-
-    if (mtime != 0)
-        _msg << "Last modified: " << mtime << " (Unix time)\r\n";
-    else
-        _msg << "Last modified: N/A";
-        
-    _bis->readUint(16);
-        
-    if (flags[2])
-    {
-        _msg << "Flag: Extra\r\n";
-        uint16_t len = _bis->readUint(16);
-
-        for (uint16_t i = 0; i < len; ++i)
-            _bis->readUint(8);
-    }
-
-    if (flags[3])
-        _msg << "File name: " + _bis->readNullTerminatedString() << "\r\n";
-
-    if (flags[4])
-        _msg << "Comment: " + _bis->readNullTerminatedString() << "\r\n";
-
-    if (flags[1])
-    {
-        _bis->readUint(16);
-        _msg << "16bit CRC present\r\n";
-    }
-
-    for (bool isFinal = false; !isFinal;)
-    {
-        isFinal = _bis->readUint(1) != 0;  // bfinal
-        int type = _bis->readUint(2);  // btype
-        
-        if (type == 0)
-            inflateUncompressedBlock();
-        else if (type == 1)
-            inflateHuffmanBlock(_FIXED_LITERAL_LENGTH_CODE, _FIXED_DISTANCE_CODE);
-        else if (type == 2)
-        {
-            CanonicalCode litLen, dist;
-            decodeHuffmanCodes(litLen, dist);
-            inflateHuffmanBlock(litLen, dist);
-        } else if (type == 3)
-            throw std::domain_error("Reserved block type");
-        else
-            throw std::logic_error("Unreachable value");
-    }
-
-    _bis->align();
-    uint32_t crc = _bis->readUint(32);
-    uint32_t size = _bis->readUint(32);
-    _msg << "CRC: 0x" << Toolbox::hex32(crc) << " 0x" << Toolbox::hex32(_os->crc()) << "\r\n";
-    _msg << "size: " << size << " " << _os->cnt() << "\r\n";
-}
-
 void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &distCode)
 {
-    uint32_t numLitLenCodes = _bis->readUint(5) + 257;  // hlit + 257
-    uint32_t numDistCodes = _bis->readUint(5) + 1;      // hdist + 1
-    uint32_t numCodeLenCodes = _bis->readUint(4) + 4;   // hclen + 4
+    uint32_t numLitLenCodes = _bis.readUint(5) + 257;  // hlit + 257
+    uint32_t numDistCodes = _bis.readUint(5) + 1;      // hdist + 1
+    uint32_t numCodeLenCodes = _bis.readUint(4) + 4;   // hclen + 4
     int codeLenCodeLen[19] = {0};
-    codeLenCodeLen[16] = _bis->readUint(3);
-    codeLenCodeLen[17] = _bis->readUint(3);
-    codeLenCodeLen[18] = _bis->readUint(3);
-    codeLenCodeLen[ 0] = _bis->readUint(3);
+    codeLenCodeLen[16] = _bis.readUint(3);
+    codeLenCodeLen[17] = _bis.readUint(3);
+    codeLenCodeLen[18] = _bis.readUint(3);
+    codeLenCodeLen[ 0] = _bis.readUint(3);
 
     for (uint32_t i = 0; i < numCodeLenCodes - 4; ++i)
     {
         uint32_t j = i % 2 == 0 ? 8 + i / 2 : 7 - i / 2;
-        codeLenCodeLen[j] = _bis->readUint(3);
+        codeLenCodeLen[j] = _bis.readUint(3);
     }
     
     CanonicalCode codeLenCode;
@@ -347,7 +275,7 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
     int codeLens[nCodeLens];
     for (int codeLensIndex = 0; codeLensIndex < nCodeLens;)
     {
-        int sym = codeLenCode.decodeNextSymbol(*_bis);
+        int sym = codeLenCode.decodeNextSymbol(_bis);
         if (0 <= sym && sym <= 15)
         {
             codeLens[codeLensIndex] = sym;
@@ -357,12 +285,12 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
         int runLen, runVal = 0;
         if (sym == 16)
         {
-            runLen = _bis->readUint(2) + 3;
+            runLen = _bis.readUint(2) + 3;
             runVal = codeLens[codeLensIndex - 1];
         } else if (sym == 17) {
-            runLen = _bis->readUint(3) + 3;
+            runLen = _bis.readUint(3) + 3;
         } else if (sym == 18) {
-            runLen = _bis->readUint(7) + 11;
+            runLen = _bis.readUint(7) + 11;
         } else {
             throw std::logic_error("Symbol out of range");
         }
@@ -389,9 +317,9 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
     for (int x : distCodeLen)
     {
         if (x == 1)
-            oneCount++;
+            ++oneCount;
         else if (x > 1)
-            otherPositiveCount++;
+            ++otherPositiveCount;
     }
     
     if (oneCount == 1 && otherPositiveCount == 0)
@@ -402,9 +330,9 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
 
 void Inflater::inflateUncompressedBlock()
 {
-    _bis->align();
-    const uint16_t len = _bis->readUint(16);
-    const uint16_t nlen = _bis->readUint(16);
+    _bis.align();
+    const uint16_t len = _bis.readUint(16);
+    const uint16_t nlen = _bis.readUint(16);
 
     if ((len ^ 0xFFFF) != nlen)
         throw std::domain_error("Invalid length in uncompressed block");
@@ -412,8 +340,8 @@ void Inflater::inflateUncompressedBlock()
     // Copy bytes
     for (uint16_t i = 0; i < len; ++i)
     {
-        uint8_t b = _bis->readUint(8);  // Byte is aligned
-        _os->put(b);
+        uint8_t b = _bis.readUint(8);  // Byte is aligned
+        _os.put(b);
         _dictionary.append(b);
     }
 }
@@ -421,19 +349,19 @@ void Inflater::inflateUncompressedBlock()
 void Inflater::inflateHuffmanBlock(
         const CanonicalCode &litLenCode, const CanonicalCode &distCode)
 {
-    for (int sym; (sym = litLenCode.decodeNextSymbol(*_bis)) != 256;)
+    for (int sym; (sym = litLenCode.decodeNextSymbol(_bis)) != 256;)
     {
         if (sym < 256)
         {
-            _os->put(sym);
+            _os.put(sym);
             _dictionary.append(sym);
         }
         else
         {
             int run = decodeRunLength(sym);
-            int distSym = distCode.decodeNextSymbol(*_bis);
+            int distSym = distCode.decodeNextSymbol(_bis);
             int dist = decodeDistance(distSym);
-            _dictionary.copy(dist, run, *_os);
+            _dictionary.copy(dist, run, _os);
         }
     }
 }
@@ -446,7 +374,7 @@ int Inflater::decodeRunLength(int sym)
     if (sym <= 284)
     {
         uint32_t numExtraBits = (sym - 261) / 4;
-        return ((sym - 265) % 4 + 4 << numExtraBits) + 3 + _bis->readUint(numExtraBits);
+        return ((sym - 265) % 4 + 4 << numExtraBits) + 3 + _bis.readUint(numExtraBits);
     }
 
     if (sym == 285)
@@ -463,10 +391,76 @@ long Inflater::decodeDistance(int sym)
     if (sym <= 29)
     {
         int numExtraBits = sym / 2 - 1;
-        return ((sym % 2 + 2L) << numExtraBits) + 1 + _bis->readUint(numExtraBits);
+        return ((sym % 2 + 2L) << numExtraBits) + 1 + _bis.readUint(numExtraBits);
     }
 
     throw std::domain_error("Reserved distance symbol");
+}
+
+void Inflater::inflate()
+{
+    if (_bis.readUint(16) != 0x8b1f)
+        throw "invalid magic";
+
+    if (_bis.readUint(8) != 8)
+        throw "unsupported compression method";
+
+    std::bitset<8> flags = _bis.readUint(8);
+    uint32_t mtime = _bis.readUint(32);
+
+    if (mtime != 0)
+        _msg << "Last modified: " << mtime << " (Unix time)\r\n";
+    else
+        _msg << "Last modified: N/A";
+        
+    _bis.readUint(16);
+        
+    if (flags[2])
+    {
+        _msg << "Flag: Extra\r\n";
+        uint16_t len = _bis.readUint(16);
+
+        for (uint16_t i = 0; i < len; ++i)
+            _bis.readUint(8);
+    }
+
+    if (flags[3])
+        _msg << "File name: " + _bis.readNullTerminatedString() << "\r\n";
+
+    if (flags[4])
+        _msg << "Comment: " + _bis.readNullTerminatedString() << "\r\n";
+
+    if (flags[1])
+    {
+        _bis.readUint(16);
+        _msg << "16bit CRC present\r\n";
+    }
+
+    for (bool isFinal = false; !isFinal;)
+    {
+        isFinal = _bis.readUint(1) != 0;  // bfinal
+        int type = _bis.readUint(2);  // btype
+        
+        if (type == 0)
+            inflateUncompressedBlock();
+        else if (type == 1)
+            inflateHuffmanBlock(_FIXED_LITERAL_LENGTH_CODE, _FIXED_DISTANCE_CODE);
+        else if (type == 2)
+        {
+            CanonicalCode litLen, dist;
+            decodeHuffmanCodes(litLen, dist);
+            inflateHuffmanBlock(litLen, dist);
+        } else if (type == 3)
+            throw std::domain_error("Reserved block type");
+        else
+            throw std::logic_error("Unreachable value");
+    }
+
+    _bis.align();
+    uint32_t crc = _bis.readUint(32);
+    uint32_t size = _bis.readUint(32);
+    _msg << "CRC: 0x" << Toolbox::hex32(crc) << " 0x" << Toolbox::hex32(_os.crc()) << "\r\n";
+    _msg << "size: " << size << " " << _os.cnt() << "\r\n";
 }
 
 int main(int argc, char *argv[])
@@ -480,9 +474,7 @@ int main(int argc, char *argv[])
         is = &ifs;
     }
 
-    BitInputStream bis(*is);
-    CRCOutputStream cos(&std::cout);
-    Inflater inflater(&bis, &cos, std::cerr);
+    Inflater inflater(*is, std::cout, std::cerr);
     inflater.inflate();
     return 0;
 }
