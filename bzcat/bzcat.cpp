@@ -114,8 +114,7 @@ class Block
     CRC32 _crc;
     uint32_t _blockCRC;
     uint32_t *_merged = nullptr;
-    int32_t _last = -1;
-    uint32_t _repeat = 0, _length = 0, _dec = 0, _curp = 0, _acc = 0;
+    uint32_t _length = 0, _dec = 0, _curp = 0;
     uint8_t _nextByte();
     void write(std::ostream &os);
     void _init(BitInputStream &bi, uint32_t blockSize);
@@ -134,36 +133,39 @@ uint8_t Block::_nextByte()
 
 void Block::write(std::ostream &os)
 {
+    uint32_t repeat = 0, acc = 0;
+    int32_t last = -2;
+
     while (true)
     {
-        if (_repeat < 1)
+        if (repeat < 1)
         {
             if (_dec == _length)
                 return;
 
             uint8_t nextByte = _nextByte();
 
-            if (nextByte != _last)
+            if (nextByte != last)
             {
-                _last = nextByte, _repeat = 1, _acc = 1;
+                last = nextByte, repeat = 1, acc = 1;
                 _crc.update(nextByte);
             }
-            else if (++_acc == 4)
+            else if (++acc == 4)
             {
-                _repeat = _nextByte() + 1, _acc = 0;
+                repeat = _nextByte() + 1, acc = 0;
 
-                for (uint32_t i = 0; i < _repeat; ++i)
+                for (uint32_t i = 0; i < repeat; ++i)
                     _crc.update(nextByte);
             }
             else
             {
-                _repeat = 1;
+                repeat = 1;
                 _crc.update(nextByte);
             }
         }
 
-        --_repeat;
-        os.put(_last);
+        --repeat;
+        os.put(last);
     }
 }
 
