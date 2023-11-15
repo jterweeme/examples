@@ -1,5 +1,5 @@
 all:
-	g++ -Wall -O2 -o bzcat bzcat.cpp
+	g++ -Wall -Wno-parentheses -O2 -o bzcat bzcat.cpp
 	javac Bzcat.java
 
 clean:

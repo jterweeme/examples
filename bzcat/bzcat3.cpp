@@ -56,59 +56,6 @@ public:
     }
 };
 
-class Table
-{
-    uint8_t _codeLengths[258];
-    uint32_t _bases[25] = {0};
-    uint32_t _limits[24] = {0};
-    uint32_t _symbols[258] = {0};
-    uint8_t _minLen = 23;
-    uint8_t _maxLen = 0;
-public:
-    void read(BitInputStream &bis, uint32_t symbolCount);
-    uint8_t minLength() const { return _minLen; }
-    uint32_t limit(uint8_t i) const { return _limits[i]; }
-    uint32_t symbol(uint16_t i) const { return _symbols[i]; }
-    uint32_t base(uint8_t i) const { return _bases[i]; }
-};
-
-//read the canonical Huffman code lengths for each table
-void Table::read(BitInputStream &bis, uint32_t symbolCount)
-{
-    for (uint32_t i = 0, pos = 0, c = bis.readBits(5); i <= symbolCount + 1; ++i)
-    {
-        while (bis.readBool())
-            c += bis.readBool() ? -1 : 1;
-        _codeLengths[pos++] = c;
-    }
-
-    for (uint32_t i = 0; i < symbolCount + 2; ++i)
-        _bases[_codeLengths[i] + 1]++;
-
-    for (uint32_t i = 1; i < 25; ++i)
-        _bases[i] += _bases[i - 1];
-
-    for (uint32_t i = 0; i < symbolCount + 2; ++i)
-    {
-        _minLen = std::min(_codeLengths[i], _minLen);
-        _maxLen = std::max(_codeLengths[i], _maxLen);
-    }
-
-    for (uint32_t i = _minLen, code = 0; i <= _maxLen; ++i)
-    {
-        uint32_t base = code;
-        code += _bases[i + 1] - _bases[i];
-        _bases[i] = base - _bases[i];
-        _limits[i] = code - 1;
-        code <<= 1;
-    }
-
-    for (uint32_t i = 0, minLen = _minLen; minLen <= _maxLen; ++minLen)
-        for (uint32_t symbol = 0; symbol < symbolCount + 2; ++symbol)
-            if (_codeLengths[symbol] == minLen)
-                _symbols[i++] = symbol;
-}
-
 class Block
 {
     CRC32 _crc;
@@ -132,6 +79,7 @@ uint8_t Block::_nextByte()
     return ret;
 }
 
+#if 1
 int Block::_read()
 {       
     while (_repeat < 1)
@@ -143,26 +91,54 @@ int Block::_read()
 
         if (nextByte != _last)
         {
-            _last = nextByte, _acc = 1;
+            _last = nextByte, _repeat = 1, _acc = 1;
             _crc.update(nextByte);
-            break;
         }
-        if (++_acc == 4)
+        else if (++_acc == 4)
         {
             _repeat = _nextByte() + 1, _acc = 0;
 
             for (uint32_t i = 0; i < _repeat; ++i)
                 _crc.update(nextByte);
-
-            break;
         }
-        _crc.update(nextByte);
-        break;
+        else
+        {
+            _repeat = 1;
+            _crc.update(nextByte);
+        }
     }
 
-    _repeat = 0;
+    --_repeat;
     return _last;
 }
+#else
+int Block::_read()
+{       
+    while (_repeat < 1)
+    {           
+        if (_dec == _length)
+            return -1;
+
+        uint8_t nextByte = _nextByte();
+
+        if (nextByte != _last)
+        {
+            _last = nextByte, _repeat = 1, _acc = 1;
+        }
+        else if (++_acc == 4)
+        {
+            _repeat = _nextByte() + 1, _acc = 0;
+        }
+        else
+        {
+            _repeat = 1;
+        }
+    }
+
+    --_repeat;
+    return _last;
+}
+#endif
 
 void Block::_init(BitInputStream &bi, uint32_t blockSize)
 {
@@ -184,30 +160,68 @@ void Block::_init(BitInputStream &bi, uint32_t blockSize)
     uint8_t nTables = bi.readBits(3);
     uint16_t nSelectors = bi.readBits(15);
     uint8_t bwtBlock[blockSize], selectors[nSelectors], mtfValue = 0;
-    Table tables[nTables];
     MoveToFront tableMTF, symbolMTF;
     _length = 0;
 
     for (uint32_t i = 0; i < nSelectors; ++i)
         selectors[i] = tableMTF.indexToFront(bi.readUnary());
 
-    for (uint32_t t = 0; t < nTables; ++t)
-        tables[t].read(bi, symbolCount);
+    uint32_t _bases[6][25] = {0};
+    uint32_t _limits[6][24] = {0};
+    uint32_t _symbols[6][258] = {0};
+    uint8_t _minLen[6] = {23,23,23,23,23,23};
+    uint8_t _maxLen[6] = {0};
+
+    for (uint8_t t = 0, codeLengths[258] = {0}; t < nTables; ++t)
+    {
+        for (uint32_t i = 0, pos = 0, c = bi.readBits(5); i <= symbolCount + 1; ++i)
+        {
+            while (bi.readBool())
+                c += bi.readBool() ? -1 : 1;
+            codeLengths[pos++] = c;
+        }
+    
+        for (uint32_t i = 0; i < symbolCount + 2; ++i)
+            _bases[t][codeLengths[i] + 1]++;
+
+        for (uint32_t i = 1; i < 25; ++i)
+            _bases[t][i] += _bases[t][i - 1];
+
+        for (uint32_t i = 0; i < symbolCount + 2; ++i)
+        {
+            _minLen[t] = std::min(codeLengths[i], _minLen[t]);
+            _maxLen[t] = std::max(codeLengths[i], _maxLen[t]);
+        }
+
+        for (uint32_t i = _minLen[t], code = 0; i <= _maxLen[t]; ++i)
+        {
+            uint32_t base = code;
+            code += _bases[t][i + 1] - _bases[t][i];
+            _bases[t][i] = base - _bases[t][i];
+            _limits[t][i] = code - 1;
+            code <<= 1;
+        }
+
+        for (uint32_t i = 0, minLen = _minLen[t]; minLen <= _maxLen[t]; ++minLen)
+            for (uint32_t symbol = 0; symbol < symbolCount + 2; ++symbol)
+                if (codeLengths[symbol] == minLen)
+                    _symbols[t][i++] = symbol;
+    }
 
     for (uint32_t n = 0, grpIdx = 0, grpPos = 0, inc = 1, curTbl = selectors[0];;)
     {
         if (grpPos++ % 50 == 0)
             curTbl = selectors[grpIdx++];
         
-        uint8_t i = tables[curTbl].minLength();
+        uint8_t i = _minLen[curTbl];
         uint32_t codeBits = bi.readBits(i);
         uint32_t nextSymbol = 0;
     
         for (;i <= 23; ++i)
         {
-            if (codeBits <= tables[curTbl].limit(i))
+            if (codeBits <= _limits[curTbl][i])
             {
-                nextSymbol = tables[curTbl].symbol(codeBits - tables[curTbl].base(i));
+                nextSymbol = _symbols[curTbl][codeBits - _bases[curTbl][i]];
                 break;
             }
     
