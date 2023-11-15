@@ -133,31 +133,27 @@ uint8_t Block::_nextByte()
 }
 
 int Block::_read()
-{       
-    while (_repeat < 1)
-    {           
-        if (_dec == _length)
-            return -1;
+{
+    if (_dec == _length)
+        return -1;
 
-        uint8_t nextByte = _nextByte();
-
-        if (nextByte != _last)
-        {
-            _last = nextByte, _acc = 1;
-            _crc.update(nextByte);
-            break;
-        }
-        if (++_acc == 4)
-        {
-            _repeat = _nextByte() + 1, _acc = 0;
-
-            for (uint32_t i = 0; i < _repeat; ++i)
-                _crc.update(nextByte);
-
-            break;
-        }
+    uint8_t nextByte = _nextByte();
+       
+    if (nextByte != _last)
+    {
+        _last = nextByte, _acc = 1;
         _crc.update(nextByte);
-        break;
+    }
+    else if (++_acc == 4)
+    {
+        _repeat = _nextByte() + 1, _acc = 0;
+
+        for (uint32_t i = 0; i < _repeat; ++i)
+            _crc.update(nextByte);
+    }
+    else
+    {
+        _crc.update(nextByte);
     }
 
     _repeat = 0;
