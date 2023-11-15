@@ -163,7 +163,7 @@ void Block::write(std::ostream &os)
 
 int Block::_read()
 {
-    while (_repeat < 1)
+    if (_repeat < 1)
     {
         if (_dec == _length)
             return -1;
