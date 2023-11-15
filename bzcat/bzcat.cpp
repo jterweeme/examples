@@ -114,7 +114,8 @@ class Block
     CRC32 _crc;
     uint32_t _blockCRC;
     uint32_t *_merged = nullptr;
-    uint32_t _length = 0, _dec = 0, _curp = 0;
+    uint8_t *_merged2 = nullptr;
+    uint32_t _length = 0, _dec = 0, _curp = 0, _curp2 = 0, _bwtStartPointer;
     uint8_t _nextByte();
     void write(std::ostream &os);
     void _init(BitInputStream &bi, uint32_t blockSize);
@@ -135,6 +136,8 @@ void Block::write(std::ostream &os)
 {
     uint32_t repeat = 0, acc = 0;
     int32_t last = -2;
+    _curp = _merged[_bwtStartPointer];
+    _curp2 = _merged2[_bwtStartPointer];
 
     while (true)
     {
@@ -178,7 +181,8 @@ void Block::_init(BitInputStream &bi, uint32_t blockSize)
     if (bi.readBool())
         throw "Randomised blocks not supported.";
 
-    uint32_t bwtStartPointer = bi.readBits(24), symbolCount = 0;
+    _bwtStartPointer = bi.readBits(24);
+    uint32_t symbolCount = 0;
 
     for (uint16_t i = 0, ranges = bi.readBits(16); i < 16; ++i)
         if ((ranges & 1 << 15 >> i) != 0)
@@ -255,7 +259,10 @@ void Block::_init(BitInputStream &bi, uint32_t blockSize)
 
     if (_merged)
         delete[] _merged;
+    if (_merged2)
+        delete[] _merged2;
     _merged = new uint32_t[_length];
+    _merged2 = new uint8_t[_length];
     uint32_t characterBase[256] = {0};
 
     for (uint16_t i = 0; i < 255; ++i)
@@ -267,10 +274,11 @@ void Block::_init(BitInputStream &bi, uint32_t blockSize)
     for (uint32_t i = 0; i < _length; ++i)
     {
         uint8_t value = bwtBlock[i] & 0xff;
+        _merged2[characterBase[value]] = ((i << 8) + value) & 0xff;
         _merged[characterBase[value]++] = (i << 8) + value;
     }
 
-    _curp = _merged[bwtStartPointer];
+
 }
 
 uint32_t Block::process(BitInputStream &bis, uint32_t blockSize, std::ostream &os)

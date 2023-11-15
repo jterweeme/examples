@@ -162,14 +162,50 @@ class Block
     uint32_t _blockCRC;
     uint32_t *_merged = nullptr;
     int32_t _last = -1;
-    uint32_t _repeat = 0, _length = 0, _dec = 0, _curp = 0, _acc = 0;
+    uint32_t _length = 0, _dec = 0, _curp = 0;
     uint8_t _nextByte();
-    int _read();
-    void _init(BitInputStream &bi, uint32_t blockSize);
+    void write(std::ostream &os);
+    uint32_t _init(BitInputStream &bi, uint32_t blockSize, std::ostream &os);
     ~Block() { delete[] _merged; }
 public:
-    static void process(BitInputStream &bi, uint32_t blockSize, std::ostream &os, uint32_t &crc);
+    static uint32_t process(BitInputStream &bi, uint32_t blockSize, std::ostream &os);
 };
+
+void Block::write(std::ostream &os)
+{
+    uint32_t _repeat = 0, _acc = 0;
+    while (true)
+    {
+        if (_repeat < 1)
+        {
+            if (_dec == _length)
+                return;
+
+            uint8_t nextByte = _nextByte();
+
+            if (nextByte != _last)
+            {
+                _last = nextByte, _repeat = 1, _acc = 1;
+                _crc.update(nextByte);
+            }
+            else if (++_acc == 4)
+            {
+                _repeat = _nextByte() + 1, _acc = 0;
+
+                for (uint32_t i = 0; i < _repeat; ++i)
+                    _crc.update(nextByte);
+            }
+            else
+            {
+                _repeat = 1;
+                _crc.update(nextByte);
+            }
+        }
+
+        --_repeat;
+        os.put(_last);
+    }
+}
 
 uint8_t Block::_nextByte()
 {       
@@ -179,39 +215,7 @@ uint8_t Block::_nextByte()
     return ret;
 }
 
-int Block::_read()
-{       
-    while (_repeat < 1)
-    {           
-        if (_dec == _length)
-            return -1;
-
-        uint8_t nextByte = _nextByte();
-
-        if (nextByte != _last)
-        {
-            _last = nextByte, _repeat = 1, _acc = 1;
-            _crc.update(nextByte);
-        }
-        else if (++_acc == 4)
-        {
-            _repeat = _nextByte() + 1, _acc = 0;
-
-            for (uint32_t i = 0; i < _repeat; ++i)
-                _crc.update(nextByte);
-        }
-        else
-        {
-            _repeat = 1;
-            _crc.update(nextByte);
-        }
-    }
-
-    --_repeat;
-    return _last;
-}
-
-void Block::_init(BitInputStream &bi, uint32_t blockSize)
+uint32_t Block::_init(BitInputStream &bi, uint32_t blockSize, std::ostream &os)
 {
     uint32_t bwtByteCounts[256] = {0};
     uint8_t symbolMap[256] = {0};
@@ -290,20 +294,18 @@ void Block::_init(BitInputStream &bi, uint32_t blockSize)
     }
 
     _curp = _merged[bwtStartPointer];
-}
+    write(os);
 
-void Block::process(BitInputStream &bis, uint32_t blockSize, std::ostream &os, uint32_t &crc)
-{
-    Block b;
-    b._init(bis, blockSize);
-
-    for (int c; (c = b._read()) != -1;)
-        os.put(c);
-
-    if (b._blockCRC != b._crc.crc())
+    if (_blockCRC != _crc.crc())
         throw "Block CRC mismatch";
 
-    crc = b._crc.crc();
+    return _crc.crc();
+}
+
+uint32_t Block::process(BitInputStream &bis, uint32_t blockSize, std::ostream &os)
+{
+    Block b;
+    return b._init(bis, blockSize, os);
 }
 
 int main(int argc, char **argv)
@@ -335,8 +337,7 @@ int main(int argc, char **argv)
 
         if (marker1 == 0x314159 && marker2 == 0x265359)
         {
-            uint32_t blockCRC;
-            Block::process(bi, blockSize * 100000, os, blockCRC);
+            uint32_t blockCRC = Block::process(bi, blockSize * 100000, *os);
             streamCRC = (streamCRC << 1 | streamCRC >> 31) ^ blockCRC;
             continue;
         }
