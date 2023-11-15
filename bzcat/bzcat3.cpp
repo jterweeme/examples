@@ -59,16 +59,12 @@ public:
 class Block
 {
     CRC32 _crc;
-    uint32_t _blockCRC;
-    uint32_t *_merged = nullptr;
     int32_t _last = -1;
-    uint32_t _repeat = 0, _length = 0, _dec = 0, _curp = 0, _acc = 0;
+    uint32_t _repeat = 0, _length = 0, _dec = 0, _curp = 0, _acc = 0, *_merged;
     uint8_t _nextByte();
     int _read();
-    void _init(BitInputStream &bi, uint32_t blockSize);
-    ~Block() { delete[] _merged; }
 public:
-    static uint32_t process(BitInputStream &bi, uint32_t blockSize, std::ostream &os);
+    uint32_t process(BitInputStream &bi, uint32_t blockSize, std::ostream &os);
 };
 
 uint8_t Block::_nextByte()
@@ -79,7 +75,6 @@ uint8_t Block::_nextByte()
     return ret;
 }
 
-#if 1
 int Block::_read()
 {       
     while (_repeat < 1)
@@ -111,40 +106,12 @@ int Block::_read()
     --_repeat;
     return _last;
 }
-#else
-int Block::_read()
-{       
-    while (_repeat < 1)
-    {           
-        if (_dec == _length)
-            return -1;
 
-        uint8_t nextByte = _nextByte();
-
-        if (nextByte != _last)
-        {
-            _last = nextByte, _repeat = 1, _acc = 1;
-        }
-        else if (++_acc == 4)
-        {
-            _repeat = _nextByte() + 1, _acc = 0;
-        }
-        else
-        {
-            _repeat = 1;
-        }
-    }
-
-    --_repeat;
-    return _last;
-}
-#endif
-
-void Block::_init(BitInputStream &bi, uint32_t blockSize)
+uint32_t Block::process(BitInputStream &bi, uint32_t blockSize, std::ostream &os)
 {
     uint32_t bwtByteCounts[256] = {0};
     uint8_t symbolMap[256] = {0};
-    _blockCRC = bi.readUInt32();
+    uint32_t _blockCRC = bi.readUInt32();
 
     if (bi.readBool())
         throw "Randomised blocks not supported.";
@@ -262,8 +229,6 @@ void Block::_init(BitInputStream &bi, uint32_t blockSize)
         bwtBlock[_length++] = nextByte;
     }
 
-    if (_merged)
-        delete[] _merged;
     _merged = new uint32_t[_length];
     uint32_t characterBase[256] = {0};
 
@@ -280,20 +245,16 @@ void Block::_init(BitInputStream &bi, uint32_t blockSize)
     }
 
     _curp = _merged[bwtStartPointer];
-}
 
-uint32_t Block::process(BitInputStream &bis, uint32_t blockSize, std::ostream &os)
-{
-    Block b;
-    b._init(bis, blockSize);
-
-    for (int c; (c = b._read()) != -1;)
+    for (int c; (c = _read()) != -1;)
         os.put(c);
 
-    if (b._blockCRC != b._crc.crc())
+    delete[] _merged;
+
+    if (_blockCRC != _crc.crc())
         throw "Block CRC mismatch";
 
-    return b._crc.crc();
+    return _crc.crc();
 }
 
 int main(int argc, char **argv)
@@ -325,7 +286,8 @@ int main(int argc, char **argv)
 
         if (marker1 == 0x314159 && marker2 == 0x265359)
         {
-            uint32_t blockCRC = Block::process(bi, blockSize * 100000, *os);
+            Block b;
+            uint32_t blockCRC = b.process(bi, blockSize * 100000, *os);
             streamCRC = (streamCRC << 1 | streamCRC >> 31) ^ blockCRC;
             continue;
         }
