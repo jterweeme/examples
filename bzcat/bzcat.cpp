@@ -117,7 +117,6 @@ class Block
     int32_t _last = -1;
     uint32_t _repeat = 0, _length = 0, _dec = 0, _curp = 0, _acc = 0;
     uint8_t _nextByte();
-    int _read();
     void write(std::ostream &os);
     void _init(BitInputStream &bi, uint32_t blockSize);
     ~Block() { delete[] _merged; }
@@ -135,62 +134,37 @@ uint8_t Block::_nextByte()
 
 void Block::write(std::ostream &os)
 {
-    while (_dec < _length)
+    while (true)
     {
-        uint8_t nextByte = _nextByte();
-           
-        if (nextByte != _last)
+        if (_repeat < 1)
         {
-            _last = nextByte, _acc = 1;
-            _crc.update(nextByte);
-        }
-        else if (++_acc == 4)
-        {
-            uint16_t repeat = _nextByte() + 1;
-            _acc = 0;
-    
-            for (uint16_t i = 0; i < repeat; ++i)
+            if (_dec == _length)
+                return;
+
+            uint8_t nextByte = _nextByte();
+
+            if (nextByte != _last)
+            {
+                _last = nextByte, _repeat = 1, _acc = 1;
                 _crc.update(nextByte);
+            }
+            else if (++_acc == 4)
+            {
+                _repeat = _nextByte() + 1, _acc = 0;
+
+                for (uint32_t i = 0; i < _repeat; ++i)
+                    _crc.update(nextByte);
+            }
+            else
+            {
+                _repeat = 1;
+                _crc.update(nextByte);
+            }
         }
-        else
-        {
-            _crc.update(nextByte);
-        }
-    
+
+        --_repeat;
         os.put(_last);
     }
-}
-
-int Block::_read()
-{
-    if (_repeat < 1)
-    {
-        if (_dec == _length)
-            return -1;
-
-        uint8_t nextByte = _nextByte();
-
-        if (nextByte != _last)
-        {
-            _last = nextByte, _repeat = 1, _acc = 1;
-            _crc.update(nextByte);
-        }
-        else if (++_acc == 4)
-        {
-            _repeat = _nextByte() + 1, _acc = 0;
-
-            for (uint32_t i = 0; i < _repeat; ++i)
-                _crc.update(nextByte);
-        }
-        else
-        {
-            _repeat = 1;
-            _crc.update(nextByte);
-        }
-    }
-
-    --_repeat;
-    return _last;
 }
 
 void Block::_init(BitInputStream &bi, uint32_t blockSize)
@@ -301,11 +275,8 @@ uint32_t Block::process(BitInputStream &bis, uint32_t blockSize, std::ostream &o
 {
     Block b;
     b._init(bis, blockSize);
-    //b.write(os);
-#if 1
-    for (int c; (c = b._read()) != -1;)
-        os.put(c);
-#endif
+    b.write(os);
+
     if (b._blockCRC != b._crc.crc())
         throw "Block CRC mismatch";
 
