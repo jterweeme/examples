@@ -56,58 +56,7 @@ public:
     }
 };
 
-class Block
-{
-    CRC32 _crc;
-    int32_t _last = -1;
-    uint32_t _repeat = 0, _length = 0, _dec = 0, _curp = 0, _acc = 0, *_merged;
-    uint8_t _nextByte();
-    int _read();
-public:
-    uint32_t process(BitInputStream &bi, uint32_t blockSize, std::ostream &os);
-};
-
-uint8_t Block::_nextByte()
-{       
-    uint8_t ret = _curp & 0xff;
-    _curp = _merged[_curp >> 8];
-    ++_dec;
-    return ret;
-}
-
-int Block::_read()
-{       
-    while (_repeat < 1)
-    {           
-        if (_dec == _length)
-            return -1;
-
-        uint8_t nextByte = _nextByte();
-
-        if (nextByte != _last)
-        {
-            _last = nextByte, _repeat = 1, _acc = 1;
-            _crc.update(nextByte);
-        }
-        else if (++_acc == 4)
-        {
-            _repeat = _nextByte() + 1, _acc = 0;
-
-            for (uint32_t i = 0; i < _repeat; ++i)
-                _crc.update(nextByte);
-        }
-        else
-        {
-            _repeat = 1;
-            _crc.update(nextByte);
-        }
-    }
-
-    --_repeat;
-    return _last;
-}
-
-uint32_t Block::process(BitInputStream &bi, uint32_t blockSize, std::ostream &os)
+static uint32_t process_block(BitInputStream &bi, uint32_t blockSize, std::ostream &os)
 {
     uint32_t bwtByteCounts[256] = {0};
     uint8_t symbolMap[256] = {0};
@@ -128,7 +77,7 @@ uint32_t Block::process(BitInputStream &bi, uint32_t blockSize, std::ostream &os
     uint16_t nSelectors = bi.readBits(15);
     uint8_t bwtBlock[blockSize], selectors[nSelectors], mtfValue = 0;
     MoveToFront tableMTF, symbolMTF;
-    _length = 0;
+    uint32_t _length = 0;
 
     for (uint32_t i = 0; i < nSelectors; ++i)
         selectors[i] = tableMTF.indexToFront(bi.readUnary());
@@ -229,7 +178,7 @@ uint32_t Block::process(BitInputStream &bi, uint32_t blockSize, std::ostream &os
         bwtBlock[_length++] = nextByte;
     }
 
-    _merged = new uint32_t[_length];
+    uint32_t *_merged = new uint32_t[_length];
     uint32_t characterBase[256] = {0};
 
     for (uint16_t i = 0; i < 255; ++i)
@@ -244,10 +193,44 @@ uint32_t Block::process(BitInputStream &bi, uint32_t blockSize, std::ostream &os
         _merged[characterBase[value]++] = (i << 8) + value;
     }
 
-    _curp = _merged[bwtStartPointer];
+    uint32_t _curp = _merged[bwtStartPointer], repeat = 0, acc = 0, _dec = 0;
+    int32_t _last = -1;
+    CRC32 _crc;
 
-    for (int c; (c = _read()) != -1;)
-        os.put(c);
+    while (true)
+    {
+        if (repeat < 1)
+        {
+            if (_dec == _length)
+                break;
+
+            uint8_t nextByte = _curp & 0xff;
+            _curp = _merged[_curp >> 8];
+            ++_dec;
+
+            if (nextByte != _last)
+            {
+                _last = nextByte, repeat = 1, acc = 1;
+                _crc.update(nextByte);
+            }
+            else if (++acc == 4)
+            {
+                repeat = (_curp & 0xff) + 1, acc = 0;
+                _curp = _merged[_curp >> 8], ++_dec;
+
+                for (uint32_t i = 0; i < repeat; ++i)
+                    _crc.update(nextByte);
+            }
+            else
+            {
+                repeat = 1;
+                _crc.update(nextByte);
+            }
+        }
+
+        --repeat;
+        os.put(_last);
+    }
 
     delete[] _merged;
 
@@ -286,8 +269,7 @@ int main(int argc, char **argv)
 
         if (marker1 == 0x314159 && marker2 == 0x265359)
         {
-            Block b;
-            uint32_t blockCRC = b.process(bi, blockSize * 100000, *os);
+            uint32_t blockCRC = process_block(bi, blockSize * 100000, *os);
             streamCRC = (streamCRC << 1 | streamCRC >> 31) ^ blockCRC;
             continue;
         }
