@@ -115,7 +115,7 @@ class Block
     uint32_t _blockCRC;
     uint32_t *_merged = nullptr;
     int32_t _last = -1;
-    uint32_t _repeat = 0, _length = 0, _dec = 0, _curp = 0, _acc = 0;
+    uint32_t _length = 0, _dec = 0, _curp = 0, _acc = 0;
     uint8_t _nextByte();
     int _read();
     void _init(BitInputStream &bi, uint32_t blockSize);
@@ -146,9 +146,10 @@ int Block::_read()
     }
     else if (++_acc == 4)
     {
-        _repeat = _nextByte() + 1, _acc = 0;
+        uint16_t repeat = _nextByte() + 1;
+        _acc = 0;
 
-        for (uint32_t i = 0; i < _repeat; ++i)
+        for (uint16_t i = 0; i < repeat; ++i)
             _crc.update(nextByte);
     }
     else
@@ -156,7 +157,6 @@ int Block::_read()
         _crc.update(nextByte);
     }
 
-    _repeat = 0;
     return _last;
 }
 
