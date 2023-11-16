@@ -1,6 +1,7 @@
 #include <fstream>
 #include <iostream>
 #include <cstdint>
+#include <cassert>
 #include <algorithm>
 #include <numeric>
 #include <iomanip>
@@ -11,14 +12,11 @@ class BitInputStream
     uint32_t _bitBuffer = 0, _bitCount = 0;
 public:
     BitInputStream(std::istream *is) : _is(is) { }
-    bool readBool() { return readBits(1) == 1; }
     uint32_t readUInt32() { return readBits(16) << 16 | readBits(16); }
-    uint32_t readUnary() { uint32_t u = 0; while (readBool()) ++u; return u; }
 
     uint32_t readBits(uint32_t count)
     {
-        if (count > 24)
-            throw "Maximaal 24 bits";
+        assert(count <= 24);
 
         for (; _bitCount < count; _bitCount += 8)
             _bitBuffer = _bitBuffer << 8 | _is->get();
@@ -73,13 +71,13 @@ public:
     uint32_t base(uint8_t i) const { return _bases[i]; }
 };
 
-//read the canonical Huffman code lengths for each table
+//read the canonical Huffman code lengths for table
 void Table::read(BitInputStream &bis, uint32_t symbolCount)
 {
     for (uint32_t i = 0, c = bis.readBits(5); i <= symbolCount + 1; ++i)
     {
-        while (bis.readBool())
-            c += bis.readBool() ? -1 : 1;
+        while (bis.readBits(1))
+            c += bis.readBits(1) ? -1 : 1;
         _codeLengths[_pos++] = c;
     }
 
@@ -129,7 +127,14 @@ void Tables::read(BitInputStream &bis, uint32_t symbolCount)
     MoveToFront tableMTF;
     
     for (uint32_t i = 0; i < nSelectors; ++i)
-        _selectors[i] = tableMTF.indexToFront(bis.readUnary());
+    {
+        uint8_t u = 0;
+
+        while (bis.readBits(1))
+            ++u;
+
+        _selectors[i] = tableMTF.indexToFront(u);
+    }
 
     for (uint32_t t = 0; t < nTables; ++t)
         _tables[t].read(bis, symbolCount);
@@ -159,7 +164,7 @@ uint32_t Tables::nextSymbol(BitInputStream &bis)
 class Block
 {
     CRC32 _crc;
-    uint32_t _dec = 0, _curp = 0, *_merged = nullptr;
+    uint32_t _dec = 0, _curp = 0, *_merged;
     uint8_t _nextByte();
 public:
     uint32_t process(BitInputStream &bi, uint32_t blockSize, std::ostream &os);
@@ -175,19 +180,16 @@ uint8_t Block::_nextByte()
 
 uint32_t Block::process(BitInputStream &bi, uint32_t blockSize, std::ostream &os)
 {
+    uint32_t _blockCRC = bi.readUInt32();
+    assert(bi.readBits(1) == 0);
+    uint32_t bwtStartPointer = bi.readBits(24), symbolCount = 0;
     uint32_t bwtByteCounts[256] = {0};
     uint8_t symbolMap[256] = {0};
-    uint32_t _blockCRC = bi.readUInt32();
-
-    if (bi.readBool())
-        throw "Randomised blocks not supported.";
-
-    uint32_t bwtStartPointer = bi.readBits(24), symbolCount = 0;
 
     for (uint16_t i = 0, ranges = bi.readBits(16); i < 16; ++i)
         if ((ranges & 1 << 15 >> i) != 0)
             for (uint32_t j = 0, k = i << 4; j < 16; ++j, ++k)
-                if (bi.readBool())
+                if (bi.readBits(1))
                     symbolMap[symbolCount++] = uint8_t(k);
 
     Tables tables;
@@ -286,10 +288,7 @@ uint32_t Block::process(BitInputStream &bi, uint32_t blockSize, std::ostream &os
     }
 
     delete[] _merged;
-
-    if (_blockCRC != _crc.crc())
-        throw "Block CRC mismatch";
-
+    assert(_blockCRC == _crc.crc());
     return _crc.crc();
 }
 
@@ -307,11 +306,7 @@ int main(int argc, char **argv)
     }
 
     BitInputStream bi(is);
-    uint16_t magic = bi.readBits(16);
-
-    if (magic != 0x425a)
-        throw "invalid magic";
-
+    assert(bi.readBits(16) == 0x425a);
     bi.readBits(8);
     uint8_t blockSize = bi.readBits(8) - '0';
     uint32_t streamCRC = 0;
