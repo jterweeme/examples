@@ -1,16 +1,14 @@
-#include <fstream>
-#include <iostream>
 #include <cstdint>
 #include <algorithm>
 #include <numeric>
-#include <iomanip>
+#include <cstdio>
 
 class BitInputStream
 {
-    std::istream &_is;
+    FILE *_is;
     uint32_t _bitBuffer = 0, _bitCount = 0;
 public:
-    BitInputStream(std::istream &is) : _is(is) { }
+    BitInputStream(FILE *is) : _is(is) { }
     bool readBool() { return readBits(1) == 1; }
     uint32_t readUInt32() { return readBits(16) << 16 | readBits(16); }
     uint32_t readUnary() { uint32_t u = 0; while (readBool()) ++u; return u; }
@@ -21,19 +19,11 @@ public:
             throw "Maximaal 24 bits";
 
         for (; _bitCount < count; _bitCount += 8)
-            _bitBuffer = _bitBuffer << 8 | _is.get();
+            _bitBuffer = _bitBuffer << 8 | fgetc(_is);
 
         _bitCount -= count;
         return _bitBuffer >> _bitCount & (1 << count) - 1;
     }
-};
-
-class MoveToFront
-{
-    uint8_t _buf[256];
-public:
-    MoveToFront() { std::iota(_buf, _buf + 256, 0); }
-    uint8_t indexToFront(uint8_t i) { std::rotate(_buf, _buf + i, _buf + i + 1); return _buf[0]; }
 };
 
 class CRC32
@@ -56,7 +46,7 @@ public:
     }
 };
 
-static uint32_t process_block(BitInputStream &bi, uint32_t blockSize, std::ostream &os)
+static uint32_t process_block(BitInputStream &bi, uint32_t blockSize, FILE *os)
 {
     uint32_t bwtByteCounts[256] = {0};
     uint8_t symbolMap[256] = {0};
@@ -76,11 +66,18 @@ static uint32_t process_block(BitInputStream &bi, uint32_t blockSize, std::ostre
     uint8_t nTables = bi.readBits(3);
     uint16_t nSelectors = bi.readBits(15);
     uint8_t bwtBlock[blockSize], selectors[nSelectors], mtfValue = 0;
-    MoveToFront tableMTF, symbolMTF;
+    uint8_t tableMTF[256];
+    uint8_t symbolMTF[256];
+    std::iota(tableMTF, tableMTF + 256, 0);
+    std::iota(symbolMTF, symbolMTF + 256, 0);
     uint32_t _length = 0;
 
     for (uint32_t i = 0; i < nSelectors; ++i)
-        selectors[i] = tableMTF.indexToFront(bi.readUnary());
+    {
+        uint8_t foo = bi.readUnary();
+        std::rotate(tableMTF, tableMTF + foo, tableMTF + foo + 1);
+        selectors[i] = tableMTF[0];
+    }
 
     uint32_t _bases[6][25] = {0};
     uint32_t _limits[6][24] = {0};
@@ -172,7 +169,8 @@ static uint32_t process_block(BitInputStream &bi, uint32_t blockSize, std::ostre
         if (nextSymbol == symbolCount + 1)
             break;
 
-        mtfValue = symbolMTF.indexToFront(nextSymbol - 1);
+        std::rotate(symbolMTF, symbolMTF + nextSymbol - 1, symbolMTF + nextSymbol);
+        mtfValue = symbolMTF[0];
         uint8_t nextByte = symbolMap[mtfValue];
         bwtByteCounts[nextByte]++;
         bwtBlock[_length++] = nextByte;
@@ -229,7 +227,7 @@ static uint32_t process_block(BitInputStream &bi, uint32_t blockSize, std::ostre
         }
 
         --repeat;
-        os.put(_last);
+        fputc(_last, os);
     }
 
     delete[] _merged;
@@ -242,18 +240,12 @@ static uint32_t process_block(BitInputStream &bi, uint32_t blockSize, std::ostre
 
 int main(int argc, char **argv)
 {
-    std::ostream *os = &std::cout;
-    std::ostream *msg = &std::cerr;
-    std::istream *is = &std::cin;
-    std::ifstream ifs;
+    FILE *os = stdout, *msg = stderr, *is = stdin;
 
     if (argc == 2)
-    {
-        ifs.open(argv[1]);
-        is = &ifs;
-    }
+        is = fopen(argv[1], "r");
 
-    BitInputStream bi(*is);
+    BitInputStream bi(is);
     uint16_t magic = bi.readBits(16);
 
     if (magic != 0x425a)
@@ -269,7 +261,7 @@ int main(int argc, char **argv)
 
         if (marker1 == 0x314159 && marker2 == 0x265359)
         {
-            uint32_t blockCRC = process_block(bi, blockSize * 100000, *os);
+            uint32_t blockCRC = process_block(bi, blockSize * 100000, os);
             streamCRC = (streamCRC << 1 | streamCRC >> 31) ^ blockCRC;
             continue;
         }
@@ -277,17 +269,14 @@ int main(int argc, char **argv)
         if (marker1 == 0x177245 && marker2 == 0x385090)
         {
             uint32_t crc = bi.readUInt32();
-
-            *msg << "0x" << std::setw(8) << std::setfill('0') << std::hex << crc << " 0x"
-                 << std::setw(8) << std::setfill('0') << std::hex << streamCRC << "\r\n";
-
+            fprintf(msg, "0x%08x 0x%08x\r\n", crc, streamCRC);
             break;
         }
 
         throw "format error!";
     }
 
-    ifs.close();
+    fclose(is);
     return 0;
 }
 
