@@ -158,6 +158,7 @@ uint32_t Tables::nextSymbol(BitInputStream &bis)
 
 class Block
 {
+    CRC32 _crc;
     uint32_t _dec = 0, _curp = 0, *_merged = nullptr;
     uint8_t _nextByte();
 public:
@@ -251,7 +252,6 @@ uint32_t Block::process(BitInputStream &bi, uint32_t blockSize, std::ostream &os
     _curp = _merged[bwtStartPointer];
     uint32_t repeat = 0, acc = 0;
     int32_t _last = -1;
-    CRC32 _crc;
 
     while (true)
     {

@@ -26,25 +26,12 @@ public:
     }
 };
 
-class CRC32
-{
-    uint32_t _table[256];
-    uint32_t _crc = 0xffffffff;
-public:
-    void update(uint8_t c) { _crc = _crc << 8 ^ _table[(_crc >> 24 ^ c) & 0xff]; }
-    uint32_t crc() const { return ~_crc; }
+uint32_t g_crc_table[256];
 
-    CRC32()
-    {
-        //https://github.com/gcc-mirror/gcc/blob/master/libiberty/crc32.c
-        for (uint32_t i = 0, j, c; i < 256; ++i)
-        {
-            for (c = i << 24, j = 8; j > 0; --j)
-                c = c & 0x80000000 ? c << 1 ^ 0x04c11db7 : c << 1;
-            _table[i] = c;
-        }
-    }
-};
+void crc_update(uint32_t &crc, uint8_t c)
+{
+    crc = crc << 8 ^ g_crc_table[(crc >> 24 ^ c) & 0xff];
+}
 
 static uint32_t process_block(BitInputStream &bi, uint32_t blockSize, FILE *os)
 {
@@ -193,7 +180,7 @@ static uint32_t process_block(BitInputStream &bi, uint32_t blockSize, FILE *os)
 
     uint32_t _curp = _merged[bwtStartPointer], repeat = 0, acc = 0, _dec = 0;
     int32_t _last = -1;
-    CRC32 _crc;
+    uint32_t _crc = 0xffffffff;
 
     while (true)
     {
@@ -209,7 +196,7 @@ static uint32_t process_block(BitInputStream &bi, uint32_t blockSize, FILE *os)
             if (nextByte != _last)
             {
                 _last = nextByte, repeat = 1, acc = 1;
-                _crc.update(nextByte);
+                crc_update(_crc, nextByte);
             }
             else if (++acc == 4)
             {
@@ -217,12 +204,12 @@ static uint32_t process_block(BitInputStream &bi, uint32_t blockSize, FILE *os)
                 _curp = _merged[_curp >> 8], ++_dec;
 
                 for (uint32_t i = 0; i < repeat; ++i)
-                    _crc.update(nextByte);
+                    crc_update(_crc, nextByte);
             }
             else
             {
                 repeat = 1;
-                _crc.update(nextByte);
+                crc_update(_crc, nextByte);
             }
         }
 
@@ -232,10 +219,10 @@ static uint32_t process_block(BitInputStream &bi, uint32_t blockSize, FILE *os)
 
     delete[] _merged;
 
-    if (_blockCRC != _crc.crc())
+    if (_blockCRC != ~_crc)
         throw "Block CRC mismatch";
 
-    return _crc.crc();
+    return ~_crc;
 }
 
 int main(int argc, char **argv)
@@ -254,6 +241,14 @@ int main(int argc, char **argv)
     bi.readBits(8);
     uint8_t blockSize = bi.readBits(8) - '0';
     uint32_t streamCRC = 0;
+
+    //init global crc table
+    for (uint32_t i = 0, j, c; i < 256; ++i)
+    {
+        for (c = i << 24, j = 8; j > 0; --j)
+            c = c & 0x80000000 ? c << 1 ^ 0x04c11db7 : c << 1;
+        g_crc_table[i] = c;
+    }
 
     while (true)
     {
