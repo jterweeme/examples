@@ -3,28 +3,24 @@
 #include <numeric>
 #include <cstdio>
 
-class BitInputStream
+FILE *os = stdout, *msg = stderr, *is = stdin;
+uint32_t _bitBuffer = 0, _bitCount = 0;
+
+static uint32_t readBits(uint32_t count)
 {
-    FILE *_is;
-    uint32_t _bitBuffer = 0, _bitCount = 0;
-public:
-    BitInputStream(FILE *is) : _is(is) { }
-    bool readBool() { return readBits(1) == 1; }
-    uint32_t readUInt32() { return readBits(16) << 16 | readBits(16); }
-    uint32_t readUnary() { uint32_t u = 0; while (readBool()) ++u; return u; }
+    if (count > 24)
+        throw "Maximaal 24 bits";
 
-    uint32_t readBits(uint32_t count)
-    {
-        if (count > 24)
-            throw "Maximaal 24 bits";
+    for (; _bitCount < count; _bitCount += 8)
+        _bitBuffer = _bitBuffer << 8 | fgetc(is);
 
-        for (; _bitCount < count; _bitCount += 8)
-            _bitBuffer = _bitBuffer << 8 | fgetc(_is);
+    _bitCount -= count;
+    return _bitBuffer >> _bitCount & (1 << count) - 1;
+}
 
-        _bitCount -= count;
-        return _bitBuffer >> _bitCount & (1 << count) - 1;
-    }
-};
+static bool readBool() { return readBits(1) == 1; }
+static uint32_t readUInt32() { return readBits(16) << 16 | readBits(16); }
+static uint32_t readUnary() { uint32_t u = 0; while (readBool()) ++u; return u; }
 
 uint32_t g_crc_table[256];
 
@@ -33,25 +29,25 @@ void crc_update(uint32_t &crc, uint8_t c)
     crc = crc << 8 ^ g_crc_table[(crc >> 24 ^ c) & 0xff];
 }
 
-static uint32_t process_block(BitInputStream &bi, uint32_t blockSize, FILE *os)
+static uint32_t process_block(uint32_t blockSize, FILE *os)
 {
     uint32_t bwtByteCounts[256] = {0};
     uint8_t symbolMap[256] = {0};
-    uint32_t _blockCRC = bi.readUInt32();
+    uint32_t _blockCRC = readUInt32();
 
-    if (bi.readBool())
+    if (readBool())
         throw "Randomised blocks not supported.";
 
-    uint32_t bwtStartPointer = bi.readBits(24), symbolCount = 0;
+    uint32_t bwtStartPointer = readBits(24), symbolCount = 0;
 
-    for (uint16_t i = 0, ranges = bi.readBits(16); i < 16; ++i)
+    for (uint16_t i = 0, ranges = readBits(16); i < 16; ++i)
         if ((ranges & 1 << 15 >> i) != 0)
             for (uint32_t j = 0, k = i << 4; j < 16; ++j, ++k)
-                if (bi.readBool())
+                if (readBool())
                     symbolMap[symbolCount++] = uint8_t(k);
 
-    uint8_t nTables = bi.readBits(3);
-    uint16_t nSelectors = bi.readBits(15);
+    uint8_t nTables = readBits(3);
+    uint16_t nSelectors = readBits(15);
     uint8_t bwtBlock[blockSize], selectors[nSelectors], mtfValue = 0;
     uint8_t tableMTF[256];
     uint8_t symbolMTF[256];
@@ -61,7 +57,7 @@ static uint32_t process_block(BitInputStream &bi, uint32_t blockSize, FILE *os)
 
     for (uint32_t i = 0; i < nSelectors; ++i)
     {
-        uint8_t foo = bi.readUnary();
+        uint8_t foo = readUnary();
         std::rotate(tableMTF, tableMTF + foo, tableMTF + foo + 1);
         selectors[i] = tableMTF[0];
     }
@@ -74,10 +70,10 @@ static uint32_t process_block(BitInputStream &bi, uint32_t blockSize, FILE *os)
 
     for (uint8_t t = 0, codeLengths[258] = {0}; t < nTables; ++t)
     {
-        for (uint32_t i = 0, pos = 0, c = bi.readBits(5); i <= symbolCount + 1; ++i)
+        for (uint32_t i = 0, pos = 0, c = readBits(5); i <= symbolCount + 1; ++i)
         {
-            while (bi.readBool())
-                c += bi.readBool() ? -1 : 1;
+            while (readBool())
+                c += readBool() ? -1 : 1;
             codeLengths[pos++] = c;
         }
     
@@ -114,7 +110,7 @@ static uint32_t process_block(BitInputStream &bi, uint32_t blockSize, FILE *os)
             curTbl = selectors[grpIdx++];
         
         uint8_t i = _minLen[curTbl];
-        uint32_t codeBits = bi.readBits(i);
+        uint32_t codeBits = readBits(i);
         uint32_t nextSymbol = 0;
     
         for (;i <= 23; ++i)
@@ -125,7 +121,7 @@ static uint32_t process_block(BitInputStream &bi, uint32_t blockSize, FILE *os)
                 break;
             }
     
-            codeBits = codeBits << 1 | bi.readBits(1);
+            codeBits = codeBits << 1 | readBits(1);
         }
 
         if (nextSymbol == 0)
@@ -227,19 +223,16 @@ static uint32_t process_block(BitInputStream &bi, uint32_t blockSize, FILE *os)
 
 int main(int argc, char **argv)
 {
-    FILE *os = stdout, *msg = stderr, *is = stdin;
-
     if (argc == 2)
         is = fopen(argv[1], "r");
 
-    BitInputStream bi(is);
-    uint16_t magic = bi.readBits(16);
+    uint16_t magic = readBits(16);
 
     if (magic != 0x425a)
         throw "invalid magic";
 
-    bi.readBits(8);
-    uint8_t blockSize = bi.readBits(8) - '0';
+    readBits(8);
+    uint8_t blockSize = readBits(8) - '0';
     uint32_t streamCRC = 0;
 
     //init global crc table
@@ -252,18 +245,18 @@ int main(int argc, char **argv)
 
     while (true)
     {
-        uint32_t marker1 = bi.readBits(24), marker2 = bi.readBits(24);
+        uint32_t marker1 = readBits(24), marker2 = readBits(24);
 
         if (marker1 == 0x314159 && marker2 == 0x265359)
         {
-            uint32_t blockCRC = process_block(bi, blockSize * 100000, os);
+            uint32_t blockCRC = process_block(blockSize * 100000, os);
             streamCRC = (streamCRC << 1 | streamCRC >> 31) ^ blockCRC;
             continue;
         }
 
         if (marker1 == 0x177245 && marker2 == 0x385090)
         {
-            uint32_t crc = bi.readUInt32();
+            uint32_t crc = readUInt32();
             fprintf(msg, "0x%08x 0x%08x\r\n", crc, streamCRC);
             break;
         }
