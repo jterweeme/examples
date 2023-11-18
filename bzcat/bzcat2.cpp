@@ -248,7 +248,7 @@ uint32_t Block::process(BitInputStream &bi, uint32_t blockSize, std::ostream &os
     for (uint32_t i = 0; i < _length; ++i)
     {
         uint8_t value = bwtBlock[i] & 0xff;
-        _merged[characterBase[value]++] = (i << 8) + value;
+        _merged[characterBase[value]++] = (i << 8) | value;
     }
 
     _curp = _merged[bwtStartPointer];
@@ -333,7 +333,7 @@ int main(int argc, char **argv)
             break;
         }
 
-        throw "format error!";
+        assert(false);
     }
     ifs.close();
     return 0;

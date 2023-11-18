@@ -1,4 +1,4 @@
 all:
-	g++ -o main -g main.cpp
+	g++ -O2 -Wall -o zcat zcat.cpp
 
 
