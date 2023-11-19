@@ -1,4 +1,4 @@
 all:
-	g++ -O2 -Wall -o zcat zcat.cpp
+	g++ -O2 -Wall -Wno-parentheses -o zcat zcat.cpp
 
 
