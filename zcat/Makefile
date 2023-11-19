@@ -8,4 +8,6 @@ test:
 	zcat < keen1.tar.Z | md5sum
 	./zcat < aa.txt.Z | md5sum
 	zcat < aa.txt.Z | md5sum
+	./zcat < tty.1.Z | md5sum
+	zcat < tty.1.Z | md5sum
 
