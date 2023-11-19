@@ -1,3 +1,4 @@
+#include <iostream>
 #include <cstdint>
 #include <cstdio>
 #include <cassert>
@@ -48,13 +49,11 @@ typedef uint8_t char_type;
 int main()
 {
     int maxbits = BITS;		/* user settable max # bits/code 				*/
-    char_type		inbuf[BUFSIZ+64];	/* Input buffer									*/
-    char_type		outbuf[BUFSIZ+2048];/* Output buffer								*/
+    char_type inbuf[BUFSIZ+64];	/* Input buffer									*/
+    char_type outbuf[BUFSIZ+2048];/* Output buffer								*/
     long bytes_in;			/* Total number of byte from input				*/
     count_int htab[HSIZE];
     uint16_t codetab[HSIZE];
-    int fdin = 0;
-    int fdout = 1;
 	char_type *stackp;
 	code_int code;
 	int finchar;
@@ -73,7 +72,7 @@ int main()
 	bytes_in = 0;
 	int insize = 0;
 
-	while (insize < 3 && (rsize = read(fdin, inbuf+insize, BUFSIZ)) > 0)
+	while (insize < 3 && (rsize = read(0, inbuf+insize, BUFSIZ)) > 0)
 		insize += rsize;
 
 	if (insize < 3 || inbuf[0] != MAGIC_1 || inbuf[1] != MAGIC_2)
@@ -114,7 +113,7 @@ resetbuf:	;
 
 		if (insize < int(sizeof(inbuf) - BUFSIZ))
 		{
-            rsize = read(fdin, inbuf + insize, BUFSIZ);
+            rsize = read(0, inbuf + insize, BUFSIZ);
             assert(rsize >= 0);
 			insize += rsize;
 		}
@@ -203,7 +202,7 @@ resetbuf:	;
 
 						if (outpos >= BUFSIZ)
 						{
-                            assert(write(fdout, outbuf, outpos) == outpos);
+                            assert(write(1, outbuf, outpos) == outpos);
                             outpos = 0;
 						}
 						stackp+= i;
@@ -231,7 +230,6 @@ resetbuf:	;
     }
 	while (rsize > 0);
 
-    (outpos > 0 && write(fdout, outbuf, outpos) != outpos);
     return 0;
 }
 
