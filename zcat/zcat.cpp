@@ -89,9 +89,9 @@ int main()
     for (code = 255 ; code >= 0 ; --code)
 		tab_suffixof(code) = (char_type)code;
 
-	do
+loop:
+	while (rsize > 0)
 	{
-resetbuf:	;
 		{
             int o = posbits >> 3;
             int e = o <= insize ? insize - o : 0;
@@ -117,11 +117,11 @@ resetbuf:	;
 		{
 			if (free_ent > maxcode)
 			{
-				posbits = ((posbits-1) + ((n_bits<<3) - (posbits-1+(n_bits<<3))%(n_bits<<3)));
+				posbits = (posbits-1) + (n_bits<<3) - (posbits-1+(n_bits<<3))%(n_bits<<3);
 				++n_bits;
                 maxcode = n_bits == maxbits ? maxmaxcode : MAXCODE(n_bits) - 1;
 				bitmask = (1<<n_bits)-1;
-				goto resetbuf;
+                goto loop;
 			}
 
 			input(inbuf,posbits,code,n_bits,bitmask);
@@ -139,7 +139,7 @@ resetbuf:	;
     			free_ent = FIRST - 1;
 				posbits = ((posbits-1) + ((n_bits<<3) - (posbits-1+(n_bits<<3))%(n_bits<<3)));
 				reset_n_bits_for_decompressor(n_bits, bitmask, maxbits, maxcode, maxmaxcode);
-				goto resetbuf;
+                goto loop;
 			}
 
 			incode = code;
@@ -220,7 +220,6 @@ resetbuf:	;
 
 		bytes_in += rsize;
     }
-	while (rsize > 0);
 
     return 0;
 }
