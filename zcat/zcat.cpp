@@ -2,7 +2,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <cassert>
-#include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
 #include <ctype.h>
@@ -67,24 +66,17 @@ int main()
 	code_int maxcode;
 	code_int maxmaxcode;
 	int n_bits;
-	int rsize;
+	std::streamsize rsize = 0;
 	int block_mode;
 	bytes_in = 0;
 	int insize = 0;
-
-	while (insize < 3 && (rsize = read(0, inbuf+insize, BUFSIZ)) > 0)
-		insize += rsize;
-
-	if (insize < 3 || inbuf[0] != MAGIC_1 || inbuf[1] != MAGIC_2)
-	{
-        assert(rsize >= 0);
-        assert(insize <= 0);
-	}
-
+    std::cin.read((char *)(inbuf + insize), BUFSIZ);
+    rsize = std::cin.gcount();
+    insize += rsize;
 	maxbits = inbuf[2] & BIT_MASK;
 	block_mode = inbuf[2] & BLOCK_MODE;
     assert(maxbits <= BITS);
-	maxmaxcode = MAXCODE(maxbits);
+	maxmaxcode = 1 << maxbits;
 	bytes_in = insize;
 	reset_n_bits_for_decompressor(n_bits, bitmask, maxbits, maxcode, maxmaxcode);
 	oldcode = -1;
@@ -113,7 +105,8 @@ resetbuf:	;
 
 		if (insize < int(sizeof(inbuf) - BUFSIZ))
 		{
-            rsize = read(0, inbuf + insize, BUFSIZ);
+            std::cin.read((char *)(inbuf + insize), BUFSIZ);
+            rsize = std::cin.gcount();
             assert(rsize >= 0);
 			insize += rsize;
 		}
@@ -191,8 +184,7 @@ resetbuf:	;
 				{
 					do
 					{
-						if (i > BUFSIZ - outpos)
-                            i = BUFSIZ - outpos;
+                        i = std::min(i, BUFSIZ - outpos);
 
 						if (i > 0)
 						{
@@ -202,7 +194,7 @@ resetbuf:	;
 
 						if (outpos >= BUFSIZ)
 						{
-                            assert(write(1, outbuf, outpos) == outpos);
+                            std::cout.write((const char *)(outbuf), outpos);
                             outpos = 0;
 						}
 						stackp+= i;
