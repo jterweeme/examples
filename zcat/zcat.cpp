@@ -89,7 +89,9 @@ resetbuf:
         if (oldcode == -1)
         {
             assert(code < 256);
-            outbuf[outpos++] = char_type(finchar = int(oldcode = code));
+            oldcode = code;
+            finchar = int(oldcode);
+            outbuf[outpos++] = char_type(finchar);
             continue;
         }
 
@@ -116,14 +118,14 @@ resetbuf:
             code = oldcode;
         }
 
-        while (cmp_code_int(code) >= cmp_code_int(256))
+        while (code >= 256)
         {
             //Generate output characters in reverse order
-            *--stackp = (pchar_type(htab.ci))[code];
+            *--stackp = htab.b[code];
             code = codetab[code];
         }
 
-        *--stackp = char_type(finchar = (pchar_type(htab.ci))[code]);
+        *--stackp = char_type(finchar = htab.b[code]);
 
         //And put them out in forward order
         {
@@ -133,12 +135,11 @@ resetbuf:
             {
                 do
                 {
-                    if (i > BUFSIZ-outpos)
-                        i = BUFSIZ-outpos;
+                    i = std::min(i, BUFSIZ - outpos);
 
                     if (i > 0)
                     {
-                        memcpy(outbuf+outpos, stackp, i);
+                        memcpy(outbuf + outpos, stackp, i);
                         outpos += i;
                     }
 
@@ -163,7 +164,7 @@ resetbuf:
         if ((code = free_ent) < maxmaxcode) 
         {
             codetab[code] = uint16_t(oldcode);
-            (pchar_type(htab.ci))[code] = char_type(finchar);
+            htab.b[code] = char_type(finchar);
             free_ent = code + 1;
         }
 
