@@ -5,72 +5,33 @@
 #include <unistd.h>
 #include <iostream>
 
-#define IBUFSIZ BUFSIZ  /* Default input buffer size*/
-#define OBUFSIZ BUFSIZ  /* Default output buffer size*/
 #define FIRST   257      /* first free entry*/
-#define CLEAR   256      /* table clear output code*/
-#define INIT_BITS 9      /* initial number of bits/code*/
-#define USERMEM  450000  /* default user memory*/
-
-#ifndef BITS        /* General processor calculate BITS*/
-#if USERMEM >= (800000)
-#define FAST
-#elif USERMEM >= (433484)
-#define BITS 16
-#elif USERMEM >= (229600)
-#define BITS 15
-#elif USERMEM >= (127536)
-#define BITS 14
-#elif USERMEM >= (73464)
-#define BITS 13
-#else
-#define BITS 12
-#endif
-#endif
-
-#ifdef FAST
 #define HSIZE (1<<17)
-#define BITS 16
-#elif BITS == 16
-#define HSIZE    69001 /* 95% occupancy */
-#elif BITS == 15
-#define HSIZE    35023 /* 94% occupancy */
-#elif BITS == 14
-#define HSIZE    18013 /* 91% occupancy */
-#elif BITS == 13
-#define HSIZE    9001  /* 91% occupancy */
-#elif BITS <= 12
-#define HSIZE    5003  /* 80% occupancy */
-#endif
 
 typedef int32_t code_int;
 typedef uint32_t count_int;
 typedef uint16_t count_short;
 typedef uint32_t cmp_code_int;
 typedef uint8_t char_type;
-
-#define reset_n_bits_for_decompressor(n_bits, bitmask, maxbits, maxcode, maxmaxcode){\
-    n_bits = INIT_BITS;bitmask = (1<<n_bits)-1;\
-    maxcode = n_bits == maxbits ? maxmaxcode : (1<<n_bits)-1;}
+typedef uint8_t *pchar_type;
 
 int main()
 {
-    char_type inbuf[IBUFSIZ+64];  //Input buffer
-    char_type outbuf[OBUFSIZ+2048];  //Output buffer
-    int rsize = read(0, inbuf, IBUFSIZ);
+    char_type inbuf[BUFSIZ+64];  //Input buffer
+    char_type outbuf[BUFSIZ+2048];  //Output buffer
+    int rsize = read(0, inbuf, BUFSIZ);
     int insize = rsize;
     assert(insize >= 3);
     assert(inbuf[0] == 0x1f);
     assert(inbuf[1] == 0x9d);
     int maxbits = inbuf[2] & 0x1f;
     int block_mode = inbuf[2] & 0x80;
-    assert(maxbits <= BITS);
+    assert(maxbits <= 16);
     code_int maxmaxcode = 1 << maxbits;
     long bytes_in = insize;
-    int bitmask;
-    code_int maxcode;
-    int n_bits;
-    reset_n_bits_for_decompressor(n_bits, bitmask, maxbits, maxcode, maxmaxcode);
+    int n_bits = 9;
+    int bitmask = (1 << n_bits) - 1;
+    code_int maxcode = n_bits == maxbits ? maxmaxcode : (1 << n_bits) - 1;
     code_int oldcode = -1;
     int finchar = 0;
     int outpos = 0;
@@ -81,7 +42,7 @@ int main()
     count_int htab[HSIZE];
 
     for (code_int i = 255; i >= 0 ; --i)
-        ((char_type *)htab)[i] = char_type(i);
+        (pchar_type(htab))[i] = char_type(i);
 
 resetbuf:
     int o = posbits >> 3;
@@ -93,9 +54,9 @@ resetbuf:
     insize = e;
     posbits = 0;
 
-    if (insize < int(sizeof(inbuf)-IBUFSIZ))
+    if (insize < int(sizeof(inbuf) - BUFSIZ))
     {
-        rsize = read(0, inbuf + insize, IBUFSIZ);
+        rsize = read(0, inbuf + insize, BUFSIZ);
         assert(rsize >= 0);
         insize += rsize;
     }
@@ -106,7 +67,7 @@ resetbuf:
     {
         if (free_ent > maxcode)
         {
-            posbits = (posbits - 1) + ((n_bits<<3) - (posbits - 1 + (n_bits<<3)) % (n_bits<<3));
+            posbits = posbits - 1 + ((n_bits<<3) - (posbits - 1 + (n_bits<<3)) % (n_bits<<3));
             ++n_bits;
             maxcode = n_bits == maxbits ? maxmaxcode : (1<<n_bits) - 1;
             bitmask = (1 << n_bits) - 1;
@@ -123,21 +84,24 @@ resetbuf:
         if (oldcode == -1)
         {
             assert(code < 256);
-            outbuf[outpos++] = char_type(finchar = (int)(oldcode = code));
+            outbuf[outpos++] = char_type(finchar = int(oldcode = code));
             continue;
         }
 
-        if (code == CLEAR && block_mode)
+        //clear
+        if (code == 256 && block_mode)
         {
             memset(codetab, 0, 256);
             free_ent = FIRST - 1;
             posbits = (posbits - 1) + ((n_bits<<3) - (posbits - 1 + (n_bits<<3)) % (n_bits<<3));
-            reset_n_bits_for_decompressor(n_bits, bitmask, maxbits, maxcode, maxmaxcode);
+            n_bits = 9;
+            bitmask = (1 << n_bits) - 1;
+            maxcode = n_bits == maxbits ? maxmaxcode : (1 << n_bits) - 1;
             goto resetbuf;
         }
 
         code_int incode = code;
-        char_type *stackp = ((char_type *)&(htab[HSIZE-1]));
+        char_type *stackp = pchar_type(&(htab[HSIZE - 1]));
 
         //Special case for KwKwK string.
         if (code >= free_ent)   
@@ -147,25 +111,25 @@ resetbuf:
             code = oldcode;
         }
 
-        while ((cmp_code_int)code >= (cmp_code_int)256)
+        while (cmp_code_int(code) >= cmp_code_int(256))
         {
             //Generate output characters in reverse order
-            *--stackp = ((char_type *)(htab))[code];
+            *--stackp = (pchar_type(htab))[code];
             code = codetab[code];
         }
 
-        *--stackp = char_type(finchar = ((char_type *)(htab))[code]);
+        *--stackp = char_type(finchar = (pchar_type(htab))[code]);
 
         //And put them out in forward order
         {
-            int i = ((char_type *)&(htab[HSIZE-1])) - stackp;
+            int i = (pchar_type(&(htab[HSIZE-1]))) - stackp;
 
-            if (outpos + i >= OBUFSIZ)
+            if (outpos + i >= BUFSIZ)
             {
                 do
                 {
-                    if (i > OBUFSIZ-outpos)
-                        i = OBUFSIZ-outpos;
+                    if (i > BUFSIZ-outpos)
+                        i = BUFSIZ-outpos;
 
                     if (i > 0)
                     {
@@ -173,19 +137,19 @@ resetbuf:
                         outpos += i;
                     }
 
-                    if (outpos >= OBUFSIZ)
+                    if (outpos >= BUFSIZ)
                     {
                         assert(write(1, outbuf, outpos) == outpos);
                         outpos = 0;
                     }
                     stackp += i;
-                    i = ((char_type *)&(htab[HSIZE-1])) - stackp;
+                    i = (pchar_type(&(htab[HSIZE-1]))) - stackp;
                 }
                 while (i > 0);
             }
             else
             {
-                memcpy(outbuf+outpos, stackp, i);
+                memcpy(outbuf + outpos, stackp, i);
                 outpos += i;
             }
         }
@@ -194,7 +158,7 @@ resetbuf:
         if ((code = free_ent) < maxmaxcode) 
         {
             codetab[code] = uint16_t(oldcode);
-            ((char_type *)(htab))[code] = char_type(finchar);
+            (pchar_type(htab))[code] = char_type(finchar);
             free_ent = code + 1;
         }
 
