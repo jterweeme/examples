@@ -92,11 +92,7 @@ typedef uint8_t char_type;
 
 #define MAXCODE(n)  (1L << (n))
 
-#define input(b,o,c,n,m){   char_type       *p = &(b)[(o)>>3];              \
-                            (c) = ((((long)(p[0]))|((long)(p[1])<<8)|       \
-                                     ((long)(p[2])<<16))>>((o)&0x7))&(m);   \
-                            (o) += (n);                                     \
-                        }
+
 
 #define reset_n_bits_for_decompressor(n_bits, bitmask, maxbits, maxcode, maxmaxcode) {  \
     n_bits = INIT_BITS;                             \
@@ -112,24 +108,18 @@ int maxbits = BITS;     /* user settable max # bits/code                */
 #define tab_prefixof(i)         codetab[i]
 #define tab_suffixof(i)         ((char_type *)(htab))[i]
 #define de_stack                ((char_type *)&(htab[HSIZE-1]))
-#define clear_htab()            memset(htab, -1, sizeof(htab))
-#define clear_tab_prefixof()    memset(codetab, 0, 256);
 
-void decompress(int fdin, int fdout)
+int main()
 {
     char_type inbuf[IBUFSIZ+64];  //Input buffer
     char_type outbuf[OBUFSIZ+2048];  //Output buffer
-    long bytes_in = 0;  //Total number of byte from input
     count_int htab[HSIZE];
     unsigned short  codetab[HSIZE];
     char_type *stackp;
     code_int code;
     int finchar;
-    code_int oldcode;
     code_int incode;
     int inbits;
-    int posbits;
-    int outpos;
     int insize = 0;
     int bitmask;
     code_int free_ent;
@@ -137,7 +127,7 @@ void decompress(int fdin, int fdout)
     int n_bits;
     int rsize;
 
-    while (insize < 3 && (rsize = read(fdin, inbuf+insize, IBUFSIZ)) > 0)
+    while (insize < 3 && (rsize = read(0, inbuf+insize, IBUFSIZ)) > 0)
         insize += rsize;
 
     assert(insize >= 3);
@@ -147,14 +137,14 @@ void decompress(int fdin, int fdout)
     int block_mode = inbuf[2] & BLOCK_MODE;
     assert(maxbits <= BITS);
     code_int maxmaxcode = MAXCODE(maxbits);
-    bytes_in = insize;
+    long bytes_in = insize;
     reset_n_bits_for_decompressor(n_bits, bitmask, maxbits, maxcode, maxmaxcode);
-    oldcode = -1;
+    code_int oldcode = -1;
     finchar = 0;
-    outpos = 0;
-    posbits = 3<<3;
+    int outpos = 0;
+    int posbits = 3<<3;
     free_ent = block_mode ? FIRST : 256;
-    clear_tab_prefixof();   //As above, initialize the first 256 entries in the table.
+    memset(codetab, 0, 256);
 
     for (code = 255 ; code >= 0 ; --code)
         tab_suffixof(code) = (char_type)code;
@@ -171,9 +161,9 @@ resetbuf:
         insize = e;
         posbits = 0;
 
-        if (insize < sizeof(inbuf)-IBUFSIZ)
+        if (insize < int(sizeof(inbuf)-IBUFSIZ))
         {
-            rsize = read(fdin, inbuf + insize, IBUFSIZ);
+            rsize = read(0, inbuf + insize, IBUFSIZ);
             assert(rsize >= 0);
             insize += rsize;
         }
@@ -195,27 +185,32 @@ resetbuf:
                 goto resetbuf;
             }
 
-            input(inbuf,posbits,code,n_bits,bitmask);
+            char_type *p = &inbuf[posbits >> 3];
+
+            code = ((long(p[0]) | (long(p[1]) << 8) |
+                                     (long(p[2]) << 16)) >> (posbits & 0x7)) & bitmask;
+
+            posbits += n_bits;
 
             if (oldcode == -1)
             {
-                    if (code >= 256) {
-                        fprintf(stderr, "oldcode:-1 code:%i\n", (int)(code));
-                        fprintf(stderr, "uncompress: corrupt input\n");
-                        exit(1);
-                    }
-                    outbuf[outpos++] = (char_type)(finchar = (int)(oldcode = code));
-                    continue;
+                if (code >= 256)
+                {
+                    fprintf(stderr, "oldcode:-1 code:%i\n", (int)(code));
+                    fprintf(stderr, "uncompress: corrupt input\n");
+                    exit(1);
+                }
+                outbuf[outpos++] = (char_type)(finchar = (int)(oldcode = code));
+                continue;
             }
 
             if (code == CLEAR && block_mode)
             {
-                    clear_tab_prefixof();
-                    free_ent = FIRST - 1;
-                    posbits = ((posbits-1) + ((n_bits<<3) -
-                                (posbits-1+(n_bits<<3))%(n_bits<<3)));
-                    reset_n_bits_for_decompressor(n_bits, bitmask, maxbits, maxcode, maxmaxcode);
-                    goto resetbuf;
+                memset(codetab, 0, 256);
+                free_ent = FIRST - 1;
+                posbits = ((posbits-1) + ((n_bits<<3) - (posbits-1+(n_bits<<3))%(n_bits<<3)));
+                reset_n_bits_for_decompressor(n_bits, bitmask, maxbits, maxcode, maxmaxcode);
+                goto resetbuf;
             }
 
             incode = code;
@@ -247,14 +242,14 @@ resetbuf:
 
             while ((cmp_code_int)code >= (cmp_code_int)256)
             {
-                /* Generate output characters in reverse order */
+                //Generate output characters in reverse order
                 *--stackp = tab_suffixof(code);
                 code = tab_prefixof(code);
             }
 
             *--stackp = (char_type)(finchar = tab_suffixof(code));
 
-            /* And put them out in forward order */
+            //And put them out in forward order
             {
                 int i;
 
@@ -273,7 +268,7 @@ resetbuf:
 
                         if (outpos >= OBUFSIZ)
                         {
-                            assert(write(fdout, outbuf, outpos) == outpos);
+                            assert(write(1, outbuf, outpos) == outpos);
                             outpos = 0;
                         }
                         stackp+= i;
@@ -287,30 +282,25 @@ resetbuf:
                 }
             }
 
-            if ((code = free_ent) < maxmaxcode) /* Generate the new entry. */
+            //Generate the new entry.
+            if ((code = free_ent) < maxmaxcode) 
             {
-                tab_prefixof(code) = (unsigned short)oldcode;
+                tab_prefixof(code) = uint16_t(oldcode);
                 tab_suffixof(code) = (char_type)finchar;
                 free_ent = code+1;
             }
 
-            oldcode = incode;   /* Remember previous code. */
+            //remember previous code
+            oldcode = incode;
         }
 
         bytes_in += rsize;
     }
     while (rsize > 0);
 
-    if (outpos > 0 && write(fdout, outbuf, outpos) != outpos)
+    if (outpos > 0 && write(1, outbuf, outpos) != outpos)
         assert(false);
-}
 
-int main(int argc, char **argv)
-{
-    if (maxbits < INIT_BITS)    maxbits = INIT_BITS;
-    if (maxbits > BITS)         maxbits = BITS;
-
-    decompress(0, 1);
     return 0;
 }
 
