@@ -11,106 +11,68 @@
 #include <errno.h>
 #include <utime.h>
 
-#define IBUFSIZ BUFSIZ  /* Default input buffer size                            */
-#define OBUFSIZ BUFSIZ  /* Default output buffer size                           */
-
+#define IBUFSIZ BUFSIZ  /* Default input buffer size*/
+#define OBUFSIZ BUFSIZ  /* Default output buffer size*/
 #define BIT_MASK    0x1f
 #define BLOCK_MODE  0x80
-#define FIRST   257                 /* first free entry                             */
-#define CLEAR   256                 /* table clear output code                      */
-#define INIT_BITS 9         /* initial number of bits/code */
+#define FIRST   257      /* first free entry*/
+#define CLEAR   256      /* table clear output code*/
+#define INIT_BITS 9      /* initial number of bits/code*/
+#define USERMEM  450000  /* default user memory*/
 
-#ifndef USERMEM
-    /*
-     * Set USERMEM to the maximum amount of physical user memory available
-     * in bytes.  USERMEM is used to determine the maximum BITS that can be used
-     * for compression.
-     */
-#   define USERMEM  450000  /* default user memory */
+#ifndef BITS        /* General processor calculate BITS*/
+#if USERMEM >= (800000)
+#define FAST
+#elif USERMEM >= (433484)
+#define BITS 16
+#elif USERMEM >= (229600)
+#define BITS 15
+#elif USERMEM >= (127536)
+#define BITS 14
+#elif USERMEM >= (73464)
+#define BITS 13
+#else
+#define BITS 12
+#endif
 #endif
 
-#ifndef BITS        /* General processor calculate BITS */
-#   if USERMEM >= (800000)
-#       define FAST
-#   else
-#   if USERMEM >= (433484)
-#       define BITS 16
-#   else
-#   if USERMEM >= (229600)
-#       define BITS 15
-#   else
-#   if USERMEM >= (127536)
-#       define BITS 14
-#   else
-#   if USERMEM >= (73464)
-#       define BITS 13
-#   else
-#       define BITS 12
-#   endif
-#   endif
-#   endif
-#   endif
-#   endif
-#endif /* BITS */
-
 #ifdef FAST
-#   define  HBITS       17          /* 50% occupancy */
-#   define  HSIZE      (1<<HBITS)
-#   define  HMASK      (HSIZE-1)
-#   define  HPRIME       9941
-#   define  BITS           16
-#else
-#   if BITS == 16
-#       define HSIZE    69001       /* 95% occupancy */
-#   endif
-#   if BITS == 15
-#       define HSIZE    35023       /* 94% occupancy */
-#   endif
-#   if BITS == 14
-#       define HSIZE    18013       /* 91% occupancy */
-#   endif
-#   if BITS == 13
-#       define HSIZE    9001        /* 91% occupancy */
-#   endif
-#   if BITS <= 12
-#       define HSIZE    5003        /* 80% occupancy */
-#   endif
+#define HSIZE (1<<17)
+#define BITS 16
+#elif BITS == 16
+#define HSIZE    69001 /* 95% occupancy */
+#elif BITS == 15
+#define HSIZE    35023 /* 94% occupancy */
+#elif BITS == 14
+#define HSIZE    18013 /* 91% occupancy */
+#elif BITS == 13
+#define HSIZE    9001  /* 91% occupancy */
+#elif BITS <= 12
+#define HSIZE    5003  /* 80% occupancy */
 #endif
 
 typedef long int            code_int;
-
-#ifdef SIGNED_COMPARE_SLOW
-    typedef unsigned long int   count_int;
-    typedef unsigned short int  count_short;
-    typedef unsigned long int   cmp_code_int;   /* Cast to make compare faster  */
-#else
-    typedef long int            count_int;
-    typedef long int            cmp_code_int;
-#endif
-
+typedef unsigned long int   count_int;
+typedef unsigned short int  count_short;
+typedef unsigned long int   cmp_code_int;   /* Cast to make compare faster*/
 typedef uint8_t char_type;
 
-#define MAXCODE(n)  (1L << (n))
-
-
-
-#define reset_n_bits_for_decompressor(n_bits, bitmask, maxbits, maxcode, maxmaxcode) {  \
-    n_bits = INIT_BITS;                             \
-    bitmask = (1<<n_bits)-1;                            \
-    if (n_bits == maxbits)                              \
-        maxcode = maxmaxcode;                           \
-    else                                        \
-        maxcode = MAXCODE(n_bits)-1;                        \
+#define reset_n_bits_for_decompressor(n_bits, bitmask, maxbits, maxcode, maxmaxcode){\
+    n_bits = INIT_BITS;\
+    bitmask = (1<<n_bits)-1;\
+    if (n_bits == maxbits)\
+        maxcode = maxmaxcode;\
+    else\
+        maxcode = (1<<n_bits)-1;\
 }
 
-int maxbits = BITS;     /* user settable max # bits/code                */
-
-#define tab_prefixof(i)         codetab[i]
-#define tab_suffixof(i)         ((char_type *)(htab))[i]
-#define de_stack                ((char_type *)&(htab[HSIZE-1]))
+#define tab_prefixof(i) codetab[i]
+#define tab_suffixof(i) ((char_type *)(htab))[i]
+#define de_stack ((char_type *)&(htab[HSIZE-1]))
 
 int main()
 {
+    int maxbits = BITS;
     char_type inbuf[IBUFSIZ+64];  //Input buffer
     char_type outbuf[OBUFSIZ+2048];  //Output buffer
     count_int htab[HSIZE];
@@ -136,7 +98,7 @@ int main()
     maxbits = inbuf[2] & BIT_MASK;
     int block_mode = inbuf[2] & BLOCK_MODE;
     assert(maxbits <= BITS);
-    code_int maxmaxcode = MAXCODE(maxbits);
+    code_int maxmaxcode = 1 << maxbits;
     long bytes_in = insize;
     reset_n_bits_for_decompressor(n_bits, bitmask, maxbits, maxcode, maxmaxcode);
     code_int oldcode = -1;
@@ -176,12 +138,8 @@ resetbuf:
             {
                 posbits = ((posbits-1) + ((n_bits<<3) -(posbits-1+(n_bits<<3))%(n_bits<<3)));
                 ++n_bits;
-                if (n_bits == maxbits)
-                    maxcode = maxmaxcode;
-                else
-                    maxcode = MAXCODE(n_bits)-1;
-
-                bitmask = (1<<n_bits)-1;
+                maxcode = n_bits == maxbits ? maxmaxcode : (1<<n_bits) - 1;
+                bitmask = (1 << n_bits) - 1;
                 goto resetbuf;
             }
 
