@@ -44,22 +44,16 @@
 #define HSIZE    5003  /* 80% occupancy */
 #endif
 
-typedef long int            code_int;
-typedef unsigned long int   count_int;
-typedef unsigned short int  count_short;
-typedef unsigned long int   cmp_code_int;   /* Cast to make compare faster*/
+typedef int32_t code_int;
+typedef uint32_t count_int;
+typedef uint16_t count_short;
+typedef uint32_t cmp_code_int;
 typedef uint8_t char_type;
 
 #define reset_n_bits_for_decompressor(n_bits, bitmask, maxbits, maxcode, maxmaxcode){\
-    n_bits = INIT_BITS;\
-    bitmask = (1<<n_bits)-1;\
-    if (n_bits == maxbits)\
-        maxcode = maxmaxcode;\
-    else\
-        maxcode = (1<<n_bits)-1;\
-}
+    n_bits = INIT_BITS;bitmask = (1<<n_bits)-1;\
+    maxcode = n_bits == maxbits ? maxmaxcode : (1<<n_bits)-1;}
 
-#define tab_prefixof(i) codetab[i]
 #define tab_suffixof(i) ((char_type *)(htab))[i]
 #define de_stack ((char_type *)&(htab[HSIZE-1]))
 
@@ -174,7 +168,7 @@ resetbuf:
             {
                 //Generate output characters in reverse order
                 *--stackp = tab_suffixof(code);
-                code = tab_prefixof(code);
+                code = codetab[code];
             }
 
             *--stackp = (char_type)(finchar = tab_suffixof(code));
@@ -215,7 +209,7 @@ resetbuf:
             //Generate the new entry.
             if ((code = free_ent) < maxmaxcode) 
             {
-                tab_prefixof(code) = uint16_t(oldcode);
+                codetab[code] = uint16_t(oldcode);
                 tab_suffixof(code) = (char_type)finchar;
                 free_ent = code+1;
             }
