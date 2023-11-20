@@ -1,15 +1,8 @@
 #include <cassert>
 #include <cstdint>
 #include <cstdio>
-#include <cstdlib>
 #include <cstring>
-#include <fcntl.h>
-#include <ctype.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <errno.h>
-#include <utime.h>
+#include <unistd.h>
 
 #define IBUFSIZ BUFSIZ  /* Default input buffer size*/
 #define OBUFSIZ BUFSIZ  /* Default output buffer size*/
@@ -152,12 +145,7 @@ resetbuf:
 
             if (oldcode == -1)
             {
-                if (code >= 256)
-                {
-                    fprintf(stderr, "oldcode:-1 code:%i\n", (int)(code));
-                    fprintf(stderr, "uncompress: corrupt input\n");
-                    exit(1);
-                }
+                assert(code < 256);
                 outbuf[outpos++] = (char_type)(finchar = (int)(oldcode = code));
                 continue;
             }
@@ -177,23 +165,7 @@ resetbuf:
             //Special case for KwKwK string.
             if (code >= free_ent)   
             {
-                if (code > free_ent)
-                {
-                    char_type *p;
-                    posbits -= n_bits;
-                    p = &inbuf[posbits>>3];
-
-                    if (p == inbuf)
-                        ++p;
-
-                    fprintf(stderr,
-                        "insize:%d posbits:%d inbuf:%02X %02X %02X %02X %02X (%d)\n",
-                        insize, posbits, p[-1],p[0],p[1],p[2],p[3], (posbits&07));
-
-                    fprintf(stderr, "uncompress: corrupt input\n");
-                    exit(1);
-                }
-
+                assert(code <= free_ent);
                 *--stackp = (char_type)finchar;
                 code = oldcode;
             }
