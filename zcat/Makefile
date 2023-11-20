@@ -1,5 +1,6 @@
 all:
 	g++ -O2 -Wall -Wno-parentheses -o zcat zcat.cpp
+	gcc -O2 -Wall -Wno-parentheses -o zcatc zcat.c
 
 test:
 	./zcat < relnotes.ps.Z | md5sum

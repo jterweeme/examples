@@ -1,9 +1,8 @@
-#include <cassert>
-#include <cstdint>
-#include <cstdio>
-#include <cstring>
+#include <assert.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 #include <unistd.h>
-#include <iostream>
 
 #define FIRST   257      /* first free entry*/
 #define HSIZE (1<<17)
@@ -45,7 +44,7 @@ int main()
     code_int free_ent = block_mode ? FIRST : 256;
     uint16_t codetab[HSIZE];
     memset(codetab, 0, 256);
-    unie htab;
+    union unie htab;
 
     for (uint16_t i = 0; i < 256; ++i)
         htab.b[i] = i;
@@ -59,7 +58,7 @@ resetbuf:
     insize = e;
     posbits = 0;
 
-    if (insize < int(sizeof(inbuf) - BUFSIZ))
+    if (insize < sizeof(inbuf) - BUFSIZ)
     {
         rsize = read(0, inbuf + insize, BUFSIZ);
         assert(rsize >= 0);
@@ -81,7 +80,7 @@ resetbuf:
 
         char_type *p = inbuf + (posbits >> 3);
 
-        code_int code = ((long(p[0]) | (long(p[1]) << 8) | (long(p[2]) << 16))
+        code_int code = (((long)(p[0]) | ((long)(p[1]) << 8) | ((long)(p[2]) << 16))
                     >> (posbits & 0x7)) & bitmask;
 
         posbits += n_bits;
@@ -89,7 +88,7 @@ resetbuf:
         if (oldcode == -1)
         {
             assert(code < 256);
-            outbuf[outpos++] = char_type(finchar = int(oldcode = code));
+            outbuf[outpos++] = (char_type)(finchar = (int)(oldcode = code));
             continue;
         }
 
@@ -106,28 +105,28 @@ resetbuf:
         }
 
         code_int incode = code;
-        char_type *stackp = pchar_type(&(htab.ci[HSIZE - 1]));
+        char_type *stackp = (pchar_type)(&(htab.ci[HSIZE - 1]));
 
         //Special case for KwKwK string.
         if (code >= free_ent)   
         {
             assert(code <= free_ent);
-            *--stackp = char_type(finchar);
+            *--stackp = (char_type)finchar;
             code = oldcode;
         }
 
-        while (cmp_code_int(code) >= cmp_code_int(256))
+        while ((cmp_code_int)(code) >= (cmp_code_int)(256))
         {
             //Generate output characters in reverse order
-            *--stackp = (pchar_type(htab.ci))[code];
+            *--stackp = ((pchar_type)(htab.ci))[code];
             code = codetab[code];
         }
 
-        *--stackp = char_type(finchar = (pchar_type(htab.ci))[code]);
+        *--stackp = (char_type)(finchar = ((pchar_type)(htab.ci))[code]);
 
         //And put them out in forward order
         {
-            int i = (pchar_type(&(htab.ci[HSIZE-1]))) - stackp;
+            int i = ((pchar_type)(&(htab.ci[HSIZE-1]))) - stackp;
 
             if (outpos + i >= BUFSIZ)
             {
@@ -138,7 +137,7 @@ resetbuf:
 
                     if (i > 0)
                     {
-                        memcpy(outbuf+outpos, stackp, i);
+                        memcpy(outbuf + outpos, stackp, i);
                         outpos += i;
                     }
 
@@ -148,7 +147,7 @@ resetbuf:
                         outpos = 0;
                     }
                     stackp += i;
-                    i = (pchar_type(&(htab.ci[HSIZE-1]))) - stackp;
+                    i = ((pchar_type)(&(htab.ci[HSIZE-1]))) - stackp;
                 }
                 while (i > 0);
             }
@@ -162,8 +161,8 @@ resetbuf:
         //Generate the new entry.
         if ((code = free_ent) < maxmaxcode) 
         {
-            codetab[code] = uint16_t(oldcode);
-            (pchar_type(htab.ci))[code] = char_type(finchar);
+            codetab[code] = (uint16_t)(oldcode);
+            ((pchar_type)(htab.ci))[code] = (char_type)finchar;
             free_ent = code + 1;
         }
 
@@ -177,7 +176,7 @@ resetbuf:
         goto resetbuf;
 
     if (outpos > 0 && write(1, outbuf, outpos) != outpos)
-        assert(false);
+        assert(0);
 
     return 0;
 }
