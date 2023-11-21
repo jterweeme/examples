@@ -12,28 +12,25 @@ typedef uint32_t count_int;
 typedef uint16_t count_short;
 typedef uint32_t cmp_code_int;
 typedef uint8_t char_type;
-typedef char_type *pchar_type;
 
 int main()
 {
     char_type inbuf[BUFSIZ + 64];  //Input buffer
-    char_type outbuf[BUFSIZ + 2048];  //Output buffer
     int rsize = read(0, inbuf, BUFSIZ);
     int insize = rsize;
     assert(insize >= 3);
     assert(inbuf[0] == 0x1f);
     assert(inbuf[1] == 0x9d);
-    int maxbits = inbuf[2] & 0x1f;
-    int block_mode = inbuf[2] & 0x80;
+    uint32_t maxbits = inbuf[2] & 0x1f;
+    uint8_t block_mode = inbuf[2] & 0x80;
     assert(maxbits <= 16);
     code_int maxmaxcode = 1 << maxbits;
     long bytes_in = insize;
-    int n_bits = 9;
-    int bitmask = (1 << n_bits) - 1;
+    uint32_t n_bits = 9;
+    uint32_t bitmask = (1 << n_bits) - 1;
     code_int maxcode = n_bits == maxbits ? maxmaxcode : (1 << n_bits) - 1;
     code_int oldcode = -1;
     char_type finchar = 0;
-    int outpos = 0;
     int posbits = 3<<3;
     code_int free_ent = block_mode ? 257 : 256;
     uint16_t codetab[HSIZE];
@@ -84,7 +81,8 @@ resetbuf:
             assert(code < 256);
             oldcode = code;
             finchar = oldcode;
-            outbuf[outpos++] = finchar;
+            std::cout.put(finchar);
+            //write(1, &finchar, 1);
             continue;
         }
 
@@ -121,38 +119,8 @@ resetbuf:
         *--stackp = finchar = htab[code];
 
         //And put them out in forward order
-        {
-            int i = htab + HSIZE * 4 - 4 - stackp;
-
-            if (outpos + i >= BUFSIZ)
-            {
-                do
-                {
-                    i = std::min(i, BUFSIZ - outpos);
-
-                    if (i > 0)
-                    {
-                        memcpy(outbuf + outpos, stackp, i);
-                        outpos += i;
-                    }
-
-                    if (outpos >= BUFSIZ)
-                    {
-                        assert(write(1, outbuf, outpos) == outpos);
-                        outpos = 0;
-                    }
-
-                    stackp += i;
-                    i = htab + HSIZE * 4 - 4 - stackp;
-                }
-                while (i > 0);
-            }
-            else
-            {
-                memcpy(outbuf + outpos, stackp, i);
-                outpos += i;
-            }
-        }
+        int i = htab + HSIZE * 4 - 4 - stackp;
+        std::cout.write((char *)(stackp), i);
 
         //Generate the new entry.
         if ((code = free_ent) < maxmaxcode) 
@@ -171,9 +139,7 @@ resetbuf:
     if (rsize > 0)
         goto resetbuf;
 
-    if (outpos > 0 && write(1, outbuf, outpos) != outpos)
-        assert(false);
-
+    std::cout.flush();
     return 0;
 }
 
