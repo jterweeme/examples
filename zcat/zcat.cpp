@@ -5,7 +5,6 @@
 #include <unistd.h>
 #include <iostream>
 
-#define FIRST   257      /* first free entry*/
 #define HSIZE (1<<17)
 
 typedef int32_t code_int;
@@ -13,7 +12,7 @@ typedef uint32_t count_int;
 typedef uint16_t count_short;
 typedef uint32_t cmp_code_int;
 typedef uint8_t char_type;
-typedef uint8_t *pchar_type;
+typedef char_type *pchar_type;
 
 union unie
 {
@@ -39,10 +38,10 @@ int main()
     int bitmask = (1 << n_bits) - 1;
     code_int maxcode = n_bits == maxbits ? maxmaxcode : (1 << n_bits) - 1;
     code_int oldcode = -1;
-    int finchar = 0;
+    char_type finchar = 0;
     int outpos = 0;
     int posbits = 3<<3;
-    code_int free_ent = block_mode ? FIRST : 256;
+    code_int free_ent = block_mode ? 257 : 256;
     uint16_t codetab[HSIZE];
     memset(codetab, 0, 256);
     unie htab;
@@ -90,8 +89,8 @@ resetbuf:
         {
             assert(code < 256);
             oldcode = code;
-            finchar = int(oldcode);
-            outbuf[outpos++] = char_type(finchar);
+            finchar = oldcode;
+            outbuf[outpos++] = finchar;
             continue;
         }
 
@@ -99,7 +98,7 @@ resetbuf:
         if (code == 256 && block_mode)
         {
             memset(codetab, 0, 256);
-            free_ent = FIRST - 1;
+            free_ent = 256;
             posbits = (posbits - 1) + ((n_bits<<3) - (posbits - 1 + (n_bits<<3)) % (n_bits<<3));
             n_bits = 9;
             bitmask = (1 << n_bits) - 1;
@@ -114,7 +113,7 @@ resetbuf:
         if (code >= free_ent)   
         {
             assert(code <= free_ent);
-            *--stackp = char_type(finchar);
+            *--stackp = finchar;
             code = oldcode;
         }
 
@@ -125,7 +124,7 @@ resetbuf:
             code = codetab[code];
         }
 
-        *--stackp = char_type(finchar = htab.b[code]);
+        *--stackp = finchar = htab.b[code];
 
         //And put them out in forward order
         {
@@ -164,7 +163,7 @@ resetbuf:
         if ((code = free_ent) < maxmaxcode) 
         {
             codetab[code] = uint16_t(oldcode);
-            htab.b[code] = char_type(finchar);
+            htab.b[code] = finchar;
             free_ent = code + 1;
         }
 
