@@ -4,6 +4,7 @@
 #include <cstring>
 #include <unistd.h>
 #include <iostream>
+#include <numeric>
 
 #define HSIZE (1<<17)
 
@@ -36,9 +37,7 @@ int main()
     uint16_t codetab[HSIZE];
     memset(codetab, 0, 256);
     char_type htab[HSIZE * 4];
-
-    for (uint16_t i = 0; i < 256; ++i)
-        htab[i] = i;
+    std::iota(htab, htab + 256, 0);
 resetbuf:
     int o = posbits >> 3;
     int e = o <= insize ? insize - o : 0;
@@ -82,7 +81,6 @@ resetbuf:
             oldcode = code;
             finchar = oldcode;
             std::cout.put(finchar);
-            //write(1, &finchar, 1);
             continue;
         }
 
