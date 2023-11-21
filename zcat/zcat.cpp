@@ -14,16 +14,10 @@ typedef uint32_t cmp_code_int;
 typedef uint8_t char_type;
 typedef char_type *pchar_type;
 
-union unie
-{
-    count_int ci[HSIZE];
-    char_type b[HSIZE * 4];
-};
-
 int main()
 {
-    char_type inbuf[BUFSIZ+64];  //Input buffer
-    char_type outbuf[BUFSIZ+2048];  //Output buffer
+    char_type inbuf[BUFSIZ + 64];  //Input buffer
+    char_type outbuf[BUFSIZ + 2048];  //Output buffer
     int rsize = read(0, inbuf, BUFSIZ);
     int insize = rsize;
     assert(insize >= 3);
@@ -44,10 +38,10 @@ int main()
     code_int free_ent = block_mode ? 257 : 256;
     uint16_t codetab[HSIZE];
     memset(codetab, 0, 256);
-    unie htab;
+    char_type htab[HSIZE * 4];
 
     for (uint16_t i = 0; i < 256; ++i)
-        htab.b[i] = i;
+        htab[i] = i;
 resetbuf:
     int o = posbits >> 3;
     int e = o <= insize ? insize - o : 0;
@@ -107,7 +101,7 @@ resetbuf:
         }
 
         code_int incode = code;
-        char_type *stackp = pchar_type(&(htab.ci[HSIZE - 1]));
+        char_type *stackp = htab + HSIZE * 4 - 4;
 
         //Special case for KwKwK string.
         if (code >= free_ent)   
@@ -120,15 +114,15 @@ resetbuf:
         while (code >= 256)
         {
             //Generate output characters in reverse order
-            *--stackp = htab.b[code];
+            *--stackp = htab[code];
             code = codetab[code];
         }
 
-        *--stackp = finchar = htab.b[code];
+        *--stackp = finchar = htab[code];
 
         //And put them out in forward order
         {
-            int i = (pchar_type(&(htab.ci[HSIZE-1]))) - stackp;
+            int i = htab + HSIZE * 4 - 4 - stackp;
 
             if (outpos + i >= BUFSIZ)
             {
@@ -147,8 +141,9 @@ resetbuf:
                         assert(write(1, outbuf, outpos) == outpos);
                         outpos = 0;
                     }
+
                     stackp += i;
-                    i = (pchar_type(&(htab.ci[HSIZE-1]))) - stackp;
+                    i = htab + HSIZE * 4 - 4 - stackp;
                 }
                 while (i > 0);
             }
@@ -163,7 +158,7 @@ resetbuf:
         if ((code = free_ent) < maxmaxcode) 
         {
             codetab[code] = uint16_t(oldcode);
-            htab.b[code] = finchar;
+            htab[code] = finchar;
             free_ent = code + 1;
         }
 
