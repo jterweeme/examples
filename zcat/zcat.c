@@ -2,44 +2,30 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 
-#define FIRST   257      /* first free entry*/
 #define HSIZE (1<<17)
-
-typedef int32_t code_int;
-typedef uint32_t count_int;
-typedef uint16_t count_short;
-typedef uint32_t cmp_code_int;
-typedef uint8_t char_type;
-typedef uint8_t *pchar_type;
 
 int main()
 {
-    char_type inbuf[BUFSIZ+64];  //Input buffer
-    char_type outbuf[BUFSIZ+2048];  //Output buffer
-    int rsize = read(0, inbuf, BUFSIZ);
+    uint8_t inbuf[BUFSIZ + 64];  //Input buffer
+    size_t rsize = fread(inbuf, 1, BUFSIZ, stdin);
     int insize = rsize;
     assert(insize >= 3);
     assert(inbuf[0] == 0x1f);
     assert(inbuf[1] == 0x9d);
-    int maxbits = inbuf[2] & 0x1f;
-    int block_mode = inbuf[2] & 0x80;
+    const uint8_t maxbits = inbuf[2] & 0x1f;
+    const uint8_t block_mode = inbuf[2] & 0x80;
     assert(maxbits <= 16);
-    code_int maxmaxcode = 1 << maxbits;
-    long bytes_in = insize;
-    int n_bits = 9;
-    int bitmask = (1 << n_bits) - 1;
-    code_int maxcode = n_bits == maxbits ? maxmaxcode : (1 << n_bits) - 1;
-    code_int oldcode = -1;
-    char_type finchar = 0;
-    int outpos = 0;
-    int posbits = 3<<3;
-    code_int free_ent = block_mode ? FIRST : 256;
+    uint8_t n_bits = 9;
+    uint32_t bitmask = (1 << n_bits) - 1;
+    uint32_t maxcode = n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1;
+    int32_t oldcode = -1;
+    uint8_t finchar = 0;
+    uint32_t posbits = 3<<3;
+    uint32_t free_ent = block_mode ? 257 : 256;
     uint16_t codetab[HSIZE];
     memset(codetab, 0, 256);
-    //union unie htab;
-    char_type htab[HSIZE * 4];
+    uint8_t htab[HSIZE];
 
     for (uint16_t i = 0; i < 256; ++i)
         htab[i] = i;
@@ -55,7 +41,7 @@ resetbuf:
 
     if (insize < sizeof(inbuf) - BUFSIZ)
     {
-        rsize = read(0, inbuf + insize, BUFSIZ);
+        rsize = fread(inbuf + insize, 1, BUFSIZ, stdin);
         assert(rsize >= 0);
         insize += rsize;
     }
@@ -68,14 +54,14 @@ resetbuf:
         {
             posbits = posbits - 1 + ((n_bits<<3) - (posbits - 1 + (n_bits<<3)) % (n_bits<<3));
             ++n_bits;
-            maxcode = n_bits == maxbits ? maxmaxcode : (1<<n_bits) - 1;
+            maxcode = n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1;
             bitmask = (1 << n_bits) - 1;
             goto resetbuf;
         }
 
-        char_type *p = inbuf + (posbits >> 3);
+        uint8_t *p = inbuf + (posbits >> 3);
 
-        code_int code = (((long)(p[0]) | ((long)(p[1]) << 8) | ((long)(p[2]) << 16))
+        uint32_t code = (((uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16))
                     >> (posbits & 0x7)) & bitmask;
 
         posbits += n_bits;
@@ -83,7 +69,9 @@ resetbuf:
         if (oldcode == -1)
         {
             assert(code < 256);
-            outbuf[outpos++] = (char_type)(finchar = (int)(oldcode = code));
+            oldcode = code;
+            finchar = oldcode;
+            fwrite(&finchar, 1, 1, stdout);
             continue;
         }
 
@@ -91,22 +79,22 @@ resetbuf:
         if (code == 256 && block_mode)
         {
             memset(codetab, 0, 256);
-            free_ent = FIRST - 1;
+            free_ent = 256;
             posbits = (posbits - 1) + ((n_bits<<3) - (posbits - 1 + (n_bits<<3)) % (n_bits<<3));
             n_bits = 9;
             bitmask = (1 << n_bits) - 1;
-            maxcode = n_bits == maxbits ? maxmaxcode : (1 << n_bits) - 1;
+            maxcode = n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1;
             goto resetbuf;
         }
 
-        code_int incode = code;
-        char_type *stackp = htab + HSIZE * 4 - 4;
+        uint32_t incode = code;
+        uint8_t *stackp = htab + HSIZE - 1;
 
         //Special case for KwKwK string.
         if (code >= free_ent)   
         {
             assert(code <= free_ent);
-            *--stackp = (char_type)finchar;
+            *--stackp = finchar;
             code = oldcode;
         }
 
@@ -120,42 +108,11 @@ resetbuf:
         *--stackp = finchar = htab[code];
 
         //And put them out in forward order
-        {
-            int i = htab + HSIZE * 4 - 4 - stackp;
-
-            if (outpos + i >= BUFSIZ)
-            {
-                do
-                {
-                    if (i > BUFSIZ-outpos)
-                        i = BUFSIZ-outpos;
-
-                    if (i > 0)
-                    {
-                        memcpy(outbuf + outpos, stackp, i);
-                        outpos += i;
-                    }
-
-                    if (outpos >= BUFSIZ)
-                    {
-                        assert(write(1, outbuf, outpos) == outpos);
-                        outpos = 0;
-                    }
-
-                    stackp += i;
-                    i = htab + HSIZE * 4 - 4 - stackp;
-                }
-                while (i > 0);
-            }
-            else
-            {
-                memcpy(outbuf + outpos, stackp, i);
-                outpos += i;
-            }
-        }
+        uint32_t i = htab + HSIZE - 1 - stackp;
+        fwrite(stackp, 1, i, stdout);
 
         //Generate the new entry.
-        if ((code = free_ent) < maxmaxcode) 
+        if ((code = free_ent) < 1 << maxbits)
         {
             codetab[code] = (uint16_t)oldcode;
             htab[code] = finchar;
@@ -166,14 +123,10 @@ resetbuf:
         oldcode = incode;
     }
 
-    bytes_in += rsize;
-
     if (rsize > 0)
         goto resetbuf;
 
-    if (outpos > 0 && write(1, outbuf, outpos) != outpos)
-        assert(0);
-
+    fflush(stdout);
     return 0;
 }
 
