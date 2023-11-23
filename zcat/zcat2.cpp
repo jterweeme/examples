@@ -8,7 +8,6 @@
 #include <iostream>
 
 #define HSIZE (1<<17)
-static constexpr uint32_t ELBOWROOM = 100<<20;
 
 int main(int argc, char **argv)
 {
@@ -33,12 +32,10 @@ int main(int argc, char **argv)
 
     for (int c; (c = fgetc(in)) != -1;)
         inbuf.push_back(c);
-
-    auto insize = inbuf.size();
 resetbuf:
     auto o = posbits >> 3;
     inbuf.erase(inbuf.begin(), inbuf.begin() + o);
-    insize = insize - o;
+    auto insize = inbuf.size();
     posbits = 0;
     auto inbits = (insize << 3) - (n_bits - 1);
 loop:
@@ -46,7 +43,6 @@ loop:
 
     if (free_ent > maxcode)
     {
-        posbits = posbits - 1 + ((n_bits<<3) - (posbits - 1 + (n_bits<<3)) % (n_bits<<3));
         ++n_bits;
         bitmask = (1 << n_bits) - 1;
         goto resetbuf;
