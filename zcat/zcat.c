@@ -1,16 +1,24 @@
 #include <assert.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
 #define HSIZE (1<<17)
+#define IBUFSIZ BUFSIZ
+#define ELBOWROOM 64
 
-int main()
+int main(int argc, char **argv)
 {
-    uint8_t inbuf[BUFSIZ + 64];  //Input buffer
-    size_t rsize = fread(inbuf, 1, BUFSIZ, stdin);
+    FILE *in = stdin;
+
+    if (argc > 1)
+        in = fopen(argv[1], "r");
+
+    uint8_t *inbuf = malloc(IBUFSIZ + ELBOWROOM);
+    size_t rsize = fread(inbuf, 1, IBUFSIZ, in);
     int insize = rsize;
-    assert(insize >= 3);
+    assert(rsize >= 3);
     assert(inbuf[0] == 0x1f);
     assert(inbuf[1] == 0x9d);
     const uint8_t maxbits = inbuf[2] & 0x1f;
@@ -39,9 +47,9 @@ resetbuf:
     insize = e;
     posbits = 0;
 
-    if (insize < sizeof(inbuf) - BUFSIZ)
+    if (insize < ELBOWROOM)
     {
-        rsize = fread(inbuf + insize, 1, BUFSIZ, stdin);
+        rsize = fread(inbuf + insize, 1, IBUFSIZ, in);
         assert(rsize >= 0);
         insize += rsize;
     }
@@ -127,6 +135,8 @@ resetbuf:
         goto resetbuf;
 
     fflush(stdout);
+    fclose(in);
+    free(inbuf);
     return 0;
 }
 

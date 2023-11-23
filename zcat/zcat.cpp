@@ -2,63 +2,11 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
-#include <unistd.h>
 #include <iostream>
+#include <algorithm>
 #include <numeric>
 
 #define HSIZE (1<<17)
-
-typedef int32_t code_int;
-typedef uint32_t count_int;
-typedef uint16_t count_short;
-typedef uint32_t cmp_code_int;
-typedef uint8_t char_type;
-
-class BitInputStream
-{   
-    std::istream &_input;
-    uint8_t _currentByte = 0;
-    uint8_t _nBitsRemaining = 0;
-public:
-    BitInputStream(std::istream &in) : _input(in) { }
-    uint8_t getBitPosition() const { return (8 - _nBitsRemaining) % 8; }
-    uint8_t readBit();
-    void align() { while (getBitPosition() != 0) readBit(); }
-    uint32_t readUint(uint32_t numBits);
-    ssize_t read(uint8_t *buf, size_t n);
-};
-
-ssize_t BitInputStream::read(uint8_t *buf, size_t n)
-{
-    for (size_t i = 0; i < n; ++i)
-        buf[i] = readUint(8) & 0xff;
-
-    return -1;
-}
-
-//read single bit
-uint8_t BitInputStream::readBit()
-{
-    if (_nBitsRemaining == 0)
-    {
-        _currentByte = _input.get();
-        _nBitsRemaining = 8;
-    }
-    --_nBitsRemaining;
-    return (_currentByte >> 7 - _nBitsRemaining) & 1;
-}
-
-//read multiple bits
-uint32_t BitInputStream::readUint(uint32_t numBits)
-{
-    uint32_t result = 0;
-    for (uint32_t i = 0; i < numBits; ++i)
-    {
-        uint32_t c = readBit();
-        result |= c << i;
-    }
-    return result;
-}
 
 uint8_t inbuf[BUFSIZ + 64];
 int rsize;
@@ -91,16 +39,13 @@ void bufread()
 {
     int o = posbits >> 3;
     int e = o <= insize ? insize - o : 0;
-
-    for (int i = 0 ; i < e ; ++i)
-        inbuf[i] = inbuf[i + o];
-
+    std::rotate(inbuf, inbuf + o, inbuf + o + e);
     insize = e;
     posbits = 0;
 
     if (insize < int(sizeof(inbuf) - BUFSIZ))
     {
-        rsize = read(0, inbuf + insize, BUFSIZ);
+        rsize = fread(inbuf + insize, 1, BUFSIZ, stdin);
         assert(rsize >= 0);
         insize += rsize;
     }
@@ -110,7 +55,7 @@ void bufread()
 
 int main()
 {
-    rsize = read(0, inbuf, BUFSIZ);
+    rsize = fread(inbuf, 1, BUFSIZ, stdin);
     insize = rsize;
     assert(insize >= 3);
     assert(inbuf[0] == 0x1f);
@@ -118,10 +63,9 @@ int main()
     const uint8_t maxbits = inbuf[2] & 0x1f;
     const uint8_t block_mode = inbuf[2] & 0x80;
     assert(maxbits <= 16);
-    const uint32_t maxmaxcode = 1 << maxbits;
     n_bits = 9;
     bitmask = (1 << n_bits) - 1;
-    uint32_t maxcode = n_bits == maxbits ? maxmaxcode : (1 << n_bits) - 1;
+    uint32_t maxcode = n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1;
     int32_t oldcode = -1;
     uint8_t finchar = 0;
     posbits = 3<<3;
@@ -131,13 +75,18 @@ int main()
     std::iota(htab, htab + 256, 0);
     bufread();
 
-    while (inbits > posbits)
+    while (true)
     {
+        if (inbits <= posbits)
+        {
+            break;
+        }
+
         if (free_ent > maxcode)
         {
             posbits = posbits - 1 + ((n_bits<<3) - (posbits - 1 + (n_bits<<3)) % (n_bits<<3));
             ++n_bits;
-            maxcode = n_bits == maxbits ? maxmaxcode : (1<<n_bits) - 1;
+            maxcode = n_bits == maxbits ? 1 << maxbits : (1<<n_bits) - 1;
             bitmask = (1 << n_bits) - 1;
             bufread();
             continue;
@@ -159,12 +108,12 @@ int main()
             memset(codetab, 0, 256);
             free_ent = 256;
             clear();
-            maxcode = n_bits == maxbits ? maxmaxcode : (1 << n_bits) - 1;
+            maxcode = n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1;
             bufread();
             continue;
         }
 
-        code_int incode = code;
+        uint32_t incode = code;
         uint8_t *stackp = htab + HSIZE - 1;
 
         //Special case for KwKwK string.
@@ -189,7 +138,7 @@ int main()
         std::cout.write((char *)(stackp), i);
 
         //Generate the new entry.
-        if ((code = free_ent) < maxmaxcode) 
+        if ((code = free_ent) < uint32_t(1 << maxbits))
         {
             codetab[code] = uint16_t(oldcode);
             htab[code] = finchar;
