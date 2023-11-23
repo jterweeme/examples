@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 resetbuf:
     int o = posbits >> 3;
     int e = o <= insize ? insize - o : 0;
-    std::rotate(inbuf, inbuf + o, inbuf + e + o);
+    std::copy(inbuf + o, inbuf + o + e, inbuf);
     insize = e;
     posbits = 0;
     rsize = insize < ELBOWROOM ? 0 : rsize;
