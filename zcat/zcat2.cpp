@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 
     for (int c; (c = fgetc(in)) != -1;)
         inbuf.push_back(c);
-resetbuf:
+
     auto o = posbits >> 3;
     inbuf.erase(inbuf.begin(), inbuf.begin() + o);
     auto insize = inbuf.size();
@@ -45,7 +45,7 @@ loop:
     {
         ++n_bits;
         bitmask = (1 << n_bits) - 1;
-        goto resetbuf;
+        goto loop;
     }
 
     uint8_t *p = inbuf.data() + (posbits >> 3);
@@ -71,7 +71,7 @@ loop:
         posbits = (posbits - 1) + ((n_bits<<3) - (posbits - 1 + (n_bits<<3)) % (n_bits<<3));
         n_bits = 9;
         bitmask = (1 << n_bits) - 1;
-        goto resetbuf;
+        goto loop;
     }
 
     uint32_t incode = code;
