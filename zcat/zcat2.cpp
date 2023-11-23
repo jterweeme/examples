@@ -36,13 +36,13 @@ int main(int argc, char **argv)
     auto rsize = inbuf.size();
     auto insize = rsize;
 resetbuf:
-    int o = posbits >> 3;
+    auto o = posbits >> 3;
     int e = o <= insize ? insize - o : 0;
     inbuf.erase(inbuf.begin(), inbuf.begin() + o);
     insize = e;
     posbits = 0;
     rsize = insize < ELBOWROOM ? 0 : rsize;
-    int inbits = rsize > 0 ? insize - insize % n_bits << 3 : (insize << 3) - (n_bits - 1);
+    auto inbits = rsize > 0 ? insize - insize % n_bits << 3 : (insize << 3) - (n_bits - 1);
 loop:
     uint32_t maxcode = n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1;
 

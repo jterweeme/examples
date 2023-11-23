@@ -12,7 +12,7 @@ static constexpr uint32_t ELBOWROOM = 64;
 
 uint8_t inbuf[IBUFSIZ + ELBOWROOM];
 int rsize;
-int insize;
+uint32_t insize;
 uint32_t bitmask;
 uint32_t posbits;
 uint32_t inbits;
@@ -39,8 +39,8 @@ void clear()
 
 void bufread()
 {
-    int o = posbits >> 3;
-    int e = o <= insize ? insize - o : 0;
+    auto o = posbits >> 3;
+    auto e = o <= insize ? insize - o : 0;
     std::copy(inbuf + o, inbuf + o + e, inbuf);
     insize = e;
     posbits = 0;
