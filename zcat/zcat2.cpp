@@ -5,9 +5,10 @@
 #include <algorithm>
 #include <numeric>
 #include <vector>
+#include <iostream>
 
 #define HSIZE (1<<17)
-static constexpr uint32_t ELBOWROOM = 64;
+static constexpr uint32_t ELBOWROOM = 100<<20;
 
 int main(int argc, char **argv)
 {
@@ -33,16 +34,13 @@ int main(int argc, char **argv)
     for (int c; (c = fgetc(in)) != -1;)
         inbuf.push_back(c);
 
-    auto rsize = inbuf.size();
-    auto insize = rsize;
+    auto insize = inbuf.size();
 resetbuf:
     auto o = posbits >> 3;
-    int e = o <= insize ? insize - o : 0;
     inbuf.erase(inbuf.begin(), inbuf.begin() + o);
-    insize = e;
+    insize = insize - o;
     posbits = 0;
-    rsize = insize < ELBOWROOM ? 0 : rsize;
-    auto inbits = rsize > 0 ? insize - insize % n_bits << 3 : (insize << 3) - (n_bits - 1);
+    auto inbits = (insize << 3) - (n_bits - 1);
 loop:
     uint32_t maxcode = n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1;
 
@@ -111,9 +109,6 @@ loop:
 
     if (inbits > posbits)
         goto loop;
-
-    if (rsize > 0)
-        goto resetbuf;
 
     fflush(stdout);
     fclose(in);
