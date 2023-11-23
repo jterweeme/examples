@@ -11,42 +11,35 @@ static constexpr uint32_t ELBOWROOM = 64;
 
 int main(int argc, char **argv)
 {
-    FILE *in = stdin;
-    std::vector<uint8_t> inbuf;
-
-    if (argc > 1)
-        in = fopen(argv[1], "r");
-
-    for (int c; (c = fgetc(in)) != -1;)
-        inbuf.push_back(c);
-
-    auto rsize = inbuf.size();
-    assert(rsize >= 3);
-    assert(inbuf[0] == 0x1f);
-    assert(inbuf[1] == 0x9d);
-    const uint8_t maxbits = inbuf[2] & 0x1f;
-    const uint8_t block_mode = inbuf[2] & 0x80;
+    FILE *in = argc > 1 ? fopen(argv[1], "r") : stdin;
+    assert(fgetc(in) == 0x1f);
+    assert(fgetc(in) == 0x9d);
+    uint8_t buf1 = fgetc(in);
+    const uint8_t maxbits = buf1 & 0x1f;
+    const uint8_t block_mode = buf1 & 0x80;
     assert(maxbits <= 16);
+    std::vector<uint8_t> inbuf;
     uint8_t n_bits = 9;
     uint32_t bitmask = (1 << n_bits) - 1;
     uint32_t maxcode = n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1;
     int32_t oldcode = -1;
     uint8_t finchar = 0;
-    uint32_t posbits = 3<<3;
+    uint32_t posbits = 0;
     uint32_t free_ent = block_mode ? 257 : 256;
     uint16_t codetab[HSIZE];
     memset(codetab, 0, 256);
     uint8_t htab[HSIZE];
     std::iota(htab, htab + 256, 0);
-    int insize = rsize;
+
+    for (int c; (c = fgetc(in)) != -1;)
+        inbuf.push_back(c);
+
+    auto rsize = inbuf.size();
+    auto insize = rsize;
 resetbuf:
     int o = posbits >> 3;
     int e = o <= insize ? insize - o : 0;
-    //std::copy(inbuf + o, inbuf + o + e, inbuf);
-
-    for (int i = 0; i < e; ++i)
-        inbuf[i] = inbuf[i + o];
-
+    inbuf.erase(inbuf.begin(), inbuf.begin() + o);
     insize = e;
     posbits = 0;
     rsize = insize < ELBOWROOM ? 0 : rsize;
@@ -125,7 +118,6 @@ loop:
 
     fflush(stdout);
     fclose(in);
-    //delete[] inbuf;
     return 0;
 }
 
