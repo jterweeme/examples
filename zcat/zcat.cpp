@@ -7,8 +7,10 @@
 #include <numeric>
 
 #define HSIZE (1<<17)
+static constexpr uint32_t IBUFSIZ = BUFSIZ;
+static constexpr uint32_t ELBOWROOM = 64;
 
-uint8_t inbuf[BUFSIZ + 64];
+uint8_t inbuf[IBUFSIZ + ELBOWROOM];
 int rsize;
 int insize;
 uint32_t bitmask;
@@ -39,13 +41,13 @@ void bufread()
 {
     int o = posbits >> 3;
     int e = o <= insize ? insize - o : 0;
-    std::rotate(inbuf, inbuf + o, inbuf + o + e);
+    std::copy(inbuf + o, inbuf + o + e, inbuf);
     insize = e;
     posbits = 0;
 
-    if (insize < int(sizeof(inbuf) - BUFSIZ))
+    if (insize < ELBOWROOM)
     {
-        rsize = fread(inbuf + insize, 1, BUFSIZ, stdin);
+        rsize = fread(inbuf + insize, 1, IBUFSIZ, stdin);
         assert(rsize >= 0);
         insize += rsize;
     }
@@ -55,7 +57,7 @@ void bufread()
 
 int main()
 {
-    rsize = fread(inbuf, 1, BUFSIZ, stdin);
+    rsize = fread(inbuf, 1, IBUFSIZ, stdin);
     insize = rsize;
     assert(insize >= 3);
     assert(inbuf[0] == 0x1f);

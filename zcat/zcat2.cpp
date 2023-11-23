@@ -4,21 +4,23 @@
 #include <string.h>
 #include <algorithm>
 #include <numeric>
+#include <vector>
 
 #define HSIZE (1<<17)
-static constexpr uint32_t IBUFSIZ = 100 << 20;
 static constexpr uint32_t ELBOWROOM = 64;
 
 int main(int argc, char **argv)
 {
     FILE *in = stdin;
+    std::vector<uint8_t> inbuf;
 
     if (argc > 1)
         in = fopen(argv[1], "r");
 
-    uint8_t *inbuf = new uint8_t[IBUFSIZ + ELBOWROOM];
-    size_t rsize = fread(inbuf, 1, IBUFSIZ, in);
-    assert(rsize < IBUFSIZ);
+    for (int c; (c = fgetc(in)) != -1;)
+        inbuf.push_back(c);
+
+    auto rsize = inbuf.size();
     assert(rsize >= 3);
     assert(inbuf[0] == 0x1f);
     assert(inbuf[1] == 0x9d);
@@ -40,7 +42,11 @@ int main(int argc, char **argv)
 resetbuf:
     int o = posbits >> 3;
     int e = o <= insize ? insize - o : 0;
-    std::copy(inbuf + o, inbuf + o + e, inbuf);
+    //std::copy(inbuf + o, inbuf + o + e, inbuf);
+
+    for (int i = 0; i < e; ++i)
+        inbuf[i] = inbuf[i + o];
+
     insize = e;
     posbits = 0;
     rsize = insize < ELBOWROOM ? 0 : rsize;
@@ -55,7 +61,7 @@ loop:
         goto resetbuf;
     }
 
-    uint8_t *p = inbuf + (posbits >> 3);
+    uint8_t *p = inbuf.data() + (posbits >> 3);
 
     uint32_t code = (((uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16))
                 >> (posbits & 0x7)) & bitmask;
@@ -119,7 +125,7 @@ loop:
 
     fflush(stdout);
     fclose(in);
-    delete[] inbuf;
+    //delete[] inbuf;
     return 0;
 }
 
