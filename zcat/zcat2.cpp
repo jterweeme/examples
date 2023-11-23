@@ -21,7 +21,6 @@ int main(int argc, char **argv)
     std::vector<uint8_t> inbuf;
     uint8_t n_bits = 9;
     uint32_t bitmask = (1 << n_bits) - 1;
-    uint32_t maxcode = n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1;
     int32_t oldcode = -1;
     uint8_t finchar = 0;
     uint32_t posbits = 0;
@@ -45,11 +44,12 @@ resetbuf:
     rsize = insize < ELBOWROOM ? 0 : rsize;
     int inbits = rsize > 0 ? insize - insize % n_bits << 3 : (insize << 3) - (n_bits - 1);
 loop:
+    uint32_t maxcode = n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1;
+
     if (free_ent > maxcode)
     {
         posbits = posbits - 1 + ((n_bits<<3) - (posbits - 1 + (n_bits<<3)) % (n_bits<<3));
         ++n_bits;
-        maxcode = n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1;
         bitmask = (1 << n_bits) - 1;
         goto resetbuf;
     }
@@ -77,7 +77,6 @@ loop:
         posbits = (posbits - 1) + ((n_bits<<3) - (posbits - 1 + (n_bits<<3)) % (n_bits<<3));
         n_bits = 9;
         bitmask = (1 << n_bits) - 1;
-        maxcode = n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1;
         goto resetbuf;
     }
 
