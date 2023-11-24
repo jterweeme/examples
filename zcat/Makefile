@@ -28,5 +28,9 @@ test:
 	./zcat < side1.pnm.Z | md5sum
 	./zcat2 side1.pnm.Z | md5sum
 	./zcatc side1.pnm.Z | md5sum
+	zcat < wingames.iso.Z | md5sum
+	./zcat < wingames.iso.Z | md5sum
+	./zcat2 wingames.iso.Z | md5sum
+	./zcatc wingames.iso.Z | md5sum
 
 
