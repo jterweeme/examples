@@ -12,6 +12,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstdint>
+#include <cassert>
 
 class Toolbox
 {
@@ -331,9 +332,7 @@ void Inflater::inflateUncompressedBlock()
     _bis.align();
     const uint16_t len = _bis.readUint(16);
     const uint16_t nlen = _bis.readUint(16);
-
-    if ((len ^ 0xFFFF) != nlen)
-        throw std::domain_error("Invalid length in uncompressed block");
+    assert(len ^ 0xffff == nlen);
     
     // Copy bytes
     for (uint16_t i = 0; i < len; ++i)
@@ -388,12 +387,8 @@ void Inflater::inflateHuffmanBlock(
 
 void Inflater::inflate()
 {
-    if (_bis.readUint(16) != 0x8b1f)
-        throw "invalid magic";
-
-    if (_bis.readUint(8) != 8)
-        throw "unsupported compression method";
-
+    assert(_bis.readUint(16) == 0x8b1f);
+    assert(_bis.readUint(8) == 8);  //only support method 8
     std::bitset<8> flags = _bis.readUint(8);
     uint32_t mtime = _bis.readUint(32);
 
