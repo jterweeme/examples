@@ -10,13 +10,10 @@
 
 #define HSIZE (1<<17)
 
-uint32_t posbits = 0;
-
-
-
 class BitStream
 {
     std::vector<uint8_t> inbuf;
+    uint32_t _posbits = 0;
 public:
     BitStream(std::istream &is)
     {
@@ -24,15 +21,20 @@ public:
             inbuf.push_back(c);
     }
 
+    void sync(uint32_t n)
+    {
+        _posbits = n;
+    }
+
     int32_t getCode(uint8_t n)
     {
-        if ((inbuf.size() << 3) - (n - 1) <= posbits)
+        if ((inbuf.size() << 3) - (n - 1) <= _posbits)
             return -1;
     
-        uint8_t *p = inbuf.data() + (posbits >> 3);
+        uint8_t *p = inbuf.data() + (_posbits >> 3);
     
         uint32_t code = (((uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16))
-                    >> (posbits & 0x7)) & (1 << n) - 1;
+                    >> (_posbits & 0x7)) & (1 << n) - 1;
     
         return code;
     }
@@ -58,6 +60,7 @@ int main(int argc, char **argv)
     assert(maxbits <= 16);
     int32_t oldcode = -1;
     uint8_t finchar = 0;
+    uint32_t posbits = 0;
     int32_t free_ent = block_mode ? 257 : 256;
     uint16_t codetab[HSIZE];
     uint8_t htab[HSIZE];
@@ -73,6 +76,7 @@ int main(int argc, char **argv)
         if (free_ent > maxcode)
             ++n_bits;
 
+        bis.sync(posbits);
         int32_t code = bis.getCode(n_bits);
         posbits += n_bits;
 
