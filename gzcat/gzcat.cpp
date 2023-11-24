@@ -219,36 +219,28 @@ class Inflater
     CRCOutputStream _os;
     std::ostream &_msg;
     ByteHistory _dictionary;
-    CanonicalCode _FIXED_LITERAL_LENGTH_CODE;
-    CanonicalCode _FIXED_DISTANCE_CODE;
+    CanonicalCode _fixedLiteralLengthCode;
+    CanonicalCode _fixedDistanceCode;
     void decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &distCode);
     void inflateUncompressedBlock();
     void inflateHuffmanBlock(const CanonicalCode &litLenCode, const CanonicalCode &distCode);
 public:
     Inflater(std::istream &is, std::ostream &os, std::ostream &msg);
     void inflate();
-    static void inflate(std::istream &is, std::ostream &os, std::ostream &msg);
 };
 
 Inflater::Inflater(std::istream &is, std::ostream &os, std::ostream &msg)
   :
     _bis(is), _os(os), _msg(msg), _dictionary(32 * 1024)
 {
-    int llcodelens[288];
-    int i = 0;
-    for (; i < 144; ++i)
-        llcodelens[i] = 8;
-    for (; i < 256; ++i)
-        llcodelens[i] = 9;
-    for (; i < 280; ++i)
-        llcodelens[i] = 7;
-    for (; i < 288; ++i)
-        llcodelens[i] = 8;
-    _FIXED_LITERAL_LENGTH_CODE.init(llcodelens, 288);
-    int distcodelens[32];
-    for (i = 0; i < 32; ++i)
-        distcodelens[i] = 5;
-    _FIXED_DISTANCE_CODE.init(distcodelens, 32);
+    int llcodelens[288], distcodelens[32];
+    std::fill(llcodelens,       llcodelens + 144, 8);
+    std::fill(llcodelens + 144, llcodelens + 256, 9);
+    std::fill(llcodelens + 256, llcodelens + 280, 7);
+    std::fill(llcodelens + 280, llcodelens + 288, 8);
+    std::fill(distcodelens, distcodelens + 32, 5);
+    _fixedLiteralLengthCode.init(llcodelens, 288);
+    _fixedDistanceCode.init(distcodelens, 32);
 }
 
 void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &distCode)
@@ -277,8 +269,7 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
         int sym = codeLenCode.decodeNextSymbol(_bis);
         if (0 <= sym && sym <= 15)
         {
-            codeLens[codeLensIndex] = sym;
-            ++codeLensIndex;
+            codeLens[codeLensIndex++] = sym;
             continue;
         }
         int runLen, runVal = 0;
@@ -295,19 +286,16 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
         }
 
         int end = codeLensIndex + runLen;
-        for (int i = codeLensIndex; i < end; ++i)
-            codeLens[i] = runVal;
+        std::fill(codeLens + codeLensIndex, codeLens + end, runVal);
         codeLensIndex = end;
     }
     
     int litLenCodeLen[numLitLenCodes];
-    for (uint32_t i = 0; i < numLitLenCodes; ++i)
-        litLenCodeLen[i] = codeLens[i];
+    std::copy(codeLens, codeLens + numLitLenCodes, litLenCodeLen);
     litLenCode.init(litLenCodeLen, numLitLenCodes);
     int nDistCodeLen = nCodeLens - numLitLenCodes;
     int distCodeLen[nDistCodeLen];
-    for (int i = 0, j = numLitLenCodes; j < nCodeLens; ++i, ++j)
-        distCodeLen[i] = codeLens[j];
+    std::copy(codeLens + numLitLenCodes, codeLens + numLitLenCodes + nCodeLens, distCodeLen);
 
     if (nDistCodeLen == 1 && distCodeLen[0] == 0)
         return;
@@ -422,27 +410,35 @@ void Inflater::inflate()
 
     for (bool isFinal = false; !isFinal;)
     {
-        isFinal = _bis.readUint(1) != 0;  // bfinal
-        int type = _bis.readUint(2);  // btype
-        
-        if (type == 0)
+        isFinal = _bis.readUint(1) != 0;
+
+        switch (_bis.readUint(2))
+        {
+        case 0:
             inflateUncompressedBlock();
-        else if (type == 1)
-            inflateHuffmanBlock(_FIXED_LITERAL_LENGTH_CODE, _FIXED_DISTANCE_CODE);
-        else if (type == 2)
+            break;
+        case 1:
+            inflateHuffmanBlock(_fixedLiteralLengthCode, _fixedDistanceCode);
+            break;
+        case 2:
         {
             CanonicalCode litLen, dist;
             decodeHuffmanCodes(litLen, dist);
             inflateHuffmanBlock(litLen, dist);
-        } else if (type == 3)
+        }
+            break;
+        case 3:
             throw std::domain_error("Reserved block type");
-        else
+        default:
             throw std::logic_error("Unreachable value");
+        }
     }
 
     _bis.align();
     uint32_t crc = _bis.readUint(32);
     uint32_t size = _bis.readUint(32);
+    assert(crc == _os.crc());
+    assert(size == _os.cnt());
     _msg << "CRC: 0x" << Toolbox::hex32(crc) << " 0x" << Toolbox::hex32(_os.crc()) << "\r\n";
     _msg << "size: " << size << " " << _os.cnt() << "\r\n";
 }

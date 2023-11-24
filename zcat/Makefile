@@ -20,5 +20,13 @@ test:
 	./zcat < tty.1.Z | md5sum
 	./zcat2 tty.1.Z | md5sum
 	./zcatc tty.1.Z | md5sum
+	#zcat < wk98.iso.Z | md5sum
+	#./zcat < wk98.iso.Z | md5sum
+	#./zcat2 wk98.iso.Z | md5sum
+	#./zcatc wk98.iso.Z | md5sum
+	zcat < side1.pnm.Z | md5sum
+	./zcat < side1.pnm.Z | md5sum
+	./zcat2 side1.pnm.Z | md5sum
+	./zcatc side1.pnm.Z | md5sum
 
 

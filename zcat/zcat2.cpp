@@ -88,8 +88,7 @@ int main(int argc, char **argv)
         }
     
         *--stackp = finchar = htab[code];
-        uint32_t i = htab + HSIZE - 1 - stackp;
-        fwrite(stackp, 1, i, stdout);
+        fwrite(stackp, 1, htab + HSIZE - 1 - stackp, stdout);
     
         if ((code = free_ent) < uint32_t(1 << maxbits))
         {
