@@ -10,23 +10,33 @@
 
 #define HSIZE (1<<17)
 
-std::vector<uint8_t> inbuf;
-uint8_t n_bits = 9;
 uint32_t posbits = 0;
 
-int32_t getCode()
+
+
+class BitStream
 {
-    if ((inbuf.size() << 3) - (n_bits - 1) <= posbits)
-        return -1;
+    std::vector<uint8_t> inbuf;
+public:
+    BitStream(std::istream &is)
+    {
+        for (int c; (c = is.get()) != -1;)
+            inbuf.push_back(c);
+    }
 
-    uint8_t *p = inbuf.data() + (posbits >> 3);
-
-    uint32_t code = (((uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16))
-                >> (posbits & 0x7)) & (1 << n_bits) - 1;
-
-    posbits += n_bits;
-    return code;
-}
+    int32_t getCode(uint8_t n)
+    {
+        if ((inbuf.size() << 3) - (n - 1) <= posbits)
+            return -1;
+    
+        uint8_t *p = inbuf.data() + (posbits >> 3);
+    
+        uint32_t code = (((uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16))
+                    >> (posbits & 0x7)) & (1 << n) - 1;
+    
+        return code;
+    }
+};
 
 int main(int argc, char **argv)
 {
@@ -48,23 +58,23 @@ int main(int argc, char **argv)
     assert(maxbits <= 16);
     int32_t oldcode = -1;
     uint8_t finchar = 0;
-    uint32_t free_ent = block_mode ? 257 : 256;
+    int32_t free_ent = block_mode ? 257 : 256;
     uint16_t codetab[HSIZE];
-    memset(codetab, 0, 256);
     uint8_t htab[HSIZE];
+    uint8_t n_bits = 9;
+    std::fill(codetab, codetab + 256, 0);
     std::iota(htab, htab + 256, 0);
-
-    for (int c; (c = is->get()) != -1;)
-        inbuf.push_back(c);
+    BitStream bis(*is);
 
     while (true)
     {
-        uint32_t maxcode = n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1;
+        int32_t maxcode = n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1;
     
         if (free_ent > maxcode)
             ++n_bits;
 
-        int32_t code = getCode();
+        int32_t code = bis.getCode(n_bits);
+        posbits += n_bits;
 
         if (code == -1)
             break;
@@ -106,7 +116,7 @@ int main(int argc, char **argv)
         *--stackp = finchar = htab[code];
         os->write((char *)(stackp), htab + HSIZE - 1 - stackp);
     
-        if ((code = free_ent) < uint32_t(1 << maxbits))
+        if ((code = free_ent) < (1 << maxbits))
         {
             codetab[code] = (uint16_t)oldcode;
             htab[code] = finchar;
