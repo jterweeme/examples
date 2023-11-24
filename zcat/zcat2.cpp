@@ -23,7 +23,6 @@ int main(int argc, char **argv)
     uint32_t bitmask = (1 << n_bits) - 1;
     int32_t oldcode = -1;
     uint8_t finchar = 0;
-    uint32_t posbits = 0;
     uint32_t free_ent = block_mode ? 257 : 256;
     uint16_t codetab[HSIZE];
     memset(codetab, 0, 256);
@@ -33,13 +32,9 @@ int main(int argc, char **argv)
     for (int c; (c = fgetc(in)) != -1;)
         inbuf.push_back(c);
 
-    auto o = posbits >> 3;
-    inbuf.erase(inbuf.begin(), inbuf.begin() + o);
-    auto insize = inbuf.size();
-    posbits = 0;
-    auto inbits = (insize << 3) - (n_bits - 1);
+    auto inbits = (inbuf.size() << 3) - (n_bits - 1);
 
-    while (inbits > posbits)
+    for (uint32_t posbits = 0; inbits > posbits;)
     {
         uint32_t maxcode = n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1;
     
