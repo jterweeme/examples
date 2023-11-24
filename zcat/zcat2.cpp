@@ -38,73 +38,73 @@ int main(int argc, char **argv)
     auto insize = inbuf.size();
     posbits = 0;
     auto inbits = (insize << 3) - (n_bits - 1);
-loop:
-    uint32_t maxcode = n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1;
 
-    if (free_ent > maxcode)
+    while (inbits > posbits)
     {
-        ++n_bits;
-        bitmask = (1 << n_bits) - 1;
-        goto loop;
+        uint32_t maxcode = n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1;
+    
+        if (free_ent > maxcode)
+        {
+            ++n_bits;
+            bitmask = (1 << n_bits) - 1;
+            continue;
+        }
+    
+        uint8_t *p = inbuf.data() + (posbits >> 3);
+    
+        uint32_t code = (((uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16))
+                    >> (posbits & 0x7)) & bitmask;
+    
+        posbits += n_bits;
+    
+        if (oldcode == -1)
+        {
+            assert(code < 256);
+            oldcode = code;
+            finchar = oldcode;
+            fwrite(&finchar, 1, 1, stdout);
+            continue;
+        }
+    
+        if (code == 256 && block_mode)
+        {
+            memset(codetab, 0, 256);
+            free_ent = 256;
+            posbits = (posbits - 1) + ((n_bits<<3) - (posbits - 1 + (n_bits<<3)) % (n_bits<<3));
+            n_bits = 9;
+            bitmask = (1 << n_bits) - 1;
+            continue;
+        }
+    
+        uint32_t incode = code;
+        uint8_t *stackp = htab + HSIZE - 1;
+    
+        if (code >= free_ent)   
+        {
+            assert(code <= free_ent);
+            *--stackp = finchar;
+            code = oldcode;
+        }
+    
+        while (code >= 256)
+        {
+            *--stackp = htab[code];
+            code = codetab[code];
+        }
+    
+        *--stackp = finchar = htab[code];
+        uint32_t i = htab + HSIZE - 1 - stackp;
+        fwrite(stackp, 1, i, stdout);
+    
+        if ((code = free_ent) < uint32_t(1 << maxbits))
+        {
+            codetab[code] = (uint16_t)oldcode;
+            htab[code] = finchar;
+            free_ent = code + 1;
+        }
+    
+        oldcode = incode;
     }
-
-    uint8_t *p = inbuf.data() + (posbits >> 3);
-
-    uint32_t code = (((uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16))
-                >> (posbits & 0x7)) & bitmask;
-
-    posbits += n_bits;
-
-    if (oldcode == -1)
-    {
-        assert(code < 256);
-        oldcode = code;
-        finchar = oldcode;
-        fwrite(&finchar, 1, 1, stdout);
-        goto loop;
-    }
-
-    if (code == 256 && block_mode)
-    {
-        memset(codetab, 0, 256);
-        free_ent = 256;
-        posbits = (posbits - 1) + ((n_bits<<3) - (posbits - 1 + (n_bits<<3)) % (n_bits<<3));
-        n_bits = 9;
-        bitmask = (1 << n_bits) - 1;
-        goto loop;
-    }
-
-    uint32_t incode = code;
-    uint8_t *stackp = htab + HSIZE - 1;
-
-    if (code >= free_ent)   
-    {
-        assert(code <= free_ent);
-        *--stackp = finchar;
-        code = oldcode;
-    }
-
-    while (code >= 256)
-    {
-        *--stackp = htab[code];
-        code = codetab[code];
-    }
-
-    *--stackp = finchar = htab[code];
-    uint32_t i = htab + HSIZE - 1 - stackp;
-    fwrite(stackp, 1, i, stdout);
-
-    if ((code = free_ent) < uint32_t(1 << maxbits))
-    {
-        codetab[code] = (uint16_t)oldcode;
-        htab[code] = finchar;
-        free_ent = code + 1;
-    }
-
-    oldcode = incode;
-
-    if (inbits > posbits)
-        goto loop;
 
     fflush(stdout);
     fclose(in);
