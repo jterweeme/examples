@@ -6,21 +6,46 @@
 #include <numeric>
 #include <vector>
 #include <iostream>
+#include <fstream>
 
 #define HSIZE (1<<17)
 
+std::vector<uint8_t> inbuf;
+uint8_t n_bits = 9;
+uint32_t posbits = 0;
+
+int32_t getCode()
+{
+    if ((inbuf.size() << 3) - (n_bits - 1) <= posbits)
+        return -1;
+
+    uint8_t *p = inbuf.data() + (posbits >> 3);
+
+    uint32_t code = (((uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16))
+                >> (posbits & 0x7)) & (1 << n_bits) - 1;
+
+    posbits += n_bits;
+    return code;
+}
+
 int main(int argc, char **argv)
 {
-    FILE *in = argc > 1 ? fopen(argv[1], "r") : stdin;
+    std::ifstream ifs;
+    std::istream *is = &std::cin;
+
+    if (argc > 1)
+    {
+        ifs.open(argv[1]);
+        is = &ifs;
+    }
+
     std::ostream *os = &std::cout;
-    assert(fgetc(in) == 0x1f);
-    assert(fgetc(in) == 0x9d);
-    uint8_t buf1 = fgetc(in);
+    assert(is->get() == 0x1f);
+    assert(is->get() == 0x9d);
+    uint8_t buf1 = is->get();
     const uint8_t maxbits = buf1 & 0x1f;
     const uint8_t block_mode = buf1 & 0x80;
     assert(maxbits <= 16);
-    std::vector<uint8_t> inbuf;
-    uint8_t n_bits = 9;
     int32_t oldcode = -1;
     uint8_t finchar = 0;
     uint32_t free_ent = block_mode ? 257 : 256;
@@ -29,25 +54,20 @@ int main(int argc, char **argv)
     uint8_t htab[HSIZE];
     std::iota(htab, htab + 256, 0);
 
-    for (int c; (c = fgetc(in)) != -1;)
+    for (int c; (c = is->get()) != -1;)
         inbuf.push_back(c);
 
-    for (uint32_t posbits = 0; (inbuf.size() << 3) - (n_bits - 1) > posbits;)
+    while (true)
     {
         uint32_t maxcode = n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1;
     
         if (free_ent > maxcode)
-        {
             ++n_bits;
-            continue;
-        }
-    
-        uint8_t *p = inbuf.data() + (posbits >> 3);
-    
-        uint32_t code = (((uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16))
-                    >> (posbits & 0x7)) & (1 << n_bits) - 1;
-    
-        posbits += n_bits;
+
+        int32_t code = getCode();
+
+        if (code == -1)
+            break;
     
         if (oldcode == -1)
         {
@@ -96,8 +116,8 @@ int main(int argc, char **argv)
         oldcode = incode;
     }
 
-    fflush(stdout);
-    fclose(in);
+    os->flush();
+    ifs.close();
     return 0;
 }
 

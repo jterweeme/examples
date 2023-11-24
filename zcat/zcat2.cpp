@@ -12,6 +12,7 @@
 int main(int argc, char **argv)
 {
     FILE *in = argc > 1 ? fopen(argv[1], "r") : stdin;
+    std::ostream *os = &std::cout;
     assert(fgetc(in) == 0x1f);
     assert(fgetc(in) == 0x9d);
     uint8_t buf1 = fgetc(in);
@@ -20,7 +21,6 @@ int main(int argc, char **argv)
     assert(maxbits <= 16);
     std::vector<uint8_t> inbuf;
     uint8_t n_bits = 9;
-    uint32_t bitmask = (1 << n_bits) - 1;
     int32_t oldcode = -1;
     uint8_t finchar = 0;
     uint32_t free_ent = block_mode ? 257 : 256;
@@ -32,23 +32,17 @@ int main(int argc, char **argv)
     for (int c; (c = fgetc(in)) != -1;)
         inbuf.push_back(c);
 
-    auto inbits = (inbuf.size() << 3) - (n_bits - 1);
-
-    for (uint32_t posbits = 0; inbits > posbits;)
+    for (uint32_t posbits = 0; (inbuf.size() << 3) - (n_bits - 1) > posbits;)
     {
         uint32_t maxcode = n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1;
     
         if (free_ent > maxcode)
-        {
             ++n_bits;
-            bitmask = (1 << n_bits) - 1;
-            continue;
-        }
     
         uint8_t *p = inbuf.data() + (posbits >> 3);
     
         uint32_t code = (((uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16))
-                    >> (posbits & 0x7)) & bitmask;
+                    >> (posbits & 0x7)) & (1 << n_bits) - 1;
     
         posbits += n_bits;
     
@@ -57,7 +51,7 @@ int main(int argc, char **argv)
             assert(code < 256);
             oldcode = code;
             finchar = oldcode;
-            fwrite(&finchar, 1, 1, stdout);
+            os->put(finchar);
             continue;
         }
     
@@ -67,7 +61,6 @@ int main(int argc, char **argv)
             free_ent = 256;
             posbits = (posbits - 1) + ((n_bits<<3) - (posbits - 1 + (n_bits<<3)) % (n_bits<<3));
             n_bits = 9;
-            bitmask = (1 << n_bits) - 1;
             continue;
         }
     
@@ -88,7 +81,7 @@ int main(int argc, char **argv)
         }
     
         *--stackp = finchar = htab[code];
-        fwrite(stackp, 1, htab + HSIZE - 1 - stackp, stdout);
+        os->write((char *)(stackp), htab + HSIZE - 1 - stackp);
     
         if ((code = free_ent) < uint32_t(1 << maxbits))
         {
