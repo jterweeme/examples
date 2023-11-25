@@ -1,7 +1,5 @@
-#include <assert.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
+#include <cassert>
+#include <cstdint>
 #include <algorithm>
 #include <numeric>
 #include <vector>
@@ -26,16 +24,16 @@ public:
         _posbits = n;
     }
 
-    int32_t getCode(uint8_t n)
+    int32_t readBits(uint8_t n)
     {
         if ((inbuf.size() << 3) - (n - 1) <= _posbits)
             return -1;
     
         uint8_t *p = inbuf.data() + (_posbits >> 3);
-    
-        uint32_t code = (((uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16))
-                    >> (_posbits & 0x7)) & (1 << n) - 1;
-    
+        uint32_t code = uint32_t(p[0]) | uint32_t(p[1]) << 8  | uint32_t(p[2]) << 16;
+        code = code >> (_posbits & 0x7);
+        code = code & (1 << n) - 1;
+        _posbits += n;
         return code;
     }
 };
@@ -60,7 +58,7 @@ int main(int argc, char **argv)
     assert(maxbits <= 16);
     int32_t oldcode = -1;
     uint8_t finchar = 0;
-    uint32_t posbits = 0;
+    uint32_t posbits = 0, poosbits = 0;
     int32_t free_ent = block_mode ? 257 : 256;
     uint16_t codetab[HSIZE];
     uint8_t htab[HSIZE];
@@ -76,9 +74,17 @@ int main(int argc, char **argv)
         if (free_ent > maxcode)
             ++n_bits;
 
-        bis.sync(posbits);
-        int32_t code = bis.getCode(n_bits);
+        const uint32_t div = (posbits - poosbits) / 16;
+
+        for (uint32_t i = 0; i < div; ++i)
+        {
+            bis.readBits(16);
+            poosbits += 16;
+        }
+
+        int32_t code = bis.readBits(n_bits);
         posbits += n_bits;
+        poosbits += n_bits;
 
         if (code == -1)
             break;
@@ -94,7 +100,7 @@ int main(int argc, char **argv)
     
         if (code == 256 && block_mode)
         {
-            memset(codetab, 0, 256);
+            std::fill(codetab, codetab + 256, 0);
             free_ent = 256;
             posbits = (posbits - 1) + ((n_bits<<3) - (posbits - 1 + (n_bits<<3)) % (n_bits<<3));
             n_bits = 9;

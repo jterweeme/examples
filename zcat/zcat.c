@@ -68,10 +68,8 @@ resetbuf:
         }
 
         uint8_t *p = inbuf + (posbits >> 3);
-
-        uint32_t code = (((uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16))
-                    >> (posbits & 0x7)) & bitmask;
-
+        uint32_t code = ((uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16));
+        code = code >> (posbits & 0x7) & bitmask;
         posbits += n_bits;
 
         if (oldcode == -1)
