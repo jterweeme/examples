@@ -1,7 +1,7 @@
 all:
 	g++ -O2 -Wall -Wno-parentheses -o zcat zcat.cpp
-	g++ -g -Wall -Wno-parentheses -o zcat2 zcat2.cpp
-	gcc -g -Wall -Wno-parentheses -o zcatc zcat.c
+	g++ -O2 -Wall -Wno-parentheses -o zcat2 zcat2.cpp
+	gcc -O2 -Wall -Wno-parentheses -o zcatc zcat.c
 
 test:
 	zcat < relnotes.ps.Z | md5sum
@@ -32,5 +32,9 @@ test:
 	./zcat < wingames.iso.Z | md5sum
 	./zcat2 wingames.iso.Z | md5sum
 	./zcatc wingames.iso.Z | md5sum
+	zcat < enwik9.Z | md5sum
+	./zcat < enwik9.Z | md5sum
+	./zcat2 enwik9.Z | md5sum
+	./zcatc enwik9.Z | md5sum
 
 

@@ -8,6 +8,26 @@
 
 #define HSIZE (1<<17)
 
+class BitInputStream
+{
+    std::istream *_is;
+    uint32_t _bitBuffer = 0, _bitCount = 0;
+public:
+    BitInputStream(std::istream *is) : _is(is) { }
+    uint32_t readUInt32() { return readBits(16) << 16 | readBits(16); }
+
+    uint32_t readBits(uint32_t count)
+    {
+        assert(count <= 24);
+
+        for (; _bitCount < count; _bitCount += 8)
+            _bitBuffer = _bitBuffer << 8 | _is->get();
+
+        _bitCount -= count;
+        return _bitBuffer >> _bitCount & ((1 << count) - 1);
+    }
+};
+
 class BitStream
 {
     std::vector<uint8_t> inbuf;
@@ -21,7 +41,7 @@ public:
 
     int32_t readBits(uint8_t n)
     {
-        if ((inbuf.size() << 3) - (n - 1) <= _posbits)
+        if (_posbits > (inbuf.size() << 3) - n)
             return -1;
     
         uint8_t *p = inbuf.data() + (_posbits >> 3);
@@ -53,7 +73,7 @@ int main(int argc, char **argv)
     assert(maxbits <= 16);
     int32_t oldcode = -1;
     uint8_t finchar = 0;
-    uint32_t posbits = 0, poosbits = 0;
+    uint32_t posbits = 0;
     int32_t free_ent = block_mode ? 257 : 256;
     uint16_t codetab[HSIZE];
     uint8_t htab[HSIZE];
@@ -64,20 +84,13 @@ int main(int argc, char **argv)
 
     while (true)
     {
-        int32_t maxcode = n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1;
+        const auto maxcode = n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1;
     
         if (free_ent > maxcode)
             ++n_bits;
 
-        while (posbits - poosbits >= 16)
-        {
-            bis.readBits(16);
-            poosbits += 16;
-        }
-
         int32_t code = bis.readBits(n_bits);
         posbits += n_bits;
-        poosbits += n_bits;
 
         if (code == -1)
             break;
@@ -95,7 +108,19 @@ int main(int argc, char **argv)
         {
             std::fill(codetab, codetab + 256, 0);
             free_ent = 256;
-            posbits = (posbits - 1) + ((n_bits<<3) - (posbits - 1 + (n_bits<<3)) % (n_bits<<3));
+
+            //padding
+            {
+                const auto losbits = (posbits - 1) + ((n_bits<<3)
+                        - (posbits - 1 + (n_bits<<3)) % (n_bits<<3));
+            
+                while (losbits - posbits >= 16)
+                {
+                    bis.readBits(16);
+                    posbits += 16;
+                }
+            }
+
             n_bits = 9;
             continue;
         }
@@ -119,9 +144,9 @@ int main(int argc, char **argv)
         *--stackp = finchar = htab[code];
         os->write((char *)(stackp), htab + HSIZE - 1 - stackp);
     
-        if ((code = free_ent) < (1 << maxbits))
+        if ((code = free_ent) < 1 << maxbits)
         {
-            codetab[code] = (uint16_t)oldcode;
+            codetab[code] = uint16_t(oldcode);
             htab[code] = finchar;
             free_ent = code + 1;
         }
