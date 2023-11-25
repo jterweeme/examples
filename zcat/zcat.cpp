@@ -74,9 +74,7 @@ int main(int argc, char **argv)
         if (free_ent > maxcode)
             ++n_bits;
 
-        const uint32_t div = (posbits - poosbits) / 16;
-
-        for (uint32_t i = 0; i < div; ++i)
+        while (posbits - poosbits >= 16)
         {
             bis.readBits(16);
             poosbits += 16;
