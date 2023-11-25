@@ -19,11 +19,6 @@ public:
             inbuf.push_back(c);
     }
 
-    void sync(uint32_t n)
-    {
-        _posbits = n;
-    }
-
     int32_t readBits(uint8_t n)
     {
         if ((inbuf.size() << 3) - (n - 1) <= _posbits)
