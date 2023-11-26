@@ -8,48 +8,48 @@
 
 #define HSIZE (1<<17)
 
-class BitInputStream
-{
-    std::istream *_is;
-    uint32_t _bitBuffer = 0, _bitCount = 0;
-public:
-    BitInputStream(std::istream *is) : _is(is) { }
-    uint32_t readUInt32() { return readBits(16) << 16 | readBits(16); }
-
-    uint32_t readBits(uint32_t count)
-    {
-        assert(count <= 24);
-
-        for (; _bitCount < count; _bitCount += 8)
-            _bitBuffer = _bitBuffer << 8 | _is->get();
-
-        _bitCount -= count;
-        return _bitBuffer >> _bitCount & ((1 << count) - 1);
-    }
-};
-
 class BitStream
 {
-    std::vector<uint8_t> inbuf;
-    uint32_t _posbits = 0;
+    std::istream &_is;
+    uint32_t _bits = 0;
+    uint8_t _byte = 0;
 public:
-    BitStream(std::istream &is)
+    BitStream(std::istream &is) : _is(is) { }
+
+    int32_t readBit()
     {
-        for (int c; (c = is.get()) != -1;)
-            inbuf.push_back(c);
+        if (_bits == 0)
+        {
+            int c = _is.get();
+
+            if (c == -1)
+                return -1;
+
+            _byte = uint8_t(c);
+            _bits = 8;
+        }
+
+        --_bits;
+        int32_t ret = _byte & 1;
+        _byte = _byte >> 1;
+        return ret;
     }
 
     int32_t readBits(uint8_t n)
     {
-        if (_posbits > (inbuf.size() << 3) - n)
-            return -1;
-    
-        uint8_t *p = inbuf.data() + (_posbits >> 3);
-        uint32_t code = uint32_t(p[0]) | uint32_t(p[1]) << 8  | uint32_t(p[2]) << 16;
-        code = code >> (_posbits & 0x7);
-        code = code & (1 << n) - 1;
-        _posbits += n;
-        return code;
+        int32_t ret = 0;
+
+        for (uint8_t i = 0; i < n; ++i)
+        {
+            int32_t bit = readBit();
+            
+            if (bit == -1)
+                return -1;
+
+            ret = ret | bit << i;
+        }
+
+        return ret;
     }
 };
 
