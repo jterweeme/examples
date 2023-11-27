@@ -5,8 +5,6 @@
 #include <iostream>
 #include <fstream>
 
-#define HSIZE (1<<17)
-
 class BitStream
 {
     std::istream &_is;
@@ -39,6 +37,18 @@ public:
     }
 };
 
+class CharStack
+{
+    static constexpr uint32_t _capacity = 1<<17;
+    char _stack[_capacity];
+    char *_ptr = _stack + _capacity;
+public:
+    void push(char c) { *--_ptr = c; }
+
+    void print(std::ostream &os)
+    { os.write(_ptr, _stack + _capacity - _ptr); _ptr = _stack + _capacity; }
+};
+
 int main(int argc, char **argv)
 {
     std::ostream * const os = &std::cout;
@@ -56,15 +66,15 @@ int main(int argc, char **argv)
     const bool block_mode = bis.readBits(1) ? true : false;
     uint8_t n_bits = 9;
     int32_t free_ent = block_mode ? 257 : 256, code, oldcode, incode;
-    uint16_t codetab[HSIZE];
+    uint16_t codetab[1<<17];
     std::fill(codetab, codetab + 256, 0);
     bis.cnt = 0;
     code = oldcode = bis.readBits(n_bits);
     assert(code >= 0 && code < 256);
-    char finchar = oldcode, htab[HSIZE];
+    char finchar = oldcode, htab[1<<17];
     os->put(finchar);
     std::iota(htab, htab + 256, 0);
-
+    CharStack cs;
 
     while ((code = incode = bis.readBits(n_bits)) != -1)
     {
@@ -75,17 +85,16 @@ int main(int argc, char **argv)
             continue;
         }
 
-        char stack[HSIZE], *stackp = stack + HSIZE;
         assert(code <= free_ent);
     
         if (code == free_ent)
-            *--stackp = finchar, code = oldcode;
+            cs.push(finchar), code = oldcode;
     
         while (code >= 256)
-            *--stackp = htab[code], code = codetab[code];
+            cs.push(htab[code]), code = codetab[code];
     
-        *--stackp = finchar = htab[code];
-        os->write(stackp, stack + HSIZE - stackp);
+        cs.push(finchar = htab[code]);
+        cs.print(*os);
     
         if ((code = free_ent) < 1 << maxbits)
             codetab[code] = uint16_t(oldcode), htab[code] = finchar, free_ent = code + 1;
