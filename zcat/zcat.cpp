@@ -2,7 +2,6 @@
 #include <cstdint>
 #include <algorithm>
 #include <numeric>
-#include <vector>
 #include <iostream>
 #include <fstream>
 
@@ -44,8 +43,7 @@ int main(int argc, char **argv)
         ifs.open(argv[1]), is = &ifs;
 
     BitStream bis(*is);
-    assert(bis.readBits(8) == 0x1f);
-    assert(bis.readBits(8) == 0x9d);
+    assert(bis.readBits(16) == 0x9d1f);
     const uint8_t maxbits = bis.readBits(5);
     assert(maxbits <= 16);
     bis.readBits(2);
@@ -56,34 +54,28 @@ int main(int argc, char **argv)
     std::fill(codetab, codetab + 256, 0);
     std::iota(htab, htab + 256, 0);
     bis.cnt(0);
+    const auto code1 = bis.readBits(n_bits);
+    assert(code1 >= 0 && code1 < 256);
+    oldcode = code1;
+    finchar = oldcode;
+    os->put(finchar);
 
     while (true)
     {
-        const auto maxcode = n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1;
-    
-        if (free_ent > maxcode)
+        if (free_ent > (n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1))
             ++n_bits;
 
-        int32_t code = bis.readBits(n_bits);
+        auto code = bis.readBits(n_bits);
 
         if (code == -1)
             break;
-    
-        if (oldcode == -1)
-        {
-            assert(code < 256);
-            oldcode = code;
-            finchar = oldcode;
-            os->put(finchar);
-            continue;
-        }
-    
+
         //end block
         if (code == 256 && block_mode)
         {
             std::fill(codetab, codetab + 256, 0), free_ent = 256;
 
-            const auto padding = (bis.cnt() - 1) + ((n_bits<<3)
+            const auto padding = bis.cnt() - 1 + ((n_bits<<3)
                         - (bis.cnt() - 1 + (n_bits<<3)) % (n_bits<<3));
             
             while (padding - bis.cnt() >= 16)
@@ -93,7 +85,7 @@ int main(int argc, char **argv)
             continue;
         }
     
-        uint32_t incode = code;
+        auto incode = code;
         uint8_t *stackp = htab + HSIZE - 1;
         assert(code <= free_ent);
     
