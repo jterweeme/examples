@@ -5,25 +5,23 @@
 #include <assert.h>
 
 FILE *os, *msg, *is;
-uint32_t _bitBuffer = 0, _bitCount = 0;
+uint32_t _window = 0, _bitCount = 0;
 uint32_t g_crc_table[256];
 
-static uint32_t readBits(uint32_t count)
-{   assert(count <= 24);
-    for (; _bitCount < count; _bitCount += 8)
-        _bitBuffer = _bitBuffer << 8 | fgetc(is);
-    _bitCount -= count;
-    return _bitBuffer >> _bitCount & (1 << count) - 1;
+static uint32_t readBits(uint8_t n)
+{   assert(n <= 24);
+    for (; _bitCount < n; _bitCount += 8)
+        _window = _window << 8 | fgetc(is);
+    _bitCount -= n;
+    return _window >> _bitCount & (1 << n) - 1;
 }
-
-static uint32_t readUInt32() { return readBits(16) << 16 | readBits(16); }
 
 void crc_update(uint32_t *crc, uint8_t c)
 { *crc = *crc << 8 ^ g_crc_table[(*crc >> 24 ^ c) & 0xff]; }
 
 static uint32_t process_block(uint32_t blockSize, FILE *os)
 {
-    uint32_t _blockCRC = readUInt32();
+    uint32_t _blockCRC = readBits(16) << 16 | readBits(16);
 
     //randomised blocks not supported
     assert(readBits(1) == 0);
@@ -237,12 +235,13 @@ int main(int argc, char **argv)
 
         if (marker1 == 0x177245 && marker2 == 0x385090)
         {
-            uint32_t crc = readUInt32();
+            uint32_t crc = readBits(16) << 16 | readBits(16);
+            assert(crc == streamCRC);
             fprintf(msg, "0x%08x 0x%08x\r\n", crc, streamCRC);
             break;
         }
 
-        //throw "format error!";
+        assert(false);
     }
 
     fclose(is);

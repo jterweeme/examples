@@ -12,17 +12,26 @@ class BitInputStream
     uint32_t _window = 0, _bitCount = 0;
 public:
     BitInputStream(std::istream *is) : _is(is) { }
-    uint32_t readUInt32() { return readBits(16) << 16 | readBits(16); }
 
-    uint32_t readBits(uint32_t n)
+    uint32_t readBits24(uint32_t n)
     {
         assert(n <= 24);
-
         for (; _bitCount < n; _bitCount += 8)
             _window = _window << 8 | _is->get();
-
         _bitCount -= n;
         return _window >> _bitCount & ((1 << n) - 1);
+    }
+
+    uint32_t readBits32(uint32_t n)
+    {
+        assert(n <= 32);
+        uint32_t ret = 0;
+        for (; n > 0; )
+        {
+            int32_t foo = std::min(16U, n);
+            ret = ret << foo | readBits24(foo), n -= foo;
+        }
+        return ret;
     }
 };
 
@@ -74,10 +83,10 @@ public:
 //read the canonical Huffman code lengths for table
 void Table::read(BitInputStream &bis, uint32_t symbolCount)
 {
-    for (uint32_t i = 0, c = bis.readBits(5); i <= symbolCount + 1; ++i)
+    for (uint32_t i = 0, c = bis.readBits24(5); i <= symbolCount + 1; ++i)
     {
-        while (bis.readBits(1))
-            c += bis.readBits(1) ? -1 : 1;
+        while (bis.readBits24(1))
+            c += bis.readBits24(1) ? -1 : 1;
         _codeLengths[_pos++] = c;
     }
 
@@ -121,8 +130,8 @@ public:
 
 void Tables::read(BitInputStream &bis, uint32_t symbolCount)
 {
-    uint8_t nTables = bis.readBits(3);
-    uint16_t nSelectors = bis.readBits(15);
+    uint8_t nTables = bis.readBits24(3);
+    uint16_t nSelectors = bis.readBits24(15);
     _selectors = new uint8_t[nSelectors];
     MoveToFront tableMTF;
     
@@ -130,7 +139,7 @@ void Tables::read(BitInputStream &bis, uint32_t symbolCount)
     {
         uint8_t u = 0;
 
-        while (bis.readBits(1))
+        while (bis.readBits24(1))
             ++u;
 
         _selectors[i] = tableMTF.indexToFront(u);
@@ -148,14 +157,14 @@ uint32_t Tables::nextSymbol(BitInputStream &bis)
         curTbl = _selectors[grpIdx++];
 
     uint8_t i = _tables[curTbl].minLength();
-    uint32_t codeBits = bis.readBits(i);
+    uint32_t codeBits = bis.readBits24(i);
 
     for (;i <= 23; ++i)
     {
         if (codeBits <= _tables[curTbl].limit(i))
             return _tables[curTbl].symbol(codeBits - _tables[curTbl].base(i));
 
-        codeBits = codeBits << 1 | bis.readBits(1);
+        codeBits = codeBits << 1 | bis.readBits24(1);
     }
 
     return 0;
@@ -180,16 +189,16 @@ uint8_t Block::_nextByte()
 
 uint32_t Block::process(BitInputStream &bi, uint32_t blockSize, std::ostream &os)
 {
-    uint32_t _blockCRC = bi.readUInt32();
-    assert(bi.readBits(1) == 0);
-    uint32_t bwtStartPointer = bi.readBits(24), symbolCount = 0;
+    uint32_t _blockCRC = bi.readBits32(32);
+    assert(bi.readBits24(1) == 0);
+    uint32_t bwtStartPointer = bi.readBits24(24), symbolCount = 0;
     uint32_t bwtByteCounts[256] = {0};
     uint8_t symbolMap[256] = {0};
 
-    for (uint16_t i = 0, ranges = bi.readBits(16); i < 16; ++i)
+    for (uint16_t i = 0, ranges = bi.readBits24(16); i < 16; ++i)
         if ((ranges & 1 << 15 >> i) != 0)
             for (uint32_t j = 0, k = i << 4; j < 16; ++j, ++k)
-                if (bi.readBits(1))
+                if (bi.readBits24(1))
                     symbolMap[symbolCount++] = uint8_t(k);
 
     Tables tables;
@@ -306,14 +315,14 @@ int main(int argc, char **argv)
     }
 
     BitInputStream bi(is);
-    assert(bi.readBits(16) == 0x425a);
-    bi.readBits(8);
-    uint8_t blockSize = bi.readBits(8) - '0';
+    assert(bi.readBits24(16) == 0x425a);
+    bi.readBits24(8);
+    uint8_t blockSize = bi.readBits24(8) - '0';
     uint32_t streamCRC = 0;
 
     while (true)
     {
-        uint32_t marker1 = bi.readBits(24), marker2 = bi.readBits(24);
+        uint32_t marker1 = bi.readBits24(24), marker2 = bi.readBits24(24);
 
         if (marker1 == 0x314159 && marker2 == 0x265359)
         {
@@ -325,7 +334,7 @@ int main(int argc, char **argv)
 
         if (marker1 == 0x177245 && marker2 == 0x385090)
         {
-            uint32_t crc = bi.readUInt32();
+            uint32_t crc = bi.readBits32(32);
 
             *msg << "0x" << std::setw(8) << std::setfill('0') << std::hex << crc << " 0x"
                  << std::setw(8) << std::setfill('0') << std::hex << streamCRC << "\r\n";

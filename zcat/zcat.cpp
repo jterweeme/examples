@@ -12,51 +12,36 @@ class BitStream
 {
     std::istream &_is;
     uint32_t _bits = 0;
-    uint8_t _byte = 0;
+    uint32_t _window = 0;
+    uint32_t _cnt = 0;
 public:
     BitStream(std::istream &is) : _is(is) { }
+    uint32_t cnt() const { return _cnt; }
+    void cnt(uint32_t val) { _cnt = val; }
 
-    int32_t readBit()
+    int32_t readBits(uint8_t n)
     {
-        if (_bits == 0)
+        for (; _bits < n; _bits += 8)
         {
             int c = _is.get();
 
             if (c == -1)
                 return -1;
 
-            _byte = uint8_t(c);
-            _bits = 8;
+            _window = _window | c << _bits;
         }
 
-        --_bits;
-        int32_t ret = _byte & 1;
-        _byte = _byte >> 1;
-        return ret;
-    }
-
-    int32_t readBits(uint8_t n)
-    {
-        int32_t ret = 0;
-
-        for (uint8_t i = 0; i < n; ++i)
-        {
-            int32_t bit = readBit();
-            
-            if (bit == -1)
-                return -1;
-
-            ret = ret | bit << i;
-        }
-
+        int32_t ret = _window & (1 << n) - 1;
+        _window = _window >> n, _bits -= n, _cnt += n;
         return ret;
     }
 };
 
 int main(int argc, char **argv)
 {
-    std::ifstream ifs;
+    std::ostream *os = &std::cout;
     std::istream *is = &std::cin;
+    std::ifstream ifs;
 
     if (argc > 1)
     {
@@ -64,23 +49,19 @@ int main(int argc, char **argv)
         is = &ifs;
     }
 
-    std::ostream *os = &std::cout;
-    assert(is->get() == 0x1f);
-    assert(is->get() == 0x9d);
-    uint8_t buf1 = is->get();
-    const uint8_t maxbits = buf1 & 0x1f;
-    const uint8_t block_mode = buf1 & 0x80;
+    BitStream bis(*is);
+    assert(bis.readBits(8) == 0x1f);
+    assert(bis.readBits(8) == 0x9d);
+    const uint8_t maxbits = bis.readBits(5);
     assert(maxbits <= 16);
-    int32_t oldcode = -1;
-    uint8_t finchar = 0;
-    uint32_t posbits = 0;
-    int32_t free_ent = block_mode ? 257 : 256;
+    bis.readBits(2);
+    const bool block_mode = bis.readBits(1) ? true : false;
+    uint8_t finchar = 0, n_bits = 9, htab[HSIZE];
+    int32_t oldcode = -1, free_ent = block_mode ? 257 : 256;
     uint16_t codetab[HSIZE];
-    uint8_t htab[HSIZE];
-    uint8_t n_bits = 9;
     std::fill(codetab, codetab + 256, 0);
     std::iota(htab, htab + 256, 0);
-    BitStream bis(*is);
+    bis.cnt(0);
 
     while (true)
     {
@@ -90,7 +71,6 @@ int main(int argc, char **argv)
             ++n_bits;
 
         int32_t code = bis.readBits(n_bits);
-        posbits += n_bits;
 
         if (code == -1)
             break;
@@ -104,22 +84,16 @@ int main(int argc, char **argv)
             continue;
         }
     
+        //end block
         if (code == 256 && block_mode)
         {
-            std::fill(codetab, codetab + 256, 0);
-            free_ent = 256;
+            std::fill(codetab, codetab + 256, 0), free_ent = 256;
 
-            //padding
-            {
-                const auto losbits = (posbits - 1) + ((n_bits<<3)
-                        - (posbits - 1 + (n_bits<<3)) % (n_bits<<3));
+            const auto padding = (bis.cnt() - 1) + ((n_bits<<3)
+                        - (bis.cnt() - 1 + (n_bits<<3)) % (n_bits<<3));
             
-                while (losbits - posbits >= 16)
-                {
-                    bis.readBits(16);
-                    posbits += 16;
-                }
-            }
+            while (padding - bis.cnt() >= 16)
+                bis.readBits(16);
 
             n_bits = 9;
             continue;
@@ -127,29 +101,19 @@ int main(int argc, char **argv)
     
         uint32_t incode = code;
         uint8_t *stackp = htab + HSIZE - 1;
+        assert(code <= free_ent);
     
         if (code >= free_ent)   
-        {
-            assert(code <= free_ent);
-            *--stackp = finchar;
-            code = oldcode;
-        }
+            *--stackp = finchar, code = oldcode;
     
         while (code >= 256)
-        {
-            *--stackp = htab[code];
-            code = codetab[code];
-        }
+            *--stackp = htab[code], code = codetab[code];
     
         *--stackp = finchar = htab[code];
         os->write((char *)(stackp), htab + HSIZE - 1 - stackp);
     
         if ((code = free_ent) < 1 << maxbits)
-        {
-            codetab[code] = uint16_t(oldcode);
-            htab[code] = finchar;
-            free_ent = code + 1;
-        }
+            codetab[code] = uint16_t(oldcode), htab[code] = finchar, free_ent = code + 1;
     
         oldcode = incode;
     }

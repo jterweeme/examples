@@ -95,21 +95,15 @@ resetbuf:
 
         uint32_t incode = code;
         uint8_t *stackp = htab + HSIZE - 1;
+        assert(code <= free_ent);
 
         //Special case for KwKwK string.
         if (code >= free_ent)   
-        {
-            assert(code <= free_ent);
-            *--stackp = finchar;
-            code = oldcode;
-        }
+            *--stackp = finchar, code = oldcode;
 
+        //Generate output characters in reverse order
         while (code >= 256)
-        {
-            //Generate output characters in reverse order
-            *--stackp = htab[code];
-            code = codetab[code];
-        }
+            *--stackp = htab[code], code = codetab[code];
 
         *--stackp = finchar = htab[code];
 
@@ -119,11 +113,7 @@ resetbuf:
 
         //Generate the new entry.
         if ((code = free_ent) < 1 << maxbits)
-        {
-            codetab[code] = (uint16_t)oldcode;
-            htab[code] = finchar;
-            free_ent = code + 1;
-        }
+            codetab[code] = (uint16_t)oldcode, htab[code] = finchar, free_ent = code + 1;
 
         //remember previous code
         oldcode = incode;

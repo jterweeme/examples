@@ -58,7 +58,7 @@ public:
 class BitInputStream
 {
     std::istream &_input;
-    uint8_t _currentByte = 0;
+    uint8_t _window = 0;
     uint8_t _nBitsRemaining = 0;
 public:
     BitInputStream(std::istream &in) : _input(in) { }
@@ -79,10 +79,10 @@ public:
 uint8_t BitInputStream::readBit()
 {
     if (_nBitsRemaining == 0)
-        _currentByte = _input.get(), _nBitsRemaining = 8;
+        _window = _input.get(), _nBitsRemaining = 8;
     
     --_nBitsRemaining;
-    return (_currentByte >> 7 - _nBitsRemaining) & 1;
+    return (_window >> 7 - _nBitsRemaining) & 1;
 }
 
 //read multiple bits
