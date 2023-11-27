@@ -79,10 +79,8 @@ public:
 uint8_t BitInputStream::readBit()
 {
     if (_nBitsRemaining == 0)
-    {
-        _currentByte = _input.get();
-        _nBitsRemaining = 8;
-    }
+        _currentByte = _input.get(), _nBitsRemaining = 8;
+    
     --_nBitsRemaining;
     return (_currentByte >> 7 - _nBitsRemaining) & 1;
 }

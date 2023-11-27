@@ -9,20 +9,20 @@
 class BitInputStream
 {
     std::istream *_is;
-    uint32_t _bitBuffer = 0, _bitCount = 0;
+    uint32_t _window = 0, _bitCount = 0;
 public:
     BitInputStream(std::istream *is) : _is(is) { }
     uint32_t readUInt32() { return readBits(16) << 16 | readBits(16); }
 
-    uint32_t readBits(uint32_t count)
+    uint32_t readBits(uint32_t n)
     {
-        assert(count <= 24);
+        assert(n <= 24);
 
-        for (; _bitCount < count; _bitCount += 8)
-            _bitBuffer = _bitBuffer << 8 | _is->get();
+        for (; _bitCount < n; _bitCount += 8)
+            _window = _window << 8 | _is->get();
 
-        _bitCount -= count;
-        return _bitBuffer >> _bitCount & ((1 << count) - 1);
+        _bitCount -= n;
+        return _window >> _bitCount & ((1 << n) - 1);
     }
 };
 

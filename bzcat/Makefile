@@ -8,9 +8,19 @@ clean:
 	rm -v *.class bzcat
 
 test:
-	bzcat wk98.iso.bz2 | md5sum
-	./bzcat wk98.iso.bz2 | md5sum
-	./bzcat2 wk98.iso.bz2 | md5sum
-	./bzcatc wk98.iso.bz2 | md5sum
-	java Bzcat wk98.iso.bz2 | md5sum
+	bzcat relnotes.ps.bz2 | md5sum
+	./bzcat relnotes.ps.bz2 | md5sum
+	./bzcat2 relnotes.ps.bz2 | md5sum
+	./bzcatc relnotes.ps.bz2 | md5sum
+	java Bzcat relnotes.ps.bz2 | md5sum
+	bzcat wingames.iso.bz2 | md5sum
+	./bzcat wingames.iso.bz2 | md5sum
+	./bzcat2 wingames.iso.bz2 | md5sum
+	./bzcatc wingames.iso.bz2 | md5sum
+	java Bzcat wingames.iso.bz2 | md5sum
+	#bzcat wk98.iso.bz2 | md5sum
+	#./bzcat wk98.iso.bz2 | md5sum
+	#./bzcat2 wk98.iso.bz2 | md5sum
+	#./bzcatc wk98.iso.bz2 | md5sum
+	#java Bzcat wk98.iso.bz2 | md5sum
 
