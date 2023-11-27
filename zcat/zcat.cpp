@@ -48,33 +48,22 @@ int main(int argc, char **argv)
     assert(maxbits <= 16);
     bis.readBits(2);
     const bool block_mode = bis.readBits(1) ? true : false;
-    uint8_t finchar = 0, n_bits = 9, htab[HSIZE];
-    int32_t oldcode = -1, free_ent = block_mode ? 257 : 256;
+    uint8_t n_bits = 9;
+    int32_t free_ent = block_mode ? 257 : 256, code, oldcode;
     uint16_t codetab[HSIZE];
     std::fill(codetab, codetab + 256, 0);
-    std::iota(htab, htab + 256, 0);
     bis.cnt(0);
-    const auto code1 = bis.readBits(n_bits);
-    assert(code1 >= 0 && code1 < 256);
-    oldcode = code1;
-    finchar = oldcode;
+    code = oldcode = bis.readBits(n_bits);
+    assert(code >= 0 && code < 256);
+    char finchar = oldcode, htab[HSIZE];
     os->put(finchar);
+    std::iota(htab, htab + 256, 0);
 
-    while (true)
+    while ((code = bis.readBits(n_bits)) != -1)
     {
-        if (free_ent > (n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1))
-            ++n_bits;
-
-        auto code = bis.readBits(n_bits);
-
-        if (code == -1)
-            break;
-
         //end block
         if (code == 256 && block_mode)
         {
-            std::fill(codetab, codetab + 256, 0), free_ent = 256;
-
             const auto padding = bis.cnt() - 1 + ((n_bits<<3)
                         - (bis.cnt() - 1 + (n_bits<<3)) % (n_bits<<3));
             
@@ -82,11 +71,12 @@ int main(int argc, char **argv)
                 bis.readBits(16);
 
             n_bits = 9;
+            std::fill(codetab, codetab + 256, 0), free_ent = 256;
             continue;
         }
     
         auto incode = code;
-        uint8_t *stackp = htab + HSIZE - 1;
+        char *stackp = htab + HSIZE - 1;
         assert(code <= free_ent);
     
         if (code == free_ent)   
@@ -96,12 +86,15 @@ int main(int argc, char **argv)
             *--stackp = htab[code], code = codetab[code];
     
         *--stackp = finchar = htab[code];
-        os->write((char *)(stackp), htab + HSIZE - 1 - stackp);
+        os->write(stackp, htab + HSIZE - 1 - stackp);
     
         if ((code = free_ent) < 1 << maxbits)
             codetab[code] = uint16_t(oldcode), htab[code] = finchar, free_ent = code + 1;
     
         oldcode = incode;
+
+        if (free_ent > (n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1))
+            ++n_bits;
     }
 
     os->flush();
