@@ -12,11 +12,9 @@ class BitStream
     std::istream &_is;
     uint32_t _bits = 0;
     uint32_t _window = 0;
-    uint32_t _cnt = 0;
 public:
+    uint32_t cnt = 0;
     BitStream(std::istream &is) : _is(is) { }
-    uint32_t cnt() const { return _cnt; }
-    void cnt(uint32_t val) { _cnt = val; }
 
     int32_t readBits(uint8_t n)
     {
@@ -28,14 +26,22 @@ public:
         }
 
         int32_t ret = _window & (1 << n) - 1;
-        _window = _window >> n, _bits -= n, _cnt += n;
+        _window = _window >> n, _bits -= n, cnt += n;
         return ret;
+    }
+
+    void ignoreBits(uint32_t n)
+    {
+        uint32_t x = std::min(n, _bits);
+        _window = _window >> x, _bits -= x, n -= x;
+        auto dv = std::div(n, 8);
+        _is.ignore(dv.quot), readBits(dv.rem), cnt += n + x;
     }
 };
 
 int main(int argc, char **argv)
 {
-    std::ostream *os = &std::cout;
+    std::ostream * const os = &std::cout;
     std::istream *is = &std::cin;
     std::ifstream ifs;
 
@@ -49,33 +55,25 @@ int main(int argc, char **argv)
     bis.readBits(2);
     const bool block_mode = bis.readBits(1) ? true : false;
     uint8_t n_bits = 9;
-    int32_t free_ent = block_mode ? 257 : 256, code, oldcode;
+    int32_t free_ent = block_mode ? 257 : 256, code, oldcode, incode;
     uint16_t codetab[HSIZE];
     std::fill(codetab, codetab + 256, 0);
-    bis.cnt(0);
+    bis.cnt = 0;
     code = oldcode = bis.readBits(n_bits);
     assert(code >= 0 && code < 256);
     char finchar = oldcode, htab[HSIZE];
     os->put(finchar);
     std::iota(htab, htab + 256, 0);
 
-    while ((code = bis.readBits(n_bits)) != -1)
+    while ((code = incode = bis.readBits(n_bits)) != -1)
     {
-        //end block
         if (code == 256 && block_mode)
         {
-            const auto padding = bis.cnt() - 1 + ((n_bits<<3)
-                        - (bis.cnt() - 1 + (n_bits<<3)) % (n_bits<<3));
-            
-            while (padding - bis.cnt() >= 16)
-                bis.readBits(16);
-
-            n_bits = 9;
-            std::fill(codetab, codetab + 256, 0), free_ent = 256;
+            bis.ignoreBits((n_bits<<3) - (bis.cnt - 1 + (n_bits<<3)) % (n_bits<<3) - 1);
+            std::fill(codetab, codetab + 256, 0), free_ent = 256, n_bits = 9;
             continue;
         }
     
-        auto incode = code;
         char *stackp = htab + HSIZE - 1;
         assert(code <= free_ent);
     
