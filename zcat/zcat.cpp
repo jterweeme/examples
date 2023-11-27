@@ -65,6 +65,7 @@ int main(int argc, char **argv)
     os->put(finchar);
     std::iota(htab, htab + 256, 0);
 
+
     while ((code = incode = bis.readBits(n_bits)) != -1)
     {
         if (code == 256 && block_mode)
@@ -73,18 +74,18 @@ int main(int argc, char **argv)
             std::fill(codetab, codetab + 256, 0), free_ent = 256, n_bits = 9;
             continue;
         }
-    
-        char *stackp = htab + HSIZE;
+
+        char stack[HSIZE], *stackp = stack + HSIZE;
         assert(code <= free_ent);
     
-        if (code == free_ent)   
+        if (code == free_ent)
             *--stackp = finchar, code = oldcode;
     
         while (code >= 256)
             *--stackp = htab[code], code = codetab[code];
     
         *--stackp = finchar = htab[code];
-        os->write(stackp, htab + HSIZE - stackp);
+        os->write(stackp, stack + HSIZE - stackp);
     
         if ((code = free_ent) < 1 << maxbits)
             codetab[code] = uint16_t(oldcode), htab[code] = finchar, free_ent = code + 1;
