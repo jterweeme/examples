@@ -74,7 +74,7 @@ int main(int argc, char **argv)
             continue;
         }
     
-        char *stackp = htab + HSIZE - 1;
+        char *stackp = htab + HSIZE;
         assert(code <= free_ent);
     
         if (code == free_ent)   
@@ -84,7 +84,7 @@ int main(int argc, char **argv)
             *--stackp = htab[code], code = codetab[code];
     
         *--stackp = finchar = htab[code];
-        os->write(stackp, htab + HSIZE - 1 - stackp);
+        os->write(stackp, htab + HSIZE - stackp);
     
         if ((code = free_ent) < 1 << maxbits)
             codetab[code] = uint16_t(oldcode), htab[code] = finchar, free_ent = code + 1;
