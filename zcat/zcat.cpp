@@ -24,10 +24,7 @@ public:
         for (; _bits < n; _bits += 8)
         {
             int c = _is.get();
-
-            if (c == -1)
-                return -1;
-
+            if (c == -1) return -1;
             _window = _window | c << _bits;
         }
 
@@ -44,10 +41,7 @@ int main(int argc, char **argv)
     std::ifstream ifs;
 
     if (argc > 1)
-    {
-        ifs.open(argv[1]);
-        is = &ifs;
-    }
+        ifs.open(argv[1]), is = &ifs;
 
     BitStream bis(*is);
     assert(bis.readBits(8) == 0x1f);
@@ -103,7 +97,7 @@ int main(int argc, char **argv)
         uint8_t *stackp = htab + HSIZE - 1;
         assert(code <= free_ent);
     
-        if (code >= free_ent)   
+        if (code == free_ent)   
             *--stackp = finchar, code = oldcode;
     
         while (code >= 256)

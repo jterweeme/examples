@@ -98,7 +98,7 @@ resetbuf:
         assert(code <= free_ent);
 
         //Special case for KwKwK string.
-        if (code >= free_ent)   
+        if (code == free_ent)   
             *--stackp = finchar, code = oldcode;
 
         //Generate output characters in reverse order

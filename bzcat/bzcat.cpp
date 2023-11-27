@@ -13,22 +13,22 @@ class BitInputStream
 public:
     BitInputStream(std::istream *is) : _is(is) { }
 
-    uint32_t readBits24(uint32_t n)
+    uint32_t readBits24(uint8_t n)
     {
         assert(n <= 24);
-        for (; _bitCount < n; _bitCount += 8)
-            _window = _window << 8 | _is->get();
+        while (_bitCount < n)
+            _window = _window << 8 | _is->get(), _bitCount += 8;
         _bitCount -= n;
-        return _window >> _bitCount & ((1 << n) - 1);
+        return _window >> _bitCount & (1 << n) - 1;
     }
 
-    uint32_t readBits32(uint32_t n)
+    uint32_t readBits32(uint8_t n)
     {
         assert(n <= 32);
         uint32_t ret = 0;
-        for (; n > 0; )
+        while (n)
         {
-            int32_t foo = std::min(16U, n);
+            int32_t foo = std::min(uint8_t(16), n);
             ret = ret << foo | readBits24(foo), n -= foo;
         }
         return ret;
@@ -309,10 +309,7 @@ int main(int argc, char **argv)
     std::ifstream ifs;
 
     if (argc == 2)
-    {
-        ifs.open(argv[1]);
-        is = &ifs;
-    }
+        ifs.open(argv[1]), is = &ifs;
 
     BitInputStream bi(is);
     assert(bi.readBits24(16) == 0x425a);

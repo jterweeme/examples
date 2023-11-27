@@ -66,10 +66,10 @@ int main(int argc, char **argv)
     
         uint32_t incode = code;
         uint8_t *stackp = htab + HSIZE - 1;
+        assert(code <= free_ent);
     
-        if (code >= free_ent)   
+        if (code == free_ent)   
         {
-            assert(code <= free_ent);
             *--stackp = finchar;
             code = oldcode;
         }
