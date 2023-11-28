@@ -1,4 +1,5 @@
 all:
+	rm -v zcat zcatc
 	g++ -O2 -Wall -Wno-parentheses -o zcat zcat.cpp
 	gcc -O2 -Wall -Wno-parentheses -o zcatc zcat.c
 

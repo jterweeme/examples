@@ -1,11 +1,9 @@
 #include <cassert>
 #include <cstdint>
-#include <algorithm>
 #include <numeric>
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <memory>
 
 class BitStream
 {
@@ -39,29 +37,12 @@ public:
     }
 };
 
-class CharStack
-{
-    std::vector<char> _stack;
-public:
-    inline void push(char c) { _stack.push_back(c); }
-    
-    void print(std::ostream &os)
-    {
-        std::vector<char>::reverse_iterator rit = _stack.rbegin();
-        while (rit != _stack.rend()) os.put(*rit++);
-        _stack.clear();
-    }
-};
-
 int main(int argc, char **argv)
 {
     std::ostream * const os = &std::cout;
     std::istream *is = &std::cin;
     std::ifstream ifs;
-
-    if (argc > 1)
-        ifs.open(argv[1]), is = &ifs;
-
+    if (argc > 1) ifs.open(argv[1]), is = &ifs;
     BitStream bis(*is);
     assert(bis.readBits(16) == 0x9d1f);
     const uint8_t maxbits = bis.readBits(5);
@@ -70,15 +51,15 @@ int main(int argc, char **argv)
     const bool block_mode = bis.readBits(1) ? true : false;
     uint8_t n_bits = 9;
     int32_t free_ent = block_mode ? 257 : 256, code, oldcode, incode;
-    uint16_t codetab[1<<17];
+    uint16_t codetab[(1 << maxbits) - 1];
     std::fill(codetab, codetab + 256, 0);
     bis.cnt = 0;
     code = oldcode = bis.readBits(n_bits);
     assert(code >= 0 && code < 256);
-    char finchar = oldcode, htab[1<<17];
+    char finchar = oldcode, htab[(1 << maxbits) - 1];
     os->put(finchar);
     std::iota(htab, htab + 256, 0);
-    CharStack cs;
+    std::vector<char> stack;
 
     while ((code = incode = bis.readBits(n_bits)) != -1)
     {
@@ -90,23 +71,16 @@ int main(int argc, char **argv)
         }
 
         assert(code <= free_ent);
-    
-        if (code == free_ent)
-            cs.push(finchar), code = oldcode;
-    
-        while (code >= 256)
-            cs.push(htab[code]), code = codetab[code];
-    
-        cs.push(finchar = htab[code]);
-        cs.print(*os);
+        if (code == free_ent) stack.push_back(finchar), code = oldcode;
+        while (code >= 256) stack.push_back(htab[code]), code = codetab[code];
+        os->put(finchar = htab[code]);
+        while (stack.size()) os->put(stack.back()), stack.pop_back();
     
         if ((code = free_ent) < 1 << maxbits)
             codetab[code] = uint16_t(oldcode), htab[code] = finchar, free_ent = code + 1;
     
         oldcode = incode;
-
-        if (free_ent > (n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1))
-            ++n_bits;
+        if (free_ent > (n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1)) ++n_bits;
     }
 
     os->flush();
