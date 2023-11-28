@@ -39,19 +39,6 @@ public:
     }
 };
 
-#if 0
-class CharStack
-{
-    static constexpr uint32_t _capacity = 1<<10;
-    char _stack[_capacity];
-    char *_ptr = _stack + _capacity;
-public:
-    inline void push(char c) { *--_ptr = c; }
-    void print(std::ostream &os) { while (_ptr != _stack + _capacity) os.put(*_ptr++); }
-};
-#endif
-
-#if 0
 class CharStack
 {
     std::vector<char> _stack;
@@ -60,43 +47,11 @@ public:
     
     void print(std::ostream &os)
     {
-        for (std::vector<char>::reverse_iterator rit = _stack.rbegin();
-                rit != _stack.rend(); ++rit)
-            os.put(*rit);
+        std::vector<char>::reverse_iterator rit = _stack.rbegin();
+        while (rit != _stack.rend()) os.put(*rit++);
         _stack.clear();
     }
 };
-#endif
-
-#if 1
-class CharStack
-{
-    std::vector<std::unique_ptr<char[]>> _blocks;
-    size_t _index;	// index of the lowest valid element within the block
-	size_t _block_size;
-
-public:
-	CharStack(size_t growth) : _blocks(), _index(0), _block_size(growth) {}
-
-    void push(char c) {
-		if(_index == 0) {
-			_blocks.push_back(std::unique_ptr<char[]>(new char[_block_size]));
-			_index = _block_size;
-		}
-		_blocks.back()[--_index] = c;
-	}
-
-    void print(std::ostream &os) const
-    { 
-		if(_blocks.empty()) return;
-		os.write(_blocks.back().get() + _index, _block_size - _index);
-
-		for(auto it = _blocks.rbegin()+1; it != _blocks.rend(); ++it)
-			os.write(it->get(), _block_size); 
-	}
-
-};
-#endif
 
 int main(int argc, char **argv)
 {
@@ -123,7 +78,7 @@ int main(int argc, char **argv)
     char finchar = oldcode, htab[1<<17];
     os->put(finchar);
     std::iota(htab, htab + 256, 0);
-    CharStack cs(1);
+    CharStack cs;
 
     while ((code = incode = bis.readBits(n_bits)) != -1)
     {
