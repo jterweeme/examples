@@ -1,5 +1,5 @@
 all:
-	g++ -Wall -Wno-parentheses -O2 -o gzcat gzcat.cpp
+	g++ -fsanitize=address -O2 -Wall -Wno-parentheses -o gzcat gzcat.cpp
 	javac Gzcat.java
 
 test:

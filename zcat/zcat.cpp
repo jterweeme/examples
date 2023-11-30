@@ -19,7 +19,10 @@ public:
         for (; _bits < n; _bits += 8)
         {
             int c = _is.get();
-            if (c == -1) return -1;
+
+            if (c == -1)
+                return -1;
+
             _window = _window | c << _bits;
         }
 
@@ -30,10 +33,16 @@ public:
 
     void ignoreBits(uint32_t n)
     {
+        //first deplete window
         uint32_t x = std::min(n, _bits);
         _window = _window >> x, _bits -= x, n -= x;
+
+        //ignore whole bytes
         auto dv = std::div(n, 8);
-        _is.ignore(dv.quot), readBits(dv.rem), cnt += n + x;
+        _is.ignore(dv.quot);
+
+        //if between 1 and 7 bits left to ignore, invoke readBits
+        readBits(dv.rem), cnt += n + x;
     }
 };
 
@@ -42,7 +51,10 @@ int main(int argc, char **argv)
     std::ostream * const os = &std::cout;
     std::istream *is = &std::cin;
     std::ifstream ifs;
-    if (argc > 1) ifs.open(argv[1]), is = &ifs;
+
+    if (argc > 1)
+        ifs.open(argv[1]), is = &ifs;
+
     BitStream bis(*is);
     assert(bis.readBits(16) == 0x9d1f);
     const uint8_t maxbits = bis.readBits(5);
@@ -51,12 +63,12 @@ int main(int argc, char **argv)
     const bool block_mode = bis.readBits(1) ? true : false;
     uint8_t n_bits = 9;
     int32_t free_ent = block_mode ? 257 : 256, code, oldcode, incode;
-    uint16_t codetab[(1 << maxbits) - 1];
+    uint16_t codetab[1 << maxbits];
     std::fill(codetab, codetab + 256, 0);
     bis.cnt = 0;
     code = oldcode = bis.readBits(n_bits);
     assert(code >= 0 && code < 256);
-    char finchar = oldcode, htab[(1 << maxbits) - 1];
+    char finchar = oldcode, htab[1 << maxbits];
     os->put(finchar);
     std::iota(htab, htab + 256, 0);
     std::vector<char> stack;
@@ -65,22 +77,34 @@ int main(int argc, char **argv)
     {
         if (code == 256 && block_mode)
         {
-            bis.ignoreBits((n_bits<<3) - (bis.cnt - 1 + (n_bits<<3)) % (n_bits<<3) - 1);
+            //padding?!
+            const uint8_t nb3 = n_bits << 3;
+            bis.ignoreBits(nb3 - (bis.cnt - 1 + nb3) % nb3 - 1);
+
             std::fill(codetab, codetab + 256, 0), free_ent = 256, n_bits = 9;
             continue;
         }
 
         assert(code <= free_ent);
-        if (code == free_ent) stack.push_back(finchar), code = oldcode;
-        while (code >= 256) stack.push_back(htab[code]), code = codetab[code];
+
+        if (code == free_ent)
+            stack.push_back(finchar), code = oldcode;
+
+        while (code >= 256)
+            stack.push_back(htab[code]), code = codetab[code];
+
         os->put(finchar = htab[code]);
-        while (stack.size()) os->put(stack.back()), stack.pop_back();
+
+        while (stack.size())
+            os->put(stack.back()), stack.pop_back();
     
         if ((code = free_ent) < 1 << maxbits)
             codetab[code] = uint16_t(oldcode), htab[code] = finchar, free_ent = code + 1;
     
         oldcode = incode;
-        if (free_ent > (n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1)) ++n_bits;
+
+        if (free_ent > (n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1))
+            ++n_bits;
     }
 
     os->flush();

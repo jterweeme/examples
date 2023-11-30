@@ -1,3 +1,3 @@
 all:
-	g++ -o player *.cpp -lm -lglut -lGL -lGLU
+	g++ -O2 -fsanitize=address -o player *.cpp -lm -lglut -lGL -lGLU
 

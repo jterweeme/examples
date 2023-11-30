@@ -1,7 +1,7 @@
 all:
 	rm -v zcat zcatc
-	g++ -O2 -Wall -Wno-parentheses -o zcat zcat.cpp
-	gcc -O2 -Wall -Wno-parentheses -o zcatc zcat.c
+	g++ -O2 -fsanitize=address,undefined -Wall -Wno-parentheses -o zcat zcat.cpp
+	gcc -O2 -fsanitize=address,undefined -Wall -Wno-parentheses -o zcatc zcat.c
 
 test:
 	zcat relnotes.ps.Z | md5sum

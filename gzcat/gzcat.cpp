@@ -88,13 +88,10 @@ uint8_t BitInputStream::readBit()
 //read multiple bits
 uint32_t BitInputStream::readUint(uint32_t numBits)
 {
-    uint32_t result = 0;
+    uint32_t ret = 0;
     for (uint32_t i = 0; i < numBits; ++i)
-    {
-        uint32_t c = readBit();
-        result |= c << i;
-    }
-    return result;
+        ret |= readBit() << i;
+    return ret;
 }
 
 class CRC32
@@ -243,38 +240,39 @@ Inflater::Inflater(std::istream &is, std::ostream &os, std::ostream &msg)
 
 void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &distCode)
 {
-    uint32_t numLitLenCodes = _bis.readUint(5) + 257;  // hlit + 257
-    uint32_t numDistCodes = _bis.readUint(5) + 1;      // hdist + 1
-    uint32_t numCodeLenCodes = _bis.readUint(4) + 4;   // hclen + 4
+    const uint32_t numLitLenCodes = _bis.readUint(5) + 257;  // hlit + 257
+    const uint8_t numDistCodes = _bis.readUint(5) + 1;      // hdist + 1
+    const uint8_t numCodeLenCodes = _bis.readUint(4) + 4;   // hclen + 4
     int codeLenCodeLen[19] = {0};
     codeLenCodeLen[16] = _bis.readUint(3);
     codeLenCodeLen[17] = _bis.readUint(3);
     codeLenCodeLen[18] = _bis.readUint(3);
     codeLenCodeLen[ 0] = _bis.readUint(3);
 
-    for (uint32_t i = 0; i < numCodeLenCodes - 4; ++i)
+    for (uint32_t i = 0; i < numCodeLenCodes - 4U; ++i)
     {
         uint32_t j = i % 2 == 0 ? 8 + i / 2 : 7 - i / 2;
         codeLenCodeLen[j] = _bis.readUint(3);
     }
-    
+
     CanonicalCode codeLenCode;
     codeLenCode.init(codeLenCodeLen, 19);
     int nCodeLens = numLitLenCodes + numDistCodes;
     int codeLens[nCodeLens];
-    for (int codeLensIndex = 0; codeLensIndex < nCodeLens;)
+
+    for (int i = 0; i < nCodeLens;)
     {
         int sym = codeLenCode.decodeNextSymbol(_bis);
         if (0 <= sym && sym <= 15)
         {
-            codeLens[codeLensIndex++] = sym;
+            codeLens[i++] = sym;
             continue;
         }
         int runLen, runVal = 0;
         if (sym == 16)
         {
             runLen = _bis.readUint(2) + 3;
-            runVal = codeLens[codeLensIndex - 1];
+            runVal = codeLens[i - 1];
         } else if (sym == 17) {
             runLen = _bis.readUint(3) + 3;
         } else if (sym == 18) {
@@ -283,21 +281,25 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
             throw std::logic_error("Symbol out of range");
         }
 
-        int end = codeLensIndex + runLen;
-        std::fill(codeLens + codeLensIndex, codeLens + end, runVal);
-        codeLensIndex = end;
+        uint32_t end = i + runLen;
+        std::fill(codeLens + i, codeLens + end, runVal);
+        i = end;
     }
-    
+
     int litLenCodeLen[numLitLenCodes];
     std::copy(codeLens, codeLens + numLitLenCodes, litLenCodeLen);
     litLenCode.init(litLenCodeLen, numLitLenCodes);
     int nDistCodeLen = nCodeLens - numLitLenCodes;
     int distCodeLen[nDistCodeLen];
+#if 0
     std::copy(codeLens + numLitLenCodes, codeLens + numLitLenCodes + nCodeLens, distCodeLen);
-
+#else
+    for (int i = 0, j = numLitLenCodes; j < nCodeLens; ++i, ++j)
+        distCodeLen[i] = codeLens[j];
+#endif
     if (nDistCodeLen == 1 && distCodeLen[0] == 0)
         return;
-    
+
     int oneCount = 0, otherPositiveCount = 0;
     for (int x : distCodeLen)
     {
