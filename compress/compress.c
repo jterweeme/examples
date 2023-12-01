@@ -40,14 +40,7 @@
 #	include	<io.h>
 #endif
 
-#ifdef UTIME_H
-#	include	<utime.h>
-#else
-	struct utimbuf {
-		time_t actime;
-		time_t modtime;
-	};
-#endif
+#include <utime.h>
 
 #ifndef SIG_TYPE
 #	define	SIG_TYPE	void (*)()
