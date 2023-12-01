@@ -93,12 +93,12 @@ public:
 
 class CanonicalCode final
 {
-    int *_symbolCodeBits = nullptr, *_symbolValues = nullptr;
-    int _numSymbolsAllocated = 0;
+    uint32_t *_symbolCodeBits = nullptr, *_symbolValues = nullptr;
+    uint32_t _numSymbolsAllocated = 0;
 public:
     ~CanonicalCode();
-    void init(int *codeLengths, size_t n);
-    int decodeNextSymbol(BitInputStream &in) const;
+    void init(uint32_t *codeLengths, uint32_t n);
+    uint32_t decodeNextSymbol(BitInputStream &in) const;
 };
 
 CanonicalCode::~CanonicalCode()
@@ -110,12 +110,12 @@ CanonicalCode::~CanonicalCode()
         delete[] _symbolValues;
 }
 
-void CanonicalCode::init(int *codeLengths, size_t n)
+void CanonicalCode::init(uint32_t *codeLengths, uint32_t n)
 {
-    _symbolCodeBits = new int[n];
-    _symbolValues = new int[n];
+    _symbolCodeBits = new uint32_t[n];
+    _symbolValues = new uint32_t[n];
 
-    for (int codeLength = 1, nextCode = 0; codeLength <= 15; ++codeLength)
+    for (uint32_t codeLength = 1, nextCode = 0; codeLength <= 15; ++codeLength)
     {
         nextCode <<= 1;
         uint32_t startBit = 1 << codeLength;
@@ -131,16 +131,14 @@ void CanonicalCode::init(int *codeLengths, size_t n)
     }
 }
 
-int CanonicalCode::decodeNextSymbol(BitInputStream &in) const
+uint32_t CanonicalCode::decodeNextSymbol(BitInputStream &in) const
 {
-    for (int codeBits = 1; true;)
+    for (uint32_t code = 1; true;)
     {
-        codeBits = codeBits << 1 | in.readBits(1);
+        code = code << 1 | in.readBits(1);
+        auto x = std::lower_bound(_symbolCodeBits, _symbolCodeBits + _numSymbolsAllocated, code);
 
-        auto x = std::lower_bound(_symbolCodeBits, _symbolCodeBits + _numSymbolsAllocated,
-                    codeBits);
-
-        if (*x == codeBits)
+        if (*x == code)
             return _symbolValues[std::distance(_symbolCodeBits, x)];
     }
 }
@@ -194,7 +192,7 @@ Inflater::Inflater(std::istream &is, std::ostream &os, std::ostream &msg)
   :
     _bis(is), _os(os), _msg(msg), _dictionary(32 * 1024)
 {
-    int llcodelens[288], distcodelens[32];
+    uint32_t llcodelens[288], distcodelens[32];
     std::fill(llcodelens,       llcodelens + 144, 8);
     std::fill(llcodelens + 144, llcodelens + 256, 9);
     std::fill(llcodelens + 256, llcodelens + 280, 7);
@@ -209,26 +207,23 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
     const uint32_t numLitLenCodes = _bis.readBits(5) + 257;  // hlit + 257
     const uint8_t numDistCodes = _bis.readBits(5) + 1;      // hdist + 1
     const uint8_t numCodeLenCodes = _bis.readBits(4) + 4;   // hclen + 4
-    int codeLenCodeLen[19] = {0};
+    uint32_t codeLenCodeLen[19] = {0};
     codeLenCodeLen[16] = _bis.readBits(3);
     codeLenCodeLen[17] = _bis.readBits(3);
     codeLenCodeLen[18] = _bis.readBits(3);
     codeLenCodeLen[ 0] = _bis.readBits(3);
 
     for (uint32_t i = 0; i < numCodeLenCodes - 4U; ++i)
-    {
-        uint32_t j = i % 2 == 0 ? 8 + i / 2 : 7 - i / 2;
-        codeLenCodeLen[j] = _bis.readBits(3);
-    }
+        codeLenCodeLen[i % 2 == 0 ? 8 + i / 2 : 7 - i / 2] = _bis.readBits(3);
 
     CanonicalCode codeLenCode;
     codeLenCode.init(codeLenCodeLen, 19);
-    auto nCodeLens = numLitLenCodes + numDistCodes;
+    const auto nCodeLens = numLitLenCodes + numDistCodes;
     int codeLens[nCodeLens];
 
-    for (int i = 0; i < nCodeLens;)
+    for (auto i = 0u; i < nCodeLens;)
     {
-        int sym = codeLenCode.decodeNextSymbol(_bis);
+        uint32_t sym = codeLenCode.decodeNextSymbol(_bis);
         if (0 <= sym && sym <= 15)
         {
             codeLens[i++] = sym;
@@ -236,31 +231,27 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
         }
         int runLen, runVal = 0;
         if (sym == 16)
-        {
-            runLen = _bis.readBits(2) + 3;
-            runVal = codeLens[i - 1];
-        } else if (sym == 17) {
+            runLen = _bis.readBits(2) + 3, runVal = codeLens[i - 1];
+        else if (sym == 17)
             runLen = _bis.readBits(3) + 3;
-        } else if (sym == 18) {
+        else if (sym == 18)
             runLen = _bis.readBits(7) + 11;
-        } else {
+        else
             throw std::logic_error("Symbol out of range");
-        }
 
-        auto end = i + runLen;
-        std::fill(codeLens + i, codeLens + end, runVal);
-        i = end;
+        std::fill(codeLens + i, codeLens + i + runLen, runVal);
+        i += runLen;
     }
 
-    int litLenCodeLen[numLitLenCodes];
+    uint32_t litLenCodeLen[numLitLenCodes];
     std::copy(codeLens, codeLens + numLitLenCodes, litLenCodeLen);
     litLenCode.init(litLenCodeLen, numLitLenCodes);
-    int nDistCodeLen = nCodeLens - numLitLenCodes;
-    int distCodeLen[nDistCodeLen];
+    auto nDistCodeLen = nCodeLens - numLitLenCodes;
+    uint32_t distCodeLen[nDistCodeLen];
 #if 0
     std::copy(codeLens + numLitLenCodes, codeLens + numLitLenCodes + nCodeLens, distCodeLen);
 #else
-    for (int i = 0, j = numLitLenCodes; j < nCodeLens; ++i, ++j)
+    for (uint32_t i = 0, j = numLitLenCodes; j < nCodeLens; ++i, ++j)
         distCodeLen[i] = codeLens[j];
 #endif
     if (nDistCodeLen == 1 && distCodeLen[0] == 0)
@@ -297,10 +288,9 @@ void Inflater::inflateUncompressedBlock()
     }
 }
 
-void Inflater::inflateHuffmanBlock(
-        const CanonicalCode &litLenCode, const CanonicalCode &distCode)
+void Inflater::inflateHuffmanBlock(const CanonicalCode &litLenCode, const CanonicalCode &distCode)
 {
-    for (int sym; (sym = litLenCode.decodeNextSymbol(_bis)) != 256;)
+    for (uint32_t sym; (sym = litLenCode.decodeNextSymbol(_bis)) != 256;)
     {
         if (sym < 256)
         {
@@ -356,7 +346,7 @@ void Inflater::inflate()
     if (flags[2])
     {
         _msg << "Flag: Extra\r\n";
-        uint16_t len = _bis.readBits(16);
+        const uint16_t len = _bis.readBits(16);
 
         for (uint16_t i = 0; i < len; ++i)
             _bis.readBits(8);
