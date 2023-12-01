@@ -33,42 +33,31 @@ public:
 
 class BitInputStream
 {
-    std::istream &_input;
-    uint8_t _window = 0;
-    uint8_t _nBitsRemaining = 0;
+    std::istream &_is;
+    uint32_t _bits = 0, _window = 0;
 public:
-    BitInputStream(std::istream &in) : _input(in) { }
-    uint8_t getBitPosition() const { return (8 - _nBitsRemaining) % 8; }
-    uint8_t readBit();
-    void align() { while (getBitPosition() != 0) readBit(); }
-    uint32_t readUint(uint32_t numBits);
+    BitInputStream(std::istream &is) : _is(is) { }
+
+    uint32_t readBits(uint8_t n)
+    {
+        for (; _bits < n; _bits += 8)
+            _window = _window | _is.get() << _bits;
+
+        uint32_t ret = _window & (1 << n) - 1;
+        _window = _window >> n, _bits -= n;
+        return ret;
+    }
+
+    void align() { readBits(_bits); }
+
     std::string readNullTerminatedString()
     {
         std::string ret;
-        for (char c; (c = readUint(8)) != 0;)
+        for (char c; (c = readBits(8)) != 0;)
             ret.push_back(c);
         return ret;
     }
 };
-
-//read single bit
-uint8_t BitInputStream::readBit()
-{
-    if (_nBitsRemaining == 0)
-        _window = _input.get(), _nBitsRemaining = 8;
-    
-    --_nBitsRemaining;
-    return (_window >> 7 - _nBitsRemaining) & 1;
-}
-
-//read multiple bits
-uint32_t BitInputStream::readUint(uint32_t numBits)
-{
-    uint32_t ret = 0;
-    for (uint32_t i = 0; i < numBits; ++i)
-        ret |= readBit() << i;
-    return ret;
-}
 
 class CRC32
 {
@@ -146,7 +135,7 @@ int CanonicalCode::decodeNextSymbol(BitInputStream &in) const
 {
     for (int codeBits = 1; true;)
     {
-        codeBits = codeBits << 1 | in.readUint(1);
+        codeBits = codeBits << 1 | in.readBits(1);
 
         auto x = std::lower_bound(_symbolCodeBits, _symbolCodeBits + _numSymbolsAllocated,
                     codeBits);
@@ -163,28 +152,27 @@ class ByteHistory
 public:
     ByteHistory(size_t size) : _size(size) { _data = new uint8_t[size]; }
     ~ByteHistory() { delete[] _data; }
-    void append(int b);
-    void copy(int dist, int len, CRCOutputStream &out);
-};
 
-void ByteHistory::append(int b)
-{
-    _data[_index] = uint8_t(b);
-    _index = (_index + 1) % _size;
-    if (_length < _size) ++_length;
-}
-
-void ByteHistory::copy(int dist, int len, CRCOutputStream &out)
-{
-    size_t readIndex = (_index - dist + _size) % _size;
-    for (int i = 0; i < len; ++i)
+    void append(uint8_t b)
     {
-        uint8_t b = _data[readIndex];
-        readIndex = (readIndex + 1) % _size;
-        out.put(char(b));
-        append(b);
+        _data[_index] = b;
+        _index = (_index + 1) % _size;
+        if (_length < _size)
+            ++_length;
     }
-}
+
+    void copy(int dist, int len, CRCOutputStream &out)
+    {
+        size_t readIndex = (_index - dist + _size) % _size;
+        for (int i = 0; i < len; ++i)
+        {
+            uint8_t b = _data[readIndex];
+            readIndex = (readIndex + 1) % _size;
+            out.put(char(b));
+            append(b);
+        }
+    }
+};
 
 class Inflater
 {
@@ -218,19 +206,19 @@ Inflater::Inflater(std::istream &is, std::ostream &os, std::ostream &msg)
 
 void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &distCode)
 {
-    const uint32_t numLitLenCodes = _bis.readUint(5) + 257;  // hlit + 257
-    const uint8_t numDistCodes = _bis.readUint(5) + 1;      // hdist + 1
-    const uint8_t numCodeLenCodes = _bis.readUint(4) + 4;   // hclen + 4
+    const uint32_t numLitLenCodes = _bis.readBits(5) + 257;  // hlit + 257
+    const uint8_t numDistCodes = _bis.readBits(5) + 1;      // hdist + 1
+    const uint8_t numCodeLenCodes = _bis.readBits(4) + 4;   // hclen + 4
     int codeLenCodeLen[19] = {0};
-    codeLenCodeLen[16] = _bis.readUint(3);
-    codeLenCodeLen[17] = _bis.readUint(3);
-    codeLenCodeLen[18] = _bis.readUint(3);
-    codeLenCodeLen[ 0] = _bis.readUint(3);
+    codeLenCodeLen[16] = _bis.readBits(3);
+    codeLenCodeLen[17] = _bis.readBits(3);
+    codeLenCodeLen[18] = _bis.readBits(3);
+    codeLenCodeLen[ 0] = _bis.readBits(3);
 
     for (uint32_t i = 0; i < numCodeLenCodes - 4U; ++i)
     {
         uint32_t j = i % 2 == 0 ? 8 + i / 2 : 7 - i / 2;
-        codeLenCodeLen[j] = _bis.readUint(3);
+        codeLenCodeLen[j] = _bis.readBits(3);
     }
 
     CanonicalCode codeLenCode;
@@ -249,12 +237,12 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
         int runLen, runVal = 0;
         if (sym == 16)
         {
-            runLen = _bis.readUint(2) + 3;
+            runLen = _bis.readBits(2) + 3;
             runVal = codeLens[i - 1];
         } else if (sym == 17) {
-            runLen = _bis.readUint(3) + 3;
+            runLen = _bis.readBits(3) + 3;
         } else if (sym == 18) {
-            runLen = _bis.readUint(7) + 11;
+            runLen = _bis.readBits(7) + 11;
         } else {
             throw std::logic_error("Symbol out of range");
         }
@@ -296,14 +284,14 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
 void Inflater::inflateUncompressedBlock()
 {
     _bis.align();
-    const uint16_t len = _bis.readUint(16);
-    const uint16_t nlen = _bis.readUint(16);
+    const uint16_t len = _bis.readBits(16);
+    const uint16_t nlen = _bis.readBits(16);
     assert(len ^ 0xffff == nlen);
     
     // Copy bytes
     for (uint16_t i = 0; i < len; ++i)
     {
-        uint8_t b = _bis.readUint(8);  // Byte is aligned
+        uint8_t b = _bis.readBits(8);  // Byte is aligned
         _os.put(b);
         _dictionary.append(b);
     }
@@ -328,7 +316,7 @@ void Inflater::inflateHuffmanBlock(
         else if (sym <= 284)
         {
             auto nExtraBits = (sym - 261U) / 4U;
-            run = ((sym - 265) % 4 + 4 << nExtraBits) + 3 + _bis.readUint(nExtraBits);
+            run = ((sym - 265) % 4 + 4 << nExtraBits) + 3 + _bis.readBits(nExtraBits);
         }
         else if (sym == 285)
             run = 258;
@@ -342,7 +330,7 @@ void Inflater::inflateHuffmanBlock(
         else if (distSym <= 29)
         {
             auto nExtraBits = distSym / 2 - 1;
-            dist = ((distSym % 2 + 2) << nExtraBits) + 1 + _bis.readUint(nExtraBits);
+            dist = (distSym % 2 + 2 << nExtraBits) + 1 + _bis.readBits(nExtraBits);
         }
         else
             throw std::domain_error("Reserved distance symbol");
@@ -353,25 +341,25 @@ void Inflater::inflateHuffmanBlock(
 
 void Inflater::inflate()
 {
-    assert(_bis.readUint(16) == 0x8b1f);
-    assert(_bis.readUint(8) == 8);  //only support method 8
-    std::bitset<8> flags = _bis.readUint(8);
-    uint32_t mtime = _bis.readUint(32);
+    assert(_bis.readBits(16) == 0x8b1f);
+    assert(_bis.readBits(8) == 8);  //only support method 8
+    std::bitset<8> flags = _bis.readBits(8);
+    uint32_t mtime = _bis.readBits(32);
 
     if (mtime != 0)
         _msg << "Last modified: " << mtime << " (Unix time)\r\n";
     else
         _msg << "Last modified: N/A";
         
-    _bis.readUint(16);
+    _bis.readBits(16);
         
     if (flags[2])
     {
         _msg << "Flag: Extra\r\n";
-        uint16_t len = _bis.readUint(16);
+        uint16_t len = _bis.readBits(16);
 
         for (uint16_t i = 0; i < len; ++i)
-            _bis.readUint(8);
+            _bis.readBits(8);
     }
 
     if (flags[3])
@@ -382,15 +370,15 @@ void Inflater::inflate()
 
     if (flags[1])
     {
-        _bis.readUint(16);
+        _bis.readBits(16);
         _msg << "16bit CRC present\r\n";
     }
 
     for (bool isFinal = false; !isFinal;)
     {
-        isFinal = _bis.readUint(1) != 0;
+        isFinal = _bis.readBits(1) != 0;
 
-        switch (_bis.readUint(2))
+        switch (_bis.readBits(2))
         {
         case 0:
             inflateUncompressedBlock();
@@ -413,8 +401,8 @@ void Inflater::inflate()
     }
 
     _bis.align();
-    uint32_t crc = _bis.readUint(32);
-    uint32_t size = _bis.readUint(32);
+    uint32_t crc = _bis.readBits(32);
+    uint32_t size = _bis.readBits(32);
     assert(crc == _os.crc());
     assert(size == _os.cnt());
     _msg << "CRC: 0x" << Toolbox::hex32(crc) << " 0x" << Toolbox::hex32(_os.crc()) << "\r\n";
