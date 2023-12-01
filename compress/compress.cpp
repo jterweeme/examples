@@ -13,44 +13,20 @@
  *   Mike Frysinger      (vapier@gmail.com)
  */
 
-#ifdef _MSC_VER
-#	define	WINDOWS
-#endif
-
-#ifdef __MINGW32__
-#	define	MINGW
-#endif
-
-#include	<stdint.h>
-#include	<stdio.h>
-#include	<stdlib.h>
-#include	<string.h>
-#include	<fcntl.h>
-#include	<ctype.h>
-#include	<signal.h>
-#include	<sys/types.h>
-#include	<sys/stat.h>
-#include	<errno.h>
-
-#if !defined(DOS) && !defined(WINDOWS)
-#	include	<dirent.h>
-#	define RECURSIVE 1
-#	include	<unistd.h>
-#else
-#	include	<io.h>
-#endif
-
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <fcntl.h>
+#include <ctype.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <unistd.h>
 #include <utime.h>
 
-#ifndef SIG_TYPE
 #define	SIG_TYPE	void (*)(int)
-#endif
-
-#if defined(AMIGA) || defined(DOS) || defined(MINGW) || defined(WINDOWS)
-#	define	chmod(pathname, mode) 0
-#	define	chown(pathname, owner, group) 0
-#	define	utime(pathname, times) 0
-#endif
 
 #if defined(MINGW) || defined(WINDOWS)
 #	define isatty(fd) 0
@@ -313,244 +289,10 @@ static const int primetab[256] =		/* Special secudary hash table.		*/
 	} ;
 #endif
 
-static void Usage(int);
-static void comprexx(const char *);
-static void compdir(char *);
-static void compress(int, int);
-static void decompress(int, int);
 static void read_error(void);
 static void write_error(void);
 static void abort_compress(void);
 static void prratio(FILE *, long, long);
-static void about(void);
-
-/*****************************************************************
- * TAG( main )
- *
- * Algorithm from "A Technique for High Performance Data Compression",
- * Terry A. Welch, IEEE Computer Vol 17, No 6 (June 1984), pp 8-19.
- *
- * Usage: compress [-dfvc] [-b bits] [file ...]
- * Inputs:
- *   -d:     If given, decompression is done instead.
- *
- *   -c:     Write output on stdout, don't remove original.
- *
- *   -b:     Parameter limits the max number of bits/code.
- *
- *   -f:     Forces output file to be generated, even if one already
- *           exists, and even if no space is saved by compressing.
- *           If -f is not used, the user will be prompted if stdin is
- *           a tty, otherwise, the output file will not be overwritten.
- *
- *   -v:     Write compression statistics
- *
- *   -r:     Recursive. If a filename is a directory, descend
- *           into it and compress everything in it.
- *
- * file ...:
- *           Files to be compressed.  If none specified, stdin is used.
- * Outputs:
- *   file.Z:     Compressed form of file with same mode, owner, and utimes
- *   or stdout   (if stdin used as input)
- *
- * Assumptions:
- *   When filenames are given, replaces with the compressed version
- *   (.Z suffix) only if the file decreases in size.
- *
- * Algorithm:
- *   Modified Lempel-Ziv method (LZW).  Basically finds common
- *   substrings and replaces them with a variable size code.  This is
- *   deterministic, and can be done on the fly.  Thus, the decompression
- *   procedure needs no input table, but tracks the way the table was built.
- */
-int main(int argc, char **argv)
-	{
-		char **filelist;
-		char **fileptr;
-		int seen_double_dash = 0;
-
-#ifdef SIGINT
-		if ((fgnd_flag = (signal(SIGINT, SIG_IGN)) != SIG_IGN))
-			signal(SIGINT, (SIG_TYPE)abort_compress);
-#endif
-
-#ifdef SIGTERM
-		signal(SIGTERM, (SIG_TYPE)abort_compress);
-#endif
-#ifdef SIGHUP
-		signal(SIGHUP, (SIG_TYPE)abort_compress);
-#endif
-
-#ifdef COMPATIBLE
-    	nomagic = 1;	/* Original didn't have a magic number */
-#endif
-
-    	filelist = (char **)malloc(argc*sizeof(char *));
-    	if (filelist == NULL)
-		{
-			fprintf(stderr, "Cannot allocate memory for file list.\n");
-			exit (1);
-		}
-    	fileptr = filelist;
-    	*filelist = NULL;
-
-    	if ((progname = strrchr(argv[0], '/')) != 0)
-			progname++;
-		else
-			progname = argv[0];
-
-    	if (strcmp(progname, "uncompress") == 0)
-			do_decomp = 1;
-		else
-		if (strcmp(progname, "zcat") == 0)
-			do_decomp = zcat_flg = 1;
-
-    	/* Argument Processing
-     	 * All flags are optional.
-     	 * -V => print Version; debug verbose
-     	 * -d => do_decomp
-     	 * -v => unquiet
-     	 * -f => force overwrite of output file
-		 * -k => keep input files
-     	 * -n => no header: useful to uncompress old files
-     	 * -b maxbits => maxbits.  If -b is specified, then maxbits MUST be given also.
-     	 * -c => cat all output to stdout
-     	 * -C => generate output compatible with compress 2.0.
-     	 * -r => recursively compress directories
-     	 * if a string is left, must be an input filename.
-     	 */
-
-    	for (argc--, argv++; argc > 0; argc--, argv++)
-		{
-			if (strcmp(*argv, "--") == 0)
-			{
-				seen_double_dash = 1;
-				continue;
-			}
-
-			if (seen_double_dash == 0 && **argv == '-')
-			{/* A flag argument */
-		    	while (*++(*argv))
-				{/* Process all flags in this arg */
-					switch (**argv)
-					{
-			    	case 'V':
-						about();
-						break;
-
-					case 's':
-						silent = 1;
-						quiet = 1;
-						break;
-
-			    	case 'v':
-						silent = 0;
-						quiet = 0;
-						break;
-
-			    	case 'd':
-						do_decomp = 1;
-						break;
-
-					case 'k':
-						keep = 1;
-						break;
-
-			    	case 'f':
-			    	case 'F':
-						force = 1;
-						break;
-
-			    	case 'n':
-						nomagic = 1;
-						break;
-
-			    	case 'b':
-						if (!ARGVAL())
-						{
-					    	fprintf(stderr, "Missing maxbits\n");
-							Usage(1);
-						}
-
-						maxbits = atoi(*argv);
-						goto nextarg;
-
-		    		case 'c':
-						zcat_flg = 1;
-						break;
-
-			    	case 'q':
-						quiet = 1;
-						break;
-			    	case 'r':
-			    	case 'R':
-#ifdef	RECURSIVE
-						recursive = 1;
-#else
-						fprintf(stderr, "%s -r not available (due to missing directory functions)\n", *argv);
-#endif
-						break;
-
-					case 'h':
-						Usage(0);
-						break;
-
-			    	default:
-						fprintf(stderr, "Unknown flag: '%c'; ", **argv);
-						Usage(1);
-					}
-		    	}
-			}
-			else
-			{
-		    	*fileptr++ = *argv;	/* Build input file list */
-		    	*fileptr = NULL;
-			}
-
-nextarg:	continue;
-    	}
-
-    	if (maxbits < INIT_BITS)	maxbits = INIT_BITS;
-    	if (maxbits > BITS) 		maxbits = BITS;
-
-    	if (*filelist != NULL)
-		{
-      		for (fileptr = filelist; *fileptr; fileptr++)
-				comprexx(*fileptr);
-    	}
-		else
-		{/* Standard input */
-			ifname = "";
-			exit_code = 0;
-			remove_ofname = 0;
-
-			setmode(0, O_BINARY);
-			setmode(1, O_BINARY);
-
-			if (do_decomp == 0)
-			{
-				compress(0, 1);
-
-				if (zcat_flg == 0 && !quiet)
-				{
-					fprintf(stderr, "Compression: ");
-					prratio(stderr, bytes_in-bytes_out, bytes_in);
-					fprintf(stderr, "\n");
-				}
-
-				if (bytes_out >= bytes_in && !(force))
-					exit_code = 2;
-			}
-			else
-				decompress(0, 1);
-		}
-
-		if (recursive && exit_code == -1) {
-			fprintf(stderr, "no files processed after recursive search\n");
-		}
-		exit((exit_code== -1) ? 1:exit_code);
-	}
 
 void
 Usage(int status)
@@ -575,505 +317,78 @@ Usage: %s [-dfhvcVr] [-b maxbits] [--] [path ...]\n\
     		exit(status);
 	}
 
-void
-comprexx(const char	*fileptr)
+void compress(int fdin, int fdout)
+{
+	long hp;
+	int rpos;
+	long fc;
+	int outbits;
+	int rlop;
+	int rsize;
+	int stcode;
+	code_int free_ent;
+	int boff;
+	int n_bits;
+	int ratio;
+	long checkpoint;
+	code_int extcode;
+	union
 	{
-		int				 fdin = -1;
-		int				 fdout = -1;
-		int				 has_z_suffix;
-		char			*tempname;
-		unsigned long	 namesize = strlen(fileptr);
+		long			code;
+		struct
+	    {
+			char_type		c;
+			unsigned short	ent;
+		} e;
+	} fcode;
 
-		/* Create a temp buffer to add/remove the .Z suffix. */
-		tempname = (char *)malloc(namesize + 3);
-		if (tempname == NULL)
-		{
-			perror("malloc");
-			goto error;
-		}
+	ratio = 0;
+	checkpoint = CHECK_GAP;
+	reset_n_bits_for_compressor(n_bits, stcode, free_ent, extcode, maxbits);
 
-		strcpy(tempname,fileptr);
-		has_z_suffix = (namesize >= 2 && strcmp(&tempname[namesize - 2], ".Z") == 0);
-		errno = 0;
+	memset(outbuf, 0, sizeof(outbuf));
+	bytes_out = 0; bytes_in = 0;
+	outbuf[0] = MAGIC_1;
+	outbuf[1] = MAGIC_2;
+	outbuf[2] = (char)(maxbits | BLOCK_MODE);
+	boff = outbits = (3<<3);
+	fcode.code = 0;
+	clear_htab();
 
-		if (lstat(tempname,&infstat) == -1)
-		{
-		  	if (do_decomp)
-			{
-	    		switch (errno)
-				{
-		    	case ENOENT:	/* file doesn't exist */
-	      			/*
-	      			** if the given name doesn't end with .Z, try appending one
-	      			** This is obviously the wrong thing to do if it's a
-	      			** directory, but it shouldn't do any harm.
-	      			*/
-					if (!has_z_suffix)
-					{
-						memcpy(&tempname[namesize], ".Z", 3);
-						namesize += 2;
-						has_z_suffix = 1;
-						errno = 0;
-						if (lstat(tempname,&infstat) == -1)
-						{
-						  	perror(tempname);
-							goto error;
-						}
-
-						if ((infstat.st_mode & S_IFMT) != S_IFREG)
-						{
-							fprintf(stderr, "%s: Not a regular file.\n", tempname);
-							goto error;
-						}
-		      		}
-		      		else
-					{
-						perror(tempname);
-						goto error;
-		      		}
-
-		      		break;
-
-	    		default:
-		      		perror(tempname);
-					goto error;
-	    		}
-	  		}
-	  		else
-			{
-	      		perror(tempname);
-				goto error;
-	  		}
-		}
-
-		switch (infstat.st_mode & S_IFMT)
-		{
-		case S_IFDIR:	/* directory */
-#ifdef	RECURSIVE
-		  	if (recursive)
-		    	compdir(tempname);
-		  	else
-#endif
-			if (!quiet)
-		    	fprintf(stderr,"%s is a directory -- ignored\n", tempname);
-		  	break;
-
-		case S_IFREG:	/* regular file */
-		  	if (do_decomp != 0)
-			{/* DECOMPRESSION */
-		    	if (!zcat_flg)
-				{
-					if (!has_z_suffix)
-					{
-						/* Ignore this scenario in recursive mode: while we
-						 * decompress files in this dir, our readdir scan
-						 * might turn up those new files.  There is no way
-						 * to efficiently handle this on very large dirs,
-						 * so we ignore it.  This also allows the user to
-						 * easily resume partial decompressions.
-						 */
-						if (recursive) {
-							free(tempname);
-							return;
-						}
-
-						if (!quiet)
-		  					fprintf(stderr,"%s - no .Z suffix\n",tempname);
-
-						goto error;
-	      			}
-		    	}
-
-				free(ofname);
-				ofname = strdup(tempname);
-				if (ofname == NULL)
-				{
-					perror("strdup");
-					goto error;
-				}
-
-				/* Strip of .Z suffix */
-				if (has_z_suffix)
-					ofname[namesize - 2] = '\0';
-	   		}
-	   		else
-			{/* COMPRESSION */
-		    	if (!zcat_flg)
-				{
-					if (has_z_suffix)
-					{
-						/* Ignore this scenario in recursive mode.
-						 * See comment above in the decompress path.
-						 */
-						if (!recursive)
-							fprintf(stderr, "%s: already has .Z suffix -- no change\n", tempname);
-						free(tempname);
-						return;
-					}
-
-					if (infstat.st_nlink > 1 && (!force))
-					{
-						fprintf(stderr, "%s has %jd other links: unchanged\n",
-										tempname, (intmax_t)(infstat.st_nlink - 1));
-						goto error;
-					}
-				}
-
-				ofname = (char *)malloc(namesize + 3);
-				if (ofname == NULL)
-				{
-					perror("malloc");
-					goto error;
-				}
-				memcpy(ofname, tempname, namesize);
-				strcpy(&ofname[namesize], ".Z");
-    		}
-
-	    	if ((fdin = open(ifname = tempname, O_RDONLY|O_BINARY)) == -1)
-			{
-		      	perror(tempname);
-				goto error;
-	    	}
-
-    		if (zcat_flg == 0)
-			{
-				if (access(ofname, F_OK) == 0)
-				{
-					if (!force)
-					{
-		    			inbuf[0] = 'n';
-
-		    			fprintf(stderr, "%s already exists.\n", ofname);
-
-		    			if (fgnd_flag && isatty(0))
-						{
-							fprintf(stderr, "Do you wish to overwrite %s (y or n)? ", ofname);
-							fflush(stderr);
-
-			    			if (read(0, inbuf, 1) > 0)
-							{
-								if (inbuf[0] != '\n')
-								{
-									do
-									{
-										if (read(0, inbuf+1, 1) <= 0)
-										{
-											perror("stdin");
-											break;
-										}
-									}
-									while (inbuf[1] != '\n');
-								}
-							}
-							else
-								perror("stdin");
-		    			}
-
-		    			if (inbuf[0] != 'y')
-						{
-							fprintf(stderr, "%s not overwritten\n", ofname);
-							goto error;
-		    			}
-					}
-
-					if (unlink(ofname))
-					{
-						fprintf(stderr, "Can't remove old output file\n");
-						perror(ofname);
-						goto error;
-					}
-				}
-
-		    	if ((fdout = open(ofname, O_WRONLY|O_CREAT|O_EXCL|O_BINARY,0600)) == -1)
-				{
-			      	perror(tempname);
-					goto error;
-		    	}
-
-				if (!quiet)
-					fprintf(stderr, "%s: ", tempname);
-
-				remove_ofname = 1;
-    		}
-			else
-			{
-				fdout = 1;
-				setmode(fdout, O_BINARY);
-				remove_ofname = 0;
-			}
-
-    		if (do_decomp == 0)
-				compress(fdin, fdout);
-    		else
-				decompress(fdin, fdout);
-
-			close(fdin);
-
-			if (fdout != 1 && close(fdout))
-				write_error();
-
-			if ( (bytes_in == 0) && (force == 0 ) )
-			{
-				if (remove_ofname)
-				{
-					if (!quiet)
-						fprintf(stderr, "No compression -- %s unchanged\n", ifname);
-					if (unlink(ofname))	/* Remove input file */
-					{
-						fprintf(stderr, "\nunlink error (ignored) ");
-	    				perror(ofname);
-					}
-
-					remove_ofname = 0;
-					exit_code = 2;
-				}
-			}
-			else
-    		if (zcat_flg == 0)
-			{
-		    	struct utimbuf	timep;
-
-		    	if (!do_decomp && bytes_out >= bytes_in && (!force))
-				{/* No compression: remove file.Z */
-					if (!quiet)
-						fprintf(stderr, "No compression -- %s unchanged\n", ifname);
-
-			    	if (unlink(ofname))
-					{
-						fprintf(stderr, "unlink error (ignored) ");
-						perror(ofname);
-					}
-
-					remove_ofname = 0;
-					exit_code = 2;
-		    	}
-				else
-				{/* ***** Successful Compression ***** */
-					if (!quiet)
-					{
-						fprintf(stderr, " -- replaced with %s",ofname);
-
-						if (!do_decomp)
-						{
-							fprintf(stderr, " Compression: ");
-							prratio(stderr, bytes_in-bytes_out, bytes_in);
-						}
-
-						fprintf(stderr, "\n");
-					}
-
-					timep.actime = infstat.st_atime;
-					timep.modtime = infstat.st_mtime;
-
-					if (utime(ofname, &timep))
-					{
-						fprintf(stderr, "\nutime error (ignored) ");
-				    	perror(ofname);
-					}
-
-					if (chmod(ofname, infstat.st_mode & 07777))		/* Copy modes */
-					{
-						fprintf(stderr, "\nchmod error (ignored) ");
-				    	perror(ofname);
-					}
-
-					if (chown(ofname, infstat.st_uid, infstat.st_gid))	/* Copy ownership */
-					{
-						fprintf(stderr, "\nchown error (ignored) ");
-						perror(ofname);
-					}
-
-					remove_ofname = 0;
-
-					if (!keep && unlink(ifname))	/* Remove input file */
-					{
-						fprintf(stderr, "\nunlink error (ignored) ");
-	    				perror(ifname);
-					}
-    			}
-    		}
-
-			if (exit_code == -1)
-				exit_code = 0;
-
-	  		break;
-
-		default:
-	  		fprintf(stderr,"%s is not a directory or a regular file - ignored\n",
-			  		tempname);
-	  		break;
-		}
-
-		free(tempname);
-		if (!remove_ofname)
-		{
-			free(ofname);
-			ofname = NULL;
-		}
-		return;
-
-error:
-		free(ofname);
-		ofname = NULL;
-		free(tempname);
-		exit_code = 1;
-		if (fdin != -1)
-			close(fdin);
-		if (fdout != -1)
-			close(fdout);
-	}
-
-#ifdef	RECURSIVE
-void
-compdir(char *dir)
+	while ((rsize = read(fdin, inbuf, IBUFSIZ)) > 0)
 	{
-		struct dirent *dp;
-		DIR *dirp;
-		char					*nptr;
-		char					*fptr;
-		unsigned long			 dir_size = strlen(dir);
-		/* The +256 is a lazy optimization. We'll resize on demand. */
-		unsigned long			 size = dir_size + 256;
-
-		nptr = (char *)malloc(size);
-		if (nptr == NULL)
+		if (bytes_in == 0)
 		{
-			perror("malloc");
-			exit_code = 1;
-			return;
+			fcode.e.ent = inbuf[0];
+			rpos = 1;
 		}
-		memcpy(nptr, dir, dir_size);
-		nptr[dir_size] = '/';
-		fptr = &nptr[dir_size + 1];
+		else
+			rpos = 0;
 
-		dirp = opendir(dir);
+		rlop = 0;
 
-		if (dirp == NULL)
+		do
 		{
-			free(nptr);
-			printf("%s unreadable\n", dir);		/* not stderr! */
-			return ;
-		}
-
-		while ((dp = readdir(dirp)) != NULL)
-		{
-			if (dp->d_ino == 0)
-				continue;
-
-			if (strcmp(dp->d_name,".") == 0 || strcmp(dp->d_name,"..") == 0)
-				continue;
-
-			if (size < dir_size + strlen(dp->d_name) + 2)
+			if (free_ent >= extcode && fcode.e.ent < FIRST)
 			{
-				size = dir_size + strlen(dp->d_name) + 2;
-				nptr = (char *)realloc(nptr, size);
-				if (nptr == NULL)
+				if (n_bits < maxbits)
 				{
-					perror("realloc");
-					exit_code = 1;
-					break;
-				}
-				fptr = &nptr[dir_size + 1];
-			}
-
-			strcpy(fptr, dp->d_name);
-			comprexx(nptr);
-  		}
-
-		closedir(dirp);
-
-		free(nptr);
-	}
-#endif
-/*
- * compress fdin to fdout
- *
- * Algorithm:  use open addressing double hashing (no chaining) on the
- * prefix code / next character combination.  We do a variant of Knuth's
- * algorithm D (vol. 3, sec. 6.4) along with G. Knott's relatively-prime
- * secondary probe.  Here, the modular division first probe is gives way
- * to a faster exclusive-or manipulation.  Also do block compression with
- * an adaptive reset, whereby the code table is cleared when the compression
- * ratio decreases, but after the table fills.  The variable-length output
- * codes are re-sized at this point, and a special CLEAR code is generated
- * for the decompressor.  Late addition:  construct the table according to
- * file size for noticeable speed improvement on small files.  Please direct
- * questions about this implementation to ames!jaw.
- */
-void
-compress(int fdin, int fdout)
-	{
-		long hp;
-		int rpos;
-		long fc;
-		int outbits;
-		int rlop;
-		int rsize;
-		int stcode;
-		code_int free_ent;
-		int boff;
-		int n_bits;
-		int ratio;
-		long checkpoint;
-		code_int extcode;
-		union
-		{
-			long			code;
-			struct
-			{
-				char_type		c;
-				unsigned short	ent;
-			} e;
-		} fcode;
-
-		ratio = 0;
-		checkpoint = CHECK_GAP;
-		reset_n_bits_for_compressor(n_bits, stcode, free_ent, extcode, maxbits);
-
-		memset(outbuf, 0, sizeof(outbuf));
-		bytes_out = 0; bytes_in = 0;
-		outbuf[0] = MAGIC_1;
-		outbuf[1] = MAGIC_2;
-		outbuf[2] = (char)(maxbits | BLOCK_MODE);
-		boff = outbits = (3<<3);
-		fcode.code = 0;
-
-		clear_htab();
-
-		while ((rsize = read(fdin, inbuf, IBUFSIZ)) > 0)
-		{
-			if (bytes_in == 0)
-			{
-				fcode.e.ent = inbuf[0];
-				rpos = 1;
-			}
-			else
-				rpos = 0;
-
-			rlop = 0;
-
-			do
-			{
-				if (free_ent >= extcode && fcode.e.ent < FIRST)
-				{
-					if (n_bits < maxbits)
-					{
-						boff = outbits = (outbits-1)+((n_bits<<3)-
-								  	((outbits-boff-1+(n_bits<<3))%(n_bits<<3)));
-						if (++n_bits < maxbits)
-							extcode = MAXCODE(n_bits)+1;
-						else
-							extcode = MAXCODE(n_bits);
-					}
+					boff = outbits = (outbits-1)+((n_bits<<3)-
+							  	((outbits-boff-1+(n_bits<<3))%(n_bits<<3)));
+					if (++n_bits < maxbits)
+						extcode = MAXCODE(n_bits)+1;
 					else
-					{
-						extcode = MAXCODE(16)+OBUFSIZ;
-						stcode = 0;
-					}
+						extcode = MAXCODE(n_bits);
 				}
-
-				if (!stcode && bytes_in >= checkpoint && fcode.e.ent < FIRST)
+				else
 				{
+					extcode = MAXCODE(16)+OBUFSIZ;
+					stcode = 0;
+				}
+			}
+
+			if (!stcode && bytes_in >= checkpoint && fcode.e.ent < FIRST)
+			{
 					long int rat;
 
 					checkpoint = bytes_in + CHECK_GAP;
@@ -1185,277 +500,45 @@ lookup:				hp = (hp+p)&HMASK;
 				}
 out:			;
 #endif
-				output(outbuf,outbits,fcode.e.ent,n_bits);
-
-				{
-					long fc = fcode.code;
-					fcode.e.ent = fcode.e.c;
-
-					if (stcode)
-					{
-						codetab[hp] = (unsigned short)free_ent++;
-						htab[hp] = fc;
-					}
-				}
-
-				goto next;
-
-endlop:			if (fcode.e.ent >= FIRST && rpos < rsize)
-					goto next2;
-
-				if (rpos > rlop)
-				{
-					bytes_in += rpos-rlop;
-					rlop = rpos;
-				}
-			}
-			while (rlop < rsize);
-		}
-
-		if (rsize < 0)
-			read_error();
-
-		if (bytes_in > 0)
 			output(outbuf,outbits,fcode.e.ent,n_bits);
 
-		if (write(fdout, outbuf, (outbits+7)>>3) != (outbits+7)>>3)
-			write_error();
+			{
+				long fc = fcode.code;
+				fcode.e.ent = fcode.e.c;
 
-		bytes_out += (outbits+7)>>3;
+				if (stcode)
+				{
+					codetab[hp] = (unsigned short)free_ent++;
+					htab[hp] = fc;
+				}
+			}
 
-		return;
+			goto next;
+endlop:
+            if (fcode.e.ent >= FIRST && rpos < rsize)
+				goto next2;
+
+			if (rpos > rlop)
+			{
+				bytes_in += rpos-rlop;
+				rlop = rpos;
+			}
+		}
+		while (rlop < rsize);
 	}
 
-/*
- * Decompress stdin to stdout.  This routine adapts to the codes in the
- * file building the "string" table on-the-fly; requiring no table to
- * be stored in the compressed file.  The tables used herein are shared
- * with those of the compress() routine.  See the definitions above.
- */
+	if (rsize < 0)
+	    read_error();
 
-void
-decompress(int fdin, int fdout)
-	{
-		char_type *stackp;
-		code_int code;
-		int finchar;
-		code_int oldcode;
-		code_int incode;
-		int inbits;
-		int posbits;
-		int outpos;
-		int insize;
-		int bitmask;
-		code_int free_ent;
-		code_int maxcode;
-		code_int maxmaxcode;
-		int n_bits;
-		int rsize;
-		int block_mode;
+	if (bytes_in > 0)
+		output(outbuf,outbits,fcode.e.ent,n_bits);
 
-		bytes_in = 0;
-		bytes_out = 0;
-		insize = 0;
+	if (write(fdout, outbuf, (outbits+7)>>3) != (outbits+7)>>3)
+		write_error();
 
-		while (insize < 3 && (rsize = read(fdin, inbuf+insize, IBUFSIZ)) > 0)
-			insize += rsize;
-
-		if (insize < 3 || inbuf[0] != MAGIC_1 || inbuf[1] != MAGIC_2)
-		{
-			if (rsize < 0)
-				read_error();
-
-			if (insize > 0)
-			{
-				fprintf(stderr, "%s: not in compressed format\n",
-									(ifname[0] != '\0'? ifname : "stdin"));
-				exit_code = 1;
-			}
-
-			return ;
-		}
-
-		maxbits = inbuf[2] & BIT_MASK;
-		block_mode = inbuf[2] & BLOCK_MODE;
-
-		if (maxbits > BITS)
-		{
-			fprintf(stderr,
-					"%s: compressed with %d bits, can only handle %d bits\n",
-					(*ifname != '\0' ? ifname : "stdin"), maxbits, BITS);
-			exit_code = 4;
-			return;
-		}
-
-		maxmaxcode = MAXCODE(maxbits);
-
-		bytes_in = insize;
-		reset_n_bits_for_decompressor(n_bits, bitmask, maxbits, maxcode, maxmaxcode);
-		oldcode = -1;
-		finchar = 0;
-		outpos = 0;
-		posbits = 3<<3;
-
-	    free_ent = ((block_mode) ? FIRST : 256);
-
-		clear_tab_prefixof();	/* As above, initialize the first
-								   256 entries in the table. */
-
-	    for (code = 255 ; code >= 0 ; --code)
-			tab_suffixof(code) = (char_type)code;
-
-		do
-		{
-resetbuf:	;
-			{
-				int i;
-				int e;
-				int o;
-
-				o = posbits >> 3;
-				e = o <= insize ? insize - o : 0;
-
-				for (i = 0 ; i < e ; ++i)
-					inbuf[i] = inbuf[i+o];
-
-				insize = e;
-				posbits = 0;
-			}
-
-			if (insize < sizeof(inbuf)-IBUFSIZ)
-			{
-				if ((rsize = read(fdin, inbuf+insize, IBUFSIZ)) < 0)
-					read_error();
-
-				insize += rsize;
-			}
-
-			inbits = ((rsize > 0) ? (insize - insize%n_bits)<<3 :
-									(insize<<3)-(n_bits-1));
-
-			while (inbits > posbits)
-			{
-				if (free_ent > maxcode)
-				{
-					posbits = ((posbits-1) + ((n_bits<<3) -
-									 (posbits-1+(n_bits<<3))%(n_bits<<3)));
-
-					++n_bits;
-					if (n_bits == maxbits)
-						maxcode = maxmaxcode;
-					else
-					    maxcode = MAXCODE(n_bits)-1;
-
-					bitmask = (1<<n_bits)-1;
-					goto resetbuf;
-				}
-
-				input(inbuf,posbits,code,n_bits,bitmask);
-
-				if (oldcode == -1)
-				{
-					if (code >= 256) {
-						fprintf(stderr, "oldcode:-1 code:%i\n", (int)(code));
-						fprintf(stderr, "uncompress: corrupt input\n");
-						abort_compress();
-					}
-					outbuf[outpos++] = (char_type)(finchar = (int)(oldcode = code));
-					continue;
-				}
-
-				if (code == CLEAR && block_mode)
-				{
-					clear_tab_prefixof();
-	    			free_ent = FIRST - 1;
-					posbits = ((posbits-1) + ((n_bits<<3) -
-								(posbits-1+(n_bits<<3))%(n_bits<<3)));
-					reset_n_bits_for_decompressor(n_bits, bitmask, maxbits, maxcode, maxmaxcode);
-					goto resetbuf;
-				}
-
-				incode = code;
-			    stackp = de_stack;
-
-				if (code >= free_ent)	/* Special case for KwKwK string.	*/
-				{
-					if (code > free_ent)
-					{
-						char_type *p;
-
-						posbits -= n_bits;
-						p = &inbuf[posbits>>3];
-						if (p == inbuf) p++;
-
-						fprintf(stderr, "insize:%d posbits:%d inbuf:%02X %02X %02X %02X %02X (%d)\n", insize, posbits,
-								p[-1],p[0],p[1],p[2],p[3], (posbits&07));
-			    		fprintf(stderr, "uncompress: corrupt input\n");
-						abort_compress();
-					}
-
-        	    	*--stackp = (char_type)finchar;
-		    		code = oldcode;
-				}
-
-				while ((cmp_code_int)code >= (cmp_code_int)256)
-				{ /* Generate output characters in reverse order */
-			    	*--stackp = tab_suffixof(code);
-			    	code = tab_prefixof(code);
-				}
-
-				*--stackp =	(char_type)(finchar = tab_suffixof(code));
-
-			/* And put them out in forward order */
-
-				{
-					int i;
-
-					if (outpos+(i = (de_stack-stackp)) >= OBUFSIZ)
-					{
-						do
-						{
-							if (i > OBUFSIZ-outpos) i = OBUFSIZ-outpos;
-
-							if (i > 0)
-							{
-								memcpy(outbuf+outpos, stackp, i);
-								outpos += i;
-							}
-
-							if (outpos >= OBUFSIZ)
-							{
-								if (write(fdout, outbuf, outpos) != outpos)
-									write_error();
-
-								outpos = 0;
-							}
-							stackp+= i;
-						}
-						while ((i = (de_stack-stackp)) > 0);
-					}
-					else
-					{
-						memcpy(outbuf+outpos, stackp, i);
-						outpos += i;
-					}
-				}
-
-				if ((code = free_ent) < maxmaxcode) /* Generate the new entry. */
-				{
-			    	tab_prefixof(code) = (unsigned short)oldcode;
-			    	tab_suffixof(code) = (char_type)finchar;
-	    			free_ent = code+1;
-				}
-
-				oldcode = incode;	/* Remember previous code.	*/
-			}
-
-			bytes_in += rsize;
-	    }
-		while (rsize > 0);
-
-		if (outpos > 0 && write(fdout, outbuf, outpos) != outpos)
-			write_error();
-	}
+	bytes_out += (outbits+7)>>3;
+	return;
+}
 
 void
 read_error(void)
@@ -1506,9 +589,8 @@ prratio(FILE *stream, long int num, long int den)
 		fprintf(stream, "%d.%02d%%", q / 100, q % 100);
 	}
 
-void
-about(void)
-	{
+void about()
+{
 		printf("Compress version: %s\n", version_id);
 		printf("Compile options:\n        ");
 #ifdef FAST
@@ -1544,5 +626,141 @@ Authors version 4.0 (World release in 1985):\n\
      Spencer W. Thomas, Jim McKie, Steve Davies,\n\
      Ken Turkowski, James A. Woods, Joe Orost\n");
 
-		exit(0);
+	exit(0);
+}
+
+int main(int argc, char **argv)
+{
+	char **filelist;
+	char **fileptr;
+	int seen_double_dash = 0;
+#ifdef SIGINT
+	if ((fgnd_flag = (signal(SIGINT, SIG_IGN)) != SIG_IGN))
+		signal(SIGINT, (SIG_TYPE)abort_compress);
+#endif
+
+#ifdef SIGTERM
+	signal(SIGTERM, (SIG_TYPE)abort_compress);
+#endif
+#ifdef SIGHUP
+	signal(SIGHUP, (SIG_TYPE)abort_compress);
+#endif
+
+#ifdef COMPATIBLE
+   	nomagic = 1;	/* Original didn't have a magic number */
+#endif
+
+   	filelist = (char **)malloc(argc*sizeof(char *));
+   	if (filelist == NULL)
+	{
+		fprintf(stderr, "Cannot allocate memory for file list.\n");
+		exit (1);
 	}
+   	fileptr = filelist;
+   	*filelist = NULL;
+
+   	if ((progname = strrchr(argv[0], '/')) != 0)
+		progname++;
+	else
+		progname = argv[0];
+
+   	for (argc--, argv++; argc > 0; argc--, argv++)
+	{
+		if (strcmp(*argv, "--") == 0)
+		{
+			seen_double_dash = 1;
+			continue;
+		}
+
+		if (seen_double_dash == 0 && **argv == '-')
+		{/* A flag argument */
+	    	while (*++(*argv))
+			{/* Process all flags in this arg */
+				switch (**argv)
+				{
+		    	case 'V':
+					about();
+					break;
+				case 's':
+					silent = 1;
+					quiet = 1;
+					break;
+		    	case 'v':
+					silent = 0;
+					quiet = 0;
+					break;
+		    	case 'd':
+					do_decomp = 1;
+					break;
+				case 'k':
+					keep = 1;
+					break;
+		    	case 'f':
+		    	case 'F':
+					force = 1;
+					break;
+		    	case 'n':
+					nomagic = 1;
+					break;
+		    	case 'b':
+					if (!ARGVAL())
+					{
+				    	fprintf(stderr, "Missing maxbits\n");
+						Usage(1);
+					}
+
+					maxbits = atoi(*argv);
+					goto nextarg;
+	    		case 'c':
+					zcat_flg = 1;
+					break;
+		    	case 'q':
+					quiet = 1;
+					break;
+				case 'h':
+					Usage(0);
+					break;
+		    	default:
+					fprintf(stderr, "Unknown flag: '%c'; ", **argv);
+					Usage(1);
+				}
+	    	}
+		}
+		else
+		{
+	    	*fileptr++ = *argv;	/* Build input file list */
+	    	*fileptr = NULL;
+		}
+nextarg:
+        continue;
+   	}
+
+   	if (maxbits < INIT_BITS)
+        maxbits = INIT_BITS;
+   	if (maxbits > BITS)
+        maxbits = BITS;
+
+	ifname = "";
+	exit_code = 0;
+	remove_ofname = 0;
+	setmode(0, O_BINARY);
+	setmode(1, O_BINARY);
+	compress(0, 1);
+
+	if (zcat_flg == 0 && !quiet)
+	{
+		fprintf(stderr, "Compression: ");
+		prratio(stderr, bytes_in-bytes_out, bytes_in);
+		fprintf(stderr, "\n");
+	}
+
+	if (bytes_out >= bytes_in && !(force))
+		exit_code = 2;
+
+	if (recursive && exit_code == -1) {
+		fprintf(stderr, "no files processed after recursive search\n");
+	}
+	exit((exit_code== -1) ? 1:exit_code);
+}
+
+
