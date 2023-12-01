@@ -19,10 +19,7 @@ public:
         for (; _bits < n; _bits += 8)
         {
             int c = _is.get();
-
-            if (c == -1)
-                return -1;
-
+            if (c == -1) return -1;
             _window = _window | c << _bits;
         }
 
@@ -65,7 +62,7 @@ int main(int argc, char **argv)
     int32_t free_ent = block_mode ? 257 : 256, code, oldcode, incode;
     uint16_t codetab[1 << maxbits];
     std::fill(codetab, codetab + 256, 0);
-    bis.cnt = 0;
+    bis.cnt = 0; //counter moet op nul om later padding te berekenen
     code = oldcode = bis.readBits(n_bits);
     assert(code >= 0 && code < 256);
     char finchar = oldcode, htab[1 << maxbits];

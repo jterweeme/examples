@@ -29,30 +29,6 @@ public:
             ret.push_back(nibble(dw >> 28 - i & 0xf));
         return ret;
     }
-
-    //https://www.geeksforgeeks.org/binary-search/
-    template <typename T> static T binarySearch(T *arr, T l, T r, T x)
-    {
-        while (l <= r)
-        {
-            int m = l + (r - l) / 2;
-     
-            // Check if x is present at mid
-            if (arr[m] == x)
-                return m;
-     
-            // If x greater, ignore left half
-            if (arr[m] < x)
-                l = m + 1;
-     
-            // If x is smaller, ignore right half
-            else
-                r = m - 1;
-        }
-     
-        // If we reach here, then element was not present
-        return -1;
-    }
 };
 
 class BitInputStream
@@ -171,10 +147,12 @@ int CanonicalCode::decodeNextSymbol(BitInputStream &in) const
     for (int codeBits = 1; true;)
     {
         codeBits = codeBits << 1 | in.readUint(1);
-        Toolbox t;
-        int index = t.binarySearch<int>(_symbolCodeBits, 0, _numSymbolsAllocated - 1, codeBits);
-        if (index >= 0)
-            return _symbolValues[index];
+
+        auto x = std::lower_bound(_symbolCodeBits, _symbolCodeBits + _numSymbolsAllocated,
+                    codeBits);
+
+        if (*x == codeBits)
+            return _symbolValues[std::distance(_symbolCodeBits, x)];
     }
 }
 
@@ -257,7 +235,7 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
 
     CanonicalCode codeLenCode;
     codeLenCode.init(codeLenCodeLen, 19);
-    int nCodeLens = numLitLenCodes + numDistCodes;
+    auto nCodeLens = numLitLenCodes + numDistCodes;
     int codeLens[nCodeLens];
 
     for (int i = 0; i < nCodeLens;)
@@ -281,7 +259,7 @@ void Inflater::decodeHuffmanCodes(CanonicalCode &litLenCode, CanonicalCode &dist
             throw std::logic_error("Symbol out of range");
         }
 
-        uint32_t end = i + runLen;
+        auto end = i + runLen;
         std::fill(codeLens + i, codeLens + end, runVal);
         i = end;
     }
@@ -349,7 +327,7 @@ void Inflater::inflateHuffmanBlock(
             run = sym - 254;
         else if (sym <= 284)
         {
-            uint32_t nExtraBits = (sym - 261) / 4;
+            auto nExtraBits = (sym - 261U) / 4U;
             run = ((sym - 265) % 4 + 4 << nExtraBits) + 3 + _bis.readUint(nExtraBits);
         }
         else if (sym == 285)
@@ -357,13 +335,13 @@ void Inflater::inflateHuffmanBlock(
         else
             throw std::domain_error("Reserved length symbol");
 
-        int distSym = distCode.decodeNextSymbol(_bis);
+        auto distSym = distCode.decodeNextSymbol(_bis);
 
         if (distSym <= 3)
             dist = distSym + 1;
         else if (distSym <= 29)
         {
-            int nExtraBits = distSym / 2 - 1;
+            auto nExtraBits = distSym / 2 - 1;
             dist = ((distSym % 2 + 2) << nExtraBits) + 1 + _bis.readUint(nExtraBits);
         }
         else
@@ -454,7 +432,11 @@ int main(int argc, char *argv[])
         is = &ifs;
     }
 
-    Inflater inflater(*is, std::cout, std::cerr);
+    class NullBuf : public std::streambuf { public: int overflow(int c) override { return c; } };
+    NullBuf nb;
+    std::ostream nullStream(&nb);
+
+    Inflater inflater(*is, std::cout, nullStream);
     inflater.inflate();
     return 0;
 }
