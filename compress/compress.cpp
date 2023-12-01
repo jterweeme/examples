@@ -43,7 +43,7 @@
 #include <utime.h>
 
 #ifndef SIG_TYPE
-#	define	SIG_TYPE	void (*)()
+#define	SIG_TYPE	void (*)(int)
 #endif
 
 #if defined(AMIGA) || defined(DOS) || defined(MINGW) || defined(WINDOWS)
@@ -258,7 +258,7 @@ char_type		inbuf[IBUFSIZ+64];	/* Input buffer									*/
 char_type		outbuf[OBUFSIZ+2048];/* Output buffer								*/
 
 struct stat		infstat;			/* Input file status							*/
-char			*ifname;			/* Input filename								*/
+const char		*ifname;			/* Input filename								*/
 int				remove_ofname = 0;	/* Remove output file on a error				*/
 char			*ofname = NULL;		/* Output filename								*/
 int				fgnd_flag = 0;		/* Running in background (SIGINT=SIGIGN)		*/
@@ -364,8 +364,7 @@ static void about(void);
  *   deterministic, and can be done on the fly.  Thus, the decompression
  *   procedure needs no input table, but tracks the way the table was built.
  */
-int
-main(int argc, char *argv[])
+int main(int argc, char **argv)
 	{
 		char **filelist;
 		char **fileptr;
@@ -586,7 +585,7 @@ comprexx(const char	*fileptr)
 		unsigned long	 namesize = strlen(fileptr);
 
 		/* Create a temp buffer to add/remove the .Z suffix. */
-		tempname = malloc(namesize + 3);
+		tempname = (char *)malloc(namesize + 3);
 		if (tempname == NULL)
 		{
 			perror("malloc");
@@ -720,7 +719,7 @@ comprexx(const char	*fileptr)
 					}
 				}
 
-				ofname = malloc(namesize + 3);
+				ofname = (char *)malloc(namesize + 3);
 				if (ofname == NULL)
 				{
 					perror("malloc");
@@ -936,7 +935,7 @@ compdir(char *dir)
 		/* The +256 is a lazy optimization. We'll resize on demand. */
 		unsigned long			 size = dir_size + 256;
 
-		nptr = malloc(size);
+		nptr = (char *)malloc(size);
 		if (nptr == NULL)
 		{
 			perror("malloc");
@@ -967,7 +966,7 @@ compdir(char *dir)
 			if (size < dir_size + strlen(dp->d_name) + 2)
 			{
 				size = dir_size + strlen(dp->d_name) + 2;
-				nptr = realloc(nptr, size);
+				nptr = (char *)realloc(nptr, size);
 				if (nptr == NULL)
 				{
 					perror("realloc");
