@@ -27,112 +27,34 @@
 #include <utime.h>
 
 #define	SIG_TYPE	void (*)(int)
-
-#if defined(MINGW) || defined(WINDOWS)
-#	define isatty(fd) 0
-#	define open _open
-#	define close _close
-#	define read _read
-#	define strdup _strdup
-#	define unlink _unlink
-#	define write _write
-#else
-/* NB: macOS has a setmode() that is different from Windows. */
-#	define setmode(fd, mode)
-#endif
-
-#ifndef	LSTAT
-#	define	lstat	stat
-#endif
-
-#if defined(DOS) || defined(WINDOWS)
-#	define	F_OK	0
-static inline int access(const char *pathname, int mode)
-{
-	struct stat st;
-	return lstat(pathname, &st);
-}
-#endif
-
+#define setmode(fd, mode)
 static char ident[] = "@(#)(N)compress 5.1";
 #define version_id (ident+4)
-
-#undef	min
-#define	min(a,b)	((a>b) ? b : a)
-
-#ifndef	IBUFSIZ
-#	define	IBUFSIZ	BUFSIZ	/* Default input buffer size							*/
-#endif
-#ifndef	OBUFSIZ
-#	define	OBUFSIZ	BUFSIZ	/* Default output buffer size							*/
-#endif
-
-							/* Defines for third byte of header 					*/
+#define	IBUFSIZ	BUFSIZ
+#define	OBUFSIZ	BUFSIZ	/* Default output buffer size							*/
 #define	MAGIC_1		(char_type)'\037'/* First byte of compressed file				*/
 #define	MAGIC_2		(char_type)'\235'/* Second byte of compressed file				*/
-#define BIT_MASK	0x1f			/* Mask for 'number of compression bits'		*/
-									/* Masks 0x20 and 0x40 are free.  				*/
-									/* I think 0x20 should mean that there is		*/
-									/* a fourth header byte (for expansion).    	*/
-#define BLOCK_MODE	0x80			/* Block compression if table is full and		*/
-									/* compression rate is dropping flush tables	*/
-
-			/* the next two codes should not be changed lightly, as they must not	*/
-			/* lie within the contiguous general code space.						*/
-#define FIRST	257					/* first free entry 							*/
-#define	CLEAR	256					/* table clear output code 						*/
-
-#define INIT_BITS 9			/* initial number of bits/code */
-
-#ifndef SACREDMEM
-	/*
- 	 * SACREDMEM is the amount of physical memory saved for others; compress
- 	 * will hog the rest.
- 	 */
-#	define SACREDMEM	0
-#endif
-
-#ifndef USERMEM
-	/*
- 	 * Set USERMEM to the maximum amount of physical user memory available
- 	 * in bytes.  USERMEM is used to determine the maximum BITS that can be used
- 	 * for compression.
-	 */
-#	define USERMEM 	450000	/* default user memory */
-#endif
-
-/*
- * machine variants which require cc -Dmachine:  pdp11, z8000, DOS
- */
-
-#ifdef	DOS			/* PC/XT/AT (8088) processor									*/
-#	define	BITS   16	/* 16-bits processor max 12 bits							*/
-#endif /* DOS */
-
-#ifndef	O_BINARY
-#	define	O_BINARY	0	/* System has no binary mode							*/
-#endif
-
-#ifdef M_XENIX			/* Stupid compiler can't handle arrays with */
-#	if BITS > 13			/* Code only handles BITS = 12, 13, or 16 */
-#		define BITS	13
-#	endif
-#endif
+#define BIT_MASK	0x1f
+#define FIRST	257
+#define	CLEAR	256
+#define INIT_BITS 9
+#define USERMEM 450000
+#define	O_BINARY 0
 
 #ifndef BITS		/* General processor calculate BITS								*/
-#	if USERMEM >= (800000+SACREDMEM)
+#	if USERMEM >= (800000)
 #		define FAST
 #	else
-#	if USERMEM >= (433484+SACREDMEM)
+#	if USERMEM >= (433484)
 #		define BITS	16
 #	else
-#	if USERMEM >= (229600+SACREDMEM)
+#	if USERMEM >= (229600)
 #		define BITS	15
 #	else
-#	if USERMEM >= (127536+SACREDMEM)
+#	if USERMEM >= (127536)
 #		define BITS	14
 #   else
-#	if USERMEM >= (73464+SACREDMEM)
+#	if USERMEM >= (73464)
 #		define BITS	13
 #	else
 #		define BITS	12
@@ -193,11 +115,6 @@ typedef	unsigned char	char_type;
 							p[2] |= (char_type)(i>>16);						\
 							(o) += (n);										\
 						}
-#define	input(b,o,c,n,m){	char_type 		*p = &(b)[(o)>>3];				\
-							(c) = ((((long)(p[0]))|((long)(p[1])<<8)|		\
-									 ((long)(p[2])<<16))>>((o)&0x7))&(m);	\
-							(o) += (n);										\
-						}
 
 #define reset_n_bits_for_compressor(n_bits, stcode, free_ent, extcode, maxbits) {	\
 	n_bits = INIT_BITS;								\
@@ -208,18 +125,9 @@ typedef	unsigned char	char_type;
 		extcode++;								\
 }
 
-#define reset_n_bits_for_decompressor(n_bits, bitmask, maxbits, maxcode, maxmaxcode) {	\
-	n_bits = INIT_BITS;								\
-	bitmask = (1<<n_bits)-1;							\
-	if (n_bits == maxbits)								\
-		maxcode = maxmaxcode;							\
-	else										\
-		maxcode = MAXCODE(n_bits)-1;						\
-}
-
 char			*progname;			/* Program name									*/
-int 			silent = 0;			/* don't tell me about errors					*/
-int 			quiet = 1;			/* don't tell me about compression 				*/
+int 			silent = 0;
+int 			quiet = 0;
 int				do_decomp = 0;		/* Decompress mode								*/
 int				force = 0;			/* Force overwrite of files and links			*/
 int				keep = 0;			/* Keep input files								*/
@@ -233,7 +141,6 @@ int				exit_code = -1;		/* Exitcode of compress (-1 no file compressed)	*/
 char_type		inbuf[IBUFSIZ+64];	/* Input buffer									*/
 char_type		outbuf[OBUFSIZ+2048];/* Output buffer								*/
 
-struct stat		infstat;			/* Input file status							*/
 const char		*ifname;			/* Input filename								*/
 int				remove_ofname = 0;	/* Remove output file on a error				*/
 char			*ofname = NULL;		/* Output filename								*/
@@ -289,10 +196,7 @@ static const int primetab[256] =		/* Special secudary hash table.		*/
 	} ;
 #endif
 
-static void read_error(void);
-static void write_error(void);
 static void abort_compress(void);
-static void prratio(FILE *, long, long);
 
 void
 Usage(int status)
@@ -350,7 +254,7 @@ void compress(int fdin, int fdout)
 	bytes_out = 0; bytes_in = 0;
 	outbuf[0] = MAGIC_1;
 	outbuf[1] = MAGIC_2;
-	outbuf[2] = (char)(maxbits | BLOCK_MODE);
+	outbuf[2] = (char)(maxbits | 0x80);
 	boff = outbits = (3<<3);
 	fcode.code = 0;
 	clear_htab();
@@ -373,12 +277,13 @@ void compress(int fdin, int fdout)
 			{
 				if (n_bits < maxbits)
 				{
-					boff = outbits = (outbits-1)+((n_bits<<3)-
-							  	((outbits-boff-1+(n_bits<<3))%(n_bits<<3)));
+                    const uint8_t nb3 = n_bits << 3;
+					boff = outbits = outbits - 1 + nb3 - ((outbits - boff - 1 + nb3) % nb3);
+
 					if (++n_bits < maxbits)
-						extcode = MAXCODE(n_bits)+1;
+						extcode = (1 << n_bits) + 1;
 					else
-						extcode = MAXCODE(n_bits);
+						extcode = 1 << n_bits;
 				}
 				else
 				{
@@ -389,116 +294,117 @@ void compress(int fdin, int fdout)
 
 			if (!stcode && bytes_in >= checkpoint && fcode.e.ent < FIRST)
 			{
-					long int rat;
+				long int rat;
+				checkpoint = bytes_in + CHECK_GAP;
 
-					checkpoint = bytes_in + CHECK_GAP;
-
-					if (bytes_in > 0x007fffff)
-					{							/* shift will overflow */
-						rat = (bytes_out+(outbits>>3)) >> 8;
-
-						if (rat == 0)				/* Don't divide by zero */
-							rat = 0x7fffffff;
-						else
-							rat = bytes_in / rat;
-					}
-					else
-						rat = (bytes_in << 8) / (bytes_out+(outbits>>3));	/* 8 fractional bits */
-					if (rat >= ratio)
-						ratio = (int)rat;
-					else
-					{
-						ratio = 0;
-						clear_htab();
-						output(outbuf,outbits,CLEAR,n_bits);
-						boff = outbits = (outbits-1)+((n_bits<<3)-
-								  	((outbits-boff-1+(n_bits<<3))%(n_bits<<3)));
-						reset_n_bits_for_compressor(n_bits, stcode, free_ent, extcode, maxbits);
-					}
+				if (bytes_in > 0x007fffff)
+				{							/* shift will overflow */
+					rat = (bytes_out+(outbits>>3)) >> 8;
+                    rat = rat == 0 ? 0x7fffffff : bytes_in / rat;
 				}
+				else
+					rat = (bytes_in << 8) / (bytes_out+(outbits>>3));	/* 8 fractional bits */
 
-				if (outbits >= (OBUFSIZ<<3))
+				if (rat >= ratio)
+					ratio = (int)rat;
+				else
 				{
-					if (write(fdout, outbuf, OBUFSIZ) != OBUFSIZ)
-						write_error();
-
-					outbits -= (OBUFSIZ<<3);
-					boff = -(((OBUFSIZ<<3)-boff)%(n_bits<<3));
-					bytes_out += OBUFSIZ;
-
-					memcpy(outbuf, outbuf+OBUFSIZ, (outbits>>3)+1);
-					memset(outbuf+(outbits>>3)+1, '\0', OBUFSIZ);
+					ratio = 0;
+					clear_htab();
+					output(outbuf,outbits,CLEAR,n_bits);
+					boff = outbits = (outbits-1)+((n_bits<<3)-
+							  	((outbits-boff-1+(n_bits<<3))%(n_bits<<3)));
+					reset_n_bits_for_compressor(n_bits, stcode, free_ent, extcode, maxbits);
 				}
+			}
 
-				{
-					int i;
+			if (outbits >= (OBUFSIZ<<3))
+			{
+				if (write(fdout, outbuf, OBUFSIZ) != OBUFSIZ)
+                    throw "write error";
 
-					i = rsize-rlop;
+				outbits -= (OBUFSIZ<<3);
+				boff = -(((OBUFSIZ<<3)-boff)%(n_bits<<3));
+				bytes_out += OBUFSIZ;
+				memcpy(outbuf, outbuf+OBUFSIZ, (outbits>>3)+1);
+				memset(outbuf+(outbits>>3)+1, '\0', OBUFSIZ);
+			}
 
-					if ((code_int)i > extcode-free_ent)	i = (int)(extcode-free_ent);
-					if (i > ((sizeof(outbuf) - 32)*8 - outbits)/n_bits)
-						i = ((sizeof(outbuf) - 32)*8 - outbits)/n_bits;
+			{
+				int i;
+				i = rsize-rlop;
 
-					if (!stcode && (long)i > checkpoint-bytes_in)
-						i = (int)(checkpoint-bytes_in);
+				if ((code_int)i > extcode-free_ent)
+                    i = (int)(extcode-free_ent);
 
-					rlop += i;
-					bytes_in += i;
-				}
+				if (i > ((sizeof(outbuf) - 32)*8 - outbits)/n_bits)
+					i = ((sizeof(outbuf) - 32)*8 - outbits)/n_bits;
 
-				goto next;
-hfound:			fcode.e.ent = codetab[hp];
-next:  			if (rpos >= rlop)
-	   				goto endlop;
-next2: 			fcode.e.c = inbuf[rpos++];
+				if (!stcode && (long)i > checkpoint-bytes_in)
+					i = (int)(checkpoint-bytes_in);
+
+				rlop += i;
+				bytes_in += i;
+			}
+
+			goto next;
+hfound:
+            fcode.e.ent = codetab[hp];
+next:
+            if (rpos >= rlop)
+                goto endlop;
+next2:
+            fcode.e.c = inbuf[rpos++];
 #ifndef FAST
+			{
+				code_int i;
+				fc = fcode.code;
+				hp = (((long)(fcode.e.c)) << (BITS-8)) ^ (long)(fcode.e.ent);
+
+				if ((i = htab[hp]) == fc)
+					goto hfound;
+
+				if (i != -1)
 				{
-					code_int i;
-					fc = fcode.code;
-					hp = (((long)(fcode.e.c)) << (BITS-8)) ^ (long)(fcode.e.ent);
+					long disp;
+					disp = (HSIZE - hp)-1;	/* secondary hash (after G. Knott) */
 
-					if ((i = htab[hp]) == fc)
-						goto hfound;
-
-					if (i != -1)
+					do
 					{
-						long disp;
+						if ((hp -= disp) < 0)
+                            hp += HSIZE;
 
-						disp = (HSIZE - hp)-1;	/* secondary hash (after G. Knott) */
-
-						do
-						{
-							if ((hp -= disp) < 0)	hp += HSIZE;
-
-							if ((i = htab[hp]) == fc)
-								goto hfound;
-						}
-						while (i != -1);
+						if ((i = htab[hp]) == fc)
+							goto hfound;
 					}
+					while (i != -1);
 				}
+			}
 #else
-				{
-					long i;
-					long p;
-					fc = fcode.code;
-					hp = ((((long)(fcode.e.c)) << (HBITS-8)) ^ (long)(fcode.e.ent));
+			{
+				long i;
+				long p;
+				fc = fcode.code;
+				hp = ((((long)(fcode.e.c)) << (HBITS-8)) ^ (long)(fcode.e.ent));
 
-					if ((i = htab[hp]) == fc)	goto hfound;
-					if (i == -1)				goto out;
+				if ((i = htab[hp]) == fc)	goto hfound;
+				if (i == -1)				goto out;
 
-					p = primetab[fcode.e.c];
-lookup:				hp = (hp+p)&HMASK;
-					if ((i = htab[hp]) == fc)	goto hfound;
-					if (i == -1)				goto out;
-					hp = (hp+p)&HMASK;
-					if ((i = htab[hp]) == fc)	goto hfound;
-					if (i == -1)				goto out;
-					hp = (hp+p)&HMASK;
-					if ((i = htab[hp]) == fc)	goto hfound;
-					if (i == -1)				goto out;
-					goto lookup;
-				}
-out:			;
+				p = primetab[fcode.e.c];
+lookup:
+                hp = (hp+p)&HMASK;
+				if ((i = htab[hp]) == fc)	goto hfound;
+				if (i == -1)				goto out;
+				hp = (hp+p)&HMASK;
+				if ((i = htab[hp]) == fc)	goto hfound;
+				if (i == -1)				goto out;
+				hp = (hp+p)&HMASK;
+				if ((i = htab[hp]) == fc)	goto hfound;
+				if (i == -1)				goto out;
+				goto lookup;
+			}
+out:
+        ;
 #endif
 			output(outbuf,outbits,fcode.e.ent,n_bits);
 
@@ -528,33 +434,17 @@ endlop:
 	}
 
 	if (rsize < 0)
-	    read_error();
+        throw "read error";
 
 	if (bytes_in > 0)
 		output(outbuf,outbits,fcode.e.ent,n_bits);
 
 	if (write(fdout, outbuf, (outbits+7)>>3) != (outbits+7)>>3)
-		write_error();
+        throw "write error";
 
 	bytes_out += (outbits+7)>>3;
 	return;
 }
-
-void
-read_error(void)
-	{
-		fprintf(stderr, "\nread error on");
-	    perror((ifname[0] != '\0') ? ifname : "stdin");
-		abort_compress();
-	}
-
-void
-write_error(void)
-	{
-		fprintf(stderr, "\nwrite error on");
-	    perror(ofname ? ofname : "stdout");
-		abort_compress();
-	}
 
 void
 abort_compress(void)
@@ -565,68 +455,27 @@ abort_compress(void)
 		exit(1);
 	}
 
-void
-prratio(FILE *stream, long int num, long int den)
+void prratio(FILE *stream, long int num, long int den)
+{
+	int q;			/* Doesn't need to be long */
+
+	if (den > 0)
 	{
-		int q;			/* Doesn't need to be long */
-
-		if (den > 0)
-		{
-			if (num > 214748L)
-				q = (int)(num/(den/10000L));	/* 2147483647/10000 */
-			else
-				q = (int)(10000L*num/den);		/* Long calculations, though */
-		}
+		if (num > 214748L)
+			q = (int)(num/(den/10000L));	/* 2147483647/10000 */
 		else
-			q = 10000;
+			q = (int)(10000L*num/den);		/* Long calculations, though */
+	}
+	else
+		q = 10000;
 
-		if (q < 0)
-		{
-			putc('-', stream);
-			q = -q;
-		}
-
-		fprintf(stream, "%d.%02d%%", q / 100, q % 100);
+	if (q < 0)
+	{
+		putc('-', stream);
+		q = -q;
 	}
 
-void about()
-{
-		printf("Compress version: %s\n", version_id);
-		printf("Compile options:\n        ");
-#ifdef FAST
-		printf("FAST, ");
-#endif
-#ifdef SIGNED_COMPARE_SLOW
-		printf("SIGNED_COMPARE_SLOW, ");
-#endif
-#ifdef DOS
-		printf("DOS, ");
-#endif
-#ifdef DEBUG
-		printf("DEBUG, ");
-#endif
-#ifdef LSTAT
-		printf("LSTAT, ");
-#endif
-		printf("\n        IBUFSIZ=%d, OBUFSIZ=%d, BITS=%d\n",
-			IBUFSIZ, OBUFSIZ, BITS);
-
-		printf("\n\
-Author version 5.x (Modernization):\n\
-Author version 4.2.4.x (Maintenance):\n\
-     Mike Frysinger  (vapier@gmail.com)\n\
-\n\
-Author version 4.2 (Speed improvement & source cleanup):\n\
-     Peter Jannesen  (peter@ncs.nl)\n\
-\n\
-Author version 4.1 (Added recursive directory compress):\n\
-     Dave Mack  (csu@alembic.acs.com)\n\
-\n\
-Authors version 4.0 (World release in 1985):\n\
-     Spencer W. Thomas, Jim McKie, Steve Davies,\n\
-     Ken Turkowski, James A. Woods, Joe Orost\n");
-
-	exit(0);
+	fprintf(stream, "%d.%02d%%", q / 100, q % 100);
 }
 
 int main(int argc, char **argv)
@@ -678,9 +527,6 @@ int main(int argc, char **argv)
 			{/* Process all flags in this arg */
 				switch (**argv)
 				{
-		    	case 'V':
-					about();
-					break;
 				case 's':
 					silent = 1;
 					quiet = 1;
