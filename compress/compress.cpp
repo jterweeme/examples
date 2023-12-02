@@ -19,65 +19,51 @@
 #include <string.h>
 #include <fcntl.h>
 #include <ctype.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <errno.h>
 #include <unistd.h>
-#include <utime.h>
 
-#define	SIG_TYPE	void (*)(int)
-#define setmode(fd, mode)
-static char ident[] = "@(#)(N)compress 5.1";
-#define version_id (ident+4)
 #define	IBUFSIZ	BUFSIZ
 #define	OBUFSIZ	BUFSIZ	/* Default output buffer size							*/
-#define	MAGIC_1		(char_type)'\037'/* First byte of compressed file				*/
-#define	MAGIC_2		(char_type)'\235'/* Second byte of compressed file				*/
-#define BIT_MASK	0x1f
-#define FIRST	257
-#define	CLEAR	256
-#define INIT_BITS 9
+#define FIRST 257
 #define USERMEM 450000
-#define	O_BINARY 0
+#define MAXCODE(n)	(1L << (n))
 
 #ifndef BITS		/* General processor calculate BITS								*/
-#	if USERMEM >= (800000)
-#		define FAST
-#	else
-#	if USERMEM >= (433484)
-#		define BITS	16
-#	else
-#	if USERMEM >= (229600)
-#		define BITS	15
-#	else
-#	if USERMEM >= (127536)
-#		define BITS	14
-#   else
-#	if USERMEM >= (73464)
-#		define BITS	13
-#	else
-#		define BITS	12
-#	endif
-#	endif
-#   endif
-#	endif
-#	endif
+#if USERMEM >= (800000)
+#define FAST
+#else
+#if USERMEM >= (433484)
+#define BITS	16
+#else
+#if USERMEM >= (229600)
+#define BITS	15
+#else
+#if USERMEM >= (127536)
+#define BITS	14
+#else
+#if USERMEM >= (73464)
+#define BITS	13
+#else
+#define BITS	12
+#endif
+#endif
+#endif
+#endif
+#endif
 #endif /* BITS */
 
 #ifdef FAST
-#	define	HBITS		17			/* 50% occupancy */
-#	define	HSIZE	   (1<<HBITS)
-#	define	HMASK	   (HSIZE-1)
-#	define	HPRIME		 9941
-#	define	BITS		   16
+#define	HBITS		17			/* 50% occupancy */
+#define	HSIZE	   (1<<HBITS)
+#define	HMASK	   (HSIZE-1)
+#define	HPRIME		 9941
+#define	BITS		   16
 #else
-#	if BITS == 16
-#		define HSIZE	69001		/* 95% occupancy */
-#	endif
-#	if BITS == 15
-#		define HSIZE	35023		/* 94% occupancy */
-#	endif
+#if BITS == 16
+#define HSIZE	69001		/* 95% occupancy */
+#endif
+#if BITS == 15
+#define HSIZE	35023		/* 94% occupancy */
+#endif
 #	if BITS == 14
 #		define HSIZE	18013		/* 91% occupancy */
 #	endif
@@ -89,25 +75,6 @@ static char ident[] = "@(#)(N)compress 5.1";
 #	endif
 #endif
 
-#define CHECK_GAP 10000
-
-typedef long int			code_int;
-
-#ifdef SIGNED_COMPARE_SLOW
-	typedef unsigned long int	count_int;
-	typedef unsigned short int	count_short;
-	typedef unsigned long int	cmp_code_int;	/* Cast to make compare faster	*/
-#else
-	typedef long int	 		count_int;
-	typedef long int			cmp_code_int;
-#endif
-
-typedef	unsigned char	char_type;
-
-#define ARGVAL() (*++(*argv) || (--argc && *++argv))
-
-#define MAXCODE(n)	(1L << (n))
-
 #define	output(b,o,c,n)	{	char_type	*p = &(b)[(o)>>3];					\
 							long		 i = ((long)(c))<<((o)&0x7);		\
 							p[0] |= (char_type)(i);							\
@@ -116,126 +83,59 @@ typedef	unsigned char	char_type;
 							(o) += (n);										\
 						}
 
-#define reset_n_bits_for_compressor(n_bits, stcode, free_ent, extcode, maxbits) {	\
-	n_bits = INIT_BITS;								\
-	stcode = 1;									\
-	free_ent = FIRST;								\
-	extcode = MAXCODE(n_bits);							\
-	if (n_bits < maxbits)								\
-		extcode++;								\
-}
-
-char			*progname;			/* Program name									*/
-int 			silent = 0;
-int 			quiet = 0;
-int				do_decomp = 0;		/* Decompress mode								*/
-int				force = 0;			/* Force overwrite of files and links			*/
-int				keep = 0;			/* Keep input files								*/
-int				nomagic = 0;		/* Use a 3-byte magic number header,			*/
-									/* unless old file 								*/
-int				maxbits = BITS;		/* user settable max # bits/code 				*/
-int 			zcat_flg = 0;		/* Write output on stdout, suppress messages 	*/
-int				recursive = 0;  	/* compress directories 						*/
-int				exit_code = -1;		/* Exitcode of compress (-1 no file compressed)	*/
-
-char_type		inbuf[IBUFSIZ+64];	/* Input buffer									*/
-char_type		outbuf[OBUFSIZ+2048];/* Output buffer								*/
-
-const char		*ifname;			/* Input filename								*/
-int				remove_ofname = 0;	/* Remove output file on a error				*/
-char			*ofname = NULL;		/* Output filename								*/
-int				fgnd_flag = 0;		/* Running in background (SIGINT=SIGIGN)		*/
-
-long 			bytes_in;			/* Total number of byte from input				*/
-long 			bytes_out;			/* Total number of byte to output				*/
-
-count_int		htab[HSIZE];
-unsigned short	codetab[HSIZE];
-
-#define	tab_prefixof(i)			codetab[i]
-#define	tab_suffixof(i)			((char_type *)(htab))[i]
-#define	de_stack				((char_type *)&(htab[HSIZE-1]))
-#define	clear_htab()			memset(htab, -1, sizeof(htab))
-#define	clear_tab_prefixof()	memset(codetab, 0, 256);
-
-#ifdef FAST
 static const int primetab[256] =		/* Special secudary hash table.		*/
-	{
-    	 1013, -1061, 1109, -1181, 1231, -1291, 1361, -1429,
-    	 1481, -1531, 1583, -1627, 1699, -1759, 1831, -1889,
-    	 1973, -2017, 2083, -2137, 2213, -2273, 2339, -2383,
-    	 2441, -2531, 2593, -2663, 2707, -2753, 2819, -2887,
-    	 2957, -3023, 3089, -3181, 3251, -3313, 3361, -3449,
-    	 3511, -3557, 3617, -3677, 3739, -3821, 3881, -3931,
-    	 4013, -4079, 4139, -4219, 4271, -4349, 4423, -4493,
-    	 4561, -4639, 4691, -4783, 4831, -4931, 4973, -5023,
-    	 5101, -5179, 5261, -5333, 5413, -5471, 5521, -5591,
-    	 5659, -5737, 5807, -5857, 5923, -6029, 6089, -6151,
-    	 6221, -6287, 6343, -6397, 6491, -6571, 6659, -6709,
-    	 6791, -6857, 6917, -6983, 7043, -7129, 7213, -7297,
-    	 7369, -7477, 7529, -7577, 7643, -7703, 7789, -7873,
-    	 7933, -8017, 8093, -8171, 8237, -8297, 8387, -8461,
-    	 8543, -8627, 8689, -8741, 8819, -8867, 8963, -9029,
-    	 9109, -9181, 9241, -9323, 9397, -9439, 9511, -9613,
-    	 9677, -9743, 9811, -9871, 9941,-10061,10111,-10177,
-   		10259,-10321,10399,-10477,10567,-10639,10711,-10789,
-   		10867,-10949,11047,-11113,11173,-11261,11329,-11423,
-   		11491,-11587,11681,-11777,11827,-11903,11959,-12041,
-   		12109,-12197,12263,-12343,12413,-12487,12541,-12611,
-   		12671,-12757,12829,-12917,12979,-13043,13127,-13187,
-   		13291,-13367,13451,-13523,13619,-13691,13751,-13829,
-   		13901,-13967,14057,-14153,14249,-14341,14419,-14489,
-   		14557,-14633,14717,-14767,14831,-14897,14983,-15083,
-   		15149,-15233,15289,-15359,15427,-15497,15583,-15649,
-   		15733,-15791,15881,-15937,16057,-16097,16189,-16267,
-   		16363,-16447,16529,-16619,16691,-16763,16879,-16937,
-   		17021,-17093,17183,-17257,17341,-17401,17477,-17551,
-   		17623,-17713,17791,-17891,17957,-18041,18097,-18169,
-   		18233,-18307,18379,-18451,18523,-18637,18731,-18803,
-   		18919,-19031,19121,-19211,19273,-19381,19429,-19477
-	} ;
-#endif
-
-static void abort_compress(void);
-
-void
-Usage(int status)
-	{
-		fprintf(status ? stderr : stdout, "\
-Usage: %s [-dfhvcVr] [-b maxbits] [--] [path ...]\n\
-  --   Halt option processing and treat all remaining args as paths.\n\
-  -d   If given, decompression is done instead.\n\
-  -c   Write output on stdout, don't remove original.\n\
-  -k   Keep input files (do not automatically remove).\n\
-  -b   Parameter limits the max number of bits/code.\n\
-  -f   Forces output file to be generated, even if one already.\n\
-       exists, and even if no space is saved by compressing.\n\
-       If -f is not used, the user will be prompted if stdin is.\n\
-       a tty, otherwise, the output file will not be overwritten.\n\
-  -h   This help output.\n\
-  -v   Write compression statistics.\n\
-  -V   Output version and compile options.\n\
-  -r   Recursive. If a path is a directory, compress everything in it.\n",
-			progname);
-
-    		exit(status);
-	}
-
-void compress(int fdin, int fdout)
 {
-	long hp;
-	int rpos;
-	long fc;
-	int outbits;
-	int rlop;
-	int rsize;
-	int stcode;
-	code_int free_ent;
-	int boff;
-	int n_bits;
-	int ratio;
-	long checkpoint;
-	code_int extcode;
+   	 1013, -1061, 1109, -1181, 1231, -1291, 1361, -1429,
+   	 1481, -1531, 1583, -1627, 1699, -1759, 1831, -1889,
+   	 1973, -2017, 2083, -2137, 2213, -2273, 2339, -2383,
+   	 2441, -2531, 2593, -2663, 2707, -2753, 2819, -2887,
+   	 2957, -3023, 3089, -3181, 3251, -3313, 3361, -3449,
+   	 3511, -3557, 3617, -3677, 3739, -3821, 3881, -3931,
+   	 4013, -4079, 4139, -4219, 4271, -4349, 4423, -4493,
+   	 4561, -4639, 4691, -4783, 4831, -4931, 4973, -5023,
+   	 5101, -5179, 5261, -5333, 5413, -5471, 5521, -5591,
+   	 5659, -5737, 5807, -5857, 5923, -6029, 6089, -6151,
+   	 6221, -6287, 6343, -6397, 6491, -6571, 6659, -6709,
+   	 6791, -6857, 6917, -6983, 7043, -7129, 7213, -7297,
+   	 7369, -7477, 7529, -7577, 7643, -7703, 7789, -7873,
+   	 7933, -8017, 8093, -8171, 8237, -8297, 8387, -8461,
+   	 8543, -8627, 8689, -8741, 8819, -8867, 8963, -9029,
+   	 9109, -9181, 9241, -9323, 9397, -9439, 9511, -9613,
+   	 9677, -9743, 9811, -9871, 9941,-10061,10111,-10177,
+	10259,-10321,10399,-10477,10567,-10639,10711,-10789,
+  	10867,-10949,11047,-11113,11173,-11261,11329,-11423,
+   	11491,-11587,11681,-11777,11827,-11903,11959,-12041,
+   	12109,-12197,12263,-12343,12413,-12487,12541,-12611,
+   	12671,-12757,12829,-12917,12979,-13043,13127,-13187,
+   	13291,-13367,13451,-13523,13619,-13691,13751,-13829,
+   	13901,-13967,14057,-14153,14249,-14341,14419,-14489,
+   	14557,-14633,14717,-14767,14831,-14897,14983,-15083,
+   	15149,-15233,15289,-15359,15427,-15497,15583,-15649,
+   	15733,-15791,15881,-15937,16057,-16097,16189,-16267,
+   	16363,-16447,16529,-16619,16691,-16763,16879,-16937,
+   	17021,-17093,17183,-17257,17341,-17401,17477,-17551,
+   	17623,-17713,17791,-17891,17957,-18041,18097,-18169,
+   	18233,-18307,18379,-18451,18523,-18637,18731,-18803,
+   	18919,-19031,19121,-19211,19273,-19381,19429,-19477
+};
+
+int main(int argc, char **argv)
+{
+    typedef long int			code_int;
+    typedef unsigned long int	count_int;
+    typedef	unsigned char	char_type;
+    static constexpr long CHECK_GAP = 10000;
+    int fdin = 0;
+    int fdout = 1;
+    long bytes_in, bytes_out;
+    char_type inbuf[IBUFSIZ+64];
+    char_type outbuf[OBUFSIZ+2048];
+    count_int htab[HSIZE];
+    unsigned short codetab[HSIZE];
+    int maxbits = BITS;
+	long hp, fc, checkpoint = CHECK_GAP;
+	int rpos, outbits, rlop, rsize, stcode, boff, n_bits, ratio = 0;
+	code_int free_ent, extcode;
 	union
 	{
 		long			code;
@@ -246,18 +146,19 @@ void compress(int fdin, int fdout)
 		} e;
 	} fcode;
 
-	ratio = 0;
-	checkpoint = CHECK_GAP;
-	reset_n_bits_for_compressor(n_bits, stcode, free_ent, extcode, maxbits);
-
+    n_bits = 9;
+    stcode = 1;
+    free_ent = FIRST;
+    extcode = MAXCODE(n_bits);
+    if (n_bits < maxbits) ++extcode;
 	memset(outbuf, 0, sizeof(outbuf));
 	bytes_out = 0; bytes_in = 0;
-	outbuf[0] = MAGIC_1;
-	outbuf[1] = MAGIC_2;
+	outbuf[0] = 0x1f;
+	outbuf[1] = 0x9d;
 	outbuf[2] = (char)(maxbits | 0x80);
 	boff = outbits = (3<<3);
 	fcode.code = 0;
-	clear_htab();
+    memset(htab, -1, sizeof(htab));
 
 	while ((rsize = read(fdin, inbuf, IBUFSIZ)) > 0)
 	{
@@ -287,7 +188,7 @@ void compress(int fdin, int fdout)
 				}
 				else
 				{
-					extcode = MAXCODE(16)+OBUFSIZ;
+					extcode = MAXCODE(16) + OBUFSIZ;
 					stcode = 0;
 				}
 			}
@@ -310,11 +211,13 @@ void compress(int fdin, int fdout)
 				else
 				{
 					ratio = 0;
-					clear_htab();
-					output(outbuf,outbits,CLEAR,n_bits);
-					boff = outbits = (outbits-1)+((n_bits<<3)-
-							  	((outbits-boff-1+(n_bits<<3))%(n_bits<<3)));
-					reset_n_bits_for_compressor(n_bits, stcode, free_ent, extcode, maxbits);
+                    memset(htab, -1, sizeof(htab));
+					output(outbuf,outbits, 256, n_bits);
+                    const uint8_t nb3 = n_bits << 3;
+					boff = outbits = outbits - 1 + (nb3 - ((outbits - boff - 1 + nb3) % nb3));
+                    n_bits = 9, stcode = 1, free_ent = FIRST;
+                    extcode = MAXCODE(n_bits);
+                    if (n_bits < maxbits) ++extcode;
 				}
 			}
 
@@ -331,8 +234,7 @@ void compress(int fdin, int fdout)
 			}
 
 			{
-				int i;
-				i = rsize-rlop;
+				int i = rsize - rlop;
 
 				if ((code_int)i > extcode-free_ent)
                     i = (int)(extcode-free_ent);
@@ -383,14 +285,16 @@ next2:
 #else
 			{
 				long i;
-				long p;
 				fc = fcode.code;
 				hp = ((((long)(fcode.e.c)) << (HBITS-8)) ^ (long)(fcode.e.ent));
 
-				if ((i = htab[hp]) == fc)	goto hfound;
-				if (i == -1)				goto out;
+                if ((i = htab[hp]) == fc)
+                    goto hfound;
 
-				p = primetab[fcode.e.c];
+                if (i == -1)
+                    goto out;
+
+				long p = primetab[fcode.e.c];
 lookup:
                 hp = (hp+p)&HMASK;
 				if ((i = htab[hp]) == fc)	goto hfound;
@@ -443,170 +347,26 @@ endlop:
         throw "write error";
 
 	bytes_out += (outbits+7)>>3;
-	return;
-}
+    fprintf(stderr, "Compression: ");
+    int q;
+    long num = bytes_in - bytes_out;
+    long den = bytes_in;
 
-void
-abort_compress(void)
-	{
-		if (remove_ofname)
-	    	unlink(ofname);
+    if (den > 0)
+    {
+        if (num > 214748L)
+            q = (int)(num/(den/10000L));
+        else
+            q = (int)(10000*num/den);
+    }
+    else q = 10000;
 
-		exit(1);
-	}
+    if (q < 0)
+        putc('-', stderr), q = -q;
 
-void prratio(FILE *stream, long int num, long int den)
-{
-	int q;			/* Doesn't need to be long */
-
-	if (den > 0)
-	{
-		if (num > 214748L)
-			q = (int)(num/(den/10000L));	/* 2147483647/10000 */
-		else
-			q = (int)(10000L*num/den);		/* Long calculations, though */
-	}
-	else
-		q = 10000;
-
-	if (q < 0)
-	{
-		putc('-', stream);
-		q = -q;
-	}
-
-	fprintf(stream, "%d.%02d%%", q / 100, q % 100);
-}
-
-int main(int argc, char **argv)
-{
-	char **filelist;
-	char **fileptr;
-	int seen_double_dash = 0;
-#ifdef SIGINT
-	if ((fgnd_flag = (signal(SIGINT, SIG_IGN)) != SIG_IGN))
-		signal(SIGINT, (SIG_TYPE)abort_compress);
-#endif
-
-#ifdef SIGTERM
-	signal(SIGTERM, (SIG_TYPE)abort_compress);
-#endif
-#ifdef SIGHUP
-	signal(SIGHUP, (SIG_TYPE)abort_compress);
-#endif
-
-#ifdef COMPATIBLE
-   	nomagic = 1;	/* Original didn't have a magic number */
-#endif
-
-   	filelist = (char **)malloc(argc*sizeof(char *));
-   	if (filelist == NULL)
-	{
-		fprintf(stderr, "Cannot allocate memory for file list.\n");
-		exit (1);
-	}
-   	fileptr = filelist;
-   	*filelist = NULL;
-
-   	if ((progname = strrchr(argv[0], '/')) != 0)
-		progname++;
-	else
-		progname = argv[0];
-
-   	for (argc--, argv++; argc > 0; argc--, argv++)
-	{
-		if (strcmp(*argv, "--") == 0)
-		{
-			seen_double_dash = 1;
-			continue;
-		}
-
-		if (seen_double_dash == 0 && **argv == '-')
-		{/* A flag argument */
-	    	while (*++(*argv))
-			{/* Process all flags in this arg */
-				switch (**argv)
-				{
-				case 's':
-					silent = 1;
-					quiet = 1;
-					break;
-		    	case 'v':
-					silent = 0;
-					quiet = 0;
-					break;
-		    	case 'd':
-					do_decomp = 1;
-					break;
-				case 'k':
-					keep = 1;
-					break;
-		    	case 'f':
-		    	case 'F':
-					force = 1;
-					break;
-		    	case 'n':
-					nomagic = 1;
-					break;
-		    	case 'b':
-					if (!ARGVAL())
-					{
-				    	fprintf(stderr, "Missing maxbits\n");
-						Usage(1);
-					}
-
-					maxbits = atoi(*argv);
-					goto nextarg;
-	    		case 'c':
-					zcat_flg = 1;
-					break;
-		    	case 'q':
-					quiet = 1;
-					break;
-				case 'h':
-					Usage(0);
-					break;
-		    	default:
-					fprintf(stderr, "Unknown flag: '%c'; ", **argv);
-					Usage(1);
-				}
-	    	}
-		}
-		else
-		{
-	    	*fileptr++ = *argv;	/* Build input file list */
-	    	*fileptr = NULL;
-		}
-nextarg:
-        continue;
-   	}
-
-   	if (maxbits < INIT_BITS)
-        maxbits = INIT_BITS;
-   	if (maxbits > BITS)
-        maxbits = BITS;
-
-	ifname = "";
-	exit_code = 0;
-	remove_ofname = 0;
-	setmode(0, O_BINARY);
-	setmode(1, O_BINARY);
-	compress(0, 1);
-
-	if (zcat_flg == 0 && !quiet)
-	{
-		fprintf(stderr, "Compression: ");
-		prratio(stderr, bytes_in-bytes_out, bytes_in);
-		fprintf(stderr, "\n");
-	}
-
-	if (bytes_out >= bytes_in && !(force))
-		exit_code = 2;
-
-	if (recursive && exit_code == -1) {
-		fprintf(stderr, "no files processed after recursive search\n");
-	}
-	exit((exit_code== -1) ? 1:exit_code);
+    fprintf(stderr, "%d.%02d%%", q / 100, q % 100);
+    fprintf(stderr, "\n");
+    return 0;
 }
 
 
