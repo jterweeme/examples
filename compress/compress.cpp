@@ -22,68 +22,26 @@
 #include <unistd.h>
 
 #define	IBUFSIZ	BUFSIZ
-#define	OBUFSIZ	BUFSIZ	/* Default output buffer size							*/
+#define	OBUFSIZ	BUFSIZ
 #define FIRST 257
-#define USERMEM 450000
-#define MAXCODE(n)	(1L << (n))
+#define BITS 16
+#define HSIZE 69001
 
-#ifndef BITS		/* General processor calculate BITS								*/
 #if USERMEM >= (800000)
 #define FAST
-#else
-#if USERMEM >= (433484)
-#define BITS	16
-#else
-#if USERMEM >= (229600)
-#define BITS	15
-#else
-#if USERMEM >= (127536)
-#define BITS	14
-#else
-#if USERMEM >= (73464)
-#define BITS	13
-#else
-#define BITS	12
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif /* BITS */
-
-#ifdef FAST
-#define	HBITS		17			/* 50% occupancy */
-#define	HSIZE	   (1<<HBITS)
-#define	HMASK	   (HSIZE-1)
-#define	HPRIME		 9941
-#define	BITS		   16
-#else
-#if BITS == 16
-#define HSIZE	69001		/* 95% occupancy */
-#endif
-#if BITS == 15
-#define HSIZE	35023		/* 94% occupancy */
-#endif
-#	if BITS == 14
-#		define HSIZE	18013		/* 91% occupancy */
-#	endif
-#	if BITS == 13
-#		define HSIZE	9001		/* 91% occupancy */
-#	endif
-#	if BITS <= 12
-#		define HSIZE	5003		/* 80% occupancy */
-#	endif
+#define	HSIZE (1<<17)
+#define	HMASK (HSIZE-1)
 #endif
 
-#define	output(b,o,c,n)	{	char_type	*p = &(b)[(o)>>3];					\
-							long		 i = ((long)(c))<<((o)&0x7);		\
-							p[0] |= (char_type)(i);							\
-							p[1] |= (char_type)(i>>8);						\
-							p[2] |= (char_type)(i>>16);						\
-							(o) += (n);										\
-						}
+#define	output(b,o,c,n)	{ uint8_t *p = &(b)[(o)>>3];\
+    long i = ((long)(c))<<((o)&0x7);\
+    p[0] |= uint8_t(i);\
+    p[1] |= uint8_t(i>>8);\
+    p[2] |= uint8_t(i>>16);\
+    (o) += (n);}
 
-static const int primetab[256] =		/* Special secudary hash table.		*/
+//Special secudary hash table.
+static const int primetab[256] =
 {
    	 1013, -1061, 1109, -1181, 1231, -1291, 1361, -1429,
    	 1481, -1531, 1583, -1627, 1699, -1759, 1831, -1889,
@@ -102,8 +60,8 @@ static const int primetab[256] =		/* Special secudary hash table.		*/
    	 8543, -8627, 8689, -8741, 8819, -8867, 8963, -9029,
    	 9109, -9181, 9241, -9323, 9397, -9439, 9511, -9613,
    	 9677, -9743, 9811, -9871, 9941,-10061,10111,-10177,
-	10259,-10321,10399,-10477,10567,-10639,10711,-10789,
-  	10867,-10949,11047,-11113,11173,-11261,11329,-11423,
+    10259,-10321,10399,-10477,10567,-10639,10711,-10789,
+    10867,-10949,11047,-11113,11173,-11261,11329,-11423,
    	11491,-11587,11681,-11777,11827,-11903,11959,-12041,
    	12109,-12197,12263,-12343,12413,-12487,12541,-12611,
    	12671,-12757,12829,-12917,12979,-13043,13127,-13187,
@@ -119,137 +77,134 @@ static const int primetab[256] =		/* Special secudary hash table.		*/
    	18919,-19031,19121,-19211,19273,-19381,19429,-19477
 };
 
+union Fcode
+{
+    long code;
+    struct
+    {
+        uint8_t c;
+        uint16_t ent;
+    } e;
+};
+
 int main(int argc, char **argv)
 {
-    typedef long int			code_int;
-    typedef unsigned long int	count_int;
-    typedef	unsigned char	char_type;
+    typedef int64_t code_int;
+    typedef uint64_t count_int;
     static constexpr long CHECK_GAP = 10000;
-    int fdin = 0;
     int fdout = 1;
     long bytes_in, bytes_out;
-    char_type inbuf[IBUFSIZ+64];
-    char_type outbuf[OBUFSIZ+2048];
+    uint8_t inbuf[IBUFSIZ+64];
+    uint8_t outbuf[OBUFSIZ+2048];
     count_int htab[HSIZE];
     unsigned short codetab[HSIZE];
     int maxbits = BITS;
-	long hp, fc, checkpoint = CHECK_GAP;
-	int rpos, outbits, rlop, rsize, stcode, boff, n_bits, ratio = 0;
-	code_int free_ent, extcode;
-	union
-	{
-		long			code;
-		struct
-	    {
-			char_type		c;
-			unsigned short	ent;
-		} e;
-	} fcode;
-
-    n_bits = 9;
-    stcode = 1;
-    free_ent = FIRST;
-    extcode = MAXCODE(n_bits);
+    long hp, fc, checkpoint = CHECK_GAP;
+    int rpos, outbits, rlop, rsize, stcode = 1, boff, n_bits = 9, ratio = 0;
+    code_int free_ent = FIRST, extcode = 1 << n_bits;
+    Fcode fcode;
     if (n_bits < maxbits) ++extcode;
-	memset(outbuf, 0, sizeof(outbuf));
-	bytes_out = 0; bytes_in = 0;
-	outbuf[0] = 0x1f;
-	outbuf[1] = 0x9d;
-	outbuf[2] = (char)(maxbits | 0x80);
-	boff = outbits = (3<<3);
-	fcode.code = 0;
+    memset(outbuf, 0, sizeof(outbuf));
+    bytes_out = 0; bytes_in = 0;
+    outbuf[0] = 0x1f;
+    outbuf[1] = 0x9d;
+    outbuf[2] = char(maxbits | 0x80);
+    boff = outbits = 3 << 3;
+    fcode.code = 0;
     memset(htab, -1, sizeof(htab));
 
-	while ((rsize = read(fdin, inbuf, IBUFSIZ)) > 0)
-	{
-		if (bytes_in == 0)
-		{
-			fcode.e.ent = inbuf[0];
-			rpos = 1;
-		}
-		else
-			rpos = 0;
+    while ((rsize = read(0, inbuf, IBUFSIZ)) > 0)
+    {
+        if (bytes_in == 0)
+        {
+            fcode.e.ent = inbuf[0];
+            rpos = 1;
+        }
+        else
+            rpos = 0;
 
-		rlop = 0;
+        rlop = 0;
 
-		do
-		{
-			if (free_ent >= extcode && fcode.e.ent < FIRST)
-			{
-				if (n_bits < maxbits)
-				{
+        do
+        {
+            if (free_ent >= extcode && fcode.e.ent < FIRST)
+            {
+                if (n_bits < maxbits)
+                {
                     const uint8_t nb3 = n_bits << 3;
-					boff = outbits = outbits - 1 + nb3 - ((outbits - boff - 1 + nb3) % nb3);
+                    boff = outbits = outbits - 1 + nb3 - ((outbits - boff - 1 + nb3) % nb3);
 
-					if (++n_bits < maxbits)
-						extcode = (1 << n_bits) + 1;
-					else
-						extcode = 1 << n_bits;
-				}
-				else
-				{
-					extcode = MAXCODE(16) + OBUFSIZ;
-					stcode = 0;
-				}
-			}
+                    if (++n_bits < maxbits)
+                        extcode = (1 << n_bits) + 1;
+                    else
+                        extcode = 1 << n_bits;
+                }
+                else
+                {
+                    extcode = (1 << 16) + OBUFSIZ;
+                    stcode = 0;
+                }
+            }
 
-			if (!stcode && bytes_in >= checkpoint && fcode.e.ent < FIRST)
-			{
-				long int rat;
-				checkpoint = bytes_in + CHECK_GAP;
+            if (!stcode && bytes_in >= checkpoint && fcode.e.ent < FIRST)
+            {
+                long int rat;
+                checkpoint = bytes_in + CHECK_GAP;
 
-				if (bytes_in > 0x007fffff)
-				{							/* shift will overflow */
-					rat = (bytes_out+(outbits>>3)) >> 8;
+                if (bytes_in > 0x007fffff)
+                {
+                    //shift will overflow
+                    rat = (bytes_out + (outbits >> 3)) >> 8;
                     rat = rat == 0 ? 0x7fffffff : bytes_in / rat;
-				}
-				else
-					rat = (bytes_in << 8) / (bytes_out+(outbits>>3));	/* 8 fractional bits */
+                }
+                else
+                    //8 fractional bits
+                    rat = (bytes_in << 8) / (bytes_out + (outbits >> 3));	
 
-				if (rat >= ratio)
-					ratio = (int)rat;
-				else
-				{
-					ratio = 0;
+                if (rat >= ratio)
+                    ratio = int(rat);
+                else
+                {
+                    ratio = 0;
                     memset(htab, -1, sizeof(htab));
-					output(outbuf,outbits, 256, n_bits);
+                    output(outbuf, outbits, 256, n_bits);
                     const uint8_t nb3 = n_bits << 3;
-					boff = outbits = outbits - 1 + (nb3 - ((outbits - boff - 1 + nb3) % nb3));
+                    boff = outbits = outbits - 1 + nb3 - ((outbits - boff - 1 + nb3) % nb3);
                     n_bits = 9, stcode = 1, free_ent = FIRST;
-                    extcode = MAXCODE(n_bits);
+                    extcode = 1 << n_bits;
                     if (n_bits < maxbits) ++extcode;
-				}
-			}
+                }
+            }
 
-			if (outbits >= (OBUFSIZ<<3))
-			{
-				if (write(fdout, outbuf, OBUFSIZ) != OBUFSIZ)
+            if (outbits >= OBUFSIZ << 3)
+            {
+                if (write(fdout, outbuf, OBUFSIZ) != OBUFSIZ)
                     throw "write error";
 
-				outbits -= (OBUFSIZ<<3);
-				boff = -(((OBUFSIZ<<3)-boff)%(n_bits<<3));
-				bytes_out += OBUFSIZ;
-				memcpy(outbuf, outbuf+OBUFSIZ, (outbits>>3)+1);
-				memset(outbuf+(outbits>>3)+1, '\0', OBUFSIZ);
-			}
+                outbits -= OBUFSIZ << 3;
+                boff = -(((OBUFSIZ << 3) - boff) % (n_bits << 3));
+                bytes_out += OBUFSIZ;
+                memcpy(outbuf, outbuf + OBUFSIZ, (outbits >> 3) + 1);
+                memset(outbuf + (outbits >> 3) + 1, '\0', OBUFSIZ);
+            }
 
-			{
-				int i = rsize - rlop;
+            {
+                int i = rsize - rlop;
 
-				if ((code_int)i > extcode-free_ent)
+                if (code_int(i) > extcode-free_ent)
                     i = (int)(extcode-free_ent);
 
-				if (i > ((sizeof(outbuf) - 32)*8 - outbits)/n_bits)
-					i = ((sizeof(outbuf) - 32)*8 - outbits)/n_bits;
+                if (i > ((sizeof(outbuf) - 32)*8 - outbits)/n_bits)
+                    i = ((sizeof(outbuf) - 32)*8 - outbits)/n_bits;
 
-				if (!stcode && (long)i > checkpoint-bytes_in)
-					i = (int)(checkpoint-bytes_in);
+                if (!stcode && (long)i > checkpoint-bytes_in)
+                    i = int(checkpoint - bytes_in);
 
-				rlop += i;
-				bytes_in += i;
-			}
+                rlop += i;
+                bytes_in += i;
+            }
 
-			goto next;
+            goto next;
 hfound:
             fcode.e.ent = codetab[hp];
 next:
@@ -258,35 +213,35 @@ next:
 next2:
             fcode.e.c = inbuf[rpos++];
 #ifndef FAST
-			{
-				code_int i;
-				fc = fcode.code;
-				hp = (((long)(fcode.e.c)) << (BITS-8)) ^ (long)(fcode.e.ent);
+            {
+                code_int i;
+                fc = fcode.code;
+                hp = long(fcode.e.c) << BITS - 8 ^ long(fcode.e.ent);
 
-				if ((i = htab[hp]) == fc)
-					goto hfound;
+                if ((i = htab[hp]) == fc)
+                    goto hfound;
 
-				if (i != -1)
-				{
-					long disp;
-					disp = (HSIZE - hp)-1;	/* secondary hash (after G. Knott) */
+                if (i != -1)
+                {
+                    //secondary hash (after G. Knott)
+                    long disp = (HSIZE - hp)-1;	
 
-					do
-					{
-						if ((hp -= disp) < 0)
+                    do
+                    {
+                        if ((hp -= disp) < 0)
                             hp += HSIZE;
 
-						if ((i = htab[hp]) == fc)
-							goto hfound;
-					}
-					while (i != -1);
-				}
-			}
+                        if ((i = htab[hp]) == fc)
+                            goto hfound;
+                    }
+                    while (i != -1);
+                }
+            }
 #else
-			{
-				long i;
-				fc = fcode.code;
-				hp = ((((long)(fcode.e.c)) << (HBITS-8)) ^ (long)(fcode.e.ent));
+            {
+                long i;
+                fc = fcode.code;
+                hp = long(fcode.e.c) << 17 - 8 ^ long(fcode.e.ent);
 
                 if ((i = htab[hp]) == fc)
                     goto hfound;
@@ -294,23 +249,29 @@ next2:
                 if (i == -1)
                     goto out;
 
-				long p = primetab[fcode.e.c];
+                long p = primetab[fcode.e.c];
 lookup:
-                hp = (hp+p)&HMASK;
-				if ((i = htab[hp]) == fc)	goto hfound;
-				if (i == -1)				goto out;
-				hp = (hp+p)&HMASK;
-				if ((i = htab[hp]) == fc)	goto hfound;
-				if (i == -1)				goto out;
-				hp = (hp+p)&HMASK;
-				if ((i = htab[hp]) == fc)	goto hfound;
-				if (i == -1)				goto out;
-				goto lookup;
-			}
+                hp = hp + p & HMASK;
+                if ((i = htab[hp]) == fc)
+                    goto hfound;
+                if (i == -1)
+                    goto out;
+                hp = hp + p & HMASK;
+                if ((i = htab[hp]) == fc)
+                    goto hfound;
+				if (i == -1)
+                    goto out;
+                hp = hp + p & HMASK;
+                if ((i = htab[hp]) == fc)
+                    goto hfound;
+                if (i == -1)
+                    goto out;
+                goto lookup;
+            }
 out:
         ;
 #endif
-			output(outbuf,outbits,fcode.e.ent,n_bits);
+            output(outbuf,outbits,fcode.e.ent,n_bits);
 
 			{
 				long fc = fcode.code;
@@ -343,21 +304,20 @@ endlop:
 	if (bytes_in > 0)
 		output(outbuf,outbits,fcode.e.ent,n_bits);
 
-	if (write(fdout, outbuf, (outbits+7)>>3) != (outbits+7)>>3)
+	if (write(fdout, outbuf, outbits + 7 >> 3) != outbits + 7 >> 3)
         throw "write error";
 
-	bytes_out += (outbits+7)>>3;
+	bytes_out += outbits + 7 >> 3;
     fprintf(stderr, "Compression: ");
     int q;
     long num = bytes_in - bytes_out;
-    long den = bytes_in;
 
-    if (den > 0)
+    if (bytes_in > 0)
     {
         if (num > 214748L)
-            q = (int)(num/(den/10000L));
+            q = int(num / (bytes_in / 10000L));
         else
-            q = (int)(10000*num/den);
+            q = int(10000 * num / bytes_in);
     }
     else q = 10000;
 
