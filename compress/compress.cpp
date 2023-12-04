@@ -242,29 +242,23 @@ next2:
             if ((i = htab[hp]) == fc)
                 goto hfound;
 
-            if (i != -1)
+            while (i != -1)
             {
                 const long p = primetab[fcode.e.c];
-                while (true)
-                {
-                    hp = hp + p & HMASK;
-                    if ((i = htab[hp]) == fc)
-                        goto hfound;
-                    if (i == -1)
-                        break;
-                    hp = hp + p & HMASK;
-                    if ((i = htab[hp]) == fc)
-                        goto hfound;
-		    		if (i == -1)
-                        break;
-                    hp = hp + p & HMASK;
-                    if ((i = htab[hp]) == fc)
-                        goto hfound;
-                    if (i == -1)
-                        break;
-                }
+                hp = hp + p & HMASK;
+                if ((i = htab[hp]) == fc)
+                    goto hfound;
+                if (i == -1)
+                    break;
+                hp = hp + p & HMASK;
+                if ((i = htab[hp]) == fc)
+                    goto hfound;
+	    		if (i == -1)
+                    break;
+                hp = hp + p & HMASK;
+                if ((i = htab[hp]) == fc)
+                    goto hfound;
             }
-        ;
 #endif
             output(outbuf, outbits, fcode.e.ent);
             outbits += n_bits;
