@@ -13,10 +13,12 @@
  *   Mike Frysinger      (vapier@gmail.com)
  */
 
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <cassert>
+#include <algorithm>
 #include <fcntl.h>
 #include <ctype.h>
 #include <unistd.h>
@@ -24,7 +26,6 @@
 #define	IBUFSIZ	BUFSIZ
 #define	OBUFSIZ	BUFSIZ
 #define FIRST 257
-#define BITS 16
 
 #if 1
 #define FAST
@@ -89,27 +90,25 @@ union Fcode
 
 int main(int argc, char **argv)
 {
-    typedef int64_t code_int;
-    typedef uint64_t count_int;
     static constexpr long CHECK_GAP = 10000;
-    int fdout = 1;
-    long bytes_in = 0, bytes_out = 0;
+    const int fdout = 1;
     uint8_t inbuf[IBUFSIZ + 64];
-    uint8_t outbuf[OBUFSIZ+2048];
-    count_int htab[HSIZE];
-    unsigned short codetab[HSIZE];
-    int maxbits = BITS;
-    long hp, fc, checkpoint = CHECK_GAP;
-    int rpos, outbits, rlop, rsize, stcode = 1, boff, n_bits = 9, ratio = 0;
-    code_int free_ent = FIRST, extcode = (1 << n_bits) + 1;
+    uint8_t outbuf[OBUFSIZ + 2048];
+    uint64_t htab[HSIZE];
+    uint16_t codetab[HSIZE];
+    long bytes_in = 0, bytes_out = 0, hp, fc, checkpoint = CHECK_GAP;
+    int rpos, outbits, rlop, stcode = 1, boff, n_bits = 9, ratio = 0;
+    uint32_t free_ent = FIRST;
+    uint32_t extcode = (1 << n_bits) + 1;
     Fcode fcode;
     memset(outbuf, 0, sizeof(outbuf));
     outbuf[0] = 0x1f;
     outbuf[1] = 0x9d;
-    outbuf[2] = char(maxbits | 0x80);
+    outbuf[2] = char(16 | 0x80);
     boff = outbits = 3 << 3;
     fcode.code = 0;
     memset(htab, -1, sizeof(htab));
+    ssize_t rsize;
 
     while ((rsize = read(0, inbuf, IBUFSIZ)) > 0)
     {
@@ -127,15 +126,12 @@ int main(int argc, char **argv)
         {
             if (free_ent >= extcode && fcode.e.ent < FIRST)
             {
-                if (n_bits < maxbits)
+                if (n_bits < 16)
                 {
                     const uint8_t nb3 = n_bits << 3;
                     boff = outbits = outbits - 1 + nb3 - ((outbits - boff - 1 + nb3) % nb3);
-
-                    if (++n_bits < maxbits)
-                        extcode = (1 << n_bits) + 1;
-                    else
-                        extcode = 1 << n_bits;
+                    ++n_bits;
+                    extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << 16;
                 }
                 else
                 {
@@ -171,15 +167,13 @@ int main(int argc, char **argv)
                     boff = outbits = outbits - 1 + nb3 - ((outbits - boff - 1 + nb3) % nb3);
                     n_bits = 9, stcode = 1, free_ent = FIRST;
                     extcode = 1 << n_bits;
-                    if (n_bits < maxbits) ++extcode;
+                    if (n_bits < 16) ++extcode;
                 }
             }
 
             if (outbits >= OBUFSIZ << 3)
             {
-                if (write(fdout, outbuf, OBUFSIZ) != OBUFSIZ)
-                    throw "write error";
-
+                assert(write(fdout, outbuf, OBUFSIZ) == OBUFSIZ);
                 outbits -= OBUFSIZ << 3;
                 boff = -(((OBUFSIZ << 3) - boff) % (n_bits << 3));
                 bytes_out += OBUFSIZ;
@@ -188,19 +182,13 @@ int main(int argc, char **argv)
             }
 
             {
-                int i = rsize - rlop;
+                int i = std::min(int(rsize - rlop), int(extcode - free_ent));
+                i = std::min(i, int(((sizeof(outbuf) - 32) * 8 - outbits) / n_bits));
 
-                if (code_int(i) > extcode-free_ent)
-                    i = (int)(extcode-free_ent);
+                if (!stcode)
+                    i = std::min(i, int(checkpoint - bytes_in));
 
-                if (i > ((sizeof(outbuf) - 32)*8 - outbits)/n_bits)
-                    i = ((sizeof(outbuf) - 32)*8 - outbits)/n_bits;
-
-                if (!stcode && (long)i > checkpoint-bytes_in)
-                    i = int(checkpoint - bytes_in);
-
-                rlop += i;
-                bytes_in += i;
+                rlop += i, bytes_in += i;
             }
 
             goto next;
@@ -214,7 +202,7 @@ next2:
 #ifndef FAST
             code_int i;
             fc = fcode.code;
-            hp = long(fcode.e.c) << BITS - 8 ^ long(fcode.e.ent);
+            hp = long(fcode.e.c) <<  8 ^ long(fcode.e.ent);
 
             if ((i = htab[hp]) == fc)
                 goto hfound;
@@ -288,8 +276,7 @@ endlop:
 		while (rlop < rsize);
 	}
 
-	if (rsize < 0)
-        throw "read error";
+    assert(rsize >= 0);
 
 	if (bytes_in > 0)
     {
@@ -297,9 +284,7 @@ endlop:
         outbits += n_bits;
     }
 
-	if (write(fdout, outbuf, outbits + 7 >> 3) != outbits + 7 >> 3)
-        throw "write error";
-
+    assert(write(fdout, outbuf, outbits + 7 >> 3) == outbits + 7 >> 3);
 	bytes_out += outbits + 7 >> 3;
     fprintf(stderr, "Compression: ");
     int q;
