@@ -25,20 +25,20 @@
 #define	OBUFSIZ	BUFSIZ
 #define FIRST 257
 #define BITS 16
-#define HSIZE 69001
 
-#if USERMEM >= (800000)
+#if 1
 #define FAST
 #define	HSIZE (1<<17)
 #define	HMASK (HSIZE-1)
+#else
+#define HSIZE 69001
 #endif
 
-#define	output(b,o,c,n)	{ uint8_t *p = &(b)[(o)>>3];\
+#define	output(b,o,c)	{ uint8_t *p = &(b)[(o)>>3];\
     long i = ((long)(c))<<((o)&0x7);\
     p[0] |= uint8_t(i);\
     p[1] |= uint8_t(i>>8);\
-    p[2] |= uint8_t(i>>16);\
-    (o) += (n);}
+    p[2] |= uint8_t(i>>16);}
 
 //Special secudary hash table.
 static const int primetab[256] =
@@ -93,19 +93,17 @@ int main(int argc, char **argv)
     typedef uint64_t count_int;
     static constexpr long CHECK_GAP = 10000;
     int fdout = 1;
-    long bytes_in, bytes_out;
-    uint8_t inbuf[IBUFSIZ+64];
+    long bytes_in = 0, bytes_out = 0;
+    uint8_t inbuf[IBUFSIZ + 64];
     uint8_t outbuf[OBUFSIZ+2048];
     count_int htab[HSIZE];
     unsigned short codetab[HSIZE];
     int maxbits = BITS;
     long hp, fc, checkpoint = CHECK_GAP;
     int rpos, outbits, rlop, rsize, stcode = 1, boff, n_bits = 9, ratio = 0;
-    code_int free_ent = FIRST, extcode = 1 << n_bits;
+    code_int free_ent = FIRST, extcode = (1 << n_bits) + 1;
     Fcode fcode;
-    if (n_bits < maxbits) ++extcode;
     memset(outbuf, 0, sizeof(outbuf));
-    bytes_out = 0; bytes_in = 0;
     outbuf[0] = 0x1f;
     outbuf[1] = 0x9d;
     outbuf[2] = char(maxbits | 0x80);
@@ -167,7 +165,8 @@ int main(int argc, char **argv)
                 {
                     ratio = 0;
                     memset(htab, -1, sizeof(htab));
-                    output(outbuf, outbits, 256, n_bits);
+                    output(outbuf, outbits, 256);
+                    outbits += n_bits;
                     const uint8_t nb3 = n_bits << 3;
                     boff = outbits = outbits - 1 + nb3 - ((outbits - boff - 1 + nb3) % nb3);
                     n_bits = 9, stcode = 1, free_ent = FIRST;
@@ -213,73 +212,70 @@ next:
 next2:
             fcode.e.c = inbuf[rpos++];
 #ifndef FAST
+            code_int i;
+            fc = fcode.code;
+            hp = long(fcode.e.c) << BITS - 8 ^ long(fcode.e.ent);
+
+            if ((i = htab[hp]) == fc)
+                goto hfound;
+
+            if (i != -1)
             {
-                code_int i;
-                fc = fcode.code;
-                hp = long(fcode.e.c) << BITS - 8 ^ long(fcode.e.ent);
+                //secondary hash (after G. Knott)
+                long disp = HSIZE - hp - 1;	
 
-                if ((i = htab[hp]) == fc)
-                    goto hfound;
-
-                if (i != -1)
+                do
                 {
-                    //secondary hash (after G. Knott)
-                    long disp = (HSIZE - hp)-1;	
+                    if ((hp -= disp) < 0)
+                        hp += HSIZE;
 
-                    do
-                    {
-                        if ((hp -= disp) < 0)
-                            hp += HSIZE;
-
-                        if ((i = htab[hp]) == fc)
-                            goto hfound;
-                    }
-                    while (i != -1);
+                    if ((i = htab[hp]) == fc)
+                        goto hfound;
                 }
+                while (i != -1);
             }
 #else
+            long i;
+            fc = fcode.code;
+            hp = long(fcode.e.c) << 17 - 8 ^ long(fcode.e.ent);
+
+            if ((i = htab[hp]) == fc)
+                goto hfound;
+
+            if (i != -1)
             {
-                long i;
-                fc = fcode.code;
-                hp = long(fcode.e.c) << 17 - 8 ^ long(fcode.e.ent);
-
-                if ((i = htab[hp]) == fc)
-                    goto hfound;
-
-                if (i == -1)
-                    goto out;
-
-                long p = primetab[fcode.e.c];
-lookup:
-                hp = hp + p & HMASK;
-                if ((i = htab[hp]) == fc)
-                    goto hfound;
-                if (i == -1)
-                    goto out;
-                hp = hp + p & HMASK;
-                if ((i = htab[hp]) == fc)
-                    goto hfound;
-				if (i == -1)
-                    goto out;
-                hp = hp + p & HMASK;
-                if ((i = htab[hp]) == fc)
-                    goto hfound;
-                if (i == -1)
-                    goto out;
-                goto lookup;
+                const long p = primetab[fcode.e.c];
+                while (true)
+                {
+                    hp = hp + p & HMASK;
+                    if ((i = htab[hp]) == fc)
+                        goto hfound;
+                    if (i == -1)
+                        break;
+                    hp = hp + p & HMASK;
+                    if ((i = htab[hp]) == fc)
+                        goto hfound;
+		    		if (i == -1)
+                        break;
+                    hp = hp + p & HMASK;
+                    if ((i = htab[hp]) == fc)
+                        goto hfound;
+                    if (i == -1)
+                        break;
+                }
             }
-out:
         ;
 #endif
-            output(outbuf,outbits,fcode.e.ent,n_bits);
+            output(outbuf, outbits, fcode.e.ent);
+            outbits += n_bits;
 
 			{
-				long fc = fcode.code;
+				const long fc = fcode.code;
 				fcode.e.ent = fcode.e.c;
 
 				if (stcode)
 				{
-					codetab[hp] = (unsigned short)free_ent++;
+					codetab[hp] = (uint16_t)free_ent++;
 					htab[hp] = fc;
 				}
 			}
@@ -302,7 +298,10 @@ endlop:
         throw "read error";
 
 	if (bytes_in > 0)
-		output(outbuf,outbits,fcode.e.ent,n_bits);
+    {
+		output(outbuf, outbits, fcode.e.ent);
+        outbits += n_bits;
+    }
 
 	if (write(fdout, outbuf, outbits + 7 >> 3) != outbits + 7 >> 3)
         throw "write error";
