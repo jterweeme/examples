@@ -29,7 +29,7 @@
 #define HSIZE 69001
 
 #define	output(b,o,c)	{ uint8_t *p = &(b)[(o)>>3];\
-    long i = ((long)(c))<<((o)&0x7);\
+    long i = (long(c))<<((o)&0x7);\
     p[0] |= uint8_t(i);\
     p[1] |= uint8_t(i>>8);\
     p[2] |= uint8_t(i>>16);}
@@ -64,18 +64,10 @@ int main(int argc, char **argv)
     boff = outbits = 3 << 3;
     fcode.code = 0;
     memset(htab, -1, sizeof(htab));
-    ssize_t rsize;
 
-    while ((rsize = read(0, inbuf, IBUFSIZ)) > 0)
+    for (ssize_t rsize; (rsize = read(0, inbuf, IBUFSIZ)) > 0;)
     {
-        if (bytes_in == 0)
-        {
-            fcode.e.ent = inbuf[0];
-            rpos = 1;
-        }
-        else
-            rpos = 0;
-
+        bytes_in == 0 ? fcode.e.ent = inbuf[0], rpos = 1 : rpos = 0;
         rlop = 0;
 
         do
@@ -98,18 +90,19 @@ int main(int argc, char **argv)
 
             if (!stcode && bytes_in >= checkpoint && fcode.e.ent < FIRST)
             {
-                long int rat;
+                long rat;
                 checkpoint = bytes_in + CHECK_GAP;
+                const long foo = bytes_out + (outbits >> 3);
 
                 if (bytes_in > 0x007fffff)
                 {
                     //shift will overflow
-                    rat = (bytes_out + (outbits >> 3)) >> 8;
+                    rat = foo >> 8;
                     rat = rat == 0 ? 0x7fffffff : bytes_in / rat;
                 }
                 else
                     //8 fractional bits
-                    rat = (bytes_in << 8) / (bytes_out + (outbits >> 3));	
+                    rat = (bytes_in << 8) / foo;
 
                 if (rat >= ratio)
                     ratio = int(rat);
@@ -138,24 +131,25 @@ int main(int argc, char **argv)
             }
 
             {
-                int i = std::min(int(rsize - rlop), int(extcode - free_ent));
-                i = std::min(i, int(((sizeof(outbuf) - 32) * 8 - outbits) / n_bits));
+                int i2 = std::min(int(rsize - rlop), int(extcode - free_ent));
+                i2 = std::min(i2, int(((sizeof(outbuf) - 32) * 8 - outbits) / n_bits));
 
                 if (!stcode)
-                    i = std::min(i, int(checkpoint - bytes_in));
+                    i2 = std::min(i2, int(checkpoint - bytes_in));
 
-                rlop += i, bytes_in += i;
+                rlop += i2, bytes_in += i2;
             }
 
             while (rpos < rlop)
 next2:
             {
                 fcode.e.c = inbuf[rpos++];
-                uint64_t i;
                 fc = fcode.code;
                 hp = long(fcode.e.c) <<  8 ^ long(fcode.e.ent);
+                const long disp = HSIZE - hp - 1;
+                uint64_t i = htab[hp];
     
-                if ((i = htab[hp]) == fc)
+                if (i == fc)
                 {
                     fcode.e.ent = codetab[hp];
     
@@ -164,57 +158,41 @@ next2:
     
                     continue;
                 }
-
-                if (i != -1)
+                
+                //secondary hash (after G. Knott)
+                while (i != -1)
                 {
-                    //secondary hash (after G. Knott)
-                    long disp = HSIZE - hp - 1;	
+                    if ((hp -= disp) < 0)
+                        hp += HSIZE;
 
-                    while (i != -1)
+                    if ((i = htab[hp]) == fc)
                     {
-                        if ((hp -= disp) < 0)
-                            hp += HSIZE;
+                        fcode.e.ent = codetab[hp];
 
-                        if ((i = htab[hp]) == fc)
-                        {
-                            fcode.e.ent = codetab[hp];
-
-                            if (rpos >= rlop)
-                                goto endlop;
+                        if (rpos >= rlop)
+                            goto endlop;
     
-                            goto next2;
-                        }
+                        goto next2;
                     }
                 }
 
                 output(outbuf, outbits, fcode.e.ent);
                 outbits += n_bits;
+                fc = fcode.code;
+                fcode.e.ent = fcode.e.c;
 
-	    		{
-                    const long fc = fcode.code;
-                    fcode.e.ent = fcode.e.c;
-
-                    if (stcode)
-                    {
-                        codetab[hp] = (uint16_t)free_ent++;
-                        htab[hp] = fc;
-                    }
-                }
+                if (stcode)
+                    codetab[hp] = uint16_t(free_ent++), htab[hp] = fc;
             }
 endlop:
             if (fcode.e.ent >= FIRST && rpos < rsize)
                 goto next2;
 
             if (rpos > rlop)
-            {
-                bytes_in += rpos-rlop;
-                rlop = rpos;
-            }
+                bytes_in += rpos - rlop, rlop = rpos;
         }
         while (rlop < rsize);
     }
-
-    assert(rsize >= 0);
 
 	if (bytes_in > 0)
     {
@@ -226,7 +204,7 @@ endlop:
 	bytes_out += outbits + 7 >> 3;
     fprintf(stderr, "Compression: ");
     int q;
-    long num = bytes_in - bytes_out;
+    const long num = bytes_in - bytes_out;
 
     if (bytes_in > 0)
     {
