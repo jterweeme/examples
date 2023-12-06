@@ -27,7 +27,7 @@
 #define	OBUFSIZ	BUFSIZ
 #define FIRST 257
 
-#if 1
+#if 0
 #define FAST
 #define	HSIZE (1<<17)
 #define	HMASK (HSIZE-1)
@@ -200,7 +200,7 @@ next:
 next2:
             fcode.e.c = inbuf[rpos++];
 #ifndef FAST
-            code_int i;
+            long i;
             fc = fcode.code;
             hp = long(fcode.e.c) <<  8 ^ long(fcode.e.ent);
 

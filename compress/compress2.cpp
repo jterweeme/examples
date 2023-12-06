@@ -19,6 +19,7 @@
 #include <cstring>
 #include <cassert>
 #include <algorithm>
+#include <iostream>
 #include <fcntl.h>
 #include <ctype.h>
 #include <unistd.h>
@@ -50,7 +51,7 @@ int main(int argc, char **argv)
     const int fdout = 1;
     uint8_t inbuf[IBUFSIZ + 64];
     uint8_t outbuf[OBUFSIZ + 2048];
-    uint64_t htab[HSIZE];
+    int64_t htab[HSIZE];
     uint16_t codetab[HSIZE];
     long bytes_in = 0, bytes_out = 0, hp, fc, checkpoint = CHECK_GAP;
     int rpos, outbits, rlop, stcode = 1, boff, n_bits = 9, ratio = 0;
@@ -101,8 +102,10 @@ int main(int argc, char **argv)
                     rat = rat == 0 ? 0x7fffffff : bytes_in / rat;
                 }
                 else
+                {
                     //8 fractional bits
                     rat = (bytes_in << 8) / foo;
+                }
 
                 if (rat >= ratio)
                     ratio = int(rat);
@@ -110,13 +113,18 @@ int main(int argc, char **argv)
                 {
                     ratio = 0;
                     memset(htab, -1, sizeof(htab));
-                    output(outbuf, outbits, 256);
+
+                    uint8_t *p = outbuf + (outbits >> 3);
+                    long i = 256 << (outbits & 0x7);
+                    p[0] |= uint8_t(i);
+                    p[1] |= uint8_t(i >> 8);
+                    p[2] |= uint8_t(i >> 16);
+
                     outbits += n_bits;
                     const uint8_t nb3 = n_bits << 3;
                     boff = outbits = outbits - 1 + nb3 - ((outbits - boff - 1 + nb3) % nb3);
                     n_bits = 9, stcode = 1, free_ent = FIRST;
-                    extcode = 1 << n_bits;
-                    if (n_bits < 16) ++extcode;
+                    extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << n_bits;
                 }
             }
 
@@ -140,6 +148,7 @@ int main(int argc, char **argv)
                 rlop += i2, bytes_in += i2;
             }
 
+loop1:
             while (rpos < rlop)
 next2:
             {
@@ -147,32 +156,23 @@ next2:
                 fc = fcode.code;
                 hp = long(fcode.e.c) <<  8 ^ long(fcode.e.ent);
                 const long disp = HSIZE - hp - 1;
-                uint64_t i = htab[hp];
     
-                if (i == fc)
+                if (htab[hp] == fc)
                 {
                     fcode.e.ent = codetab[hp];
-    
-                    if (rpos >= rlop)
-                        break;
-    
                     continue;
                 }
                 
                 //secondary hash (after G. Knott)
-                while (i != -1)
+                while (htab[hp] != -1)
                 {
                     if ((hp -= disp) < 0)
                         hp += HSIZE;
 
-                    if ((i = htab[hp]) == fc)
+                    if (htab[hp] == fc)
                     {
                         fcode.e.ent = codetab[hp];
-
-                        if (rpos >= rlop)
-                            goto endlop;
-    
-                        goto next2;
+                        goto loop1;
                     }
                 }
 
@@ -184,7 +184,7 @@ next2:
                 if (stcode)
                     codetab[hp] = uint16_t(free_ent++), htab[hp] = fc;
             }
-endlop:
+
             if (fcode.e.ent >= FIRST && rpos < rsize)
                 goto next2;
 
