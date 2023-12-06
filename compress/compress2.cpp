@@ -29,12 +29,6 @@
 #define FIRST 257
 #define HSIZE 69001
 
-#define	output(b,o,c)	{ uint8_t *p = &(b)[(o)>>3];\
-    long i = (long(c))<<((o)&0x7);\
-    p[0] |= uint8_t(i);\
-    p[1] |= uint8_t(i>>8);\
-    p[2] |= uint8_t(i>>16);}
-
 union Fcode
 {
     long code;
@@ -48,21 +42,19 @@ union Fcode
 int main(int argc, char **argv)
 {
     static constexpr long CHECK_GAP = 10000;
-    const int fdout = 1;
     uint8_t inbuf[IBUFSIZ + 64];
     uint8_t outbuf[OBUFSIZ + 2048];
     int64_t htab[HSIZE];
     uint16_t codetab[HSIZE];
     long bytes_in = 0, bytes_out = 0, hp, fc, checkpoint = CHECK_GAP;
-    int rpos, outbits, rlop, stcode = 1, boff, n_bits = 9, ratio = 0;
+    int rpos, outbits = 0, rlop, stcode = 1, boff = 0, n_bits = 9, ratio = 0;
     uint32_t free_ent = FIRST;
     uint32_t extcode = (1 << n_bits) + 1;
     Fcode fcode;
     memset(outbuf, 0, sizeof(outbuf));
-    outbuf[0] = 0x1f;
-    outbuf[1] = 0x9d;
-    outbuf[2] = char(16 | 0x80);
-    boff = outbits = 3 << 3;
+    std::cout.put(0x1f);
+    std::cout.put(0x9d);
+    std::cout.put(char(16 | 0x80));
     fcode.code = 0;
     memset(htab, -1, sizeof(htab));
 
@@ -115,7 +107,7 @@ int main(int argc, char **argv)
                     memset(htab, -1, sizeof(htab));
 
                     uint8_t *p = outbuf + (outbits >> 3);
-                    long i = 256 << (outbits & 0x7);
+                    long i = 256 << (outbits & 7);
                     p[0] |= uint8_t(i);
                     p[1] |= uint8_t(i >> 8);
                     p[2] |= uint8_t(i >> 16);
@@ -130,7 +122,7 @@ int main(int argc, char **argv)
 
             if (outbits >= OBUFSIZ << 3)
             {
-                assert(write(fdout, outbuf, OBUFSIZ) == OBUFSIZ);
+                std::cout.write((const char *)outbuf, OBUFSIZ);
                 outbits -= OBUFSIZ << 3;
                 boff = -(((OBUFSIZ << 3) - boff) % (n_bits << 3));
                 bytes_out += OBUFSIZ;
@@ -176,7 +168,12 @@ next2:
                     }
                 }
 
-                output(outbuf, outbits, fcode.e.ent);
+                uint8_t *p = &outbuf[outbits >> 3];
+                long i = long(fcode.e.ent) << (outbits & 7);
+                p[0] |= uint8_t(i);
+                p[1] |= uint8_t(i >> 8);
+                p[2] |= uint8_t(i >> 16);
+
                 outbits += n_bits;
                 fc = fcode.code;
                 fcode.e.ent = fcode.e.c;
@@ -196,11 +193,16 @@ next2:
 
 	if (bytes_in > 0)
     {
-		output(outbuf, outbits, fcode.e.ent);
+        uint8_t *p = &outbuf[outbits >> 3];
+        long i = long(fcode.e.ent) << (outbits & 7);
+        p[0] |= uint8_t(i);
+        p[1] |= uint8_t(i >> 8);
+        p[2] |= uint8_t(i >> 16);
+
         outbits += n_bits;
     }
 
-    assert(write(fdout, outbuf, outbits + 7 >> 3) == outbits + 7 >> 3);
+    std::cout.write((const char *)outbuf, outbits + 7 >> 3);
 	bytes_out += outbits + 7 >> 3;
     fprintf(stderr, "Compression: ");
     int q;
