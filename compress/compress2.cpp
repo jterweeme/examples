@@ -15,7 +15,6 @@
 
 #include <cstdint>
 #include <cstdio>
-#include <cstdlib>
 #include <cstring>
 #include <cassert>
 #include <algorithm>
@@ -42,27 +41,49 @@ union Fcode
 class BitOutputStream
 {
     std::ostream &_os;
-public:
+    long _bytes_out = 0;
+    int boff = 0;
+    int _outbits = 0;
     uint8_t outbuf[OBUFSIZ + 2048];
-    int outbits = 0;
-    BitOutputStream(std::ostream &os) : _os(os) { memset(outbuf, 0, sizeof(outbuf)); }
+public:
+    int outbits() const { return _outbits; }
+    long bytes_out() const { return _bytes_out; }
+    BitOutputStream(std::ostream &os) : _os(os) { std::fill(outbuf, outbuf + sizeof(outbuf), 0); }
 
-    void write1()
+    void flush1()
     {
         _os.write((const char *)outbuf, OBUFSIZ);
-        outbits -= OBUFSIZ << 3;
-        memcpy(outbuf, outbuf + OBUFSIZ, (outbits >> 3) + 1);
-        memset(outbuf + (outbits >> 3) + 1, '\0', OBUFSIZ);
+        _outbits -= OBUFSIZ << 3;
+        memcpy(outbuf, outbuf + OBUFSIZ, (_outbits >> 3) + 1);
+        memset(outbuf + (_outbits >> 3) + 1, '\0', OBUFSIZ);
+        _bytes_out += OBUFSIZ;
     }
 
-    void write2(uint16_t code, uint8_t n_bits)
+    void flush2()
     {
-        uint8_t *p = &outbuf[outbits >> 3];
-        long i = long(code) << (outbits & 7);
+        _os.write((const char *)outbuf, _outbits + 7 >> 3);
+        _bytes_out += _outbits + 7 >> 3;
+    }
+
+    void de_bof(uint8_t n_bits)
+    {
+        const uint8_t nb3 = n_bits << 3;
+        boff = _outbits = _outbits - 1 + nb3 - ((_outbits - boff - 1 + nb3) % nb3);
+    }
+
+    void de_bof2(uint8_t n_bits)
+    {
+        boff = -(((OBUFSIZ << 3) - boff) % (n_bits << 3));
+    }
+
+    void write(uint16_t code, uint8_t n_bits)
+    {
+        uint8_t *p = &outbuf[_outbits >> 3];
+        long i = long(code) << (_outbits & 7);
         p[0] |= uint8_t(i);
         p[1] |= uint8_t(i >> 8);
         p[2] |= uint8_t(i >> 16);
-        outbits += n_bits;
+        _outbits += n_bits;
     }
 };
 
@@ -73,14 +94,14 @@ int main(int argc, char **argv)
     uint8_t inbuf[IBUFSIZ + 64];
     int64_t htab[HSIZE];
     uint16_t codetab[HSIZE];
-    long bytes_in = 0, bytes_out = 0, hp, fc, checkpoint = CHECK_GAP;
-    int rpos, rlop, stcode = 1, boff = 0, n_bits = 9, ratio = 0;
+    long bytes_in = 0, hp, fc, checkpoint = CHECK_GAP;
+    int rpos, rlop, stcode = 1, n_bits = 9, ratio = 0;
     uint32_t free_ent = FIRST;
     uint32_t extcode = (1 << n_bits) + 1;
     Fcode fcode;
     std::cout.put(0x1f);
     std::cout.put(0x9d);
-    std::cout.put(char(16 | 0x80));
+    std::cout.put(16 | 0x80);
     fcode.code = 0;
     memset(htab, -1, sizeof(htab));
 
@@ -94,24 +115,16 @@ int main(int argc, char **argv)
             if (free_ent >= extcode && fcode.e.ent < FIRST)
             {
                 if (n_bits < 16)
-                {
-                    const uint8_t nb3 = n_bits << 3;
-                    boff = bos.outbits = bos.outbits - 1 + nb3 - ((bos.outbits - boff - 1 + nb3) % nb3);
-                    ++n_bits;
-                    extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << 16;
-                }
+                    bos.de_bof(n_bits++), extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << 16;
                 else
-                {
-                    extcode = (1 << 16) + OBUFSIZ;
-                    stcode = 0;
-                }
+                    extcode = (1 << 16) + OBUFSIZ, stcode = 0;
             }
 
             if (!stcode && bytes_in >= checkpoint && fcode.e.ent < FIRST)
             {
                 long rat;
                 checkpoint = bytes_in + CHECK_GAP;
-                const long foo = bytes_out + (bos.outbits >> 3);
+                const long foo = bos.bytes_out() + (bos.outbits() >> 3);
 
                 if (bytes_in > 0x007fffff)
                     //shift will overflow
@@ -126,25 +139,19 @@ int main(int argc, char **argv)
                 {
                     ratio = 0;
                     memset(htab, -1, sizeof(htab));
-                    bos.write2(256, n_bits);
-                    const uint8_t nb3 = n_bits << 3;
-                    boff = bos.outbits = bos.outbits - 1 + nb3 - ((bos.outbits - boff - 1 + nb3) % nb3);
+                    bos.write(256, n_bits);
+                    bos.de_bof(n_bits);
                     n_bits = 9, stcode = 1, free_ent = FIRST;
                     extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << n_bits;
                 }
             }
 
-            if (bos.outbits >= OBUFSIZ << 3)
-            {
-                bos.write1();
-
-                boff = -(((OBUFSIZ << 3) - boff) % (n_bits << 3));
-                bytes_out += OBUFSIZ;
-            }
+            if (bos.outbits() >= OBUFSIZ << 3)
+                bos.flush1(), bos.de_bof2(n_bits);
 
             {
                 int i2 = std::min(int(rsize - rlop), int(extcode - free_ent));
-                i2 = std::min(i2, int(((sizeof(bos.outbuf) - 32) * 8 - bos.outbits) / n_bits));
+                i2 = std::min(i2, ((OBUFSIZ + 2048 - 32) * 8 - bos.outbits()) / n_bits);
 
                 if (!stcode)
                     i2 = std::min(i2, int(checkpoint - bytes_in));
@@ -179,7 +186,7 @@ next2:
                         goto loop1;
                     }
                 }
-                bos.write2(fcode.e.ent, n_bits);
+                bos.write(fcode.e.ent, n_bits);
                 fc = fcode.code;
                 fcode.e.ent = fcode.e.c;
 
@@ -197,13 +204,12 @@ next2:
     }
 
 	if (bytes_in > 0)
-        bos.write2(fcode.e.ent, n_bits);
+        bos.write(fcode.e.ent, n_bits);
 
-    std::cout.write((const char *)bos.outbuf, bos.outbits + 7 >> 3);
-	bytes_out += bos.outbits + 7 >> 3;
+    bos.flush2();
     fprintf(stderr, "Compression: ");
     int q;
-    const long num = bytes_in - bytes_out;
+    const long num = bytes_in - bos.bytes_out();
 
     if (bytes_in > 0)
     {
