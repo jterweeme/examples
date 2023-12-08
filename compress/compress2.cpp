@@ -38,37 +38,35 @@ union Fcode
 class BitOutputStream
 {
     std::ostream &_os;
-    long _bytes_out = 0;
-    int _outbits = 0;
-    uint8_t outbuf[OBUFSIZ + 2048];
+    uint64_t _outbits = 0;
+    uint64_t _cnt = 0;
+    uint8_t _outbuf[OBUFSIZ + 2048];
 public:
-    int outbits() const { return _outbits; }
-    long bytes_out() const { return _bytes_out; }
-    BitOutputStream(std::ostream &os) : _os(os) { memset(outbuf, 0, sizeof(outbuf)); }
+    uint64_t cnt() const { return _cnt; }
+    uint64_t outbits() const { return _outbits; }
+    BitOutputStream(std::ostream &os) : _os(os) { memset(_outbuf, 0, sizeof(_outbuf)); }
 
     void flush1()
     {
-        _os.write((const char *)outbuf, OBUFSIZ);
+        _os.write((const char *)_outbuf, OBUFSIZ);
         _outbits -= OBUFSIZ << 3;
-        memcpy(outbuf, outbuf + OBUFSIZ, (_outbits >> 3) + 1);
-        memset(outbuf + (_outbits >> 3) + 1, '\0', OBUFSIZ);
-        _bytes_out += OBUFSIZ;
+        memcpy(_outbuf, _outbuf + OBUFSIZ, (_outbits >> 3) + 1);
+        memset(_outbuf + (_outbits >> 3) + 1, '\0', OBUFSIZ);
     }
 
     void flush2()
     {
-        _os.write((const char *)outbuf, _outbits + 7 >> 3);
-        _bytes_out += _outbits + 7 >> 3;
+        _os.write((const char *)_outbuf, _outbits + 7 >> 3);
     }
 
     void write(uint16_t code, uint8_t n_bits)
     {
-        uint8_t *p = &outbuf[_outbits >> 3];
+        uint8_t *p = _outbuf + (_outbits >> 3);
         long i = long(code) << (_outbits & 7);
         p[0] |= uint8_t(i);
         p[1] |= uint8_t(i >> 8);
         p[2] |= uint8_t(i >> 16);
-        _outbits += n_bits;
+        _outbits += n_bits, _cnt += n_bits;
     }
 };
 
@@ -114,14 +112,14 @@ int main(int argc, char **argv)
             {
                 long rat;
                 checkpoint = bytes_in + CHECK_GAP;
-                const long foo = bos.bytes_out() + (bos.outbits() >> 3);
+                const uint64_t bitsout = bos.cnt();
 
                 if (bytes_in > 0x007fffff)
                     //shift will overflow
-                    rat = foo >> 8 == 0 ? 0x7fffffff : bytes_in / (foo >> 8);
+                    rat = bitsout >> 11 == 0 ? 0x7fffffff : bytes_in / (bitsout >> 11);
                 else
                     //8 fractional bits
-                    rat = (bytes_in << 8) / foo;
+                    rat = (bytes_in << 8) / (bitsout >> 3);
 
                 if (rat >= ratio)
                     ratio = int(rat);
@@ -150,7 +148,7 @@ int main(int argc, char **argv)
 
             {
                 int i2 = std::min(int(rsize - rlop), int(extcode - free_ent));
-                i2 = std::min(i2, ((OBUFSIZ + 2048 - 32) * 8 - bos.outbits()) / n_bits);
+                i2 = std::min(uint64_t(i2), ((OBUFSIZ + 2048 - 32) * 8 - bos.outbits()) / n_bits);
 
                 if (!stcode)
                     i2 = std::min(i2, int(checkpoint - bytes_in));
@@ -158,10 +156,11 @@ int main(int argc, char **argv)
                 rlop += i2, bytes_in += i2;
             }
 
+            bool flag = false;
 loop1:
-            while (rpos < rlop)
-next2:
+            while (rpos < rlop || flag)
             {
+                flag = false;
                 fcode.e.c = inbuf[rpos++];
                 fc = fcode.code;
                 hp = long(fcode.e.c) <<  8 ^ long(fcode.e.ent);
@@ -193,7 +192,10 @@ next2:
             }
 
             if (fcode.e.ent >= FIRST && rpos < rsize)
-                goto next2;
+            {
+                flag = true;
+                goto loop1;
+            }
 
             if (rpos > rlop)
                 bytes_in += rpos - rlop, rlop = rpos;
@@ -207,7 +209,7 @@ next2:
     bos.flush2();
     std::cerr << "Compression: ";
     int q;
-    const long num = bytes_in - bos.bytes_out();
+    const long num = bytes_in - (bos.cnt() >> 3);
 
     if (bytes_in > 0)
     {
