@@ -14,13 +14,10 @@
  */
 
 #include <cstdint>
-#include <cstdio>
 #include <cstring>
 #include <cassert>
 #include <algorithm>
 #include <iostream>
-#include <fcntl.h>
-#include <ctype.h>
 #include <unistd.h>
 
 #define	IBUFSIZ	BUFSIZ
@@ -48,7 +45,7 @@ class BitOutputStream
 public:
     int outbits() const { return _outbits; }
     long bytes_out() const { return _bytes_out; }
-    BitOutputStream(std::ostream &os) : _os(os) { std::fill(outbuf, outbuf + sizeof(outbuf), 0); }
+    BitOutputStream(std::ostream &os) : _os(os) { memset(outbuf, 0, sizeof(outbuf)); }
 
     void flush1()
     {
@@ -103,7 +100,7 @@ int main(int argc, char **argv)
     std::cout.put(0x9d);
     std::cout.put(16 | 0x80);
     fcode.code = 0;
-    memset(htab, -1, sizeof(htab));
+    std::fill(htab, htab + HSIZE, -1);
 
     for (ssize_t rsize; (rsize = read(0, inbuf, IBUFSIZ)) > 0;)
     {
@@ -138,7 +135,7 @@ int main(int argc, char **argv)
                 else
                 {
                     ratio = 0;
-                    memset(htab, -1, sizeof(htab));
+                    std::fill(htab, htab + HSIZE, -1);
                     bos.write(256, n_bits);
                     bos.de_bof(n_bits);
                     n_bits = 9, stcode = 1, free_ent = FIRST;
@@ -166,7 +163,6 @@ next2:
                 fcode.e.c = inbuf[rpos++];
                 fc = fcode.code;
                 hp = long(fcode.e.c) <<  8 ^ long(fcode.e.ent);
-                const long disp = HSIZE - hp - 1;
     
                 if (htab[hp] == fc)
                 {
@@ -177,7 +173,7 @@ next2:
                 //secondary hash (after G. Knott)
                 while (htab[hp] != -1)
                 {
-                    if ((hp -= disp) < 0)
+                    if ((hp -= HSIZE - hp - 1) < 0)
                         hp += HSIZE;
 
                     if (htab[hp] == fc)
@@ -207,7 +203,7 @@ next2:
         bos.write(fcode.e.ent, n_bits);
 
     bos.flush2();
-    fprintf(stderr, "Compression: ");
+    std::cerr << "Compression: ";
     int q;
     const long num = bytes_in - bos.bytes_out();
 
@@ -221,10 +217,10 @@ next2:
     else q = 10000;
 
     if (q < 0)
-        putc('-', stderr), q = -q;
+        std::cerr.put('-'), q = -q;
 
-    fprintf(stderr, "%d.%02d%%", q / 100, q % 100);
-    fprintf(stderr, "\n");
+    std::cerr << q / 100 << "." << q % 100 << "\r\n";
+    std::cerr.flush();
     return 0;
 }
 
