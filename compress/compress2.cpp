@@ -39,7 +39,6 @@ class BitOutputStream
 {
     std::ostream &_os;
     long _bytes_out = 0;
-    int boff = 0;
     int _outbits = 0;
     uint8_t outbuf[OBUFSIZ + 2048];
 public:
@@ -62,15 +61,10 @@ public:
         _bytes_out += _outbits + 7 >> 3;
     }
 
-    void de_bof(uint8_t n_bits)
+    void de_bof(int &boffx, uint8_t n_bits)
     {
         const uint8_t nb3 = n_bits << 3;
-        boff = _outbits = _outbits - 1 + nb3 - ((_outbits - boff - 1 + nb3) % nb3);
-    }
-
-    void de_bof2(uint8_t n_bits)
-    {
-        boff = -(((OBUFSIZ << 3) - boff) % (n_bits << 3));
+        boffx = _outbits = _outbits - 1 + nb3 - ((_outbits - boffx - 1 + nb3) % nb3);
     }
 
     void write(uint16_t code, uint8_t n_bits)
@@ -101,6 +95,7 @@ int main(int argc, char **argv)
     std::cout.put(16 | 0x80);
     fcode.code = 0;
     std::fill(htab, htab + HSIZE, -1);
+    int boff = 0;
 
     for (ssize_t rsize; (rsize = read(0, inbuf, IBUFSIZ)) > 0;)
     {
@@ -112,7 +107,10 @@ int main(int argc, char **argv)
             if (free_ent >= extcode && fcode.e.ent < FIRST)
             {
                 if (n_bits < 16)
-                    bos.de_bof(n_bits++), extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << 16;
+                {
+                    bos.de_bof(boff, n_bits++);
+                    extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << 16;
+                }
                 else
                     extcode = (1 << 16) + OBUFSIZ, stcode = 0;
             }
@@ -137,14 +135,17 @@ int main(int argc, char **argv)
                     ratio = 0;
                     std::fill(htab, htab + HSIZE, -1);
                     bos.write(256, n_bits);
-                    bos.de_bof(n_bits);
+                    bos.de_bof(boff, n_bits);
                     n_bits = 9, stcode = 1, free_ent = FIRST;
                     extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << n_bits;
                 }
             }
 
             if (bos.outbits() >= OBUFSIZ << 3)
-                bos.flush1(), bos.de_bof2(n_bits);
+            {
+                bos.flush1();
+                boff = -(((OBUFSIZ << 3) - boff) % (n_bits << 3));
+            }
 
             {
                 int i2 = std::min(int(rsize - rlop), int(extcode - free_ent));
