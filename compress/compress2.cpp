@@ -39,9 +39,10 @@ class BitOutputStream
 {
     std::ostream &_os;
     long _bytes_out = 0;
-    int _outbits = 0;
+
     uint8_t outbuf[OBUFSIZ + 2048];
 public:
+    int _outbits = 0;
     int outbits() const { return _outbits; }
     long bytes_out() const { return _bytes_out; }
     BitOutputStream(std::ostream &os) : _os(os) { memset(outbuf, 0, sizeof(outbuf)); }
@@ -64,7 +65,8 @@ public:
     void de_bof(int boff, uint8_t n_bits)
     {
         const uint8_t nb3 = n_bits << 3;
-        _outbits = _outbits - 1 + nb3 - ((_outbits - boff - 1 + nb3) % nb3);
+        const int foo = - 1 + nb3 - ((_outbits - boff - 1 + nb3) % nb3);
+        _outbits += foo;
     }
 
     void write(uint16_t code, uint8_t n_bits)
@@ -108,8 +110,10 @@ int main(int argc, char **argv)
             {
                 if (n_bits < 16)
                 {
-                    bos.de_bof(boff, n_bits++);
-                    boff = bos.outbits();
+                    const uint8_t nb3 = n_bits++ << 3;
+                    const int foo = - 1 + nb3 - ((bos._outbits - boff - 1 + nb3) % nb3);
+                    bos._outbits += foo;
+                    boff = bos._outbits;
                     extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << 16;
                 }
                 else
