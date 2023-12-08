@@ -61,10 +61,10 @@ public:
         _bytes_out += _outbits + 7 >> 3;
     }
 
-    void de_bof(int &boffx, uint8_t n_bits)
+    void de_bof(int boff, uint8_t n_bits)
     {
         const uint8_t nb3 = n_bits << 3;
-        boffx = _outbits = _outbits - 1 + nb3 - ((_outbits - boffx - 1 + nb3) % nb3);
+        _outbits = _outbits - 1 + nb3 - ((_outbits - boff - 1 + nb3) % nb3);
     }
 
     void write(uint16_t code, uint8_t n_bits)
@@ -109,6 +109,7 @@ int main(int argc, char **argv)
                 if (n_bits < 16)
                 {
                     bos.de_bof(boff, n_bits++);
+                    boff = bos.outbits();
                     extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << 16;
                 }
                 else
@@ -136,6 +137,7 @@ int main(int argc, char **argv)
                     std::fill(htab, htab + HSIZE, -1);
                     bos.write(256, n_bits);
                     bos.de_bof(boff, n_bits);
+                    boff = bos.outbits();
                     n_bits = 9, stcode = 1, free_ent = FIRST;
                     extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << n_bits;
                 }
