@@ -47,17 +47,18 @@ public:
 
     void write(uint16_t code, uint8_t n_bits)
     {
-        _window |= code << _bits;
-        _cnt += n_bits;
-        
-        for (_bits += n_bits; _bits >= 8; _bits -= 8)
-            _os.put(_window & 0xff), _window = _window >> 8;
+        _window |= code << _bits, _cnt += n_bits, _bits += n_bits;
+        while (_bits >= 8) flush();
     }
 
-    void flush2()
+    void flush()
     {
-        if (_bits > 0)
+        if (_bits)
+        {
+            const uint32_t bits = std::min(_bits, 8U);
             _os.put(_window & 0xff);
+            _window = _window >> bits, _bits -= bits;
+        }
     }
 };
 
@@ -177,7 +178,7 @@ loop1:
 	if (bytes_in > 0)
         bos.write(fcode.e.ent, n_bits);
 
-    bos.flush2();
+    bos.flush();
     std::cerr << "Compression: ";
     int q;
     const long num = bytes_in - bos.cnt() / 8;
