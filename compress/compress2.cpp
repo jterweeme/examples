@@ -137,16 +137,7 @@ int main(int argc, char **argv)
             if (bos.outbits() >= OBUFSIZ << 3)
                 bos.flush1();
 
-            {
-                int i2 = std::min(int(rsize - rlop), int(extcode - free_ent));
-                i2 = std::min(uint64_t(i2), ((OBUFSIZ + 2048 - 32) * 8 - bos.outbits()) / n_bits);
-
-                if (!stcode)
-                    i2 = std::min(i2, int(checkpoint - bytes_in));
-
-                rlop += i2, bytes_in += i2;
-            }
-
+            ++rlop, ++bytes_in;
             bool flag = false;
 loop1:
             while (rpos < rlop || flag)
