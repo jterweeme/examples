@@ -16,9 +16,7 @@
 #include <cstdint>
 #include <cstring>
 #include <cassert>
-#include <algorithm>
 #include <iostream>
-#include <unistd.h>
 
 #define	IBUFSIZ	BUFSIZ
 #define OBUFSIZ BUFSIZ
@@ -82,8 +80,13 @@ int main(int argc, char **argv)
     fcode.code = 0;
     std::fill(htab, htab + HSIZE, -1);
 
-    for (ssize_t rsize; (rsize = read(0, inbuf, IBUFSIZ)) > 0;)
+    while (true)
     {
+        std::cin.read((char *)inbuf, IBUFSIZ);
+
+        if (std::cin.gcount() <= 0)
+            break;
+
         bytes_in == 0 ? fcode.e.ent = inbuf[0], rpos = 1 : rpos = 0;
         int rlop = 0;
 
@@ -163,7 +166,7 @@ loop1:
                     codetab[hp] = uint16_t(free_ent++), htab[hp] = fc;
             }
 
-            if (fcode.e.ent >= FIRST && rpos < rsize)
+            if (fcode.e.ent >= FIRST && rpos < std::cin.gcount())
             {
                 flag = true;
                 goto loop1;
@@ -172,7 +175,7 @@ loop1:
             if (rpos > rlop)
                 bytes_in += rpos - rlop, rlop = rpos;
         }
-        while (rlop < rsize);
+        while (rlop < std::cin.gcount());
     }
 
 	if (bytes_in > 0)
