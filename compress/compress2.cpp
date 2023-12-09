@@ -24,7 +24,6 @@
 #define OBUFSIZ BUFSIZ
 #define FIRST 257
 #define HSIZE 69001
-#define NIEUW
 
 union Fcode
 {
@@ -39,50 +38,20 @@ union Fcode
 class BitOutputStream
 {
     std::ostream &_os;
-    uint64_t _outbits = 0;
-    uint64_t _cnt = 0;
-    uint8_t _outbuf[OBUFSIZ + 2048];
     uint32_t _window = 0;
     uint32_t _bits = 0;
 public:
+    uint64_t _cnt = 0;
     uint64_t cnt() const { return _cnt; }
-    BitOutputStream(std::ostream &os) : _os(os) { memset(_outbuf, 0, sizeof(_outbuf)); }
-#ifndef NIEUW
-    uint64_t outbits() const { return _outbits; }
+    BitOutputStream(std::ostream &os) : _os(os) { }
 
-    void flush1()
-    {
-        _os.write((const char *)_outbuf, OBUFSIZ);
-        _outbits -= OBUFSIZ << 3;
-        memcpy(_outbuf, _outbuf + OBUFSIZ, _outbits / 8 + 1);
-        memset(_outbuf + _outbits / 8 + 1, 0, OBUFSIZ);
-    }
-
-    void flush2()
-    {
-        _os.write((const char *)_outbuf, _outbits + 7 >> 3);
-    }
-
-    void write(uint16_t code, uint8_t n_bits)
-    {
-        uint8_t *p = _outbuf + (_outbits >> 3);
-        long i = long(code) << (_outbits & 7);
-        p[0] |= uint8_t(i);
-        p[1] |= uint8_t(i >> 8);
-        p[2] |= uint8_t(i >> 16);
-        _outbits += n_bits, _cnt += n_bits;
-    }
-#else
     void write(uint16_t code, uint8_t n_bits)
     {
         _window |= code << _bits;
-        _bits += n_bits, _cnt += n_bits;
+        _cnt += n_bits;
         
-        while (_bits >= 8)
-        {
-            _os.put(_window & 0xff);
-            _window = _window >> 8, _bits -= 8;
-        }
+        for (_bits += n_bits; _bits >= 8; _bits -= 8)
+            _os.put(_window & 0xff), _window = _window >> 8;
     }
 
     void flush2()
@@ -90,13 +59,11 @@ public:
         if (_bits > 0)
             _os.put(_window & 0xff);
     }
-#endif
 };
 
 int main(int argc, char **argv)
 {
     static constexpr long CHECK_GAP = 10000;
-    BitOutputStream bos(std::cout);
     uint8_t inbuf[IBUFSIZ + 64];
     int64_t htab[HSIZE];
     uint16_t codetab[HSIZE];
@@ -105,9 +72,12 @@ int main(int argc, char **argv)
     uint32_t free_ent = FIRST;
     uint32_t extcode = (1 << n_bits) + 1;
     Fcode fcode;
-    std::cout.put(0x1f);
-    std::cout.put(0x9d);
-    std::cout.put(16 | 0x80);
+    BitOutputStream bos(std::cout);
+    bos.write(0x9d1f, 16);  //magic
+    bos.write(16, 5);       //max. 16 bits (hardcoded)
+    bos.write(0, 2);        //reserved
+    bos.write(1, 1);        //block mode
+    bos._cnt = 0;
     fcode.code = 0;
     std::fill(htab, htab + HSIZE, -1);
 
@@ -155,10 +125,7 @@ int main(int argc, char **argv)
                     extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << n_bits;
                 }
             }
-#ifndef NIEUW
-            if (bos.outbits() >= OBUFSIZ << 3)
-                bos.flush1();
-#endif
+
             ++rlop, ++bytes_in;
             bool flag = false;
 loop1:
@@ -209,9 +176,8 @@ loop1:
 
 	if (bytes_in > 0)
         bos.write(fcode.e.ent, n_bits);
-#ifndef NIEUW
+
     bos.flush2();
-#endif
     std::cerr << "Compression: ";
     int q;
     const long num = bytes_in - bos.cnt() / 8;
@@ -228,7 +194,7 @@ loop1:
     if (q < 0)
         std::cerr.put('-'), q = -q;
 
-    std::cerr << q / 100 << "." << q % 100 << "\r\n";
+    std::cerr << q / 100 << "." << q % 100 << "%\r\n";
     std::cerr.flush();
     return 0;
 }
