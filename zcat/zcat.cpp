@@ -27,20 +27,6 @@ public:
         _window = _window >> n, _bits -= n, cnt += n;
         return ret;
     }
-
-    void ignoreBits(uint32_t n)
-    {
-        //first deplete window
-        uint32_t x = std::min(n, _bits);
-        _window = _window >> x, _bits -= x, n -= x;
-
-        //ignore whole bytes
-        auto dv = std::div(n, 8);
-        _is.ignore(dv.quot);
-
-        //if between 1 and 7 bits left to ignore, invoke readBits
-        readBits(dv.rem), cnt += n + x;
-    }
 };
 
 int main(int argc, char **argv)
@@ -75,8 +61,8 @@ int main(int argc, char **argv)
         if (code == 256 && block_mode)
         {
             //padding?!
-            const uint8_t nb3 = n_bits << 3;
-            bis.ignoreBits(nb3 - (bis.cnt - 1 + nb3) % nb3 - 1);
+            for (const uint8_t nb3 = n_bits << 3; nb3 - (bis.cnt - 1 + nb3) % nb3 > 1;)
+                bis.readBits(16);
 
             std::fill(codetab, codetab + 256, 0), free_ent = 256, n_bits = 9;
             continue;

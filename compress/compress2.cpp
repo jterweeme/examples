@@ -121,7 +121,7 @@ int main(int argc, char **argv)
                     bos.write(256, n_bits);
                     const uint8_t nb3 = n_bits << 3;
 
-                    while (nb3 - (bos.cnt() - 1 + nb3) % nb3 - 1 > 0)
+                    while (nb3 - (bos.cnt() - 1 + nb3) % nb3 > 1)
                         bos.write(0, 16);
 
                     n_bits = 9, stcode = 1, free_ent = FIRST;
