@@ -24,6 +24,7 @@
 #define OBUFSIZ BUFSIZ
 #define FIRST 257
 #define HSIZE 69001
+#define NIEUW
 
 union Fcode
 {
@@ -42,10 +43,12 @@ class BitOutputStream
     uint64_t _cnt = 0;
     uint8_t _outbuf[OBUFSIZ + 2048];
     uint32_t _window = 0;
+    uint32_t _bits = 0;
 public:
     uint64_t cnt() const { return _cnt; }
-    uint64_t outbits() const { return _outbits; }
     BitOutputStream(std::ostream &os) : _os(os) { memset(_outbuf, 0, sizeof(_outbuf)); }
+#ifndef NIEUW
+    uint64_t outbits() const { return _outbits; }
 
     void flush1()
     {
@@ -69,6 +72,25 @@ public:
         p[2] |= uint8_t(i >> 16);
         _outbits += n_bits, _cnt += n_bits;
     }
+#else
+    void write(uint16_t code, uint8_t n_bits)
+    {
+        _window |= code << _bits;
+        _bits += n_bits, _cnt += n_bits;
+        
+        while (_bits >= 8)
+        {
+            _os.put(_window & 0xff);
+            _window = _window >> 8, _bits -= 8;
+        }
+    }
+
+    void flush2()
+    {
+        if (_bits > 0)
+            _os.put(_window & 0xff);
+    }
+#endif
 };
 
 int main(int argc, char **argv)
@@ -133,10 +155,10 @@ int main(int argc, char **argv)
                     extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << n_bits;
                 }
             }
-
+#ifndef NIEUW
             if (bos.outbits() >= OBUFSIZ << 3)
                 bos.flush1();
-
+#endif
             ++rlop, ++bytes_in;
             bool flag = false;
 loop1:
@@ -187,8 +209,9 @@ loop1:
 
 	if (bytes_in > 0)
         bos.write(fcode.e.ent, n_bits);
-
+#ifndef NIEUW
     bos.flush2();
+#endif
     std::cerr << "Compression: ";
     int q;
     const long num = bytes_in - bos.cnt() / 8;
