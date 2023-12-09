@@ -120,10 +120,9 @@ int main(int argc, char **argv)
                     std::fill(htab, htab + HSIZE, -1);
                     bos.write(256, n_bits);
                     const uint8_t nb3 = n_bits << 3;
-                    uint32_t foo = nb3 - (bos.cnt() - 1 + nb3) % nb3 - 1;
 
-                    while (foo > 0)
-                        bos.write(0, 16), foo -= 16;
+                    while (nb3 - (bos.cnt() - 1 + nb3) % nb3 - 1 > 0)
+                        bos.write(0, 16);
 
                     n_bits = 9, stcode = 1, free_ent = FIRST;
                     extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << n_bits;
