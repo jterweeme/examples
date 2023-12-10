@@ -17,10 +17,7 @@
 #include <cstring>
 #include <cassert>
 #include <iostream>
-
-#define	IBUFSIZ	BUFSIZ
-#define FIRST 257
-#define HSIZE 69001
+#include <vector>
 
 class BitOutputStream
 {
@@ -59,10 +56,13 @@ union Fcode
     } e;
 };
 
+#define	IBUFSIZ	BUFSIZ
+static constexpr uint16_t FIRST = 257;
+static constexpr uint32_t HSIZE = 69001;
+
 int main(int argc, char **argv)
 {
     static constexpr long CHECK_GAP = 10000;
-    uint8_t inbuf[IBUFSIZ + 64];
     int64_t htab[HSIZE];
     uint16_t codetab[HSIZE];
     long bytes_in = 0, hp, fc, checkpoint = CHECK_GAP;
@@ -78,14 +78,20 @@ int main(int argc, char **argv)
     bos._cnt = 0;
     fcode.code = 0;
     std::fill(htab, htab + HSIZE, -1);
-
+#if 1
+    uint8_t inbuf[IBUFSIZ + 64];
     while (true)
     {
         std::cin.read((char *)inbuf, IBUFSIZ);
 
         if (std::cin.gcount() <= 0)
             break;
-
+#else
+    {
+        std::vector<uint8_t> inbuf;
+        for (int c; (c = std::cin.get()) != -1;)
+            inbuf.push_back(c);
+#endif
         bytes_in == 0 ? fcode.e.ent = inbuf[0], rpos = 1 : rpos = 0;
         int rlop = 0;
 

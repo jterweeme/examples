@@ -43,19 +43,23 @@ int main(int argc, char **argv)
     assert(maxbits <= 16);
     bis.readBits(2);
     const bool block_mode = bis.readBits(1) ? true : false;
-    uint8_t n_bits = 9;
-    int32_t free_ent = block_mode ? 257 : 256, code, oldcode, incode;
+    bis.cnt = 0; //counter moet op nul om later padding te berekenen
+
     uint16_t codetab[1 << maxbits];
     std::fill(codetab, codetab + 256, 0);
-    bis.cnt = 0; //counter moet op nul om later padding te berekenen
-    code = oldcode = bis.readBits(n_bits);
-    assert(code >= 0 && code < 256);
-    char finchar = oldcode, htab[1 << maxbits];
-    os->put(finchar);
+    char htab[1 << maxbits];
     std::iota(htab, htab + 256, 0);
-    std::vector<char> stack;
 
-    while ((code = incode = bis.readBits(n_bits)) != -1)
+    uint8_t n_bits = 9;
+    int32_t free_ent = block_mode ? 257 : 256;
+
+    int32_t first = bis.readBits(n_bits);
+    assert(first >= 0 && first < 256);
+
+    char finchar = first;
+    os->put(finchar);
+
+    for (int32_t code, incode, oldcode = first; (code = incode = bis.readBits(n_bits)) != -1;)
     {
         if (code == 256 && block_mode)
         {
@@ -69,6 +73,7 @@ int main(int argc, char **argv)
         }
 
         assert(code <= free_ent);
+        std::vector<char> stack;
 
         if (code == free_ent)
             stack.push_back(finchar), code = oldcode;
@@ -84,10 +89,10 @@ int main(int argc, char **argv)
         if ((code = free_ent) < 1 << maxbits)
             codetab[code] = uint16_t(oldcode), htab[code] = finchar, free_ent = code + 1;
     
-        oldcode = incode;
-
         if (free_ent > (n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1))
             ++n_bits;
+
+        oldcode = incode;
     }
 
     os->flush();
