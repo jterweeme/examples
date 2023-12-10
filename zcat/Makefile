@@ -34,6 +34,7 @@ test:
 	#./zcatc side1.pnm.Z | md5sum
 	zcat wingames.iso.Z | md5sum
 	./zcat wingames.iso.Z | md5sum
+	./zcat2 wingames.iso.Z | md5sum
 	#./zcatc wingames.iso.Z | md5sum
 	#zcat enwik9.Z | md5sum
 	#./zcat enwik9.Z | md5sum

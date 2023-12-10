@@ -35,8 +35,8 @@ class LZW
     const bool _block_mode;
     uint16_t *_codetab;
     char *_htab;
-    int32_t _oldcode;
-    int32_t _free_ent;
+    uint32_t _oldcode;
+    uint32_t _free_ent;
     char _finchar;
 public:
     LZW(std::ostream &os, uint8_t maxbits, bool block_mode, char first)
@@ -66,8 +66,9 @@ public:
         _free_ent = 256;
     }
 
-    void code(uint16_t c, uint8_t &n_bits)
+    void code(uint32_t c, uint8_t &n_bits)
     {
+        assert(c >= 0 && c <= 65535);
         assert(c <= _free_ent);
         uint16_t incode = c;
         std::vector<char> stack;
@@ -83,10 +84,10 @@ public:
         while (stack.size())
             _os.put(stack.back()), stack.pop_back();
 
-        if ((c = _free_ent) < 1 << _maxbits)
-            _codetab[c] = uint16_t(_oldcode), _htab[c] = _finchar, _free_ent = c + 1;
+        if ((c = _free_ent) < 1U << _maxbits)
+            _codetab[c] = uint16_t(_oldcode), _htab[c] = _finchar, _free_ent = c + 1U;
 
-        if (_free_ent > (n_bits == _maxbits ? 1 << _maxbits : (1 << n_bits) - 1))
+        if (_free_ent > (n_bits == _maxbits ? 1U << _maxbits : (1U << n_bits) - 1U))
             ++n_bits;
 
         _oldcode = incode;
@@ -111,11 +112,11 @@ int main(int argc, char **argv)
     bis.cnt = 0; //counter moet op nul om later padding te berekenen
 
     uint8_t n_bits = 9;
-    int32_t code = bis.readBits(n_bits);
-    assert(code >= 0 && code < 256);
-    LZW lzw(*os, maxbits, block_mode, code);
+    int32_t first = bis.readBits(n_bits);
+    assert(first >= 0 && first < 256);
+    LZW lzw(*os, maxbits, block_mode, first);
 
-    while ((code = bis.readBits(n_bits)) != -1)
+    for (int32_t code; (code = bis.readBits(n_bits)) != -1;)
     {
         if (code == 256 && block_mode)
         {

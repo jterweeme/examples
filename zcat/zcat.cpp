@@ -85,7 +85,7 @@ int main(int argc, char **argv)
 
         while (stack.size())
             os->put(stack.back()), stack.pop_back();
-    
+
         if ((code = free_ent) < 1 << maxbits)
             codetab[code] = uint16_t(oldcode), htab[code] = finchar, free_ent = code + 1;
     
