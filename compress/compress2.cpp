@@ -19,19 +19,8 @@
 #include <iostream>
 
 #define	IBUFSIZ	BUFSIZ
-#define OBUFSIZ BUFSIZ
 #define FIRST 257
 #define HSIZE 69001
-
-union Fcode
-{
-    long code;
-    struct
-    {
-        uint8_t c;
-        uint16_t ent;
-    } e;
-};
 
 class BitOutputStream
 {
@@ -58,6 +47,16 @@ public:
             _window = _window >> bits, _bits -= bits;
         }
     }
+};
+
+union Fcode
+{
+    long code;
+    struct
+    {
+        uint8_t c;
+        uint16_t ent;
+    } e;
 };
 
 int main(int argc, char **argv)
@@ -97,7 +96,7 @@ int main(int argc, char **argv)
                 if (n_bits < 16)
                     ++n_bits, extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << 16;
                 else
-                    extcode = (1 << 16) + OBUFSIZ, stcode = 0;
+                    stcode = 0;
             }
 
             if (!stcode && bytes_in >= checkpoint && fcode.e.ent < FIRST)
@@ -119,9 +118,8 @@ int main(int argc, char **argv)
                     ratio = 0;
                     std::fill(htab, htab + HSIZE, -1);
                     bos.write(256, n_bits);
-                    const uint8_t nb3 = n_bits << 3;
 
-                    while (nb3 - (bos.cnt() - 1 + nb3) % nb3 > 1)
+                    for (uint8_t nb3 = n_bits << 3; (bos.cnt() - 1U + nb3) % nb3 != nb3 - 1U;)
                         bos.write(0, 16);
 
                     n_bits = 9, stcode = 1, free_ent = FIRST;

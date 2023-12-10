@@ -8,8 +8,7 @@
 class BitStream
 {
     std::istream &_is;
-    uint32_t _bits = 0;
-    uint32_t _window = 0;
+    uint32_t _bits = 0, _window = 0;
 public:
     uint32_t cnt = 0;
     BitStream(std::istream &is) : _is(is) { }
@@ -61,8 +60,9 @@ int main(int argc, char **argv)
         if (code == 256 && block_mode)
         {
             //padding?!
-            for (const uint8_t nb3 = n_bits << 3; nb3 - (bis.cnt - 1 + nb3) % nb3 > 1;)
-                bis.readBits(16);
+            assert(n_bits == 13 || n_bits == 15 || n_bits == 16);
+            for (const uint8_t nb3 = n_bits << 3; (bis.cnt - 1U + nb3) % nb3 != nb3 - 1U;)
+                bis.readBits(n_bits);
 
             std::fill(codetab, codetab + 256, 0), free_ent = 256, n_bits = 9;
             continue;
