@@ -1,7 +1,7 @@
 all:
 	rm -vf zcat zcat2 zcatc
-	g++ -g -O2 -fsanitize=address,undefined -Wall -Wno-parentheses -o zcat zcat.cpp
-	g++ -g -O2 -fsanitize=address,undefined -Wall -Wno-parentheses -o zcat2 zcat2.cpp
+	g++ -g -O2 -Wall -Wno-parentheses -o zcat zcat.cpp
+	g++ -g -O2 -Wall -Wno-parentheses -o zcat2 zcat2.cpp
 	gcc -g -O2 -fsanitize=address,undefined -Wall -Wno-parentheses -o zcatc zcat.c
 
 test:

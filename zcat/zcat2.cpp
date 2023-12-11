@@ -3,7 +3,6 @@
 #include <numeric>
 #include <iostream>
 #include <fstream>
-#include <vector>
 
 class BitStream
 {
@@ -32,76 +31,39 @@ class LZW
 {
     const unsigned _maxbits;
     const bool _block_mode;
-    unsigned *_codetab;
-    char *_htab;
-    unsigned _oldcode;
-    unsigned _free_ent;
-    char _finchar;
+    unsigned _oldcode, _free_ent, *_codetab;
+    char _finchar, _stack[2048], *_htab;
 public:
+    void reset() { std::fill(_codetab, _codetab + 256, 0), _free_ent = 256; }
+    ~LZW() { delete[] _codetab; delete[] _htab; }
     LZW(unsigned maxbits, bool block_mode, char first)
       :
         _maxbits(maxbits),
         _block_mode(block_mode),
-        _codetab(new unsigned[1 << maxbits]),
-        _htab(new char[1 << maxbits]),
         _oldcode(first),
-        _free_ent(block_mode ? 257 : 256)
+        _free_ent(block_mode ? 257 : 256),
+        _codetab(new unsigned[1 << maxbits]),
+        _finchar(first),
+        _htab(new char[1 << maxbits])
     {
         std::iota(_htab, _htab + 256, 0);
     }
 
-    ~LZW()
+    inline void code(const unsigned in, unsigned &n_bits, std::ostream &os)
     {
-        delete[] _codetab;
-        delete[] _htab;
-    }
-
-    void reset()
-    {
-        std::fill(_codetab, _codetab + 256, 0);
-        _free_ent = 256;
-    }
-
-    inline void code(const unsigned incode, unsigned &n_bits, std::ostream &os)
-    {
-        assert(incode >= 0 && incode <= 65535);
-        assert(incode <= _free_ent);
-        unsigned c = incode;
-        std::vector<char> stack;
-
-        if (c == _free_ent)
-        {
-            stack.push_back(_finchar);
-            c = _oldcode;
-        }
-
-        while (c >= 256)
-        {
-            stack.push_back(_htab[c]);
-            c = _codetab[c];
-        }
-
+        assert(in >= 0 && in <= 65535 && in <= _free_ent);
+        unsigned c = in;
+        char *stackp = _stack + sizeof(_stack);
+        if (c == _free_ent) *--stackp = _finchar, c = _oldcode;
+        while (c >= 256U) *--stackp = _htab[c], c = _codetab[c];
         os.put(_finchar = _htab[c]);
+        os.write(stackp, _stack + sizeof(_stack) - stackp);
 
-        while (stack.size())
-            os.put(stack.back()), stack.pop_back();
+        if (_free_ent < 1U << _maxbits)
+            _codetab[_free_ent] = _oldcode, _htab[_free_ent++] = _finchar;
 
-        c = _free_ent;
-
-        if (c < 1U << _maxbits)
-        {
-            assert(c < 65536);
-            _codetab[c] = _oldcode;
-            _htab[c] = _finchar;
-            _free_ent = c + 1U;
-        }
-
-        assert(_free_ent < 65537);
-
-        if (_free_ent > (n_bits == _maxbits ? 1U << _maxbits : (1U << n_bits) - 1U))
-            ++n_bits;
-
-        _oldcode = incode;
+        if (_free_ent > (n_bits == _maxbits ? 1U << _maxbits : (1U << n_bits) - 1U)) ++n_bits;
+        _oldcode = in;
     }
 };
 
