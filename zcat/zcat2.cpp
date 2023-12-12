@@ -27,12 +27,27 @@ public:
     }
 };
 
+class Stack
+{
+    char _stack[2048];
+    char *_stackp = _stack + sizeof(_stack);
+public:
+    void push(char c) { *--_stackp = c; }
+
+    void print(std::ostream &os)
+    {
+        os.write(_stackp, _stack + sizeof(_stack) - _stackp);
+        _stackp = _stack + sizeof(_stack);
+    }
+};
+
 class LZW
 {
     const unsigned _maxbits;
     const bool _block_mode;
     unsigned _oldcode, _free_ent, *_codetab;
-    char _finchar, _stack[2048], *_htab;
+    char _finchar, *_htab;
+    Stack _stack;
 public:
     void reset() { std::fill(_codetab, _codetab + 256, 0), _free_ent = 256; }
     ~LZW() { delete[] _codetab; delete[] _htab; }
@@ -53,16 +68,31 @@ public:
     {
         assert(in >= 0 && in <= 65535 && in <= _free_ent);
         unsigned c = in;
-        char *stackp = _stack + sizeof(_stack);
-        if (c == _free_ent) *--stackp = _finchar, c = _oldcode;
-        while (c >= 256U) *--stackp = _htab[c], c = _codetab[c];
+
+        if (c == _free_ent)
+        {
+            _stack.push(_finchar);
+            c = _oldcode;
+        }
+
+        while (c >= 256U)
+        {
+            _stack.push(_htab[c]);
+            c = _codetab[c];
+        }
+
         os.put(_finchar = _htab[c]);
-        os.write(stackp, _stack + sizeof(_stack) - stackp);
+        _stack.print(os);
 
         if (_free_ent < 1U << _maxbits)
-            _codetab[_free_ent] = _oldcode, _htab[_free_ent++] = _finchar;
+        {
+            _codetab[_free_ent] = _oldcode;
+            _htab[_free_ent++] = _finchar;
+        }
 
-        if (_free_ent > (n_bits == _maxbits ? 1U << _maxbits : (1U << n_bits) - 1U)) ++n_bits;
+        if (_free_ent > (n_bits == _maxbits ? 1U << _maxbits : (1U << n_bits) - 1U))
+            ++n_bits;
+
         _oldcode = in;
     }
 };
