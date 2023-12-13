@@ -45,28 +45,37 @@ class LZW
 {
     const unsigned _maxbits;
     const bool _block_mode;
-    unsigned _oldcode, _free_ent, *_codetab, _n_bits = 9;
+    unsigned _oldcode, _free_ent, _n_bits = 9;
     char _finchar, *_htab;
     Stack _stack;
+    std::vector<unsigned> _codetab;
+    std::vector<char> _htab2;
 public:
     void reset()
     {
         _free_ent = 256;
         _n_bits = 9;
+        _codetab.clear();
+        _htab2.clear();
     }
     unsigned n_bits() const { return _n_bits; }
-    ~LZW() { delete[] _codetab; delete[] _htab; }
+    ~LZW() { delete[] _htab; }
     LZW(unsigned maxbits, bool block_mode, char first)
       :
         _maxbits(maxbits),
         _block_mode(block_mode),
         _oldcode(first),
         _free_ent(block_mode ? 257 : 256),
-        _codetab(new unsigned[1 << maxbits]),
         _finchar(first),
         _htab(new char[1 << maxbits])
     {
         std::iota(_htab, _htab + 256, 0);
+
+        if (block_mode)
+        {
+            _codetab.push_back(0);
+            _htab2.push_back(0);
+        }
     }
 
     inline void code(const unsigned in, std::ostream &os)
@@ -82,20 +91,22 @@ public:
 
         while (c >= 256U)
         {
-            _stack.push(_htab[c]);
+            _stack.push(_htab2[c - 256]);
             c = _codetab[c - 256];
         }
 
-        os.put(_finchar = _htab[c]);
+        //os.put(_finchar = _htab[c]);
+        os.put(_finchar = c);
         _stack.print(os);
 
-        if (_free_ent < 1U << _maxbits)
+        if (_codetab.size() + 256 < 1U << _maxbits)
         {
-            _codetab[_free_ent - 256] = _oldcode;
+            _codetab.push_back(_oldcode);
+            _htab2.push_back(_finchar);
             _htab[_free_ent++] = _finchar;
         }
 
-        if (_free_ent > (_n_bits == _maxbits ? 1U << _maxbits : (1U << _n_bits) - 1U))
+        if (_codetab.size() + 256 > (_n_bits == _maxbits ? 1U << _maxbits : (1U << _n_bits) - 1U))
             ++_n_bits;
 
         _oldcode = in;

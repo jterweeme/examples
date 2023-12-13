@@ -84,7 +84,7 @@ public:
             c = _codetab[c];
         }
 
-        os.put(_finchar = _htab[c]);
+        os.put(_finchar = c);
         _stack.print(os);
 
         if (_free_ent < 1U << _maxbits)
