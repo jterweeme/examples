@@ -3,6 +3,7 @@
 #include <numeric>
 #include <iostream>
 #include <fstream>
+#include <vector>
 
 class BitStream
 {
@@ -29,15 +30,14 @@ public:
 
 class Stack
 {
-    char _stack[2048];
-    char *_stackp = _stack + sizeof(_stack);
+    std::vector<char> _stack;
 public:
-    void push(char c) { *--_stackp = c; }
+    void push(char c) { _stack.push_back(c); }
 
     void print(std::ostream &os)
     {
-        os.write(_stackp, _stack + sizeof(_stack) - _stackp);
-        _stackp = _stack + sizeof(_stack);
+        while (_stack.size())
+            os.put(_stack.back()), _stack.pop_back();
     }
 };
 
@@ -49,7 +49,10 @@ class LZW
     char _finchar, *_htab;
     Stack _stack;
 public:
-    void reset() { std::fill(_codetab, _codetab + 256, 0), _free_ent = 256; }
+    void reset()
+    {
+        _free_ent = 256;
+    }
     ~LZW() { delete[] _codetab; delete[] _htab; }
     LZW(unsigned maxbits, bool block_mode, char first)
       :

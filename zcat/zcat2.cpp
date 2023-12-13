@@ -45,11 +45,16 @@ class LZW
 {
     const unsigned _maxbits;
     const bool _block_mode;
-    unsigned _oldcode, _free_ent, *_codetab;
+    unsigned _oldcode, _free_ent, *_codetab, _n_bits = 9;
     char _finchar, *_htab;
     Stack _stack;
 public:
-    void reset() { std::fill(_codetab, _codetab + 256, 0), _free_ent = 256; }
+    void reset()
+    {
+        _free_ent = 256;
+        _n_bits = 9;
+    }
+    unsigned n_bits() const { return _n_bits; }
     ~LZW() { delete[] _codetab; delete[] _htab; }
     LZW(unsigned maxbits, bool block_mode, char first)
       :
@@ -64,7 +69,7 @@ public:
         std::iota(_htab, _htab + 256, 0);
     }
 
-    inline void code(const unsigned in, unsigned &n_bits, std::ostream &os)
+    inline void code(const unsigned in, std::ostream &os)
     {
         assert(in >= 0 && in <= 65535 && in <= _free_ent);
         unsigned c = in;
@@ -90,8 +95,8 @@ public:
             _htab[_free_ent++] = _finchar;
         }
 
-        if (_free_ent > (n_bits == _maxbits ? 1U << _maxbits : (1U << n_bits) - 1U))
-            ++n_bits;
+        if (_free_ent > (_n_bits == _maxbits ? 1U << _maxbits : (1U << _n_bits) - 1U))
+            ++_n_bits;
 
         _oldcode = in;
     }
@@ -114,27 +119,25 @@ int main(int argc, char **argv)
     const bool block_mode = bis.readBits(1) ? true : false;
     bis.cnt = 0; //counter moet op nul om later padding te berekenen
 
-    unsigned n_bits = 9;
-    int first = bis.readBits(n_bits);
+    int first = bis.readBits(9);
     assert(first >= 0 && first < 256);
     os->put(first);
     LZW lzw(maxbits, block_mode, first);
 
-    for (int code; (code = bis.readBits(n_bits)) != -1;)
+    for (int code; (code = bis.readBits(lzw.n_bits())) != -1;)
     {
         if (code == 256 && block_mode)
         {
             //padding?!
-            assert(n_bits == 13 || n_bits == 15 || n_bits == 16);
-            for (const unsigned nb3 = n_bits << 3; (bis.cnt - 1U + nb3) % nb3 != nb3 - 1U;)
-                bis.readBits(n_bits);
+            assert(lzw.n_bits() == 13 || lzw.n_bits() == 15 || lzw.n_bits() == 16);
+            for (const unsigned nb3 = lzw.n_bits() << 3; (bis.cnt - 1U + nb3) % nb3 != nb3 - 1U;)
+                bis.readBits(lzw.n_bits());
 
             lzw.reset();
-            n_bits = 9;
         }
         else
         {        
-            lzw.code(code, n_bits, *os);
+            lzw.code(code, *os);
         }
     }
 
