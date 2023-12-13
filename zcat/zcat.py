@@ -11,8 +11,10 @@ class LZW:
         self.oldcode = first
         self.free_ent = 257 if block_mode else 256
         self.finchar = first
-        self.htab = list(range(1 << maxbits))
-        self.codetab = list(range(1 << maxbits))
+        self.htab = [0] * (1 << maxbits)
+        for i in range(256):
+            self.htab[i] = i
+        self.codetab = [0] * (1 << maxbits)
         self.n_bits = 9
     def code(self, incode):
         c = incode;

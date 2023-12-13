@@ -3,17 +3,16 @@
 #include <numeric>
 #include <iostream>
 #include <fstream>
-#include <vector>
 
 class BitStream
 {
     std::istream &_is;
-    uint32_t _bits = 0, _window = 0;
+    unsigned _bits = 0, _window = 0;
 public:
-    uint32_t cnt = 0;
+    unsigned cnt = 0;
     BitStream(std::istream &is) : _is(is) { }
 
-    int32_t readBits(uint8_t n)
+    int readBits(unsigned n)
     {
         for (; _bits < n; _bits += 8)
         {
@@ -22,9 +21,79 @@ public:
             _window = _window | c << _bits;
         }
 
-        int32_t ret = _window & (1 << n) - 1;
+        int ret = _window & (1 << n) - 1;
         _window = _window >> n, _bits -= n, cnt += n;
         return ret;
+    }
+};
+
+class Stack
+{
+    char _stack[2048];
+    char *_stackp = _stack + sizeof(_stack);
+public:
+    void push(char c) { *--_stackp = c; }
+
+    void print(std::ostream &os)
+    {
+        os.write(_stackp, _stack + sizeof(_stack) - _stackp);
+        _stackp = _stack + sizeof(_stack);
+    }
+};
+
+class LZW
+{
+    const unsigned _maxbits;
+    const bool _block_mode;
+    unsigned _oldcode, _free_ent, *_codetab;
+    char _finchar, *_htab;
+    Stack _stack;
+public:
+    void reset() { std::fill(_codetab, _codetab + 256, 0), _free_ent = 256; }
+    ~LZW() { delete[] _codetab; delete[] _htab; }
+    LZW(unsigned maxbits, bool block_mode, char first)
+      :
+        _maxbits(maxbits),
+        _block_mode(block_mode),
+        _oldcode(first),
+        _free_ent(block_mode ? 257 : 256),
+        _codetab(new unsigned[1 << maxbits]),
+        _finchar(first),
+        _htab(new char[1 << maxbits])
+    {
+        std::iota(_htab, _htab + 256, 0);
+    }
+
+    inline void code(const unsigned in, unsigned &n_bits, std::ostream &os)
+    {
+        assert(in >= 0 && in <= 65535 && in <= _free_ent);
+        unsigned c = in;
+
+        if (c == _free_ent)
+        {
+            _stack.push(_finchar);
+            c = _oldcode;
+        }
+
+        while (c >= 256U)
+        {
+            _stack.push(_htab[c]);
+            c = _codetab[c];
+        }
+
+        os.put(_finchar = _htab[c]);
+        _stack.print(os);
+
+        if (_free_ent < 1U << _maxbits)
+        {
+            _codetab[_free_ent] = _oldcode;
+            _htab[_free_ent++] = _finchar;
+        }
+
+        if (_free_ent > (n_bits == _maxbits ? 1U << _maxbits : (1U << n_bits) - 1U))
+            ++n_bits;
+
+        _oldcode = in;
     }
 };
 
@@ -39,60 +108,34 @@ int main(int argc, char **argv)
 
     BitStream bis(*is);
     assert(bis.readBits(16) == 0x9d1f);
-    const uint8_t maxbits = bis.readBits(5);
+    const unsigned maxbits = bis.readBits(5);
     assert(maxbits <= 16);
     bis.readBits(2);
     const bool block_mode = bis.readBits(1) ? true : false;
     bis.cnt = 0; //counter moet op nul om later padding te berekenen
 
-    uint16_t codetab[1 << maxbits];
-    std::fill(codetab, codetab + 256, 0);
-    char htab[1 << maxbits];
-    std::iota(htab, htab + 256, 0);
-
-    uint8_t n_bits = 9;
-    int32_t free_ent = block_mode ? 257 : 256;
-
-    int32_t first = bis.readBits(n_bits);
+    unsigned n_bits = 9;
+    int first = bis.readBits(n_bits);
     assert(first >= 0 && first < 256);
+    os->put(first);
+    LZW lzw(maxbits, block_mode, first);
 
-    char finchar = first;
-    os->put(finchar);
-
-    for (int32_t code, incode, oldcode = first; (code = incode = bis.readBits(n_bits)) != -1;)
+    for (int code; (code = bis.readBits(n_bits)) != -1;)
     {
         if (code == 256 && block_mode)
         {
             //padding?!
             assert(n_bits == 13 || n_bits == 15 || n_bits == 16);
-            for (const uint8_t nb3 = n_bits << 3; (bis.cnt - 1U + nb3) % nb3 != nb3 - 1U;)
+            for (const unsigned nb3 = n_bits << 3; (bis.cnt - 1U + nb3) % nb3 != nb3 - 1U;)
                 bis.readBits(n_bits);
 
-            std::fill(codetab, codetab + 256, 0), free_ent = 256, n_bits = 9;
-            continue;
+            lzw.reset();
+            n_bits = 9;
         }
-
-        assert(code <= free_ent);
-        std::vector<char> stack;
-
-        if (code == free_ent)
-            stack.push_back(finchar), code = oldcode;
-
-        while (code >= 256)
-            stack.push_back(htab[code]), code = codetab[code];
-
-        os->put(finchar = htab[code]);
-
-        while (stack.size())
-            os->put(stack.back()), stack.pop_back();
-
-        if (free_ent < 1 << maxbits)
-            codetab[free_ent] = uint16_t(oldcode), htab[free_ent] = finchar, ++free_ent;
-    
-        if (free_ent > (n_bits == maxbits ? 1 << maxbits : (1 << n_bits) - 1))
-            ++n_bits;
-
-        oldcode = incode;
+        else
+        {        
+            lzw.code(code, n_bits, *os);
+        }
     }
 
     os->flush();
