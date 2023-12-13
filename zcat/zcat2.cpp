@@ -28,28 +28,15 @@ public:
     }
 };
 
-class Stack
-{
-    std::vector<char> _stack;
-public:
-    void push(char c) { _stack.push_back(c); }
-
-    void print(std::ostream &os)
-    {
-        while (_stack.size())
-            os.put(_stack.back()), _stack.pop_back();
-    }
-};
-
 class LZW
 {
     const unsigned _maxbits;
     const bool _block_mode;
     unsigned _oldcode, _n_bits = 9;
     char _finchar;
-    Stack _stack;
     std::vector<unsigned> _codetab;
     std::vector<char> _htab;
+    std::vector<char> _stack;
 public:
     void reset()
     {
@@ -65,6 +52,7 @@ public:
         _oldcode(first),
         _finchar(first)
     {
+        //why did they design it this way?
         if (block_mode)
         {
             _codetab.push_back(0);
@@ -78,32 +66,20 @@ public:
         unsigned c = in;
 
         if (c == _codetab.size() + 256)
-        {
-            _stack.push(_finchar);
-            c = _oldcode;
-        }
+            _stack.push_back(_finchar), c = _oldcode;
 
         while (c >= 256U)
-        {
-            _stack.push(_htab[c - 256]);
-            c = _codetab[c - 256];
-        }
+            _stack.push_back(_htab[c - 256]), c = _codetab[c - 256];
 
         os.put(_finchar = c);
-        _stack.print(os);
+
+        while (_stack.size())
+            os.put(_stack.back()), _stack.pop_back();
 
         if (_codetab.size() + 256 < 1U << _maxbits)
-        {
-            _codetab.push_back(_oldcode);
-            _htab.push_back(_finchar);
-        }
+            _codetab.push_back(_oldcode), _htab.push_back(_finchar);
 
-        unsigned maxcode = 1U << _n_bits;
-
-        if (_n_bits < _maxbits)
-            --maxcode;
-
-        if (_codetab.size() + 256 > maxcode)
+        if (_n_bits < _maxbits && _codetab.size() + 256 > (1U << _n_bits) - 1)
             ++_n_bits;
 
         _oldcode = in;
