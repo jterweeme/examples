@@ -45,45 +45,39 @@ class LZW
 {
     const unsigned _maxbits;
     const bool _block_mode;
-    unsigned _oldcode, _free_ent, _n_bits = 9;
-    char _finchar, *_htab;
+    unsigned _oldcode, _n_bits = 9;
+    char _finchar;
     Stack _stack;
     std::vector<unsigned> _codetab;
-    std::vector<char> _htab2;
+    std::vector<char> _htab;
 public:
     void reset()
     {
-        _free_ent = 256;
         _n_bits = 9;
         _codetab.clear();
-        _htab2.clear();
+        _htab.clear();
     }
     unsigned n_bits() const { return _n_bits; }
-    ~LZW() { delete[] _htab; }
     LZW(unsigned maxbits, bool block_mode, char first)
       :
         _maxbits(maxbits),
         _block_mode(block_mode),
         _oldcode(first),
-        _free_ent(block_mode ? 257 : 256),
-        _finchar(first),
-        _htab(new char[1 << maxbits])
+        _finchar(first)
     {
-        std::iota(_htab, _htab + 256, 0);
-
         if (block_mode)
         {
             _codetab.push_back(0);
-            _htab2.push_back(0);
+            _htab.push_back(0);
         }
     }
 
     inline void code(const unsigned in, std::ostream &os)
     {
-        assert(in >= 0 && in <= 65535 && in <= _free_ent);
+        assert(in >= 0 && in <= 65535 && in <= _codetab.size() + 256);
         unsigned c = in;
 
-        if (c == _free_ent)
+        if (c == _codetab.size() + 256)
         {
             _stack.push(_finchar);
             c = _oldcode;
@@ -91,22 +85,25 @@ public:
 
         while (c >= 256U)
         {
-            _stack.push(_htab2[c - 256]);
+            _stack.push(_htab[c - 256]);
             c = _codetab[c - 256];
         }
 
-        //os.put(_finchar = _htab[c]);
         os.put(_finchar = c);
         _stack.print(os);
 
         if (_codetab.size() + 256 < 1U << _maxbits)
         {
             _codetab.push_back(_oldcode);
-            _htab2.push_back(_finchar);
-            _htab[_free_ent++] = _finchar;
+            _htab.push_back(_finchar);
         }
 
-        if (_codetab.size() + 256 > (_n_bits == _maxbits ? 1U << _maxbits : (1U << _n_bits) - 1U))
+        unsigned maxcode = 1U << _n_bits;
+
+        if (_n_bits < _maxbits)
+            --maxcode;
+
+        if (_codetab.size() + 256 > maxcode)
             ++_n_bits;
 
         _oldcode = in;

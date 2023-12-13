@@ -64,7 +64,6 @@ public:
         _finchar(first),
         _htab(new char[1 << maxbits])
     {
-        std::iota(_htab, _htab + 256, 0);
     }
 
     inline void code(const unsigned in, unsigned &n_bits, std::ostream &os)
