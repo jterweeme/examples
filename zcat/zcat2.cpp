@@ -83,7 +83,7 @@ public:
         while (c >= 256U)
         {
             _stack.push(_htab[c]);
-            c = _codetab[c];
+            c = _codetab[c - 256];
         }
 
         os.put(_finchar = _htab[c]);
@@ -91,7 +91,7 @@ public:
 
         if (_free_ent < 1U << _maxbits)
         {
-            _codetab[_free_ent] = _oldcode;
+            _codetab[_free_ent - 256] = _oldcode;
             _htab[_free_ent++] = _finchar;
         }
 
