@@ -1,7 +1,6 @@
-#!/usr/bin/python3
+#!/usr/bin/pypy3
 
-#This is a comment
-#I love comments
+#Usage ./zcat.py archive.Z
 
 import sys
 
@@ -16,7 +15,7 @@ class BitInputStream:
             b = self.f.read(1)
             if len(b) == 0:
                 return -1
-            c = int.from_bytes(b)
+            c = int.from_bytes(b, 'little')
             self.window = self.window | c << self.bits
             self.bits = self.bits + 8
         ret = self.window & (1 << n) - 1
@@ -30,7 +29,7 @@ class LZW:
         self.maxbits = maxbits
         self.oldcode = first
         self.n_bits = 9
-        self.finchar = first.to_bytes(1)
+        self.finchar = first.to_bytes(1, 'little')
         self.dict = list()
         if block_mode:
             self.dict.append((0, 0))
@@ -43,15 +42,15 @@ class LZW:
         while c >= 256:
             stack.append(self.dict[c - 256][1])
             c = self.dict[c - 256][0]
-        self.finchar = c.to_bytes(1)
-        stack.append(self.finchar)
-        stack.reverse()
+        self.finchar = c.to_bytes(1, 'little')
+        yield self.finchar
+        for x in reversed(stack):
+            yield x
         if len(self.dict) + 256 < (1 << self.maxbits):
             self.dict.append((self.oldcode, self.finchar))
         if self.n_bits < self.maxbits and len(self.dict) + 256 > (1 << self.n_bits) - 1:
             self.n_bits = self.n_bits + 1
         self.oldcode = incode
-        return stack
 
 def main(argv):
     bis = BitInputStream(argv[1])
@@ -63,7 +62,7 @@ def main(argv):
     bis.cnt = 0
     first = bis.readBits(9)
     assert first >= 0 and first < 256
-    sys.stdout.buffer.write(first.to_bytes(1))
+    sys.stdout.buffer.write(first.to_bytes(1, 'little'))
     lzw = LZW(maxbits, block_mode, first)
     while True:
         c = bis.readBits(lzw.n_bits)
@@ -77,8 +76,7 @@ def main(argv):
             lzw.n_bits = 9
             lzw.dict.clear()
         else:
-            ret = lzw.code(c)
-            for b in ret:
+            for b in lzw.code(c):
                 sys.stdout.buffer.write(b)
 
 if __name__ == "__main__":

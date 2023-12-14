@@ -59,11 +59,7 @@ public:
             stack.push_back(_finchar), c = _oldcode;
 
         while (c >= 256U)
-        {
-            auto foo = _dict[c - 256];
-            stack.push_back(foo.second);
-            c = foo.first;
-        }
+            stack.push_back(_dict[c - 256].second), c = _dict[c - 256].first;
 
         _os.put(_finchar = c);
 
