@@ -1,44 +1,86 @@
+#!/usr/bin/python3
+
+#This is a comment
+#I love comments
+
 import sys
 
 class BitInputStream:
-    def readBits:
-        return 0
+    def __init__(self, file):
+        self.f = open(file, "rb")
+        self.bits = 0
+        self.window = 0
+        self.cnt = 0
+    def readBits(self, n):
+        while self.bits < n:
+            b = self.f.read(1)
+            if len(b) == 0:
+                return -1
+            c = int.from_bytes(b)
+            self.window = self.window | c << self.bits
+            self.bits = self.bits + 8
+        ret = self.window & (1 << n) - 1
+        self.window = self.window >> n
+        self.bits = self.bits - n
+        self.cnt = self.cnt + n
+        return ret
 
 class LZW:
     def __init__(self, maxbits, block_mode, first):
         self.maxbits = maxbits
-        self.block_mode = block_mode
         self.oldcode = first
-        self.free_ent = 257 if block_mode else 256
-        self.finchar = first
-        self.htab = [0] * (1 << maxbits)
-        for i in range(256):
-            self.htab[i] = i
-        self.codetab = [0] * (1 << maxbits)
         self.n_bits = 9
+        self.finchar = first.to_bytes(1)
+        self.dict = list()
+        if block_mode:
+            self.dict.append((0, 0))
     def code(self, incode):
         c = incode;
         stack = list()
-        if c == self.free_ent:
+        if c == len(self.dict) + 256:
             stack.append(self.finchar)
             c = self.oldcode
         while c >= 256:
-            stack.append(self.htab[c])
-            c = self.codetab[c]
-        self.finchar = self.htab[c]
+            stack.append(self.dict[c - 256][1])
+            c = self.dict[c - 256][0]
+        self.finchar = c.to_bytes(1)
         stack.append(self.finchar)
         stack.reverse()
-        if self.free_ent < (1 << self.maxbits):
-            self.codetab[self.free_ent] = self.oldcode
-            self.htab[self.free_ent] = self.finchar
-        maxcode = 1 << self.maxbits if self.n_bits == self.maxbits else (1 << self.n_bits) - 1
-        if self.free_ent > maxcode:
+        if len(self.dict) + 256 < (1 << self.maxbits):
+            self.dict.append((self.oldcode, self.finchar))
+        if self.n_bits < self.maxbits and len(self.dict) + 256 > (1 << self.n_bits) - 1:
             self.n_bits = self.n_bits + 1
         self.oldcode = incode
         return stack
 
-        
-            
+def main(argv):
+    bis = BitInputStream(argv[1])
+    assert bis.readBits(16) == 0x9d1f
+    maxbits = bis.readBits(5)
+    assert maxbits <= 16
+    bis.readBits(2)
+    block_mode = bis.readBits(1)
+    bis.cnt = 0
+    first = bis.readBits(9)
+    assert first >= 0 and first < 256
+    sys.stdout.buffer.write(first.to_bytes(1))
+    lzw = LZW(maxbits, block_mode, first)
+    while True:
+        c = bis.readBits(lzw.n_bits)
+        if c == -1:
+            break
+        if c == 256 and block_mode:
+            assert maxbits == 13 or maxbits == 15 or maxbits == 16
+            nb3 = lzw.n_bits << 3
+            while (bis.cnt - 1 + nb3) % nb3 != nb3 - 1:
+                bis.readBits(lzw.n_bits)
+            lzw.n_bits = 9
+            lzw.dict.clear()
+        else:
+            ret = lzw.code(c)
+            for b in ret:
+                sys.stdout.buffer.write(b)
 
-
+if __name__ == "__main__":
+    main(sys.argv)           
 

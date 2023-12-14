@@ -1,6 +1,8 @@
+//This is a comment
+//I love comments
+
 #include <cassert>
 #include <cstdint>
-#include <numeric>
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -19,81 +21,60 @@ public:
         {
             int c = _is.get();
             if (c == -1) return -1;
-            _window = _window | c << _bits;
+            _window |= c << _bits;
         }
 
         int ret = _window & (1 << n) - 1;
-        _window = _window >> n, _bits -= n, cnt += n;
+        _window >>= n, _bits -= n, cnt += n;
         return ret;
-    }
-};
-
-class Stack
-{
-    std::vector<char> _stack;
-public:
-    void push(char c) { _stack.push_back(c); }
-
-    void print(std::ostream &os)
-    {
-        while (_stack.size())
-            os.put(_stack.back()), _stack.pop_back();
     }
 };
 
 class LZW
 {
     const unsigned _maxbits;
-    const bool _block_mode;
-    unsigned _oldcode, _free_ent, *_codetab;
-    char _finchar, *_htab;
-    Stack _stack;
+    unsigned _oldcode, _n_bits = 9;
+    char _finchar;
+    std::vector<std::pair<unsigned, char>> _dict;
+    std::ostream &_os;
 public:
-    void reset()
+    unsigned n_bits() const { return _n_bits; }
+    void reset() { _n_bits = 9; _dict.clear(); }
+
+    LZW(unsigned maxbits, bool block_mode, char first, std::ostream &os)
+      : _maxbits(maxbits), _oldcode(first), _finchar(first), _os(os)
     {
-        _free_ent = 256;
-    }
-    ~LZW() { delete[] _codetab; delete[] _htab; }
-    LZW(unsigned maxbits, bool block_mode, char first)
-      :
-        _maxbits(maxbits),
-        _block_mode(block_mode),
-        _oldcode(first),
-        _free_ent(block_mode ? 257 : 256),
-        _codetab(new unsigned[1 << maxbits]),
-        _finchar(first),
-        _htab(new char[1 << maxbits])
-    {
+        //why did they design it this way?
+        if (block_mode)
+            _dict.push_back(std::pair<unsigned, char>(0, 0));
     }
 
-    inline void code(const unsigned in, unsigned &n_bits, std::ostream &os)
+    inline void code(const unsigned in)
     {
-        assert(in >= 0 && in <= 65535 && in <= _free_ent);
-        unsigned c = in;
+        assert(in >= 0 && in <= 65535 && in <= _dict.size() + 256);
+        auto c = in;
+        std::vector<char> stack;
 
-        if (c == _free_ent)
-        {
-            _stack.push(_finchar);
-            c = _oldcode;
-        }
+        if (c == _dict.size() + 256)
+            stack.push_back(_finchar), c = _oldcode;
 
         while (c >= 256U)
         {
-            _stack.push(_htab[c]);
-            c = _codetab[c];
+            auto foo = _dict[c - 256];
+            stack.push_back(foo.second);
+            c = foo.first;
         }
 
-        os.put(_finchar = c);
-        _stack.print(os);
+        _os.put(_finchar = c);
 
-        if (_free_ent < 1U << _maxbits)
-        {
-            _codetab[_free_ent] = _oldcode;
-            _htab[_free_ent++] = _finchar;
-        }
+        while (stack.size())
+            _os.put(stack.back()), stack.pop_back();
 
-        if (_free_ent > (n_bits == _maxbits ? 1U << _maxbits : (1U << n_bits) - 1U))
-            ++n_bits;
+        if (_dict.size() + 256 < 1U << _maxbits)
+            _dict.push_back(std::pair<unsigned, char>(_oldcode, _finchar));
+
+        if (_n_bits < _maxbits && _dict.size() + 256 > (1U << _n_bits) - 1)
+            ++_n_bits;
 
         _oldcode = in;
     }
@@ -116,27 +97,27 @@ int main(int argc, char **argv)
     const bool block_mode = bis.readBits(1) ? true : false;
     bis.cnt = 0; //counter moet op nul om later padding te berekenen
 
-    unsigned n_bits = 9;
-    int first = bis.readBits(n_bits);
+    int first = bis.readBits(9);
     assert(first >= 0 && first < 256);
     os->put(first);
-    LZW lzw(maxbits, block_mode, first);
+    LZW lzw(maxbits, block_mode, first, *os);
 
-    for (int code; (code = bis.readBits(n_bits)) != -1;)
+    for (int code; (code = bis.readBits(lzw.n_bits())) != -1;)
     {
         if (code == 256 && block_mode)
         {
+            //other max. bits not working yet :S
+            assert(maxbits == 13 || maxbits == 15 || maxbits == 16);
+
             //padding?!
-            assert(n_bits == 13 || n_bits == 15 || n_bits == 16);
-            for (const unsigned nb3 = n_bits << 3; (bis.cnt - 1U + nb3) % nb3 != nb3 - 1U;)
-                bis.readBits(n_bits);
+            for (const unsigned nb3 = lzw.n_bits() << 3; (bis.cnt - 1U + nb3) % nb3 != nb3 - 1U;)
+                bis.readBits(lzw.n_bits());
 
             lzw.reset();
-            n_bits = 9;
         }
         else
         {        
-            lzw.code(code, n_bits, *os);
+            lzw.code(code);
         }
     }
 
