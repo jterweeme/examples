@@ -16,12 +16,12 @@ class BitInputStream:
             if len(b) == 0:
                 return -1
             c = int.from_bytes(b, 'little')
-            self.window = self.window | c << self.bits
-            self.bits = self.bits + 8
+            self.window |= c << self.bits
+            self.bits += 8
         ret = self.window & (1 << n) - 1
-        self.window = self.window >> n
-        self.bits = self.bits - n
-        self.cnt = self.cnt + n
+        self.window >>= n
+        self.bits -= n
+        self.cnt += n
         return ret
 
 class LZW:
@@ -46,14 +46,14 @@ class LZW:
             stack.append(self.dict[c - 256][1])
             c = self.dict[c - 256][0]
         self.finchar = c.to_bytes(1, 'little')
-        yield self.finchar
-        for x in reversed(stack):
-            yield x
+        stack.append(self.finchar)
+        stack.reverse()
         if len(self.dict) + 256 < (1 << self.maxbits):
             self.dict.append((self.oldcode, self.finchar))
         if self.n_bits < self.maxbits and len(self.dict) + 256 > (1 << self.n_bits) - 1:
-            self.n_bits = self.n_bits + 1
+            self.n_bits += 1
         self.oldcode = incode
+        return stack
 
 def main(argv):
     bis = BitInputStream(argv[1])
