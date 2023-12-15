@@ -55,22 +55,22 @@ class LZW:
         self.oldcode = incode
         return stack
 
-def main(argv):
-    bis = BitInputStream(argv[1])
+if __name__ == "__main__":
+    bis = BitInputStream(sys.argv[1])
     assert bis.readBits(16) == 0x9d1f
     maxbits = bis.readBits(5)
     assert maxbits <= 16
     bis.readBits(2)
     block_mode = bis.readBits(1)
+
+    #reset counter needed for cumbersome padding formula
     bis.cnt = 0
+
     first = bis.readBits(9)
     assert first >= 0 and first < 256
     sys.stdout.buffer.write(first.to_bytes(1, 'little'))
     lzw = LZW(maxbits, block_mode, first)
-    while True:
-        c = bis.readBits(lzw.n_bits)
-        if c == -1:
-            break
+    while (c := bis.readBits(lzw.n_bits)) != -1:
         if c == 256 and block_mode:
             assert maxbits == 13 or maxbits == 15 or maxbits == 16
 
@@ -84,7 +84,4 @@ def main(argv):
         else:
             for b in lzw.code(c):
                 sys.stdout.buffer.write(b)
-
-if __name__ == "__main__":
-    main(sys.argv)           
 
