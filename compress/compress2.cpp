@@ -65,7 +65,7 @@ int main(int argc, char **argv)
     static constexpr long CHECK_GAP = 10000;
     int64_t htab[HSIZE];
     uint16_t codetab[HSIZE];
-    long bytes_in = 0, hp, fc, checkpoint = CHECK_GAP;
+    long bytes_in = 0, checkpoint = CHECK_GAP;
     int rpos, stcode = 1, n_bits = 9, ratio = 0;
     uint32_t free_ent = FIRST;
     uint32_t extcode = (1 << n_bits) + 1;
@@ -93,9 +93,8 @@ int main(int argc, char **argv)
             inbuf.push_back(c);
 #endif
         bytes_in == 0 ? fcode.e.ent = inbuf[0], rpos = 1 : rpos = 0;
-        int rlop = 0;
 
-        do
+        for (int rlop = 0; rlop < std::cin.gcount();)
         {
             if (free_ent >= extcode && fcode.e.ent < FIRST)
             {
@@ -140,8 +139,8 @@ loop1:
             {
                 flag = false;
                 fcode.e.c = inbuf[rpos++];
-                fc = fcode.code;
-                hp = long(fcode.e.c) <<  8 ^ long(fcode.e.ent);
+                long fc = fcode.code;
+                long hp = long(fcode.e.c) <<  8 ^ long(fcode.e.ent);
     
                 if (htab[hp] == fc)
                 {
@@ -172,16 +171,15 @@ loop1:
             if (fcode.e.ent >= FIRST && rpos < std::cin.gcount())
             {
                 flag = true;
-                goto loop1;
+                continue;
             }
 
             if (rpos > rlop)
                 bytes_in += rpos - rlop, rlop = rpos;
         }
-        while (rlop < std::cin.gcount());
     }
 
-	if (bytes_in > 0)
+    if (bytes_in > 0)
         bos.write(fcode.e.ent, n_bits);
 
     bos.flush();
