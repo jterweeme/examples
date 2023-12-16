@@ -87,9 +87,8 @@ int main(int argc, char **argv)
 
     BitStream bis(*is);
     assert(bis.readBits(16) == 0x9d1f);
-    const unsigned maxbits = bis.readBits(5);
+    const unsigned maxbits = bis.readBits(7);
     assert(maxbits <= 16);
-    bis.readBits(2);
     const bool block_mode = bis.readBits(1) ? true : false;
     bis.cnt = 0; //counter moet op nul om later padding te berekenen
 

@@ -58,9 +58,8 @@ class LZW:
 if __name__ == "__main__":
     bis = BitInputStream(sys.argv[1])
     assert bis.readBits(16) == 0x9d1f
-    maxbits = bis.readBits(5)
+    maxbits = bis.readBits(7)
     assert maxbits <= 16
-    bis.readBits(2)
     block_mode = bis.readBits(1)
 
     #reset counter needed for cumbersome padding formula

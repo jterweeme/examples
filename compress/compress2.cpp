@@ -59,31 +59,24 @@ static constexpr int IBUFSIZ = BUFSIZ;
 
 class InBuf
 {
-public:
     uint8_t inbuf[IBUFSIZ + 64];
-    int rpos = 0;
     int bytes_read;
+    int _rpos = -1;
+public:
+    int rpos() const { return _rpos; }
+    uint8_t next() { return inbuf[_rpos++]; }
+    bool hasleft() { return _rpos < bytes_read; }
 
     bool read()
     {
-        rpos = 0;
+        _rpos = 0;
         std::cin.read((char *)inbuf, IBUFSIZ);
         bytes_read = std::cin.gcount();
         return bytes_read <= 0 ? false : true;
     }
-
-    uint8_t next()
-    {
-        return inbuf[rpos++];
-    }
-
-    bool hasleft()
-    {
-        return rpos < bytes_read;
-    }
 };
 
-bool vlag(bool &f)
+static bool vlag(bool &f)
 {
     bool ret = f;
     f = false;
@@ -97,10 +90,9 @@ int main(int argc, char **argv)
     int64_t htab[HSIZE];
     uint16_t codetab[HSIZE];
     long checkpoint = CHECK_GAP;
-    int n_bits = 9, ratio = 0;
     bool stcode = true;
     uint32_t free_ent = 257;
-    uint32_t extcode = (1 << n_bits) + 1;
+
     BitOutputStream bos(std::cout);
     bos.write(0x9d1f, 16);  //magic
     bos.write(16, 5);       //max. 16 bits (hardcoded)
@@ -112,98 +104,105 @@ int main(int argc, char **argv)
     fcode.e.ent = std::cin.get();
     long bytes_in = 1;
     InBuf inbuf;
+    int n_bits = 9, ratio = 0;
+    uint32_t extcode = (1 << n_bits) + 1;
+    bool rflag = inbuf.read();
 
-    while (inbuf.read())
+    for (int rlop = 0; rflag;)
     {
-        for (int rlop = 0; inbuf.hasleft();)
+        if (inbuf.hasleft() == false)
         {
-            if (free_ent >= extcode && fcode.e.ent < 257)
+            rflag = inbuf.read();
+            rlop = 0;
+            continue;
+        }
+
+        if (free_ent >= extcode && fcode.e.ent < 257)
+        {
+            if (n_bits < 16)
+                ++n_bits, extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << 16;
+            else
+                stcode = false;
+        }
+
+        if (!stcode && bytes_in >= checkpoint && fcode.e.ent < 257)
+        {
+            long rat;
+            checkpoint = bytes_in + CHECK_GAP;
+
+            if (bytes_in > 0x007fffff)
+                //shift will overflow
+                rat = bos.cnt >> 11 == 0 ? 0x7fffffff : bytes_in / (bos.cnt >> 11);
+            else
+                //8 fractional bits
+                rat = (bytes_in << 8) / (bos.cnt >> 3);
+
+            if (rat >= ratio)
+                ratio = int(rat);
+            else
             {
-                if (n_bits < 16)
-                    ++n_bits, extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << 16;
-                else
-                    stcode = false;
+                ratio = 0;
+                std::fill(htab, htab + HSIZE, -1);
+                bos.write(256, n_bits);
+
+                for (uint8_t nb3 = n_bits << 3; (bos.cnt - 1U + nb3) % nb3 != nb3 - 1U;)
+                    bos.write(0, 16);
+
+                n_bits = 9, stcode = true, free_ent = 257;
+                extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << n_bits;
             }
+        }
 
-            if (!stcode && bytes_in >= checkpoint && fcode.e.ent < 257)
-            {
-                long rat;
-                checkpoint = bytes_in + CHECK_GAP;
+        ++rlop, ++bytes_in;
+        bool flag = false;
 
-                if (bytes_in > 0x007fffff)
-                    //shift will overflow
-                    rat = bos.cnt >> 11 == 0 ? 0x7fffffff : bytes_in / (bos.cnt >> 11);
-                else
-                    //8 fractional bits
-                    rat = (bytes_in << 8) / (bos.cnt >> 3);
-
-                if (rat >= ratio)
-                    ratio = int(rat);
-                else
-                {
-                    ratio = 0;
-                    std::fill(htab, htab + HSIZE, -1);
-                    bos.write(256, n_bits);
-
-                    for (uint8_t nb3 = n_bits << 3; (bos.cnt - 1U + nb3) % nb3 != nb3 - 1U;)
-                        bos.write(0, 16);
-
-                    n_bits = 9, stcode = true, free_ent = 257;
-                    extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << n_bits;
-                }
-            }
-
-            ++rlop, ++bytes_in;
-            bool flag = false;
-
-            while (inbuf.rpos < rlop || vlag(flag))
-            {
-                fcode.e.c = inbuf.next();
-                long fc = fcode.code;
-                long hp = long(fcode.e.c) <<  8 ^ long(fcode.e.ent);
+        while (inbuf.rpos() < rlop || vlag(flag))
+        {
+            fcode.e.c = inbuf.next();
+            long fc = fcode.code;
+            long hp = long(fcode.e.c) <<  8 ^ long(fcode.e.ent);
     
+            if (htab[hp] == fc)
+            {
+                fcode.e.ent = codetab[hp];
+                continue;
+            }
+                
+            //secondary hash (after G. Knott)
+            while (htab[hp] != -1)
+            {
+                if ((hp -= HSIZE - hp - 1) < 0)
+                    hp += HSIZE;
+
                 if (htab[hp] == fc)
                 {
                     fcode.e.ent = codetab[hp];
-                    continue;
+                    flag = true;
+                    break;
                 }
-                
-                //secondary hash (after G. Knott)
-                while (htab[hp] != -1)
-                {
-                    if ((hp -= HSIZE - hp - 1) < 0)
-                        hp += HSIZE;
-
-                    if (htab[hp] == fc)
-                    {
-                        fcode.e.ent = codetab[hp];
-                        flag = true;
-                        break;
-                    }
-                }
-
-                if (vlag(flag))
-                    continue;
-
-                bos.write(fcode.e.ent, n_bits);
-                fc = fcode.code;
-                fcode.e.ent = fcode.e.c;
-
-                if (stcode)
-                    codetab[hp] = uint16_t(free_ent++), htab[hp] = fc;
             }
 
-            if (fcode.e.ent >= 257 && inbuf.hasleft())
-            {
-                flag = true;
+            if (vlag(flag))
                 continue;
-            }
 
-            if (inbuf.rpos > rlop)
-            {
-                bytes_in += inbuf.rpos - rlop;
-                rlop = inbuf.rpos;
-            }
+            bos.write(fcode.e.ent, n_bits);
+            fc = fcode.code;
+            fcode.e.ent = fcode.e.c;
+
+            if (stcode)
+                codetab[hp] = uint16_t(free_ent++), htab[hp] = fc;
+        }
+
+        if (fcode.e.ent >= 257 && inbuf.hasleft())
+        {
+            flag = true;
+            continue;
+        }
+
+        if (inbuf.rpos() > rlop)
+        {
+            bytes_in += inbuf.rpos() - rlop;
+            rlop = inbuf.rpos();
         }
     }
 
