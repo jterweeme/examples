@@ -133,7 +133,7 @@ int main(int argc, char **argv)
 
             ++rlop, ++bytes_in;
             bool flag = false;
-loop1:
+
             while (rpos < rlop || flag)
             {
                 flag = false;
@@ -156,9 +156,17 @@ loop1:
                     if (htab[hp] == fc)
                     {
                         fcode.e.ent = codetab[hp];
-                        goto loop1;
+                        flag = true;
+                        break;
                     }
                 }
+
+                if (flag)
+                {
+                    flag = false;
+                    continue;
+                }
+
                 bos.write(fcode.e.ent, n_bits);
                 fc = fcode.code;
                 fcode.e.ent = fcode.e.c;
