@@ -64,7 +64,8 @@ int main(int argc, char **argv)
     int64_t htab[HSIZE];
     uint16_t codetab[HSIZE];
     long checkpoint = CHECK_GAP;
-    int stcode = 1, n_bits = 9, ratio = 0;
+    int n_bits = 9, ratio = 0;
+    bool stcode = true;
     uint32_t free_ent = 257;
     uint32_t extcode = (1 << n_bits) + 1;
     BitOutputStream bos(std::cout);
@@ -99,7 +100,7 @@ int main(int argc, char **argv)
                 if (n_bits < 16)
                     ++n_bits, extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << 16;
                 else
-                    stcode = 0;
+                    stcode = false;
             }
 
             if (!stcode && bytes_in >= checkpoint && fcode.e.ent < 257)
@@ -125,7 +126,7 @@ int main(int argc, char **argv)
                     for (uint8_t nb3 = n_bits << 3; (bos.cnt - 1U + nb3) % nb3 != nb3 - 1U;)
                         bos.write(0, 16);
 
-                    n_bits = 9, stcode = 1, free_ent = 257;
+                    n_bits = 9, stcode = true, free_ent = 257;
                     extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << n_bits;
                 }
             }
