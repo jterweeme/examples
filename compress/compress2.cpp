@@ -25,13 +25,12 @@ class BitOutputStream
     uint32_t _window = 0;
     uint32_t _bits = 0;
 public:
-    uint64_t _cnt = 0;
-    uint64_t cnt() const { return _cnt; }
+    uint64_t cnt = 0;
     BitOutputStream(std::ostream &os) : _os(os) { }
 
     void write(uint16_t code, uint8_t n_bits)
     {
-        _window |= code << _bits, _cnt += n_bits, _bits += n_bits;
+        _window |= code << _bits, cnt += n_bits, _bits += n_bits;
         while (_bits >= 8) flush();
     }
 
@@ -48,7 +47,7 @@ public:
 
 union Fcode
 {
-    long code;
+    long code = 0;
     struct
     {
         uint8_t c;
@@ -57,7 +56,6 @@ union Fcode
 };
 
 #define	IBUFSIZ	BUFSIZ
-static constexpr uint16_t FIRST = 257;
 static constexpr uint32_t HSIZE = 69001;
 
 int main(int argc, char **argv)
@@ -65,21 +63,23 @@ int main(int argc, char **argv)
     static constexpr long CHECK_GAP = 10000;
     int64_t htab[HSIZE];
     uint16_t codetab[HSIZE];
-    long bytes_in = 0, checkpoint = CHECK_GAP;
-    int rpos, stcode = 1, n_bits = 9, ratio = 0;
-    uint32_t free_ent = FIRST;
+    long checkpoint = CHECK_GAP;
+    int stcode = 1, n_bits = 9, ratio = 0;
+    uint32_t free_ent = 257;
     uint32_t extcode = (1 << n_bits) + 1;
-    Fcode fcode;
     BitOutputStream bos(std::cout);
     bos.write(0x9d1f, 16);  //magic
     bos.write(16, 5);       //max. 16 bits (hardcoded)
     bos.write(0, 2);        //reserved
     bos.write(1, 1);        //block mode
-    bos._cnt = 0;
-    fcode.code = 0;
+    bos.cnt = 0;
     std::fill(htab, htab + HSIZE, -1);
+    Fcode fcode;
+    fcode.e.ent = std::cin.get();
+    long bytes_in = 1;
 #if 1
     uint8_t inbuf[IBUFSIZ + 64];
+
     while (true)
     {
         std::cin.read((char *)inbuf, IBUFSIZ);
@@ -92,11 +92,9 @@ int main(int argc, char **argv)
         for (int c; (c = std::cin.get()) != -1;)
             inbuf.push_back(c);
 #endif
-        bytes_in == 0 ? fcode.e.ent = inbuf[0], rpos = 1 : rpos = 0;
-
-        for (int rlop = 0; rlop < std::cin.gcount();)
+        for (int rlop = 0, rpos = 0; rlop < std::cin.gcount();)
         {
-            if (free_ent >= extcode && fcode.e.ent < FIRST)
+            if (free_ent >= extcode && fcode.e.ent < 257)
             {
                 if (n_bits < 16)
                     ++n_bits, extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << 16;
@@ -104,17 +102,17 @@ int main(int argc, char **argv)
                     stcode = 0;
             }
 
-            if (!stcode && bytes_in >= checkpoint && fcode.e.ent < FIRST)
+            if (!stcode && bytes_in >= checkpoint && fcode.e.ent < 257)
             {
                 long rat;
                 checkpoint = bytes_in + CHECK_GAP;
 
                 if (bytes_in > 0x007fffff)
                     //shift will overflow
-                    rat = bos.cnt() >> 11 == 0 ? 0x7fffffff : bytes_in / (bos.cnt() >> 11);
+                    rat = bos.cnt >> 11 == 0 ? 0x7fffffff : bytes_in / (bos.cnt >> 11);
                 else
                     //8 fractional bits
-                    rat = (bytes_in << 8) / (bos.cnt() >> 3);
+                    rat = (bytes_in << 8) / (bos.cnt >> 3);
 
                 if (rat >= ratio)
                     ratio = int(rat);
@@ -124,10 +122,10 @@ int main(int argc, char **argv)
                     std::fill(htab, htab + HSIZE, -1);
                     bos.write(256, n_bits);
 
-                    for (uint8_t nb3 = n_bits << 3; (bos.cnt() - 1U + nb3) % nb3 != nb3 - 1U;)
+                    for (uint8_t nb3 = n_bits << 3; (bos.cnt - 1U + nb3) % nb3 != nb3 - 1U;)
                         bos.write(0, 16);
 
-                    n_bits = 9, stcode = 1, free_ent = FIRST;
+                    n_bits = 9, stcode = 1, free_ent = 257;
                     extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << n_bits;
                 }
             }
@@ -168,7 +166,7 @@ loop1:
                     codetab[hp] = uint16_t(free_ent++), htab[hp] = fc;
             }
 
-            if (fcode.e.ent >= FIRST && rpos < std::cin.gcount())
+            if (fcode.e.ent >= 257 && rpos < std::cin.gcount())
             {
                 flag = true;
                 continue;
@@ -185,7 +183,7 @@ loop1:
     bos.flush();
     std::cerr << "Compression: ";
     int q;
-    const long num = bytes_in - bos.cnt() / 8;
+    const long num = bytes_in - bos.cnt / 8;
 
     if (bytes_in > 0)
     {
