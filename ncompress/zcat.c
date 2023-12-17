@@ -11,15 +11,6 @@
 #include <dirent.h>
 #include <unistd.h>
 
-#ifdef UTIME_H
-#	include	<utime.h>
-#else
-	struct utimbuf {
-		time_t actime;
-		time_t modtime;
-	};
-#endif
-
 #ifndef SIG_TYPE
 #	define	SIG_TYPE	void (*)()
 #endif
@@ -57,23 +48,9 @@
 #	else
 #	if USERMEM >= (433484)
 #		define BITS	16
-#	else
-#	if USERMEM >= (229600)
-#		define BITS	15
-#	else
-#	if USERMEM >= (127536)
-#		define BITS	14
-#   else
-#	if USERMEM >= (73464)
-#		define BITS	13
-#	else
-#		define BITS	12
 #	endif
 #	endif
-#   endif
-#	endif
-#	endif
-#endif /* BITS */
+#endif
 
 #ifdef FAST
 #	define	HBITS		17			/* 50% occupancy */
@@ -104,15 +81,15 @@
 typedef long int			code_int;
 
 #ifdef SIGNED_COMPARE_SLOW
-	typedef unsigned long int	count_int;
-	typedef unsigned short int	count_short;
-	typedef unsigned long int	cmp_code_int;	/* Cast to make compare faster	*/
+typedef unsigned long int	count_int;
+typedef unsigned short int	count_short;
+typedef unsigned long int	cmp_code_int;	/* Cast to make compare faster	*/
 #else
-	typedef long int	 		count_int;
-	typedef long int			cmp_code_int;
+typedef long int count_int;
+typedef long int cmp_code_int;
 #endif
 
-typedef	unsigned char	char_type;
+typedef	unsigned char char_type;
 
 #define MAXCODE(n)	(1L << (n))
 
@@ -141,20 +118,16 @@ typedef	unsigned char	char_type;
 }
 
 int maxbits = BITS;		/* user settable max # bits/code 				*/
-int 			zcat_flg = 0;		/* Write output on stdout, suppress messages 	*/
-int				recursive = 0;  	/* compress directories 						*/
-int				exit_code = -1;		/* Exitcode of compress (-1 no file compressed)	*/
-char_type		inbuf[IBUFSIZ+64];	/* Input buffer									*/
-char_type		outbuf[OBUFSIZ+2048];/* Output buffer								*/
-struct stat		infstat;			/* Input file status							*/
-char			*ifname;			/* Input filename								*/
+int zcat_flg = 0;		/* Write output on stdout, suppress messages 	*/
+int exit_code = -1;		/* Exitcode of compress (-1 no file compressed)	*/
+char_type inbuf[IBUFSIZ+64];	/* Input buffer									*/
+char_type outbuf[OBUFSIZ+2048];/* Output buffer								*/
+char *ifname;			/* Input filename								*/
 int				remove_ofname = 0;	/* Remove output file on a error				*/
 char			*ofname = NULL;		/* Output filename								*/
-int				fgnd_flag = 0;		/* Running in background (SIGINT=SIGIGN)		*/
 long 			bytes_in;			/* Total number of byte from input				*/
 long 			bytes_out;			/* Total number of byte to output				*/
-count_int		htab[HSIZE];
-unsigned short	codetab[HSIZE];
+
 
 #define	tab_prefixof(i)			codetab[i]
 #define	tab_suffixof(i)			((char_type *)(htab))[i]
@@ -168,6 +141,8 @@ static void abort_compress(void);
 
 void decompress(int fdin, int fdout)
 {
+    count_int		htab[HSIZE];
+    unsigned short	codetab[HSIZE];
 	char_type *stackp;
 	code_int code;
 	int finchar;
@@ -231,32 +206,32 @@ void decompress(int fdin, int fdout)
 		tab_suffixof(code) = (char_type)code;
 
 resetbuf:
-	{
-		int o = posbits >> 3;
-		int e = o <= insize ? insize - o : 0;
+    int o = posbits >> 3;
+    int e = o <= insize ? insize - o : 0;
 
-		for (int i = 0 ; i < e ; ++i)
-			inbuf[i] = inbuf[i+o];
+    for (int i = 0 ; i < e ; ++i)
+        inbuf[i] = inbuf[i+o];
 
-		insize = e;
-		posbits = 0;
+    insize = e;
+    posbits = 0;
 
-		if (insize < sizeof(inbuf)-IBUFSIZ)
-		{
-				if ((rsize = read(fdin, inbuf+insize, IBUFSIZ)) < 0)
-					read_error();
+    if (insize < sizeof(inbuf)-IBUFSIZ)
+    {
+        if ((rsize = read(fdin, inbuf+insize, IBUFSIZ)) < 0)
+            read_error();
 
-				insize += rsize;
-		}
+        insize += rsize;
+    }
 
-		inbits = ((rsize > 0) ? (insize - insize%n_bits)<<3 : (insize<<3)-(n_bits-1));
+    inbits = ((rsize > 0) ? (insize - insize%n_bits)<<3 : (insize<<3)-(n_bits-1));
 
-		while (inbits > posbits)
-		{
-			if (free_ent > maxcode)
-			{
+    while (inbits > posbits)
+    {
+        if (free_ent > maxcode)
+        {
 				posbits = ((posbits-1) + ((n_bits<<3) - (posbits-1+(n_bits<<3))%(n_bits<<3)));
 				++n_bits;
+
 				if (n_bits == maxbits)
 					maxcode = maxmaxcode;
 				else
@@ -264,113 +239,114 @@ resetbuf:
 
 				bitmask = (1<<n_bits)-1;
 				goto resetbuf;
-			}
-
-			input(inbuf,posbits,code,n_bits,bitmask);
-
-			if (oldcode == -1)
-			{
-				if (code >= 256) {
-					fprintf(stderr, "oldcode:-1 code:%i\n", (int)(code));
-					fprintf(stderr, "uncompress: corrupt input\n");
-					abort_compress();
-				}
-					outbuf[outpos++] = (char_type)(finchar = (int)(oldcode = code));
-					continue;
-			}
-
-			if (code == CLEAR && block_mode)
-			{
-				clear_tab_prefixof();
-    			free_ent = FIRST - 1;
-				posbits = ((posbits-1) + ((n_bits<<3) - (posbits-1+(n_bits<<3))%(n_bits<<3)));
-				reset_n_bits_for_decompressor(n_bits, bitmask, maxbits, maxcode, maxmaxcode);
-				goto resetbuf;
-			}
-
-			incode = code;
-		    stackp = de_stack;
-
-            //Special case for KwKwK string.
-			if (code >= free_ent)	
-			{
-				if (code > free_ent)
-				{
-					char_type *p;
-					posbits -= n_bits;
-					p = &inbuf[posbits>>3];
-					if (p == inbuf)
-                        p++;
-					fprintf(stderr, "insize:%d posbits:%d inbuf:%02X %02X %02X %02X %02X (%d)\n",
-                        insize, posbits, p[-1],p[0],p[1],p[2],p[3], (posbits&07));
-		    		fprintf(stderr, "uncompress: corrupt input\n");
-					abort_compress();
-				}
-
-       	    	*--stackp = (char_type)finchar;
-	    		code = oldcode;
-			}
-
-			while ((cmp_code_int)code >= (cmp_code_int)256)
-			{
-		    	*--stackp = tab_suffixof(code);
-		    	code = tab_prefixof(code);
-			}
-
-			*--stackp =	(char_type)(finchar = tab_suffixof(code));
-
-            {
-                int i;
-
-                if (outpos+(i = (de_stack-stackp)) >= OBUFSIZ)
-                {
-                    do
-                    {
-                        if (i > OBUFSIZ-outpos)
-                            i = OBUFSIZ-outpos;
-
-                        if (i > 0)
-                        {
-                            memcpy(outbuf + outpos, stackp, i);
-                            outpos += i;
-                        }
-
-                        if (outpos >= OBUFSIZ)
-                        {
-                            if (write(fdout, outbuf, outpos) != outpos)
-                                write_error();
-
-                            outpos = 0;
-                        }
-                        stackp += i;
-                    }
-                    while ((i = (de_stack-stackp)) > 0);
-                }
-                else
-                {
-                    memcpy(outbuf+outpos, stackp, i);
-                    outpos += i;
-                }
-            }
-
-            if ((code = free_ent) < maxmaxcode) /* Generate the new entry. */
-            {
-                tab_prefixof(code) = (unsigned short)oldcode;
-                tab_suffixof(code) = (char_type)finchar;
-                free_ent = code+1;
-            }
-
-            oldcode = incode;	/* Remember previous code.	*/
         }
 
-        bytes_in += rsize;
+        input(inbuf,posbits,code,n_bits,bitmask);
+
+        if (oldcode == -1)
+        {
+            if (code >= 256)
+            {
+                fprintf(stderr, "oldcode:-1 code:%i\n", (int)(code));
+                fprintf(stderr, "uncompress: corrupt input\n");
+                abort_compress();
+            }
+            outbuf[outpos++] = (char_type)(finchar = (int)(oldcode = code));
+            continue;
+        }
+
+        if (code == CLEAR && block_mode)
+        {
+            clear_tab_prefixof();
+            free_ent = FIRST - 1;
+            posbits = ((posbits-1) + ((n_bits<<3) - (posbits-1+(n_bits<<3))%(n_bits<<3)));
+            reset_n_bits_for_decompressor(n_bits, bitmask, maxbits, maxcode, maxmaxcode);
+            goto resetbuf;
+        }
+
+        incode = code;
+        stackp = de_stack;
+
+        //Special case for KwKwK string.
+        if (code >= free_ent)	
+        {
+            if (code > free_ent)
+            {
+                char_type *p;
+                posbits -= n_bits;
+                p = &inbuf[posbits>>3];
+
+                if (p == inbuf)
+                    p++;
+
+                fprintf(stderr, "insize:%d posbits:%d inbuf:%02X %02X %02X %02X %02X (%d)\n",
+                       insize, posbits, p[-1],p[0],p[1],p[2],p[3], (posbits&07));
+
+	    		fprintf(stderr, "uncompress: corrupt input\n");
+				abort_compress();
+            }
+
+            *--stackp = (char_type)finchar;
+            code = oldcode;
+        }
+
+        while ((cmp_code_int)code >= (cmp_code_int)256)
+        {
+            *--stackp = tab_suffixof(code);
+            code = tab_prefixof(code);
+        }
+
+        *--stackp =	(char_type)(finchar = tab_suffixof(code));
+
+        {
+            int i;
+
+            if (outpos+(i = (de_stack-stackp)) >= OBUFSIZ)
+            {
+                do
+                {
+                    if (i > OBUFSIZ-outpos)
+                        i = OBUFSIZ-outpos;
+
+                    if (i > 0)
+                    {
+                        memcpy(outbuf + outpos, stackp, i);
+                        outpos += i;
+                    }
+
+                    if (outpos >= OBUFSIZ)
+                    {
+                        if (write(fdout, outbuf, outpos) != outpos)
+                            write_error();
+
+                        outpos = 0;
+                    }
+                    stackp += i;
+                }
+                while ((i = (de_stack-stackp)) > 0);
+            }
+            else
+            {
+                memcpy(outbuf+outpos, stackp, i);
+                outpos += i;
+            }
+        }
+
+        //Generate the new entry.
+        if ((code = free_ent) < maxmaxcode) 
+        {
+            tab_prefixof(code) = (unsigned short)oldcode;
+            tab_suffixof(code) = (char_type)finchar;
+            free_ent = code + 1;
+        }
+
+        oldcode = incode;
     }
+
+    bytes_in += rsize;
 
     if (rsize > 0)
         goto resetbuf;
-
-    if (outpos > 0 && write(fdout, outbuf, outpos) != outpos)
-        write_error();
 }
 
 void
@@ -415,6 +391,7 @@ void comprexx(const char *fileptr)
 	strcpy(tempname,fileptr);
 	has_z_suffix = (namesize >= 2 && strcmp(&tempname[namesize - 2], ".Z") == 0);
 	errno = 0;
+    struct stat infstat;
 	lstat(tempname,&infstat);
 
 	switch (infstat.st_mode & S_IFMT)
@@ -476,17 +453,6 @@ int main(int argc, char **argv)
 	char **filelist;
 	char **fileptr;
 	int seen_double_dash = 0;
-#ifdef SIGINT
-	if ((fgnd_flag = (signal(SIGINT, SIG_IGN)) != SIG_IGN))
-		signal(SIGINT, (SIG_TYPE)abort_compress);
-#endif
-
-#ifdef SIGTERM
-	signal(SIGTERM, (SIG_TYPE)abort_compress);
-#endif
-#ifdef SIGHUP
-	signal(SIGHUP, (SIG_TYPE)abort_compress);
-#endif
    	filelist = (char **)malloc(argc*sizeof(char *));
    	if (filelist == NULL)
 	{
@@ -503,9 +469,6 @@ int main(int argc, char **argv)
     	*fileptr = NULL;
         continue;
     }
-
-   	if (maxbits < INIT_BITS)	maxbits = INIT_BITS;
-   	if (maxbits > BITS) 		maxbits = BITS;
 
    	if (*filelist != NULL)
 	{
