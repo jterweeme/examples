@@ -10,10 +10,10 @@ all:
 	gcc -g -O2 -Wall -Wno-parentheses -o $(ZCATC) zcatc.c
 
 test:
-	$(TIME) zcat relnotes.ps.Z | md5sum
-	$(TIME) ./$(ZCATPP) relnotes.ps.Z | md5sum
-	$(TIME) ./$(ZCATUX) relnotes.ps.Z | md5sum
-	$(TIME) ./$(ZCATC) relnotes.ps.Z | md5sum
+	$(TIME) zcat < relnotes.ps.Z | md5sum
+	$(TIME) ./$(ZCATPP) < relnotes.ps.Z | md5sum
+	$(TIME) ./$(ZCATUX) < relnotes.ps.Z | md5sum
+	$(TIME) ./$(ZCATC) < relnotes.ps.Z | md5sum
 	$(TIME) ./zcat.py relnotes.ps.Z | md5sum
 	$(TIME) zcat keen1.tar.Z | md5sum
 	$(TIME) ./$(ZCATPP) keen1.tar.Z | md5sum
@@ -33,6 +33,7 @@ test:
 	$(TIME) ./$(ZCATC) tty.1.Z | md5sum
 	$(TIME) ./zcat.py tty.1.Z | md5sum
 	$(TIME) zcat wk98.iso.Z | md5sum
+	$(TIME) ./$(ZCATPP) wk98.iso.Z | md5sum
 	$(TIME) zcat side1.pnm.Z | md5sum
 	$(TIME) ./$(ZCATPP) side1.pnm.Z | md5sum
 	$(TIME) ./$(ZCATC) side1.pnm.Z | md5sum
@@ -41,5 +42,6 @@ test:
 	$(TIME) ./$(ZCATPP) wingames.iso.Z | md5sum
 	$(TIME) ./zcat.py wingames.iso.Z | md5sum
 	$(TIME) zcat enwik9.Z | md5sum
+	$(TIME) ./$(ZCATPP) enwik9.Z | md5sum
 
 
