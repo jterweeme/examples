@@ -114,17 +114,8 @@ typedef long int			code_int;
 
 typedef	unsigned char	char_type;
 
-#define ARGVAL() (*++(*argv) || (--argc && *++argv))
-
 #define MAXCODE(n)	(1L << (n))
 
-#define	output(b,o,c,n)	{	char_type	*p = &(b)[(o)>>3];					\
-							long		 i = ((long)(c))<<((o)&0x7);		\
-							p[0] |= (char_type)(i);							\
-							p[1] |= (char_type)(i>>8);						\
-							p[2] |= (char_type)(i>>16);						\
-							(o) += (n);										\
-						}
 #define	input(b,o,c,n,m){	char_type 		*p = &(b)[(o)>>3];				\
 							(c) = ((((long)(p[0]))|((long)(p[1])<<8)|		\
 									 ((long)(p[2])<<16))>>((o)&0x7))&(m);	\
@@ -149,9 +140,7 @@ typedef	unsigned char	char_type;
 		maxcode = MAXCODE(n_bits)-1;						\
 }
 
-int				do_decomp = 0;
-int				nomagic = 0;
-int				maxbits = BITS;		/* user settable max # bits/code 				*/
+int maxbits = BITS;		/* user settable max # bits/code 				*/
 int 			zcat_flg = 0;		/* Write output on stdout, suppress messages 	*/
 int				recursive = 0;  	/* compress directories 						*/
 int				exit_code = -1;		/* Exitcode of compress (-1 no file compressed)	*/
@@ -215,184 +204,173 @@ void decompress(int fdin, int fdout)
 		}
 
 		return ;
-		}
+    }
 
-		maxbits = inbuf[2] & BIT_MASK;
-		block_mode = inbuf[2] & BLOCK_MODE;
+	maxbits = inbuf[2] & BIT_MASK;
+	block_mode = inbuf[2] & BLOCK_MODE;
 
-		if (maxbits > BITS)
-		{
-			fprintf(stderr,
-					"%s: compressed with %d bits, can only handle %d bits\n",
+	if (maxbits > BITS)
+	{
+		fprintf(stderr, "%s: compressed with %d bits, can only handle %d bits\n",
 					(*ifname != '\0' ? ifname : "stdin"), maxbits, BITS);
-			exit_code = 4;
-			return;
-		}
+		exit_code = 4;
+		return;
+	}
 
-		maxmaxcode = MAXCODE(maxbits);
-		bytes_in = insize;
-		reset_n_bits_for_decompressor(n_bits, bitmask, maxbits, maxcode, maxmaxcode);
-		oldcode = -1;
-		finchar = 0;
-		outpos = 0;
-		posbits = 3<<3;
-	    free_ent = ((block_mode) ? FIRST : 256);
-		clear_tab_prefixof();
+	maxmaxcode = MAXCODE(maxbits);
+	bytes_in = insize;
+	reset_n_bits_for_decompressor(n_bits, bitmask, maxbits, maxcode, maxmaxcode);
+	oldcode = -1;
+	finchar = 0;
+	outpos = 0;
+	posbits = 3<<3;
+    free_ent = ((block_mode) ? FIRST : 256);
+	clear_tab_prefixof();
 
-	    for (code = 255 ; code >= 0 ; --code)
-			tab_suffixof(code) = (char_type)code;
+    for (code = 255 ; code >= 0 ; --code)
+		tab_suffixof(code) = (char_type)code;
 
-		do
+resetbuf:
+	{
+		int o = posbits >> 3;
+		int e = o <= insize ? insize - o : 0;
+
+		for (int i = 0 ; i < e ; ++i)
+			inbuf[i] = inbuf[i+o];
+
+		insize = e;
+		posbits = 0;
+
+		if (insize < sizeof(inbuf)-IBUFSIZ)
 		{
-resetbuf:	;
-			{
-				int i;
-				int e;
-				int o;
-
-				o = posbits >> 3;
-				e = o <= insize ? insize - o : 0;
-
-				for (i = 0 ; i < e ; ++i)
-					inbuf[i] = inbuf[i+o];
-
-				insize = e;
-				posbits = 0;
-			}
-
-			if (insize < sizeof(inbuf)-IBUFSIZ)
-			{
 				if ((rsize = read(fdin, inbuf+insize, IBUFSIZ)) < 0)
 					read_error();
 
 				insize += rsize;
+		}
+
+		inbits = ((rsize > 0) ? (insize - insize%n_bits)<<3 : (insize<<3)-(n_bits-1));
+
+		while (inbits > posbits)
+		{
+			if (free_ent > maxcode)
+			{
+				posbits = ((posbits-1) + ((n_bits<<3) - (posbits-1+(n_bits<<3))%(n_bits<<3)));
+				++n_bits;
+				if (n_bits == maxbits)
+					maxcode = maxmaxcode;
+				else
+				    maxcode = MAXCODE(n_bits)-1;
+
+				bitmask = (1<<n_bits)-1;
+				goto resetbuf;
 			}
 
-			inbits = ((rsize > 0) ? (insize - insize%n_bits)<<3 :
-									(insize<<3)-(n_bits-1));
+			input(inbuf,posbits,code,n_bits,bitmask);
 
-			while (inbits > posbits)
+			if (oldcode == -1)
 			{
-				if (free_ent > maxcode)
-				{
-					posbits = ((posbits-1) + ((n_bits<<3) -
-									 (posbits-1+(n_bits<<3))%(n_bits<<3)));
-
-					++n_bits;
-					if (n_bits == maxbits)
-						maxcode = maxmaxcode;
-					else
-					    maxcode = MAXCODE(n_bits)-1;
-
-					bitmask = (1<<n_bits)-1;
-					goto resetbuf;
+				if (code >= 256) {
+					fprintf(stderr, "oldcode:-1 code:%i\n", (int)(code));
+					fprintf(stderr, "uncompress: corrupt input\n");
+					abort_compress();
 				}
-
-				input(inbuf,posbits,code,n_bits,bitmask);
-
-				if (oldcode == -1)
-				{
-					if (code >= 256) {
-						fprintf(stderr, "oldcode:-1 code:%i\n", (int)(code));
-						fprintf(stderr, "uncompress: corrupt input\n");
-						abort_compress();
-					}
 					outbuf[outpos++] = (char_type)(finchar = (int)(oldcode = code));
 					continue;
-				}
-
-				if (code == CLEAR && block_mode)
-				{
-					clear_tab_prefixof();
-	    			free_ent = FIRST - 1;
-					posbits = ((posbits-1) + ((n_bits<<3) -
-								(posbits-1+(n_bits<<3))%(n_bits<<3)));
-					reset_n_bits_for_decompressor(n_bits, bitmask, maxbits, maxcode, maxmaxcode);
-					goto resetbuf;
-				}
-
-				incode = code;
-			    stackp = de_stack;
-
-				if (code >= free_ent)	/* Special case for KwKwK string.	*/
-				{
-					if (code > free_ent)
-					{
-						char_type *p;
-
-						posbits -= n_bits;
-						p = &inbuf[posbits>>3];
-						if (p == inbuf) p++;
-
-						fprintf(stderr, "insize:%d posbits:%d inbuf:%02X %02X %02X %02X %02X (%d)\n", insize, posbits,
-								p[-1],p[0],p[1],p[2],p[3], (posbits&07));
-			    		fprintf(stderr, "uncompress: corrupt input\n");
-						abort_compress();
-					}
-
-        	    	*--stackp = (char_type)finchar;
-		    		code = oldcode;
-				}
-
-				while ((cmp_code_int)code >= (cmp_code_int)256)
-				{ /* Generate output characters in reverse order */
-			    	*--stackp = tab_suffixof(code);
-			    	code = tab_prefixof(code);
-				}
-
-				*--stackp =	(char_type)(finchar = tab_suffixof(code));
-
-			/* And put them out in forward order */
-
-				{
-					int i;
-
-					if (outpos+(i = (de_stack-stackp)) >= OBUFSIZ)
-					{
-						do
-						{
-							if (i > OBUFSIZ-outpos) i = OBUFSIZ-outpos;
-
-							if (i > 0)
-							{
-								memcpy(outbuf+outpos, stackp, i);
-								outpos += i;
-							}
-
-							if (outpos >= OBUFSIZ)
-							{
-								if (write(fdout, outbuf, outpos) != outpos)
-									write_error();
-
-								outpos = 0;
-							}
-							stackp+= i;
-						}
-						while ((i = (de_stack-stackp)) > 0);
-					}
-					else
-					{
-						memcpy(outbuf+outpos, stackp, i);
-						outpos += i;
-					}
-				}
-
-				if ((code = free_ent) < maxmaxcode) /* Generate the new entry. */
-				{
-			    	tab_prefixof(code) = (unsigned short)oldcode;
-			    	tab_suffixof(code) = (char_type)finchar;
-	    			free_ent = code+1;
-				}
-
-				oldcode = incode;	/* Remember previous code.	*/
 			}
 
-			bytes_in += rsize;
-	    }
-		while (rsize > 0);
+			if (code == CLEAR && block_mode)
+			{
+				clear_tab_prefixof();
+    			free_ent = FIRST - 1;
+				posbits = ((posbits-1) + ((n_bits<<3) - (posbits-1+(n_bits<<3))%(n_bits<<3)));
+				reset_n_bits_for_decompressor(n_bits, bitmask, maxbits, maxcode, maxmaxcode);
+				goto resetbuf;
+			}
 
-		if (outpos > 0 && write(fdout, outbuf, outpos) != outpos)
-			write_error();
+			incode = code;
+		    stackp = de_stack;
+
+            //Special case for KwKwK string.
+			if (code >= free_ent)	
+			{
+				if (code > free_ent)
+				{
+					char_type *p;
+					posbits -= n_bits;
+					p = &inbuf[posbits>>3];
+					if (p == inbuf)
+                        p++;
+					fprintf(stderr, "insize:%d posbits:%d inbuf:%02X %02X %02X %02X %02X (%d)\n",
+                        insize, posbits, p[-1],p[0],p[1],p[2],p[3], (posbits&07));
+		    		fprintf(stderr, "uncompress: corrupt input\n");
+					abort_compress();
+				}
+
+       	    	*--stackp = (char_type)finchar;
+	    		code = oldcode;
+			}
+
+			while ((cmp_code_int)code >= (cmp_code_int)256)
+			{
+		    	*--stackp = tab_suffixof(code);
+		    	code = tab_prefixof(code);
+			}
+
+			*--stackp =	(char_type)(finchar = tab_suffixof(code));
+
+            {
+                int i;
+
+                if (outpos+(i = (de_stack-stackp)) >= OBUFSIZ)
+                {
+                    do
+                    {
+                        if (i > OBUFSIZ-outpos)
+                            i = OBUFSIZ-outpos;
+
+                        if (i > 0)
+                        {
+                            memcpy(outbuf + outpos, stackp, i);
+                            outpos += i;
+                        }
+
+                        if (outpos >= OBUFSIZ)
+                        {
+                            if (write(fdout, outbuf, outpos) != outpos)
+                                write_error();
+
+                            outpos = 0;
+                        }
+                        stackp += i;
+                    }
+                    while ((i = (de_stack-stackp)) > 0);
+                }
+                else
+                {
+                    memcpy(outbuf+outpos, stackp, i);
+                    outpos += i;
+                }
+            }
+
+            if ((code = free_ent) < maxmaxcode) /* Generate the new entry. */
+            {
+                tab_prefixof(code) = (unsigned short)oldcode;
+                tab_suffixof(code) = (char_type)finchar;
+                free_ent = code+1;
+            }
+
+            oldcode = incode;	/* Remember previous code.	*/
+        }
+
+        bytes_in += rsize;
+    }
+
+    if (rsize > 0)
+        goto resetbuf;
+
+    if (outpos > 0 && write(fdout, outbuf, outpos) != outpos)
+        write_error();
 }
 
 void
@@ -442,19 +420,6 @@ void comprexx(const char *fileptr)
 	switch (infstat.st_mode & S_IFMT)
 	{
 	case S_IFREG:	/* regular file */
-    	if (!zcat_flg)
-		{
-				if (!has_z_suffix)
-				{
-					if (recursive) {
-						free(tempname);
-						return;
-					}
-
-					goto error;
-      			}
-    	}
-
 		free(ofname);
 		ofname = strdup(tempname);
 		if (ofname == NULL)
@@ -530,7 +495,7 @@ int main(int argc, char **argv)
 	}
    	fileptr = filelist;
    	*filelist = NULL;
-	do_decomp = zcat_flg = 1;
+	zcat_flg = 1;
 
    	for (argc--, argv++; argc > 0; argc--, argv++)
 	{
@@ -548,9 +513,6 @@ int main(int argc, char **argv)
             comprexx(*fileptr);
    	}
 
-    if (recursive && exit_code == -1) {
-        fprintf(stderr, "no files processed after recursive search\n");
-	}
 	exit((exit_code== -1) ? 1:exit_code);
 }
 
