@@ -8,12 +8,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
-#include <dirent.h>
 #include <unistd.h>
-
-#ifndef SIG_TYPE
-#	define	SIG_TYPE	void (*)()
-#endif
+#include <assert.h>
 
 #ifndef	LSTAT
 #define	lstat	stat
@@ -31,7 +27,6 @@
 #define BIT_MASK	0x1f			
 #define BLOCK_MODE	0x80			
 #define FIRST	257					
-#define	CLEAR	256					
 #define INIT_BITS 9
 
 #ifndef USERMEM
@@ -117,17 +112,15 @@ typedef	unsigned char char_type;
 		maxcode = MAXCODE(n_bits)-1;						\
 }
 
-int maxbits = BITS;		/* user settable max # bits/code 				*/
-int zcat_flg = 0;		/* Write output on stdout, suppress messages 	*/
-int exit_code = -1;		/* Exitcode of compress (-1 no file compressed)	*/
-char_type inbuf[IBUFSIZ+64];	/* Input buffer									*/
-char_type outbuf[OBUFSIZ+2048];/* Output buffer								*/
-char *ifname;			/* Input filename								*/
-int				remove_ofname = 0;	/* Remove output file on a error				*/
-char			*ofname = NULL;		/* Output filename								*/
-long 			bytes_in;			/* Total number of byte from input				*/
-long 			bytes_out;			/* Total number of byte to output				*/
+static int maxbits = BITS;
+static int zcat_flg = 0;
+static int exit_code = -1;
 
+char *ifname;			/* Input filename								*/
+int remove_ofname = 0;	/* Remove output file on a error				*/
+char *ofname = NULL;		/* Output filename								*/
+long bytes_in;			/* Total number of byte from input				*/
+long bytes_out;			/* Total number of byte to output				*/
 
 #define	tab_prefixof(i)			codetab[i]
 #define	tab_suffixof(i)			((char_type *)(htab))[i]
@@ -137,21 +130,27 @@ long 			bytes_out;			/* Total number of byte to output				*/
 
 static void read_error(void);
 static void write_error(void);
-static void abort_compress(void);
 
-void decompress(int fdin, int fdout)
+static void abort_compress(void)
 {
-    count_int		htab[HSIZE];
-    unsigned short	codetab[HSIZE];
+    if (remove_ofname)
+        unlink(ofname);
+
+    exit(1);
+}
+
+static void decompress(int fdin, int fdout)
+{
+    count_int htab[HSIZE];
+    unsigned short codetab[HSIZE];
+    char_type inbuf[IBUFSIZ + 64];
+    char_type outbuf[OBUFSIZ + 2048];
 	char_type *stackp;
 	code_int code;
-	int finchar;
 	code_int oldcode;
 	code_int incode;
-	int inbits;
 	int posbits;
 	int outpos;
-	int insize;
 	int bitmask;
 	code_int free_ent;
 	code_int maxcode;
@@ -161,7 +160,7 @@ void decompress(int fdin, int fdout)
 	int block_mode;
 	bytes_in = 0;
 	bytes_out = 0;
-	insize = 0;
+	int insize = 0;
 
 	while (insize < 3 && (rsize = read(fdin, inbuf+insize, IBUFSIZ)) > 0)
 		insize += rsize;
@@ -173,8 +172,7 @@ void decompress(int fdin, int fdout)
 
 		if (insize > 0)
 		{
-			fprintf(stderr, "%s: not in compressed format\n",
-								(ifname[0] != '\0'? ifname : "stdin"));
+			fprintf(stderr, "%s: not in compressed format\n", (ifname[0] != 0 ? ifname : "stdin"));
 			exit_code = 1;
 		}
 
@@ -196,7 +194,7 @@ void decompress(int fdin, int fdout)
 	bytes_in = insize;
 	reset_n_bits_for_decompressor(n_bits, bitmask, maxbits, maxcode, maxmaxcode);
 	oldcode = -1;
-	finchar = 0;
+	int finchar = 0;
 	outpos = 0;
 	posbits = 3<<3;
     free_ent = ((block_mode) ? FIRST : 256);
@@ -204,7 +202,6 @@ void decompress(int fdin, int fdout)
 
     for (code = 255 ; code >= 0 ; --code)
 		tab_suffixof(code) = (char_type)code;
-
 resetbuf:
     int o = posbits >> 3;
     int e = o <= insize ? insize - o : 0;
@@ -215,51 +212,51 @@ resetbuf:
     insize = e;
     posbits = 0;
 
-    if (insize < sizeof(inbuf)-IBUFSIZ)
+    if (insize < sizeof(inbuf) - IBUFSIZ)
     {
-        if ((rsize = read(fdin, inbuf+insize, IBUFSIZ)) < 0)
+        if ((rsize = read(fdin, inbuf + insize, IBUFSIZ)) < 0)
             read_error();
 
         insize += rsize;
     }
 
-    inbits = ((rsize > 0) ? (insize - insize%n_bits)<<3 : (insize<<3)-(n_bits-1));
+    int inbits = rsize > 0 ? insize - insize % n_bits << 3 : (insize << 3) - (n_bits - 1);
 
     while (inbits > posbits)
     {
         if (free_ent > maxcode)
         {
-				posbits = ((posbits-1) + ((n_bits<<3) - (posbits-1+(n_bits<<3))%(n_bits<<3)));
-				++n_bits;
+			posbits = (posbits-1) + ((n_bits<<3) - (posbits - 1 + (n_bits<<3)) % (n_bits<<3));
+			++n_bits;
 
-				if (n_bits == maxbits)
-					maxcode = maxmaxcode;
-				else
-				    maxcode = MAXCODE(n_bits)-1;
+			if (n_bits == maxbits)
+				maxcode = maxmaxcode;
+			else
+			    maxcode = MAXCODE(n_bits) - 1;
 
-				bitmask = (1<<n_bits)-1;
-				goto resetbuf;
+			bitmask = (1<<n_bits)-1;
+			goto resetbuf;
         }
 
-        input(inbuf,posbits,code,n_bits,bitmask);
+        input(inbuf, posbits, code, n_bits, bitmask);
 
         if (oldcode == -1)
         {
-            if (code >= 256)
-            {
-                fprintf(stderr, "oldcode:-1 code:%i\n", (int)(code));
-                fprintf(stderr, "uncompress: corrupt input\n");
-                abort_compress();
-            }
-            outbuf[outpos++] = (char_type)(finchar = (int)(oldcode = code));
+            assert(code < 256);
+#if 0
+            putc(code, stdout);
+#else
+            outbuf[outpos++] = (char_type)code;
+#endif
+            oldcode = finchar = code;
             continue;
         }
 
-        if (code == CLEAR && block_mode)
+        if (code == 256 && block_mode)
         {
             clear_tab_prefixof();
             free_ent = FIRST - 1;
-            posbits = ((posbits-1) + ((n_bits<<3) - (posbits-1+(n_bits<<3))%(n_bits<<3)));
+            posbits = (posbits-1) + ((n_bits<<3) - (posbits-1+(n_bits<<3))%(n_bits<<3));
             reset_n_bits_for_decompressor(n_bits, bitmask, maxbits, maxcode, maxmaxcode);
             goto resetbuf;
         }
@@ -297,7 +294,9 @@ resetbuf:
         }
 
         *--stackp =	(char_type)(finchar = tab_suffixof(code));
-
+#if 0
+        fwrite(stackp, de_stack - stackp, 1, stdout);
+#else
         {
             int i;
 
@@ -331,7 +330,7 @@ resetbuf:
                 outpos += i;
             }
         }
-
+#endif
         //Generate the new entry.
         if ((code = free_ent) < maxmaxcode) 
         {
@@ -349,30 +348,19 @@ resetbuf:
         goto resetbuf;
 }
 
-void
-read_error(void)
-	{
-		fprintf(stderr, "\nread error on");
-	    perror((ifname[0] != '\0') ? ifname : "stdin");
-		abort_compress();
-	}
+void read_error(void)
+{
+	fprintf(stderr, "\nread error on");
+    perror((ifname[0] != '\0') ? ifname : "stdin");
+	abort_compress();
+}
 
-void
-write_error(void)
-	{
-		fprintf(stderr, "\nwrite error on");
-	    perror(ofname ? ofname : "stdout");
-		abort_compress();
-	}
-
-void
-abort_compress(void)
-	{
-		if (remove_ofname)
-	    	unlink(ofname);
-
-		exit(1);
-	}
+void write_error(void)
+{
+	fprintf(stderr, "\nwrite error on");
+    perror(ofname ? ofname : "stdout");
+	abort_compress();
+}
 
 void comprexx(const char *fileptr)
 {
