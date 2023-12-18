@@ -1,17 +1,5 @@
-/* (N)compress.c - File compression ala IEEE Computer, Mar 1992.
- *
- * Authors:
- *   Spencer W. Thomas   (decvax!harpo!utah-cs!utah-gr!thomas)
- *   Jim McKie           (decvax!mcvax!jim)
- *   Steve Davies        (decvax!vax135!petsd!peora!srd)
- *   Ken Turkowski       (decvax!decwrl!turtlevax!ken)
- *   James A. Woods      (decvax!ihnp4!ames!jaw)
- *   Joe Orost           (decvax!vax135!petsd!joe)
- *   Dave Mack           (csu@alembic.acs.com)
- *   Peter Jannesen, Network Communication Systems
- *                       (peter@ncs.nl)
- *   Mike Frysinger      (vapier@gmail.com)
- */
+//This is a comment
+//I love comments
 
 #include <cstdint>
 #include <cstring>
@@ -189,10 +177,7 @@ int main(int argc, char **argv)
 
         flag = true;
 
-        if (fcode.e.ent >= 257 && inbuf.hasleft())
-            continue;
-
-        if (inbuf.rpos() > rlop)
+        if (fcode.e.ent < 257 && inbuf.rpos() > rlop)
         {
             bytes_in += inbuf.rpos() - rlop;
             rlop = inbuf.rpos();
