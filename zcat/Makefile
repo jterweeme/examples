@@ -1,23 +1,21 @@
 TIME = 
 ZCATPP = zcatpp
 ZCATC = zcatc
-ZCATUX = zcatux
+#ZCATUX = zcatux
 
 all:
 	rm -vf $(ZCATPP) $(ZCATUX) $(ZCATC)
 	g++ -g -O2 -Wall -Wno-parentheses -o $(ZCATPP) zcatpp.cpp
-	g++ -g -O2 -Wall -Wno-parentheses -o $(ZCATUX) zcatux.cpp
+	#g++ -g -O2 -Wall -Wno-parentheses -o $(ZCATUX) zcatux.cpp
 	gcc -g -O2 -Wall -Wno-parentheses -o $(ZCATC) zcatc.c
 
 test:
 	$(TIME) zcat < relnotes.ps.Z | md5sum
 	$(TIME) ./$(ZCATPP) < relnotes.ps.Z | md5sum
-	$(TIME) ./$(ZCATUX) < relnotes.ps.Z | md5sum
 	$(TIME) ./$(ZCATC) < relnotes.ps.Z | md5sum
 	$(TIME) ./zcat.py relnotes.ps.Z | md5sum
 	$(TIME) zcat keen1.tar.Z | md5sum
 	$(TIME) ./$(ZCATPP) keen1.tar.Z | md5sum
-	$(TIME) ./$(ZCATUX) keen1.tar.Z | md5sum
 	$(TIME) ./$(ZCATC) keen1.tar.Z | md5sum
 	$(TIME) ./zcat.py keen1.tar.Z | md5sum
 	$(TIME) zcat DA40_cockpit.xml.Z | md5sum

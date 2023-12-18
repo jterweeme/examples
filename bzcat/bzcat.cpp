@@ -1,23 +1,117 @@
-#include <fstream>
-#include <iostream>
+//This is a comment
+//I love comments
+
+#define FAST
+
 #include <cstdint>
 #include <cassert>
 #include <algorithm>
-#include <numeric>
-#include <iomanip>
+#ifdef FAST
+#include <unistd.h>
+#include <fcntl.h>
+#else
+#include <iostream>
+#include <fstream>
+#endif
+
+#ifdef FAST
+class istream
+{
+private:
+    uint32_t _cap;
+    uint32_t _head = 0, _tail = 0;
+    uint8_t *_buf;
+protected:
+    int _fd;
+public:
+    ~istream() { delete[] _buf; }
+
+    istream(int fd = -1, uint32_t capacity = 8192)
+      : _cap(capacity), _buf(new uint8_t[capacity]), _fd(fd) { }
+
+    int get()
+    {
+        if (_tail == _head)
+        {
+            ssize_t n = ::read(_fd, _buf, _cap);
+            if (n < 1) return -1;
+            _head = n;
+            _tail = 0;
+        }
+        return _buf[_tail++];
+    }
+};
+
+class ifstream : public istream
+{
+public:
+    void close() { ::close(_fd); }
+    void open(const char *fn) { _fd = ::open(fn, O_RDONLY); }
+};
+
+class ostream
+{
+    int _fd;
+    uint32_t _cap;
+    uint32_t _pos = 0;
+    char *_buf;
+public:
+    ~ostream() { delete[] _buf; }
+    void put(char c) { if (_pos > _cap) flush(); _buf[_pos++] = c; }
+    void puts(const char *s) { while (*s) put(*s++); }
+    ostream& operator<<(const char *s) { puts(s); return *this; }
+    void flush() { ::write(_fd, _buf, _pos), _pos = 0; }
+
+    ostream(int fd, uint32_t capacity = 8192)
+      : _fd(fd), _cap(capacity), _buf(new char[capacity]) { }
+};
+
+static istream cin(0, 8192);
+static ostream cout(1, 8192);
+static ostream cerr(2, 8192);
+#else
+using std::istream;
+using std::ostream;
+using std::ifstream;
+using std::cin;
+using std::cout;
+using std::cerr;
+#endif
+
+class Toolbox
+{
+public:
+    static char nibble(uint8_t n)
+    {
+        return n <= 9 ? '0' + char(n) : 'a' + char(n - 10);
+    }
+
+    static void hex32(uint32_t dw, ostream &os)
+    {
+        for (uint32_t i = 0; i <= 28; i += 4)
+            os.put(nibble(dw >> 28 - i & 0xf));
+    }
+
+    template <class ForwardIt, class T>
+    static constexpr void iota(ForwardIt first, ForwardIt last, T value)
+    {
+        while (first != last)
+            *first++ = value++;
+    }
+};
 
 class BitInputStream
 {
-    std::istream *_is;
+    istream &_is;
     uint32_t _window = 0, _bitCount = 0;
 public:
-    BitInputStream(std::istream *is) : _is(is) { }
+    BitInputStream(istream &is) : _is(is) { }
 
     uint32_t readBits24(uint8_t n)
     {
         assert(n <= 24);
         while (_bitCount < n)
-            _window = _window << 8 | _is->get(), _bitCount += 8;
+            _window = _window << 8 | _is.get(), _bitCount += 8;
         _bitCount -= n;
         return _window >> _bitCount & (1 << n) - 1;
     }
@@ -39,7 +133,7 @@ class MoveToFront
 {
     uint8_t _buf[256];
 public:
-    MoveToFront() { std::iota(_buf, _buf + 256, 0); }
+    MoveToFront() { Toolbox::iota(_buf, _buf + 256, 0); }
     uint8_t indexToFront(uint8_t i) { std::rotate(_buf, _buf + i, _buf + i + 1); return _buf[0]; }
 };
 
@@ -176,7 +270,7 @@ class Block
     uint32_t _dec = 0, _curp = 0, *_merged;
     uint8_t _nextByte();
 public:
-    uint32_t process(BitInputStream &bi, uint32_t blockSize, std::ostream &os);
+    uint32_t process(BitInputStream &bi, uint32_t blockSize, ostream &os);
 };
 
 uint8_t Block::_nextByte()
@@ -187,7 +281,7 @@ uint8_t Block::_nextByte()
     return ret;
 }
 
-uint32_t Block::process(BitInputStream &bi, uint32_t blockSize, std::ostream &os)
+uint32_t Block::process(BitInputStream &bi, uint32_t blockSize, ostream &os)
 {
     uint32_t _blockCRC = bi.readBits32(32);
     assert(bi.readBits24(1) == 0);
@@ -296,6 +390,7 @@ uint32_t Block::process(BitInputStream &bi, uint32_t blockSize, std::ostream &os
         os.put(_last);
     }
 
+    os.flush();
     delete[] _merged;
     assert(_blockCRC == _crc.crc());
     return _crc.crc();
@@ -303,15 +398,15 @@ uint32_t Block::process(BitInputStream &bi, uint32_t blockSize, std::ostream &os
 
 int main(int argc, char **argv)
 {
-    std::ostream *os = &std::cout;
-    std::ostream *msg = &std::cerr;
-    std::istream *is = &std::cin;
-    std::ifstream ifs;
+    auto is = &cin;
+    auto os = &cout;
+    auto msg = &cerr;
+    ifstream ifs;
 
     if (argc == 2)
         ifs.open(argv[1]), is = &ifs;
 
-    BitInputStream bi(is);
+    BitInputStream bi(*is);
     assert(bi.readBits24(16) == 0x425a);
     bi.readBits24(8);
     uint8_t blockSize = bi.readBits24(8) - '0';
@@ -332,10 +427,13 @@ int main(int argc, char **argv)
         if (marker1 == 0x177245 && marker2 == 0x385090)
         {
             uint32_t crc = bi.readBits32(32);
-
-            *msg << "0x" << std::setw(8) << std::setfill('0') << std::hex << crc << " 0x"
-                 << std::setw(8) << std::setfill('0') << std::hex << streamCRC << "\r\n";
-
+            assert(crc == streamCRC);
+            *msg << "0x";
+            Toolbox::hex32(crc, *msg);
+            *msg << " 0x";
+            Toolbox::hex32(streamCRC, *msg);
+            *msg << "\r\n";
+            msg->flush();
             break;
         }
 

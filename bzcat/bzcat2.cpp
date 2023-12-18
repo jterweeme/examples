@@ -1,6 +1,7 @@
 #include <fstream>
 #include <iostream>
 #include <cstdint>
+#include <cassert>
 #include <algorithm>
 #include <numeric>
 #include <iomanip>
@@ -330,6 +331,7 @@ int main(int argc, char **argv)
         if (marker1 == 0x177245 && marker2 == 0x385090)
         {
             uint32_t crc = bi.readUInt32();
+            assert(crc == streamCRC);
 
             *msg << "0x" << std::setw(8) << std::setfill('0') << std::hex << crc << " 0x"
                  << std::setw(8) << std::setfill('0') << std::hex << streamCRC << "\r\n";

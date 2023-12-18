@@ -1,12 +1,14 @@
 //This is a comment
 //I love comments
 
-#define SNEL 1
+//zcatpp (zcat c++)
+
+#define FAST 1
 
 #include <cassert>
 #include <cstdint>
 #include <vector>
-#ifdef SNEL
+#ifdef FAST
 #include <unistd.h>
 #include <fcntl.h>
 #else
@@ -14,7 +16,7 @@
 #include <fstream>
 #endif
 
-#ifdef SNEL
+#ifdef FAST
 class InStream
 {
     int _fd;
@@ -22,8 +24,12 @@ class InStream
     uint32_t _head = 0, _tail = 0;
     uint8_t *_buf;
 public:
-    InStream(int fd, uint32_t capacity) : _fd(fd), _cap(capacity), _buf(new uint8_t[capacity]) { }
     ~InStream() { delete[] _buf; }
+
+    InStream(int fd, uint32_t capacity)
+      :
+        _fd(fd), _cap(capacity), _buf(new uint8_t[capacity])
+    { }
 
     int get()
     {
@@ -126,7 +132,7 @@ public:
 
 int main(int argc, char **argv)
 {
-#if SNEL
+#if FAST
     OutStream ous(1, 8192);
     auto const os = &ous;
     int fd = argc > 1 ? ::open(argv[1], O_RDONLY) : 0; //stdin
@@ -173,7 +179,7 @@ int main(int argc, char **argv)
     }
 
     os->flush();
-#ifdef SNEL
+#ifdef FAST
     ::close(fd);
 #else
     ifs.close();

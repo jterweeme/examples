@@ -55,24 +55,23 @@ union Fcode
     } e;
 };
 
-static constexpr int IBUFSIZ = BUFSIZ;
-
 class InBuf
 {
-    uint8_t inbuf[IBUFSIZ + 64];
-    int bytes_read;
-    int _rpos = -1;
+    char *_inbuf;
+    uint32_t _cap, _head = 0, _tail = 0;
 public:
-    int rpos() const { return _rpos; }
-    uint8_t next() { return inbuf[_rpos++]; }
-    bool hasleft() { return _rpos < bytes_read; }
+    InBuf(uint32_t capacity) : _inbuf(new char[capacity]), _cap(capacity) { }
+    ~InBuf() { delete[] _inbuf; }
+    int rpos() const { return _tail; }
+    uint8_t next() { return _inbuf[_tail++]; }
+    bool hasleft() { return _tail < _head; }
 
     bool read()
     {
-        _rpos = 0;
-        std::cin.read((char *)inbuf, IBUFSIZ);
-        bytes_read = std::cin.gcount();
-        return bytes_read <= 0 ? false : true;
+        _tail = 0;
+        std::cin.read(_inbuf, _cap);
+        _head = std::cin.gcount();
+        return _head <= 0 ? false : true;
     }
 };
 
@@ -90,29 +89,27 @@ int main(int argc, char **argv)
     int64_t htab[HSIZE];
     uint16_t codetab[HSIZE];
     long checkpoint = CHECK_GAP;
-    bool stcode = true;
     uint32_t free_ent = 257;
 
     BitOutputStream bos(std::cout);
     bos.write(0x9d1f, 16);  //magic
-    bos.write(16, 5);       //max. 16 bits (hardcoded)
-    bos.write(0, 2);        //reserved
+    bos.write(16, 7);       //max. 16 bits (hardcoded)
     bos.write(1, 1);        //block mode
     bos.cnt = 0;
     std::fill(htab, htab + HSIZE, -1);
     Fcode fcode;
     fcode.e.ent = std::cin.get();
     long bytes_in = 1;
-    InBuf inbuf;
+    InBuf inbuf(8192);
     int n_bits = 9, ratio = 0;
     uint32_t extcode = (1 << n_bits) + 1;
-    bool rflag = inbuf.read();
+    int rlop = 0;
 
-    for (int rlop = 0; rflag;)
+    for (bool flag = true, stcode = true; flag;)
     {
         if (inbuf.hasleft() == false)
         {
-            rflag = inbuf.read();
+            flag = inbuf.read();
             rlop = 0;
             continue;
         }
@@ -153,10 +150,7 @@ int main(int argc, char **argv)
             }
         }
 
-        ++rlop, ++bytes_in;
-        bool flag = false;
-
-        while (inbuf.rpos() < rlop || vlag(flag))
+        for (++rlop, ++bytes_in, flag = false; inbuf.rpos() < rlop || vlag(flag);)
         {
             fcode.e.c = inbuf.next();
             long fc = fcode.code;
@@ -193,11 +187,10 @@ int main(int argc, char **argv)
                 codetab[hp] = uint16_t(free_ent++), htab[hp] = fc;
         }
 
+        flag = true;
+
         if (fcode.e.ent >= 257 && inbuf.hasleft())
-        {
-            flag = true;
             continue;
-        }
 
         if (inbuf.rpos() > rlop)
         {
@@ -208,6 +201,8 @@ int main(int argc, char **argv)
 
     bos.write(fcode.e.ent, n_bits);
     bos.flush();
+
+    //print message
     std::cerr << "Compression: ";
     int q;
     const long num = bytes_in - bos.cnt / 8;

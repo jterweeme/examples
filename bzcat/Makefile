@@ -1,7 +1,10 @@
+SANE = -fsanitize=address
+SANE =
+
 all:
-	g++ -fsanitize=address -Wall -Wno-parentheses -O2 -o bzcat bzcat.cpp
-	g++ -fsanitize=address -Wall -Wno-parentheses -O2 -o bzcat2 bzcat2.cpp
-	gcc -fsanitize=address -Wall -Wno-parentheses -O2 -o bzcatc bzcat.c
+	g++ $(SANE) -Wall -Wno-parentheses -O2 -o bzcat bzcat.cpp
+	g++ $(SANE) -Wall -Wno-parentheses -O2 -o bzcat2 bzcat2.cpp
+	gcc $(SANE) -Wall -Wno-parentheses -O2 -o bzcatc bzcat.c
 	javac Bzcat.java
 
 clean:
