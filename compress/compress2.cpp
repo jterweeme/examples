@@ -10,13 +10,12 @@
 class BitOutputStream
 {
     std::ostream &_os;
-    uint32_t _window = 0;
-    uint32_t _bits = 0;
+    unsigned _window = 0, _bits = 0;
 public:
     uint64_t cnt = 0;
     BitOutputStream(std::ostream &os) : _os(os) { }
 
-    void write(uint16_t code, uint8_t n_bits)
+    void write(uint16_t code, unsigned n_bits)
     {
         _window |= code << _bits, cnt += n_bits, _bits += n_bits;
         while (_bits >= 8) flush();
@@ -26,7 +25,7 @@ public:
     {
         if (_bits)
         {
-            const uint32_t bits = std::min(_bits, 8U);
+            const unsigned bits = std::min(_bits, 8U);
             _os.put(_window & 0xff);
             _window = _window >> bits, _bits -= bits;
         }
@@ -35,7 +34,7 @@ public:
 
 union Fcode
 {
-    long code = 0;
+    unsigned code = 0;
     struct
     {
         uint8_t c;
@@ -46,11 +45,11 @@ union Fcode
 class InBuf
 {
     char *_inbuf;
-    uint32_t _cap, _head = 0, _tail = 0;
+    unsigned _cap, _head = 0, _tail = 0;
 public:
-    InBuf(uint32_t capacity) : _inbuf(new char[capacity]), _cap(capacity) { }
+    InBuf(unsigned capacity) : _inbuf(new char[capacity]), _cap(capacity) { }
     ~InBuf() { delete[] _inbuf; }
-    int rpos() const { return _tail; }
+    unsigned rpos() const { return _tail; }
     uint8_t next() { return _inbuf[_tail++]; }
     bool hasleft() { return _tail < _head; }
 
@@ -65,14 +64,9 @@ public:
 
 int main(int argc, char **argv)
 {
-    static constexpr long CHECK_GAP = 10000;
-    static constexpr uint32_t HSIZE = 69001;
-    int64_t htab[HSIZE];
+    static constexpr unsigned CHECK_GAP = 10000, HSIZE = 69001;
     bool mask[HSIZE];
     uint16_t codetab[HSIZE];
-    long checkpoint = CHECK_GAP;
-    uint32_t free_ent = 257;
-
     BitOutputStream bos(std::cout);
     bos.write(0x9d1f, 16);  //magic
     bos.write(16, 7);       //max. 16 bits (hardcoded)
@@ -81,11 +75,9 @@ int main(int argc, char **argv)
     std::fill(mask, mask + HSIZE, false);
     Fcode fcode;
     fcode.e.ent = std::cin.get();
-    long bytes_in = 1;
     InBuf inbuf(8192);
-    int n_bits = 9, ratio = 0;
-    uint32_t extcode = (1 << n_bits) + 1;
-    int rlop = 0;
+    unsigned bytes_in = 1, n_bits = 9, checkpoint = CHECK_GAP, free_ent = 257;
+    unsigned ratio = 0, extcode = (1 << n_bits) + 1, rlop = 0, htab[HSIZE];
 
     for (bool flag = true, stcode = true; flag;)
     {
@@ -106,7 +98,7 @@ int main(int argc, char **argv)
 
         if (!stcode && bytes_in >= checkpoint && fcode.e.ent < 257)
         {
-            long rat;
+            unsigned rat;
             checkpoint = bytes_in + CHECK_GAP;
 
             if (bytes_in > 0x007fffff)
@@ -117,14 +109,14 @@ int main(int argc, char **argv)
                 rat = (bytes_in << 8) / (bos.cnt >> 3);
 
             if (rat >= ratio)
-                ratio = int(rat);
+                ratio = rat;
             else
             {
                 ratio = 0;
                 std::fill(mask, mask + HSIZE, false);
                 bos.write(256, n_bits);
 
-                for (uint8_t nb3 = n_bits << 3; (bos.cnt - 1U + nb3) % nb3 != nb3 - 1U;)
+                for (unsigned nb3 = n_bits << 3; (bos.cnt - 1U + nb3) % nb3 != nb3 - 1U;)
                     bos.write(0, 16);
 
                 n_bits = 9, stcode = true, free_ent = 257;
@@ -136,8 +128,8 @@ int main(int argc, char **argv)
         {
             flag = false;
             fcode.e.c = inbuf.next();
-            long fc = fcode.code;
-            long hp = long(fcode.e.c) <<  8 ^ long(fcode.e.ent);
+            unsigned fc = fcode.code;
+            unsigned hp = fcode.e.c << 8 ^ fcode.e.ent;
     
             if (htab[hp] == fc && mask[hp])
             {
@@ -146,11 +138,10 @@ int main(int argc, char **argv)
             }
 
             //secondary hash (after G. Knott)
-            //while (htab[hp] != -1)
             while (mask[hp])
             {
-                if ((hp -= HSIZE - hp - 1) < 0)
-                    hp += HSIZE;
+                if ((hp += hp + 1) >= HSIZE)
+                    hp -= HSIZE;
 
                 if (mask[hp] == false)
                     break;
@@ -175,7 +166,7 @@ int main(int argc, char **argv)
             flag = inbuf.rpos() < rlop ? true : false;
 
             if (stcode)
-                codetab[hp] = uint16_t(free_ent++), htab[hp] = fc, mask[hp] = true;
+                codetab[hp] = free_ent++, htab[hp] = fc, mask[hp] = true;
         }
 
         flag = true;
