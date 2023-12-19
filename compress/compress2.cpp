@@ -50,7 +50,7 @@ public:
     InBuf(unsigned capacity) : _inbuf(new char[capacity]), _cap(capacity) { }
     ~InBuf() { delete[] _inbuf; }
     unsigned rpos() const { return _tail; }
-    uint8_t next() { return _inbuf[_tail++]; }
+    char next() { return _inbuf[_tail++]; }
     bool hasleft() { return _tail < _head; }
 
     bool read()
@@ -75,18 +75,28 @@ int main(int argc, char **argv)
     std::fill(mask, mask + HSIZE, false);
     Fcode fcode;
     fcode.e.ent = std::cin.get();
-    InBuf inbuf(8192);
+    InBuf inbuf(1);
     unsigned bytes_in = 1, n_bits = 9, checkpoint = CHECK_GAP, free_ent = 257;
     unsigned ratio = 0, extcode = (1 << n_bits) + 1, rlop = 0, htab[HSIZE];
 
     for (bool flag = true, stcode = true; flag;)
     {
+#if 0
         if (inbuf.hasleft() == false)
         {
             flag = inbuf.read();
             rlop = 0;
             continue;
         }
+#else
+        flag = inbuf.read();
+
+        if (flag == false)
+            break;
+
+        rlop = 0;
+#endif
+        
 
         if (free_ent >= extcode && fcode.e.ent < 257)
         {
