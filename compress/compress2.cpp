@@ -68,6 +68,7 @@ int main(int argc, char **argv)
     static constexpr long CHECK_GAP = 10000;
     static constexpr uint32_t HSIZE = 69001;
     int64_t htab[HSIZE];
+    bool mask[HSIZE];
     uint16_t codetab[HSIZE];
     long checkpoint = CHECK_GAP;
     uint32_t free_ent = 257;
@@ -77,7 +78,7 @@ int main(int argc, char **argv)
     bos.write(16, 7);       //max. 16 bits (hardcoded)
     bos.write(1, 1);        //block mode
     bos.cnt = 0;
-    std::fill(htab, htab + HSIZE, -1);
+    std::fill(mask, mask + HSIZE, false);
     Fcode fcode;
     fcode.e.ent = std::cin.get();
     long bytes_in = 1;
@@ -120,7 +121,7 @@ int main(int argc, char **argv)
             else
             {
                 ratio = 0;
-                std::fill(htab, htab + HSIZE, -1);
+                std::fill(mask, mask + HSIZE, false);
                 bos.write(256, n_bits);
 
                 for (uint8_t nb3 = n_bits << 3; (bos.cnt - 1U + nb3) % nb3 != nb3 - 1U;)
@@ -131,24 +132,28 @@ int main(int argc, char **argv)
             }
         }
 
-        for (++rlop, ++bytes_in, flag = false; inbuf.rpos() < rlop || flag;)
+        for (++rlop, ++bytes_in; flag;)
         {
             flag = false;
             fcode.e.c = inbuf.next();
             long fc = fcode.code;
             long hp = long(fcode.e.c) <<  8 ^ long(fcode.e.ent);
     
-            if (htab[hp] == fc)
+            if (htab[hp] == fc && mask[hp])
             {
                 fcode.e.ent = codetab[hp];
                 continue;
             }
 
             //secondary hash (after G. Knott)
-            while (htab[hp] != -1)
+            //while (htab[hp] != -1)
+            while (mask[hp])
             {
                 if ((hp -= HSIZE - hp - 1) < 0)
                     hp += HSIZE;
+
+                if (mask[hp] == false)
+                    break;
 
                 if (htab[hp] == fc)
                 {
@@ -167,9 +172,10 @@ int main(int argc, char **argv)
             bos.write(fcode.e.ent, n_bits);
             fc = fcode.code;
             fcode.e.ent = fcode.e.c;
+            flag = inbuf.rpos() < rlop ? true : false;
 
             if (stcode)
-                codetab[hp] = uint16_t(free_ent++), htab[hp] = fc;
+                codetab[hp] = uint16_t(free_ent++), htab[hp] = fc, mask[hp] = true;
         }
 
         flag = true;
