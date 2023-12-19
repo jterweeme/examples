@@ -63,13 +63,6 @@ public:
     }
 };
 
-static bool vlag(bool &f)
-{
-    bool ret = f;
-    f = false;
-    return ret;
-}
-
 int main(int argc, char **argv)
 {
     static constexpr long CHECK_GAP = 10000;
@@ -138,8 +131,9 @@ int main(int argc, char **argv)
             }
         }
 
-        for (++rlop, ++bytes_in, flag = false; inbuf.rpos() < rlop || vlag(flag);)
+        for (++rlop, ++bytes_in, flag = false; inbuf.rpos() < rlop || flag;)
         {
+            flag = false;
             fcode.e.c = inbuf.next();
             long fc = fcode.code;
             long hp = long(fcode.e.c) <<  8 ^ long(fcode.e.ent);
@@ -149,7 +143,7 @@ int main(int argc, char **argv)
                 fcode.e.ent = codetab[hp];
                 continue;
             }
-                
+
             //secondary hash (after G. Knott)
             while (htab[hp] != -1)
             {
@@ -164,8 +158,11 @@ int main(int argc, char **argv)
                 }
             }
 
-            if (vlag(flag))
+            if (flag)
+            {
+                flag = false;
                 continue;
+            }
 
             bos.write(fcode.e.ent, n_bits);
             fc = fcode.code;
