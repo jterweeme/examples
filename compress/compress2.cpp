@@ -56,18 +56,12 @@ int main(int argc, char **argv)
     Fcode fcode;
     fcode.e.ent = std::cin.get();
     unsigned bytes_in = 1, n_bits = 9, checkpoint = CHECK_GAP, free_ent = 257;
-    unsigned ratio = 0, extcode = (1 << n_bits) + 1, rlop = 0, htab[HSIZE];
+    unsigned ratio = 0, extcode = (1 << n_bits) + 1, htab[HSIZE];
     bool stcode = true;
+    int byte;
 
-    while (true)
+    while ((byte = std::cin.get()) != -1)
     {
-        int byte = std::cin.get();
-
-        if (byte == -1)
-            break;
-
-        rlop = 0;
-
         if (free_ent >= extcode && fcode.e.ent < 257)
         {
             if (n_bits < 16)
@@ -105,7 +99,6 @@ int main(int argc, char **argv)
         }
 
         ++bytes_in;
-        rlop = 1;
         fcode.e.c = byte;
         unsigned fc = fcode.code;
         unsigned hp = fcode.e.c << 8 ^ fcode.e.ent;
@@ -143,12 +136,6 @@ int main(int argc, char **argv)
 
             if (stcode)
                 codetab[hp] = free_ent++, htab[hp] = fc, mask[hp] = true;
-        }
-
-        if (fcode.e.ent < 257 && 1 > rlop)
-        {
-            bytes_in += 1 - rlop;
-            rlop = 1;
         }
     }
 
