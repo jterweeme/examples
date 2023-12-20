@@ -42,26 +42,6 @@ union Fcode
     } e;
 };
 
-class InBuf
-{
-    char *_inbuf;
-    unsigned _cap, _head = 0, _tail = 0;
-public:
-    InBuf(unsigned capacity) : _inbuf(new char[capacity]), _cap(capacity) { }
-    ~InBuf() { delete[] _inbuf; }
-    unsigned rpos() const { return _tail; }
-    char next() { return _inbuf[_tail++]; }
-    bool hasleft() { return _tail < _head; }
-
-    bool read()
-    {
-        _tail = 0;
-        std::cin.read(_inbuf, _cap);
-        _head = std::cin.gcount();
-        return _head <= 0 ? false : true;
-    }
-};
-
 int main(int argc, char **argv)
 {
     static constexpr unsigned CHECK_GAP = 10000, HSIZE = 69001;
@@ -75,28 +55,17 @@ int main(int argc, char **argv)
     std::fill(mask, mask + HSIZE, false);
     Fcode fcode;
     fcode.e.ent = std::cin.get();
-    InBuf inbuf(1);
     unsigned bytes_in = 1, n_bits = 9, checkpoint = CHECK_GAP, free_ent = 257;
     unsigned ratio = 0, extcode = (1 << n_bits) + 1, rlop = 0, htab[HSIZE];
 
     for (bool flag = true, stcode = true; flag;)
     {
-#if 0
-        if (inbuf.hasleft() == false)
-        {
-            flag = inbuf.read();
-            rlop = 0;
-            continue;
-        }
-#else
-        flag = inbuf.read();
+        int byte = std::cin.get();
 
-        if (flag == false)
+        if (byte == -1)
             break;
 
         rlop = 0;
-#endif
-        
 
         if (free_ent >= extcode && fcode.e.ent < 257)
         {
@@ -137,7 +106,7 @@ int main(int argc, char **argv)
         for (++rlop, ++bytes_in; flag;)
         {
             flag = false;
-            fcode.e.c = inbuf.next();
+            fcode.e.c = byte;
             unsigned fc = fcode.code;
             unsigned hp = fcode.e.c << 8 ^ fcode.e.ent;
     
@@ -173,7 +142,7 @@ int main(int argc, char **argv)
             bos.write(fcode.e.ent, n_bits);
             fc = fcode.code;
             fcode.e.ent = fcode.e.c;
-            flag = inbuf.rpos() < rlop ? true : false;
+            flag = 1 < rlop ? true : false;
 
             if (stcode)
                 codetab[hp] = free_ent++, htab[hp] = fc, mask[hp] = true;
@@ -181,10 +150,10 @@ int main(int argc, char **argv)
 
         flag = true;
 
-        if (fcode.e.ent < 257 && inbuf.rpos() > rlop)
+        if (fcode.e.ent < 257 && 1 > rlop)
         {
-            bytes_in += inbuf.rpos() - rlop;
-            rlop = inbuf.rpos();
+            bytes_in += 1 - rlop;
+            rlop = 1;
         }
     }
 
