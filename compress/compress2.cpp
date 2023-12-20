@@ -57,8 +57,9 @@ int main(int argc, char **argv)
     fcode.e.ent = std::cin.get();
     unsigned bytes_in = 1, n_bits = 9, checkpoint = CHECK_GAP, free_ent = 257;
     unsigned ratio = 0, extcode = (1 << n_bits) + 1, rlop = 0, htab[HSIZE];
+    bool stcode = true;
 
-    for (bool flag = true, stcode = true; flag;)
+    while (true)
     {
         int byte = std::cin.get();
 
@@ -103,52 +104,46 @@ int main(int argc, char **argv)
             }
         }
 
-        for (++rlop, ++bytes_in; flag;)
-        {
-            flag = false;
-            fcode.e.c = byte;
-            unsigned fc = fcode.code;
-            unsigned hp = fcode.e.c << 8 ^ fcode.e.ent;
+        ++bytes_in;
+        rlop = 1;
+        fcode.e.c = byte;
+        unsigned fc = fcode.code;
+        unsigned hp = fcode.e.c << 8 ^ fcode.e.ent;
     
-            if (htab[hp] == fc && mask[hp])
+        if (htab[hp] == fc && mask[hp])
+        {
+            fcode.e.ent = codetab[hp];
+            continue;
+        }
+
+        bool hfound = false;
+
+        //secondary hash (after G. Knott)
+        while (mask[hp])
+        {
+            if ((hp += hp + 1) >= HSIZE)
+                hp -= HSIZE;
+
+            if (mask[hp] == false)
+                break;
+
+            if (htab[hp] == fc)
             {
                 fcode.e.ent = codetab[hp];
-                continue;
+                hfound = true;
+                break;
             }
+        }
 
-            //secondary hash (after G. Knott)
-            while (mask[hp])
-            {
-                if ((hp += hp + 1) >= HSIZE)
-                    hp -= HSIZE;
-
-                if (mask[hp] == false)
-                    break;
-
-                if (htab[hp] == fc)
-                {
-                    fcode.e.ent = codetab[hp];
-                    flag = true;
-                    break;
-                }
-            }
-
-            if (flag)
-            {
-                flag = false;
-                continue;
-            }
-
+        if (!hfound)
+        {
             bos.write(fcode.e.ent, n_bits);
             fc = fcode.code;
             fcode.e.ent = fcode.e.c;
-            flag = 1 < rlop ? true : false;
 
             if (stcode)
                 codetab[hp] = free_ent++, htab[hp] = fc, mask[hp] = true;
         }
-
-        flag = true;
 
         if (fcode.e.ent < 257 && 1 > rlop)
         {
