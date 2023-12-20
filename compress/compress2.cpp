@@ -46,14 +46,13 @@ int main(int argc, char **argv)
 {
     auto is = &std::cin;
     static constexpr unsigned CHECK_GAP = 10000, HSIZE = 69001;
-    bool mask[HSIZE];
     uint16_t codetab[HSIZE];
+    std::fill(codetab, codetab + HSIZE, 0);
     BitOutputStream bos(std::cout);
     bos.write(0x9d1f, 16);  //magic
     bos.write(16, 7);       //max. 16 bits (hardcoded)
     bos.write(1, 1);        //block mode
     bos.cnt = 0;
-    std::fill(mask, mask + HSIZE, false);
     Fcode fcode;
     fcode.e.ent = is->get();
     unsigned bytes_in = 1, n_bits = 9, checkpoint = CHECK_GAP, free_ent = 257;
@@ -87,7 +86,7 @@ int main(int argc, char **argv)
             else
             {
                 ratio = 0;
-                std::fill(mask, mask + HSIZE, false);
+                std::fill(codetab, codetab + HSIZE, 0);
                 bos.write(256, n_bits);
 
                 for (unsigned nb3 = n_bits << 3; (bos.cnt - 1U + nb3) % nb3 != nb3 - 1U;)
@@ -106,7 +105,7 @@ int main(int argc, char **argv)
         bool hfound = false;
 
         //secondary hash (after G. Knott)
-        while (mask[hp])
+        while (codetab[hp])
         {
             if (htab[hp] == fc)
             {
@@ -126,7 +125,7 @@ int main(int argc, char **argv)
             fcode.e.ent = fcode.e.c;
 
             if (stcode)
-                codetab[hp] = free_ent++, htab[hp] = fc, mask[hp] = true;
+                codetab[hp] = free_ent++, htab[hp] = fc;
         }
     }
 
