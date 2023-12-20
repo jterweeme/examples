@@ -55,9 +55,10 @@ int main(int argc, char **argv)
     bos.cnt = 0;
     Fcode fcode;
     fcode.e.ent = is->get();
-    unsigned bytes_in = 1, n_bits = 9, checkpoint = CHECK_GAP, free_ent = 257;
+    unsigned n_bits = 9, checkpoint = CHECK_GAP, free_ent = 257;
     unsigned ratio = 0, extcode = (1 << n_bits) + 1, htab[HSIZE];
     bool stcode = true;
+    unsigned bytes_in = 1;
 
     for (int byte; (byte = is->get()) != -1;)
     {
@@ -73,13 +74,7 @@ int main(int argc, char **argv)
         {
             unsigned rat;
             checkpoint = bytes_in + CHECK_GAP;
-
-            if (bytes_in > 0x007fffff)
-                //shift will overflow
-                rat = bos.cnt >> 11 == 0 ? 0x7fffffff : bytes_in / (bos.cnt >> 11);
-            else
-                //8 fractional bits
-                rat = (bytes_in << 8) / (bos.cnt >> 3);
+            rat = (bytes_in << 8) / (bos.cnt >> 3);
 
             if (rat >= ratio)
                 ratio = rat;

@@ -5,4 +5,7 @@ all:
 
 test:
 	./compress2 < hocus.dat | md5sum
+	md5sum hocus.dat.Z
+	./compress2 < keen1.tar | md5sum
+	md5sum keen1.tar.Z
 
