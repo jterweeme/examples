@@ -5,7 +5,6 @@
 
 #include <cstdint>
 #include <cassert>
-#include <algorithm>
 #ifdef FAST
 #include <unistd.h>
 #include <fcntl.h>
@@ -51,63 +50,76 @@ public:
 
 class ostream
 {
+public:
+    virtual void put(char) { }
+    virtual void flush() { }
+    virtual ostream& operator<<(const char *) { return *this; }
+};
+
+class outstream : public ostream
+{
     int _fd;
     uint32_t _cap;
     uint32_t _pos = 0;
     char *_buf;
 public:
-    ~ostream() { delete[] _buf; }
-    void put(char c) { if (_pos > _cap) flush(); _buf[_pos++] = c; }
-    void puts(const char *s) { while (*s) put(*s++); }
-    ostream& operator<<(const char *s) { puts(s); return *this; }
+    ~outstream() { delete[] _buf; }
+    void put(char c) override { if (_pos > _cap) flush(); _buf[_pos++] = c; }
+    ostream& operator<<(const char *s) override { while (*s) put(*s++); return *this; }
     void flush() { ::write(_fd, _buf, _pos), _pos = 0; }
 
-    ostream(int fd, uint32_t capacity = 8192)
+    outstream(int fd, uint32_t capacity = 8192)
       : _fd(fd), _cap(capacity), _buf(new char[capacity]) { }
 };
 
+class NullStream : public ostream
+{
+public:
+    ostream& operator<<(const char *) override { return *this; }
+};
+
 static istream cin(0, 8192);
-static ostream cout(1, 8192);
-static ostream cerr(2, 8192);
+static outstream cout(1, 8192);
+static outstream cerr(2, 8192);
+static NullStream nullstream;
 #else
+class nullbuf : public std::streambuf
+{
+public:
+    int overflow(int c) override { return c; }
+};
+
 using std::istream;
 using std::ostream;
 using std::ifstream;
 using std::cin;
 using std::cout;
 using std::cerr;
+static nullbuf nb;
+static std::ostream nullstream(&nb);
 #endif
 
 class Toolbox
 {
 public:
+    template <class T> static T min(T a, T b) { return b < a ? b : a; }
+    template <class T> static T max(T a, T b) { return a < b ? b : a; }
+
     static char nibble(uint8_t n)
-    {
-        return n <= 9 ? '0' + char(n) : 'a' + char(n - 10);
-    }
+    { return n <= 9 ? '0' + char(n) : 'a' + char(n - 10); }
 
-    static void hex32(uint32_t dw, ostream &os)
-    {
-        for (uint32_t i = 0; i <= 28; i += 4)
-            os.put(nibble(dw >> 28 - i & 0xf));
-    }
-
-    template <class ForwardIt, class T>
-    static constexpr void iota(ForwardIt first, ForwardIt last, T value)
-    {
-        while (first != last)
-            *first++ = value++;
-    }
+    static void hex32(unsigned dw, ostream &os)
+    { for (unsigned i = 0; i <= 28; i += 4) os.put(nibble(dw >> 28 - i & 0xf)); }
 };
 
 class BitInputStream
 {
     istream &_is;
-    uint32_t _window = 0, _bitCount = 0;
+    unsigned _window = 0, _bitCount = 0;
 public:
     BitInputStream(istream &is) : _is(is) { }
 
-    uint32_t readBits24(uint8_t n)
+    unsigned readBits24(unsigned n)
     {
         assert(n <= 24);
         while (_bitCount < n)
@@ -116,13 +128,13 @@ public:
         return _window >> _bitCount & (1 << n) - 1;
     }
 
-    uint32_t readBits32(uint8_t n)
+    unsigned readBits32(unsigned n)
     {
         assert(n <= 32);
-        uint32_t ret = 0;
+        unsigned ret = 0;
         while (n)
         {
-            int32_t foo = std::min(uint8_t(16), n);
+            unsigned foo = Toolbox::min(16U, n);
             ret = ret << foo | readBits24(foo), n -= foo;
         }
         return ret;
@@ -133,8 +145,11 @@ class MoveToFront
 {
     uint8_t _buf[256];
 public:
-    MoveToFront() { Toolbox::iota(_buf, _buf + 256, 0); }
-    uint8_t indexToFront(uint8_t i) { std::rotate(_buf, _buf + i, _buf + i + 1); return _buf[0]; }
+    MoveToFront()
+    { for (unsigned i = 0; i < 256; ++i) _buf[i] = i; }
+
+    uint8_t indexToFront(unsigned i)
+    { uint8_t val = _buf[i]; for (; i; --i) _buf[i] = _buf[i - 1]; return _buf[0] = val; }
 };
 
 class CRC32
@@ -160,14 +175,14 @@ public:
 class Table
 {
     uint8_t _codeLengths[258];
-    uint16_t _pos = 0;
-    uint32_t _bases[25] = {0};
-    uint32_t _limits[24] = {0};
-    uint32_t _symbols[258] = {0};
+    unsigned _pos = 0;
+    unsigned _bases[25] = {0};
+    unsigned _limits[24] = {0};
+    unsigned _symbols[258] = {0};
     uint8_t _minLen = 23;
     uint8_t _maxLen = 0;
 public:
-    void read(BitInputStream &bis, uint32_t symbolCount);
+    void read(BitInputStream &bis, unsigned symbolCount);
     uint8_t minLength() const { return _minLen; }
     uint32_t limit(uint8_t i) const { return _limits[i]; }
     uint32_t symbol(uint16_t i) const { return _symbols[i]; }
@@ -175,38 +190,38 @@ public:
 };
 
 //read the canonical Huffman code lengths for table
-void Table::read(BitInputStream &bis, uint32_t symbolCount)
+void Table::read(BitInputStream &bis, unsigned symbolCount)
 {
-    for (uint32_t i = 0, c = bis.readBits24(5); i <= symbolCount + 1; ++i)
+    for (unsigned i = 0, c = bis.readBits24(5); i <= symbolCount + 1; ++i)
     {
         while (bis.readBits24(1))
             c += bis.readBits24(1) ? -1 : 1;
         _codeLengths[_pos++] = c;
     }
 
-    for (uint32_t i = 0; i < symbolCount + 2; ++i)
+    for (unsigned i = 0; i < symbolCount + 2; ++i)
         _bases[_codeLengths[i] + 1]++;
 
-    for (uint32_t i = 1; i < 25; ++i)
+    for (unsigned i = 1; i < 25; ++i)
         _bases[i] += _bases[i - 1];
 
-    for (uint32_t i = 0; i < symbolCount + 2; ++i)
+    for (unsigned i = 0; i < symbolCount + 2; ++i)
     {
-        _minLen = std::min(_codeLengths[i], _minLen);
-        _maxLen = std::max(_codeLengths[i], _maxLen);
+        _minLen = Toolbox::min(_codeLengths[i], _minLen);
+        _maxLen = Toolbox::max(_codeLengths[i], _maxLen);
     }
 
-    for (uint32_t i = _minLen, code = 0; i <= _maxLen; ++i)
+    for (unsigned i = _minLen, code = 0; i <= _maxLen; ++i)
     {
-        uint32_t base = code;
+        unsigned base = code;
         code += _bases[i + 1] - _bases[i];
         _bases[i] = base - _bases[i];
         _limits[i] = code - 1;
         code <<= 1;
     }
 
-    for (uint32_t i = 0, minLen = _minLen; minLen <= _maxLen; ++minLen)
-        for (uint32_t symbol = 0; symbol < symbolCount + 2; ++symbol)
+    for (unsigned i = 0, minLen = _minLen; minLen <= _maxLen; ++minLen)
+        for (unsigned symbol = 0; symbol < symbolCount + 2; ++symbol)
             if (_codeLengths[symbol] == minLen)
                 _symbols[i++] = symbol;
 }
@@ -250,8 +265,8 @@ uint32_t Tables::nextSymbol(BitInputStream &bis)
     if (grpPos++ % 50 == 0)
         curTbl = _selectors[grpIdx++];
 
-    uint8_t i = _tables[curTbl].minLength();
-    uint32_t codeBits = bis.readBits24(i);
+    unsigned i = _tables[curTbl].minLength();
+    unsigned codeBits = bis.readBits24(i);
 
     for (;i <= 23; ++i)
     {
@@ -285,13 +300,13 @@ uint32_t Block::process(BitInputStream &bi, uint32_t blockSize, ostream &os)
 {
     uint32_t _blockCRC = bi.readBits32(32);
     assert(bi.readBits24(1) == 0);
-    uint32_t bwtStartPointer = bi.readBits24(24), symbolCount = 0;
-    uint32_t bwtByteCounts[256] = {0};
+    unsigned bwtStartPointer = bi.readBits24(24), symbolCount = 0;
+    unsigned bwtByteCounts[256] = {0};
     uint8_t symbolMap[256] = {0};
 
-    for (uint16_t i = 0, ranges = bi.readBits24(16); i < 16; ++i)
+    for (unsigned i = 0, ranges = bi.readBits24(16); i < 16; ++i)
         if ((ranges & 1 << 15 >> i) != 0)
-            for (uint32_t j = 0, k = i << 4; j < 16; ++j, ++k)
+            for (unsigned j = 0, k = i << 4; j < 16; ++j, ++k)
                 if (bi.readBits24(1))
                     symbolMap[symbolCount++] = uint8_t(k);
 
@@ -301,9 +316,9 @@ uint32_t Block::process(BitInputStream &bi, uint32_t blockSize, ostream &os)
     MoveToFront symbolMTF;
     uint32_t _length = 0;
 
-    for (uint32_t n = 0, inc = 1;;)
+    for (unsigned n = 0, inc = 1;;)
     {
-        uint32_t nextSymbol = tables.nextSymbol(bi);
+        unsigned nextSymbol = tables.nextSymbol(bi);
 
         if (nextSymbol == 0)
         {
@@ -340,23 +355,23 @@ uint32_t Block::process(BitInputStream &bi, uint32_t blockSize, ostream &os)
     }
 
     _merged = new uint32_t[_length];
-    uint32_t characterBase[256] = {0};
+    unsigned characterBase[256] = {0};
 
-    for (uint16_t i = 0; i < 255; ++i)
+    for (unsigned i = 0; i < 255; ++i)
         characterBase[i + 1] = bwtByteCounts[i];
 
-    for (uint16_t i = 2; i <= 255; ++i)
+    for (unsigned i = 2; i <= 255; ++i)
         characterBase[i] += characterBase[i - 1];
 
-    for (uint32_t i = 0; i < _length; ++i)
+    for (unsigned i = 0; i < _length; ++i)
     {
-        uint8_t value = bwtBlock[i] & 0xff;
-        _merged[characterBase[value]++] = (i << 8) | value;
+        unsigned val = bwtBlock[i] & 0xff;
+        _merged[characterBase[val]++] = (i << 8) | val;
     }
 
     _curp = _merged[bwtStartPointer];
-    uint32_t repeat = 0, acc = 0;
-    int32_t _last = -1;
+    unsigned repeat = 0, acc = 0;
+    int last = -1;
 
     while (true)
     {
@@ -367,16 +382,16 @@ uint32_t Block::process(BitInputStream &bi, uint32_t blockSize, ostream &os)
 
             uint8_t nextByte = _nextByte();
 
-            if (nextByte != _last)
+            if (nextByte != last)
             {
-                _last = nextByte, repeat = 1, acc = 1;
+                last = nextByte, repeat = 1, acc = 1;
                 _crc.update(nextByte);
             }
             else if (++acc == 4)
             {
                 repeat = _nextByte() + 1, acc = 0;
 
-                for (uint32_t i = 0; i < repeat; ++i)
+                for (unsigned i = 0; i < repeat; ++i)
                     _crc.update(nextByte);
             }
             else
@@ -387,7 +402,7 @@ uint32_t Block::process(BitInputStream &bi, uint32_t blockSize, ostream &os)
         }
 
         --repeat;
-        os.put(_last);
+        os.put(last);
     }
 
     os.flush();
@@ -398,10 +413,14 @@ uint32_t Block::process(BitInputStream &bi, uint32_t blockSize, ostream &os)
 
 int main(int argc, char **argv)
 {
-    auto is = &cin;
-    auto os = &cout;
-    auto msg = &cerr;
+    static constexpr bool quiet = true;
+    istream *is = &cin;
+    ostream *os = &cout;
+    ostream *msg = &cerr;
     ifstream ifs;
+
+    if (quiet)
+        msg = &nullstream;
 
     if (argc == 2)
         ifs.open(argv[1]), is = &ifs;

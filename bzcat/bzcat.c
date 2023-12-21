@@ -1,3 +1,6 @@
+//This is a comment
+//I love comments
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -46,16 +49,10 @@ static uint32_t process_block(uint32_t blockSize, FILE *os)
 
     for (uint32_t i = 0; i < nSelectors; ++i)
     {
-        uint16_t idx = 0;
-
-        while (readBits(1))
-            ++idx;
-
+        unsigned idx = 0;
+        while (readBits(1)) ++idx;
         uint8_t value = tableMTF[idx];
-
-        for (uint16_t i = idx; i > 0; i--)
-            tableMTF[i] = tableMTF[i - 1];
-
+        for (; idx; --idx) tableMTF[idx] = tableMTF[idx - 1];
         selectors[i] = tableMTF[0] = value;
     }
     uint32_t _bases[6][25] = {0}, _limits[6][24] = {0}, _symbols[6][258] = {0};
@@ -135,7 +132,8 @@ static uint32_t process_block(uint32_t blockSize, FILE *os)
             while (--n >= 1) bwtBlock[_length++] = nextByte;
         }
         //end of block
-        if (nextSymbol == symbolCount + 1) break;
+        if (nextSymbol == symbolCount + 1)
+            break;
 
         mtfValue = symbolMTF[nextSymbol - 1];
 
