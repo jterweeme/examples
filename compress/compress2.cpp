@@ -34,10 +34,10 @@ public:
 
 union Fcode
 {
-    unsigned code = 0;
+    uint32_t code = 0;
     struct
     {
-        uint8_t c;
+        uint16_t c;
         uint16_t ent;
     } e;
 };
@@ -72,9 +72,8 @@ int main(int argc, char **argv)
 
         if (!stcode && bytes_in >= checkpoint && fcode.e.ent < 257)
         {
-            unsigned rat;
             checkpoint = bytes_in + CHECK_GAP;
-            rat = (bytes_in << 8) / (bos.cnt >> 3);
+            unsigned rat = (bytes_in << 8) / (bos.cnt >> 3);
 
             if (rat >= ratio)
                 ratio = rat;
@@ -95,6 +94,7 @@ int main(int argc, char **argv)
         ++bytes_in;
         fcode.e.c = byte;
         unsigned fc = fcode.code;
+        //unsigned hp = (fcode.code & 0xff) << 8 ^ fcode.code >> 16;
         unsigned hp = fcode.e.c << 8 ^ fcode.e.ent;
  
         bool hfound = false;
@@ -116,6 +116,7 @@ int main(int argc, char **argv)
         if (!hfound)
         {
             bos.write(fcode.e.ent, n_bits);
+            //bos.write(fcode.code >> 16, n_bits);
             fc = fcode.code;
             fcode.e.ent = fcode.e.c;
 
