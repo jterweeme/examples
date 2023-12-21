@@ -87,13 +87,12 @@ public:
 class LZW
 {
     const unsigned _maxbits;
-    unsigned _oldcode, _n_bits = 9;
+    unsigned _oldcode;
     char _finchar;
     std::vector<std::pair<unsigned, char>> _dict;
     OutStream &_os;
 public:
-    unsigned n_bits() const { return _n_bits; }
-    void reset() { _n_bits = 9; _dict.clear(); }
+    void clear_dict() { _dict.clear(); }
 
     LZW(unsigned maxbits, bool block_mode, char first, OutStream &os)
       : _maxbits(maxbits), _oldcode(first), _finchar(first), _os(os)
@@ -112,19 +111,16 @@ public:
         if (c == _dict.size() + 256)
             stack.push_back(_finchar), c = _oldcode;
 
-        while (c >= 256U)
-            stack.push_back(_dict[c - 256].second), c = _dict[c - 256].first;
+        for (; c >= 256U; c = _dict[c - 256].first)
+            stack.push_back(_dict[c - 256].second);
 
         _os.put(_finchar = c);
 
-        while (stack.size())
-            _os.put(stack.back()), stack.pop_back();
+        for (; stack.size(); stack.pop_back())
+            _os.put(stack.back());
 
         if (_dict.size() + 256 < 1U << _maxbits)
             _dict.push_back(std::pair<unsigned, char>(_oldcode, _finchar));
-
-        if (_n_bits < _maxbits && _dict.size() + 256 > (1U << _n_bits) - 1)
-            ++_n_bits;
 
         _oldcode = in;
     }
@@ -154,23 +150,28 @@ int main(int argc, char **argv)
     const bool block_mode = bis.readBits(1) ? true : false;
     bis.cnt = 0; //counter moet op nul om later padding te berekenen
 
-    int first = bis.readBits(9);
+    unsigned cnt = 1, nbits = 9;
+    int first = bis.readBits(nbits);
     assert(first >= 0 && first < 256);
     os->put(first);
     LZW lzw(maxbits, block_mode, first, *os);
 
-    for (int code; (code = bis.readBits(lzw.n_bits())) != -1;)
+    for (int code; (code = bis.readBits(nbits)) != -1;)
     {
+        //read 256 9-bit codes, 512 10-bit codes, 1024 11-bit codes, etc
+        if (++cnt == 1U << nbits - 1U && nbits != maxbits)
+            ++nbits, cnt = 0;
+
         if (code == 256 && block_mode)
         {
             //other max. bits not working yet :S
             assert(maxbits == 13 || maxbits == 15 || maxbits == 16);
 
             //padding?!
-            for (const unsigned nb3 = lzw.n_bits() << 3; (bis.cnt - 1U + nb3) % nb3 != nb3 - 1U;)
-                bis.readBits(lzw.n_bits());
+            for (const unsigned nb3 = nbits << 3; (bis.cnt - 1U + nb3) % nb3 != nb3 - 1U;)
+                bis.readBits(nbits);
 
-            lzw.reset();
+            lzw.clear_dict(), cnt = 0, nbits = 9;
         }
         else
         {        
