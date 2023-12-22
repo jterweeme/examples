@@ -5,7 +5,7 @@ ZCATC = zcatc
 
 all:
 	rm -vf $(ZCATPP) $(ZCATUX) $(ZCATC)
-	g++ -g -O2 -Wall -Wno-parentheses -o $(ZCATPP) zcatpp.cpp
+	g++ -g -Wall -Wno-parentheses -o $(ZCATPP) zcatpp.cpp
 	#g++ -g -O2 -Wall -Wno-parentheses -o $(ZCATUX) zcatux.cpp
 	gcc -g -O2 -Wall -Wno-parentheses -o $(ZCATC) zcatc.c
 
