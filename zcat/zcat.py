@@ -31,11 +31,6 @@ class LZW:
         self.n_bits = 9
         self.finchar = first.to_bytes(1, 'little')
         self.dict = list()
-
-        #in block mode, first block offset is one off
-        if block_mode:
-            self.dict.append((0, 0))
-
     def code(self, incode):
         c = incode;
         stack = list()
@@ -67,8 +62,9 @@ if __name__ == "__main__":
 
     first = bis.readBits(9)
     assert first >= 0 and first < 256
-    sys.stdout.buffer.write(first.to_bytes(1, 'little'))
     lzw = LZW(maxbits, block_mode, first)
+    lzw.code(first)
+    sys.stdout.buffer.write(first.to_bytes(1, 'little'))
     while (c := bis.readBits(lzw.n_bits)) != -1:
         if c == 256 and block_mode:
             assert maxbits == 13 or maxbits == 15 or maxbits == 16

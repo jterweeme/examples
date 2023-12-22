@@ -10,6 +10,22 @@ all:
 	gcc -g -O2 -Wall -Wno-parentheses -o $(ZCATC) zcatc.c
 
 test:
+	$(TIME) zcat < mo.m68.tar.Z | md5sum
+	$(TIME) ./$(ZCATPP) < mo.m68.tar.Z | md5sum
+	$(TIME) ./$(ZCATC) < mo.m68.tar.Z | md5sum
+	$(TIME) ./zcat.py mo.m68.tar.Z | md5sum
+	$(TIME) zcat < mo.ns32.tar.Z | md5sum
+	$(TIME) ./$(ZCATPP) < mo.ns32.tar.Z | md5sum
+	$(TIME) ./$(ZCATC) < mo.ns32.tar.Z | md5sum
+	$(TIME) ./zcat.py mo.ns32.tar.Z | md5sum
+	$(TIME) zcat < mo.sparc.tar.Z | md5sum
+	$(TIME) ./$(ZCATPP) < mo.sparc.tar.Z | md5sum
+	$(TIME) ./$(ZCATC) < mo.sparc.tar.Z | md5sum
+	$(TIME) ./zcat.py mo.sparc.tar.Z | md5sum
+	$(TIME) zcat < mo.vax.tar.Z | md5sum
+	$(TIME) ./$(ZCATPP) < mo.vax.tar.Z | md5sum
+	$(TIME) ./$(ZCATC) < mo.vax.tar.Z | md5sum
+	$(TIME) ./zcat.py mo.vax.tar.Z | md5sum
 	$(TIME) zcat < relnotes.ps.Z | md5sum
 	$(TIME) ./$(ZCATPP) < relnotes.ps.Z | md5sum
 	$(TIME) ./$(ZCATC) < relnotes.ps.Z | md5sum

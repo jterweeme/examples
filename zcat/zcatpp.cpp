@@ -108,7 +108,7 @@ public:
 class LZW
 {
     const unsigned _maxbits;
-    unsigned _oldcode;
+    unsigned _oldcode = 0;
     char _finchar;
     std::vector<std::pair<unsigned, char>> _dict;
     ostream &_os;
@@ -116,8 +116,8 @@ class LZW
 public:
     void clear_dict() { _dict.clear(); }
 
-    LZW(unsigned maxbits, bool block_mode, char first, ostream &os)
-      : _maxbits(maxbits), _oldcode(first), _finchar(first), _os(os) { }
+    LZW(unsigned maxbits, ostream &os)
+      : _maxbits(maxbits), _os(os) { }
 
     inline void code(const unsigned in)
     {
@@ -131,12 +131,12 @@ public:
             _stack.push_back(_dict[c - 256].second);
 
         _os.put(_finchar = c);
-        _stack.print(_os);
 
         if (_dict.size() + 256 < 1U << _maxbits)
             _dict.push_back(std::pair<unsigned, char>(_oldcode, _finchar));
 
         _oldcode = in;
+        _stack.print(_os);
     }
 };
 
@@ -159,7 +159,7 @@ int main(int argc, char **argv)
     unsigned cnt = 1, nbits = 9;
     int first = bis.readBits(nbits);
     assert(first >= 0 && first < 256);
-    LZW lzw(maxbits, block_mode, first, *os);
+    LZW lzw(maxbits, *os);
     lzw.code(first);
 
     for (int code; (code = bis.readBits(nbits)) != -1;)
@@ -173,7 +173,7 @@ int main(int argc, char **argv)
             //other max. bits not working yet :S
             assert(maxbits == 13 || maxbits == 15 || maxbits == 16);
 
-            //padding?!
+            //cumbersome padding formula
             for (const unsigned nb3 = nbits << 3; (bis.cnt - 1U + nb3) % nb3 != nb3 - 1U;)
                 bis.readBits(nbits);
 
