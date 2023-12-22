@@ -1,6 +1,6 @@
 #!/usr/bin/pypy3
 
-#Usage ./zcat.py archive.Z
+#Usage ./zcat.py archive.Z > archive
 
 import sys
 
@@ -26,18 +26,18 @@ class LZW:
     def __init__(self, maxbits):
         self.maxbits = maxbits
         self.oldcode = 0
-        self.finchar = self.oldcode.to_bytes(1, 'little')
+        self.finchar = 0
         self.dict = list()
     def code(self, incode):
         c = incode;
-        stack = list()
+        stack = bytearray()
         if c == len(self.dict) + 256:
             stack.append(self.finchar)
             c = self.oldcode
         while c >= 256:
             stack.append(self.dict[c - 256][1])
             c = self.dict[c - 256][0]
-        self.finchar = c.to_bytes(1, 'little')
+        self.finchar = c
         if len(self.dict) + 256 < (1 << self.maxbits):
             self.dict.append((self.oldcode, self.finchar))
         stack.append(self.finchar)
@@ -62,16 +62,12 @@ if __name__ == "__main__":
             cnt = 0
         if c == 256 and block_mode:
             assert maxbits == 13 or maxbits == 15 or maxbits == 16
-
-            #cumbersome padding formula
             nb3 = nbits << 3
             while (bis.cnt - 1 + nb3) % nb3 != nb3 - 1:
-                bis.readBits(nbits)
-
+                bis.readBits(nbits) #cumbersome padding formula
             nbits = 9
             cnt = 0
             lzw.dict.clear()
         else:
-            for b in lzw.code(c):
-                sys.stdout.buffer.write(b)
+            sys.stdout.buffer.write(lzw.code(c))
 
