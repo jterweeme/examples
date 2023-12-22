@@ -155,12 +155,8 @@ int main(int argc, char **argv)
     assert(maxbits <= 16);
     const bool block_mode = bis.readBits(1) ? true : false;
     bis.cnt = 0; //counter moet op nul om later padding te berekenen
-
-    unsigned cnt = 1, nbits = 9;
-    int first = bis.readBits(nbits);
-    assert(first >= 0 && first < 256);
+    unsigned cnt = 0, nbits = 9;
     LZW lzw(maxbits, *os);
-    lzw.code(first);
 
     for (int code; (code = bis.readBits(nbits)) != -1;)
     {

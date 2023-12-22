@@ -60,21 +60,28 @@ if __name__ == "__main__":
     #reset counter needed for cumbersome padding formula
     bis.cnt = 0
 
-    first = bis.readBits(9)
+    nbits = 9
+    first = bis.readBits(nbits)
     assert first >= 0 and first < 256
     lzw = LZW(maxbits, block_mode, first)
     lzw.code(first)
     sys.stdout.buffer.write(first.to_bytes(1, 'little'))
-    while (c := bis.readBits(lzw.n_bits)) != -1:
+    cnt = 1
+    while (c := bis.readBits(nbits)) != -1:
+        cnt += 1
+        if cnt == 1 << nbits - 1 and nbits != maxbits:
+            nbits += 1
+            cnt = 0
         if c == 256 and block_mode:
             assert maxbits == 13 or maxbits == 15 or maxbits == 16
 
             #cumbersome padding formula
-            nb3 = lzw.n_bits << 3
+            nb3 = nbits << 3
             while (bis.cnt - 1 + nb3) % nb3 != nb3 - 1:
-                bis.readBits(lzw.n_bits)
+                bis.readBits(nbits)
 
-            lzw.n_bits = 9
+            nbits = 9
+            cnt = 0
             lzw.dict.clear()
         else:
             for b in lzw.code(c):
