@@ -10,6 +10,14 @@ all:
 	gcc -g -O2 -Wall -Wno-parentheses -o $(ZCATC) zcatc.c
 
 test:
+	$(TIME) zcat < logo.c.Z | md5sum
+	$(TIME) ./$(ZCATPP) < logo.c.Z | md5sum
+	$(TIME) ./$(ZCATC) < logo.c.Z | md5sum
+	$(TIME) ./zcat.py logo.c.Z | md5sum
+	$(TIME) zcat < mjkimage.c.Z | md5sum
+	$(TIME) ./$(ZCATPP) < mjkimage.c.Z | md5sum
+	$(TIME) ./$(ZCATC) < mjkimage.c.Z | md5sum
+	$(TIME) ./zcat.py mjkimage.c.Z | md5sum
 	$(TIME) zcat < mo.m68.tar.Z | md5sum
 	$(TIME) ./$(ZCATPP) < mo.m68.tar.Z | md5sum
 	$(TIME) ./$(ZCATC) < mo.m68.tar.Z | md5sum
