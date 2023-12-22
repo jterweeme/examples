@@ -17,16 +17,16 @@
 #endif
 
 #ifdef FAST
-class InStream
+class istream
 {
     int _fd;
     uint32_t _cap;
     uint32_t _head = 0, _tail = 0;
     uint8_t *_buf;
 public:
-    ~InStream() { delete[] _buf; }
+    ~istream() { delete[] _buf; }
 
-    InStream(int fd, uint32_t capacity)
+    istream(int fd, uint32_t capacity)
       :
         _fd(fd), _cap(capacity), _buf(new uint8_t[capacity])
     { }
@@ -57,17 +57,19 @@ public:
     void flush() { ::write(_fd, _buf, _pos), _pos = 0; }
 };
 #else
-typedef std::istream InStream;
+using std::istream;
 typedef std::ostream OutStream;
+using std::cin;
+using std::cout;
 #endif
 
 class BitStream
 {
-    InStream &_is;
+    istream &_is;
     unsigned _bits = 0, _window = 0;
 public:
     unsigned cnt = 0;
-    BitStream(InStream &is) : _is(is) { }
+    BitStream(istream &is) : _is(is) { }
 
     int readBits(unsigned n)
     {
@@ -133,11 +135,11 @@ int main(int argc, char **argv)
     auto const os = &ous;
     int fd = argc > 1 ? ::open(argv[1], O_RDONLY) : 0; //stdin
     assert(fd != -1);
-    InStream ins(fd, 8192);
-    InStream *is = &ins;
+    istream ins(fd, 8192);
+    auto is = &ins;
 #else
-    auto const os = &std::cout;
-    auto is = &std::cin;
+    auto const os = &cout;
+    auto is = &cin;
     std::ifstream ifs;
 
     if (argc > 1)

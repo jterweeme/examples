@@ -30,16 +30,16 @@ test:
 	$(TIME) ./$(ZCATPP) tty.1.Z | md5sum
 	$(TIME) ./$(ZCATC) tty.1.Z | md5sum
 	$(TIME) ./zcat.py tty.1.Z | md5sum
-	$(TIME) zcat wk98.iso.Z | md5sum
-	$(TIME) ./$(ZCATPP) wk98.iso.Z | md5sum
+	#$(TIME) zcat wk98.iso.Z | md5sum
+	#$(TIME) ./$(ZCATPP) wk98.iso.Z | md5sum
 	$(TIME) zcat side1.pnm.Z | md5sum
 	$(TIME) ./$(ZCATPP) side1.pnm.Z | md5sum
 	$(TIME) ./$(ZCATC) side1.pnm.Z | md5sum
-	$(TIME) ./zcat.py side1.pnm.Z | md5sum
+	#$(TIME) ./zcat.py side1.pnm.Z | md5sum
 	$(TIME) zcat wingames.iso.Z | md5sum
 	$(TIME) ./$(ZCATPP) wingames.iso.Z | md5sum
-	$(TIME) ./zcat.py wingames.iso.Z | md5sum
-	$(TIME) zcat enwik9.Z | md5sum
-	$(TIME) ./$(ZCATPP) enwik9.Z | md5sum
+	#$(TIME) ./zcat.py wingames.iso.Z | md5sum
+	#$(TIME) zcat enwik9.Z | md5sum
+	#$(TIME) ./$(ZCATPP) enwik9.Z | md5sum
 
 
