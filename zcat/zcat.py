@@ -7,9 +7,7 @@ import sys
 class BitInputStream:
     def __init__(self, file):
         self.f = open(file, "rb")
-        self.bits = 0
-        self.window = 0
-        self.cnt = 0
+        self.bits = self.window = self.cnt = 0
     def readBits(self, n):
         while self.bits < n:
             b = self.f.read(1)
