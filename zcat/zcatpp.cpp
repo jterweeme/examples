@@ -121,7 +121,7 @@ public:
 
     inline void code(const unsigned in)
     {
-        assert(in >= 0 && in <= 65535 && in <= _dict.size() + 256);
+        assert(in <= _dict.size() + 256);
         auto c = in;
 
         if (c == _dict.size() + 256)
