@@ -25,11 +25,10 @@ class BitInputStream:
         return ret
 
 class LZW:
-    def __init__(self, maxbits, block_mode, first):
+    def __init__(self, maxbits):
         self.maxbits = maxbits
-        self.oldcode = first
-        self.n_bits = 9
-        self.finchar = first.to_bytes(1, 'little')
+        self.oldcode = 0
+        self.finchar = self.oldcode.to_bytes(1, 'little')
         self.dict = list()
     def code(self, incode):
         c = incode;
@@ -41,12 +40,10 @@ class LZW:
             stack.append(self.dict[c - 256][1])
             c = self.dict[c - 256][0]
         self.finchar = c.to_bytes(1, 'little')
-        stack.append(self.finchar)
-        stack.reverse()
         if len(self.dict) + 256 < (1 << self.maxbits):
             self.dict.append((self.oldcode, self.finchar))
-        if self.n_bits < self.maxbits and len(self.dict) + 256 > (1 << self.n_bits) - 1:
-            self.n_bits += 1
+        stack.append(self.finchar)
+        stack.reverse()
         self.oldcode = incode
         return stack
 
@@ -56,17 +53,10 @@ if __name__ == "__main__":
     maxbits = bis.readBits(7)
     assert maxbits <= 16
     block_mode = bis.readBits(1)
-
-    #reset counter needed for cumbersome padding formula
-    bis.cnt = 0
-
+    bis.cnt = 0  #reset counter needed for cumbersome padding formula
     nbits = 9
-    first = bis.readBits(nbits)
-    assert first >= 0 and first < 256
-    lzw = LZW(maxbits, block_mode, first)
-    lzw.code(first)
-    sys.stdout.buffer.write(first.to_bytes(1, 'little'))
-    cnt = 1
+    cnt = 0
+    lzw = LZW(maxbits)
     while (c := bis.readBits(nbits)) != -1:
         cnt += 1
         if cnt == 1 << nbits - 1 and nbits != maxbits:
