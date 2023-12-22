@@ -44,21 +44,23 @@ public:
     }
 };
 
-class OutStream
+class ostream
 {
     int _fd;
     uint32_t _cap;
     uint32_t _pos = 0;
     char *_buf;
 public:
-    OutStream(int fd, uint32_t capacity) : _fd(fd), _cap(capacity), _buf(new char[capacity]) { }
-    ~OutStream() { delete[] _buf; }
+    ostream(int fd, uint32_t capacity) : _fd(fd), _cap(capacity), _buf(new char[capacity]) { }
+    ~ostream() { delete[] _buf; }
     void put(char c) { if (_pos > _cap) flush(); _buf[_pos++] = c; }
     void flush() { ::write(_fd, _buf, _pos), _pos = 0; }
 };
+
+static ostream cout(1, 8192);
 #else
 using std::istream;
-typedef std::ostream OutStream;
+using std::ostream;
 using std::cin;
 using std::cout;
 #endif
@@ -92,11 +94,11 @@ class LZW
     unsigned _oldcode;
     char _finchar;
     std::vector<std::pair<unsigned, char>> _dict;
-    OutStream &_os;
+    ostream &_os;
 public:
     void clear_dict() { _dict.clear(); }
 
-    LZW(unsigned maxbits, bool block_mode, char first, OutStream &os)
+    LZW(unsigned maxbits, bool block_mode, char first, ostream &os)
       : _maxbits(maxbits), _oldcode(first), _finchar(first), _os(os)
     {
         //why did they design it this way?
@@ -130,15 +132,13 @@ public:
 
 int main(int argc, char **argv)
 {
+    auto const os = &cout;
 #if FAST
-    OutStream ous(1, 8192);
-    auto const os = &ous;
     int fd = argc > 1 ? ::open(argv[1], O_RDONLY) : 0; //stdin
     assert(fd != -1);
     istream ins(fd, 8192);
     auto is = &ins;
 #else
-    auto const os = &cout;
     auto is = &cin;
     std::ifstream ifs;
 
