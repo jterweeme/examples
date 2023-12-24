@@ -77,10 +77,10 @@ using std::cout;
 class BitStream
 {
     istream &_is;
-    unsigned _bits = 0, _window = 0;
+    unsigned _bits = 0, _window = 0, _cnt = 0;
 public:
-    unsigned cnt = 0;
     BitStream(istream &is) : _is(is) { }
+    unsigned cnt() const { return _cnt; }
 
     int readBits(unsigned n)
     {
@@ -92,7 +92,7 @@ public:
         }
 
         int ret = _window & (1 << n) - 1;
-        _window >>= n, _bits -= n, cnt += n;
+        _window >>= n, _bits -= n, _cnt += n;
         return ret;
     }
 };
@@ -159,12 +159,13 @@ int main(int argc, char **argv)
     if (argc > 1)
         ifs.open(argv[1]), is = &ifs;
 
+    assert(is->get() == 0x1f);
+    assert(is->get() == 0x9d);
+    int c = is->get();
+    assert(c >= 0 && c & 80);
+    const unsigned maxbits = c & 0x7f;
+    assert(maxbits >= 9 && maxbits <= 16);
     BitStream bis(*is);
-    assert(bis.readBits(16) == 0x9d1f);
-    const unsigned maxbits = bis.readBits(7);
-    assert(maxbits <= 16);
-    assert(bis.readBits(1) == 1); //block mode is hardcoded 1 in ncompress
-    bis.cnt = 0; //reset counter needed for cumbersome padding formula
     unsigned cnt = 0, nbits = 9;
     LZW lzw(maxbits, *os);
 
@@ -180,7 +181,7 @@ int main(int argc, char **argv)
             assert(maxbits == 13 || maxbits == 15 || maxbits == 16);
 
             //cumbersome padding formula
-            for (const unsigned nb3 = nbits << 3; (bis.cnt - 1U + nb3) % nb3 != nb3 - 1U;)
+            for (const unsigned nb3 = nbits << 3; (bis.cnt() - 1U + nb3) % nb3 != nb3 - 1U;)
                 bis.readBits(nbits);
 
             cnt = 0, nbits = 9;

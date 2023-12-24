@@ -3,7 +3,7 @@
 
 //zcatpp (zcat c++)
 
-#define FAST
+//#define FAST
 
 #include <cassert>
 #include <cstdint>
@@ -84,6 +84,7 @@ using std::ostream;
 using std::ifstream;
 using std::cin;
 using std::cout;
+using std::cerr;
 #endif
 
 class BitStream
@@ -109,6 +110,7 @@ public:
     }
 };
 
+#if 0
 int main(int argc, char **argv)
 {
     istream *is = &cin;
@@ -121,7 +123,7 @@ int main(int argc, char **argv)
     BitStream bis(*is);
     assert(bis.readBits(16) == 0x9d1f);
     const unsigned maxbits = bis.readBits(7);
-    assert(maxbits <= 16);
+    assert(maxbits >= 9 && maxbits <= 16);
     assert(bis.readBits(1) == 1); //block mode is hardcoded 1 in ncompress
     bis.cnt = 0; //reset counter needed for cumbersome padding formula
     unsigned cnt = 0, nbits = 9;
@@ -151,5 +153,50 @@ int main(int argc, char **argv)
     ifs.close();
     return 0;
 }
+#else
+int main(int argc, char **argv)
+{
+    istream *is = &cin;
+    ostream *os = &cout;
+    ifstream ifs;
+    
+    if (argc > 1)
+        ifs.open(argv[1]), is = &ifs;
+
+    assert(is->get() == 0x1f);
+    assert(is->get() == 0x9d);
+    int c = is->get();
+    assert(c != -1 && c & 80);
+    const unsigned maxbits = c & 0x7f;
+    assert(maxbits >= 9 && maxbits <= 16);
+    cerr << maxbits << "\r\n";
+
+    
+
+    //9*8 = 8*9 = 72
+    //256*9 = 288*8
+
+    //10*4 = 8*5 = 40
+    //512*10 = 640*8
+
+    //11*8 = 8*11 88
+    //1024*11=1408*8
+
+    //12*2 = 8*3 = 24
+    //2048*12=3072*8
+
+    //13*8 = 8*13 = 104
+    //4096*13=6656*8
+
+    //14*4 = 8*7 = 56
+    //8192*14=14336*8
+
+    //15*8 = 8*15 = 120
+    //16384*15=30720*8
+
+    //16*1 = 8*2 = 16
+    return 0;
+}
+#endif
 
 

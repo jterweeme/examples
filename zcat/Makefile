@@ -3,14 +3,15 @@ ZCATPP = zcatpp
 ZCATC = zcatc
 
 OPTIMIZE = -ftree-ter
-OPTIMIZE = -O3
+OPTIMIZE = -O
 WARNINGS = -Wall -Wno-parentheses
-DEBUG =
+DEBUG = -g
 
 all:
 	rm -vf $(ZCATPP) $(ZCATUX) $(ZCATC)
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o $(ZCATPP) $(ZCATPP).cpp
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o extract_codes extract_codes.cpp
+	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o codesin codesin.cpp
 	gcc $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o $(ZCATC) $(ZCATC).c
 
 test:
