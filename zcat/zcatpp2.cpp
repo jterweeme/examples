@@ -167,6 +167,21 @@ int main(int argc, char **argv)
     bis.cnt = 0; //reset counter needed for cumbersome padding formula
     unsigned cnt = 0, nbits = 9;
     LZW lzw(maxbits, *os);
+    char buf[2048];
+    uint32_t pos = 0;
+
+    while (true)
+    {
+        is->read(buf, nbits);
+        
+        if (is->gcount() < 1)
+            break;
+
+        for (unsigned i = 0; i < nbits)
+        {
+            unsigned code = buf[0] | buf[1] & 1
+        }
+    }
 
     for (int code; (code = bis.readBits(nbits)) != -1;)
     {

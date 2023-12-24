@@ -7,7 +7,6 @@
 
 #include <cassert>
 #include <cstdint>
-#include <vector>
 #ifdef FAST
 #include <unistd.h>
 #include <fcntl.h>
@@ -60,8 +59,21 @@ class ostream
 public:
     ostream(int fd, uint32_t capacity) : _fd(fd), _cap(capacity), _buf(new char[capacity]) { }
     ~ostream() { delete[] _buf; }
-    void put(char c) { if (_pos > _cap) flush(); _buf[_pos++] = c; }
+    inline void put(char c) { if (_pos > _cap) flush(); _buf[_pos++] = c; }
     void flush() { ::write(_fd, _buf, _pos), _pos = 0; }
+    inline ostream& operator<<(const char *s) { while (*s) put(*s++); return *this; }
+
+    inline ostream& operator<<(unsigned n)
+    {
+        if (n == 0) { put('0'); return *this; }
+        char buf[100];
+        unsigned i = 0;
+        for (; n; n = n / 10)
+            buf[i++] = n % 10 + '0';
+        while (i)
+            put(buf[--i]);
+        return *this;
+    }
 };
 
 static istream cin(0, 8192);
@@ -97,59 +109,6 @@ public:
     }
 };
 
-class PrintStack
-{
-    std::vector<char> _stack;
-public:
-    void push_back(char c) { _stack.push_back(c); }
-    void print(ostream &os) { for (; _stack.size(); _stack.pop_back()) os.put(_stack.back()); }
-};
-
-class LZW
-{
-    const unsigned _maxbits;
-    unsigned _oldcode = 0;
-    char _finchar;
-    std::vector<std::pair<unsigned, char>> _dict;
-    ostream &_os;
-    PrintStack _stack;
-public:
-    LZW(unsigned maxbits, ostream &os) : _maxbits(maxbits), _os(os) { }
-
-    inline void code(const unsigned in)
-    {
-        assert(in <= _dict.size() + 256);
-        auto c = in;
-
-        if (in == 256)
-        {
-            _dict.clear();
-            return;
-        }
-
-        if (c == _dict.size() + 256)
-        {
-            _stack.push_back(_finchar);
-            c = _oldcode;
-        }
-
-        for (; c >= 256U; c = _dict[c - 256].first)
-        {
-            _stack.push_back(_dict[c - 256].second);
-        }
-
-        _os.put(_finchar = c);
-
-        if (_dict.size() + 256 < 1U << _maxbits)
-        {
-            _dict.push_back(std::pair<unsigned, char>(_oldcode, _finchar));
-        }
-
-        _oldcode = in;
-        _stack.print(_os);
-    }
-};
-
 int main(int argc, char **argv)
 {
     istream *is = &cin;
@@ -166,7 +125,6 @@ int main(int argc, char **argv)
     assert(bis.readBits(1) == 1); //block mode is hardcoded 1 in ncompress
     bis.cnt = 0; //reset counter needed for cumbersome padding formula
     unsigned cnt = 0, nbits = 9;
-    LZW lzw(maxbits, *os);
 
     for (int code; (code = bis.readBits(nbits)) != -1;)
     {
@@ -186,7 +144,7 @@ int main(int argc, char **argv)
             cnt = 0, nbits = 9;
         }
 
-        lzw.code(code);
+        cout << code << "\n";
     }
 
     os->flush();

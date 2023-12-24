@@ -2,29 +2,35 @@
 
 import sys
 
-if __name__ == "__main__":
-    maxbits = 16
-    oldcode = finchar = 0
-    xdict = list()
-    for line in sys.stdin:
-        c = int(line)
-        assert c <= len(xdict) + 256
+class LZW:
+    def __init__(self, maxbits):
+        self.maxbits = maxbits
+        self.oldcode = self.finchar = 0
+        self.dict = list()
+    def code(self, incode):
+        c = incode
+        assert c <= len(self.dict) + 256
         if c == 256:
-            xdict.clear()
-            continue
+            self.dict.clear()
+            return bytearray()
         stack = bytearray()
-        if c == len(xdict) + 256:
-            stack.append(finchar)
-            c = oldcode
+        if c == len(self.dict) + 256:
+            stack.append(self.finchar)
+            c = self.oldcode
         while c >= 256:
-            stack.append(xdict[c - 256][1])
-            c = xdict[c - 256][0]
-        finchar = c
-        if len(xdict) + 256 < 1 << maxbits:
-            xdict.append((oldcode, finchar))
-        oldcode = int(line)
-        stack.append(finchar)
+            stack.append(self.dict[c - 256][1])
+            c = self.dict[c - 256][0]
+        self.finchar = c
+        if len(self.dict) + 256 < 1 << self.maxbits:
+            self.dict.append((self.oldcode, self.finchar))
+        stack.append(self.finchar)
         stack.reverse()
-        sys.stdout.buffer.write(stack)
+        self.oldcode = incode
+        return stack
+
+if __name__ == "__main__":
+    lzw = LZW(16)
+    for line in sys.stdin:
+        sys.stdout.buffer.write(lzw.code(int(line)))
 
 

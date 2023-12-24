@@ -1,23 +1,29 @@
 TIME = 
 ZCATPP = zcatpp
 ZCATC = zcatc
-#ZCATUX = zcatux
+
+OPTIMIZE = -ftree-ter
+OPTIMIZE = -O3
+WARNINGS = -Wall -Wno-parentheses
+DEBUG =
 
 all:
 	rm -vf $(ZCATPP) $(ZCATUX) $(ZCATC)
-	g++ -g -Wall -Wno-parentheses -o $(ZCATPP) zcatpp.cpp
-	#g++ -g -O2 -Wall -Wno-parentheses -o $(ZCATUX) zcatux.cpp
-	gcc -g -O2 -Wall -Wno-parentheses -o $(ZCATC) zcatc.c
+	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o $(ZCATPP) $(ZCATPP).cpp
+	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o extract_codes extract_codes.cpp
+	gcc $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o $(ZCATC) $(ZCATC).c
 
 test:
 	$(TIME) zcat < logo.c.Z | md5sum
 	$(TIME) ./$(ZCATPP) < logo.c.Z | md5sum
 	$(TIME) ./$(ZCATC) < logo.c.Z | md5sum
 	$(TIME) ./zcat.py logo.c.Z | md5sum
+	$(TIME) ./extract_codes.py logo.c.Z | ./codesin.py | md5sum
 	$(TIME) zcat < mjkimage.c.Z | md5sum
 	$(TIME) ./$(ZCATPP) < mjkimage.c.Z | md5sum
 	$(TIME) ./$(ZCATC) < mjkimage.c.Z | md5sum
 	$(TIME) ./zcat.py mjkimage.c.Z | md5sum
+	$(TIME) ./extract_codes.py mjkimage.c.Z | ./codesin.py | md5sum
 	$(TIME) zcat < mo.m68.tar.Z | md5sum
 	$(TIME) ./$(ZCATPP) < mo.m68.tar.Z | md5sum
 	$(TIME) ./$(ZCATC) < mo.m68.tar.Z | md5sum
