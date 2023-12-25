@@ -3,7 +3,7 @@
 
 //zcatpp (zcat c++)
 
-//#define FAST
+#define FAST
 
 #include <cassert>
 #include <cstdint>
@@ -90,10 +90,10 @@ using std::cerr;
 class BitStream
 {
     istream &_is;
-    unsigned _bits = 0, _window = 0;
+    unsigned _bits = 0, _window = 0, _cnt = 0;
 public:
-    unsigned cnt = 0;
     BitStream(istream &is) : _is(is) { }
+    unsigned cnt() const { return _cnt; }
 
     int readBits(unsigned n)
     {
@@ -105,12 +105,47 @@ public:
         }
 
         int ret = _window & (1 << n) - 1;
-        _window >>= n, _bits -= n, cnt += n;
+        _window >>= n, _bits -= n, _cnt += n;
         return ret;
     }
 };
 
-#if 0
+class Codes
+{
+    BitStream _bis;
+    const unsigned _maxbits;
+    unsigned _cnt = 0, _nbits = 9;
+public:
+    Codes(istream &is, unsigned maxbits) : _bis(is), _maxbits(maxbits)
+    {
+        assert(maxbits >= 9 && maxbits <= 16);
+    }
+
+    int extract()
+    {
+        int code = _bis.readBits(_nbits);
+
+        //read 256 9-bit codes, 512 10-bit codes, 1024 11-bit codes, etc
+        if (++_cnt == 1U << _nbits - 1U && _nbits != _maxbits)
+            ++_nbits, _cnt = 0;
+
+        if (code == 256)
+        {
+            //other max. bits not working yet :S
+            assert(_maxbits == 13 || _maxbits == 15 || _maxbits == 16);
+
+            //cumbersome padding formula
+            for (const unsigned nb3 = _nbits << 3; (_bis.cnt() - 1U + nb3) % nb3 != nb3 - 1U;)
+                _bis.readBits(_nbits);
+
+            _cnt = 0, _nbits = 9;
+        }
+
+        return code;
+    }
+};
+
+#if 1
 int main(int argc, char **argv)
 {
     istream *is = &cin;
@@ -120,34 +155,14 @@ int main(int argc, char **argv)
     if (argc > 1)
         ifs.open(argv[1]), is = &ifs;
 
-    BitStream bis(*is);
-    assert(bis.readBits(16) == 0x9d1f);
-    const unsigned maxbits = bis.readBits(7);
-    assert(maxbits >= 9 && maxbits <= 16);
-    assert(bis.readBits(1) == 1); //block mode is hardcoded 1 in ncompress
-    bis.cnt = 0; //reset counter needed for cumbersome padding formula
-    unsigned cnt = 0, nbits = 9;
+    assert(is->get() == 0x1f);
+    assert(is->get() == 0x9d);
+    int c = is->get();
+    assert(c >= 0 && c & 0x80);   //block mode bit is hardcoded in ncompress
+    Codes codes(*is, c & 0x7f);
 
-    for (int code; (code = bis.readBits(nbits)) != -1;)
-    {
-        //read 256 9-bit codes, 512 10-bit codes, 1024 11-bit codes, etc
-        if (++cnt == 1U << nbits - 1U && nbits != maxbits)
-            ++nbits, cnt = 0;
-
-        if (code == 256)
-        {
-            //other max. bits not working yet :S
-            assert(maxbits == 13 || maxbits == 15 || maxbits == 16);
-
-            //cumbersome padding formula
-            for (const unsigned nb3 = nbits << 3; (bis.cnt - 1U + nb3) % nb3 != nb3 - 1U;)
-                bis.readBits(nbits);
-
-            cnt = 0, nbits = 9;
-        }
-
-        cout << code << "\n";
-    }
+    for (int code; (code = codes.extract()) != -1;)
+        *os << code << "\r\n";
 
     os->flush();
     ifs.close();

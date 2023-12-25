@@ -1,8 +1,11 @@
 #include <vector>
 #include <iostream>
+#include <fstream>
 #include <cassert>
 
 using std::ostream;
+using std::istream;
+using std::ifstream;
 using std::string;
 using std::cout;
 using std::cin;
@@ -60,14 +63,22 @@ public:
     }
 };
 
-int main()
+int main(int argc, char **argv)
 {
-    string s;
-    LZW lzw(16, cout);
+    istream *is = &cin;
+    ostream *os = &cout;
+    ifstream ifs;
+    
+    if (argc > 1)
+        ifs.open(argv[1]), is = &ifs;
 
-    while (std::getline(cin, s))
+    LZW lzw(16, *os);
+
+    for (string s; std::getline(*is, s);)
         lzw.code(std::stoi(s));
 
+    os->flush();
+    ifs.close();
     return 0;
 }
 

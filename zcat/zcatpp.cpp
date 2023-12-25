@@ -188,6 +188,7 @@ public:
 int main(int argc, char **argv)
 {
     istream *is = &cin;
+    ostream * const os = &cout;
     ifstream ifs;
 
     if (argc > 1)
@@ -196,15 +197,15 @@ int main(int argc, char **argv)
     assert(is->get() == 0x1f);
     assert(is->get() == 0x9d);
     int c = is->get();
-    assert(c >= 0 && c & 80);   //block mode bit is hardcoded in ncompress
+    assert(c >= 0 && c & 0x80);   //block mode bit is hardcoded in ncompress
     const unsigned maxbits = c & 0x7f;
     Codes codes(*is, maxbits);
-    LZW lzw(maxbits, cout);
+    LZW lzw(maxbits, *os);
 
     for (int code; (code = codes.extract()) != -1;)
         lzw.code(code);
 
-    cout.flush();
+    os->flush();
     ifs.close();
     return 0;
 }

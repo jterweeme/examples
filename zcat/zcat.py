@@ -28,8 +28,11 @@ class LZW:
         self.oldcode = self.finchar = 0
         self.dict = list()
     def code(self, incode):
-        assert incode != 256 and incode <= len(self.dict) + 256
         c = incode
+        assert c <= len(self.dict) + 256
+        if c == 256:
+            self.dict.clear()
+            return bytearray()
         stack = bytearray()
         if c == len(self.dict) + 256:
             stack.append(self.finchar)
@@ -45,16 +48,10 @@ class LZW:
         self.oldcode = incode
         return stack
 
-if __name__ == "__main__":
-    bis = BitInputStream(sys.argv[1])
-    assert bis.readBits(16) == 0x9d1f
-    maxbits = bis.readBits(7)
+def codes(bis, maxbits):
     assert maxbits >= 9 and maxbits <= 16
-    assert bis.readBits(1) == 1 #block mode is hardcoded in ncompress
-    bis.cnt = 0  #reset counter needed for cumbersome padding formula
+    bis.cnt = cnt = 0  #reset bis.cnt counter needed for cumbersome padding formula
     nbits = 9
-    cnt = 0
-    lzw = LZW(maxbits)
     while (c := bis.readBits(nbits)) != -1:
         cnt += 1
         if cnt == 1 << nbits - 1 and nbits != maxbits:
@@ -69,7 +66,14 @@ if __name__ == "__main__":
                 bis.readBits(nbits)
             nbits = 9
             cnt = 0
-            lzw.dict.clear()
-        else:
-            sys.stdout.buffer.write(lzw.code(c))
+        yield c
+
+if __name__ == "__main__":
+    bis = BitInputStream(sys.argv[1])
+    assert bis.readBits(16) == 0x9d1f
+    maxbits = bis.readBits(7)
+    assert bis.readBits(1) == 1 #block mode bit is hardcoded in ncompress
+    lzw = LZW(maxbits)
+    for c in codes(bis, maxbits):
+        sys.stdout.buffer.write(lzw.code(c))
 

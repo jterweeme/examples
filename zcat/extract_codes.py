@@ -22,13 +22,9 @@ class BitInputStream:
         self.cnt += n
         return ret
 
-if __name__ == "__main__":
-    bis = BitInputStream(sys.argv[1])
-    assert bis.readBits(16) == 0x9d1f
-    maxbits = bis.readBits(7)
+def codes(bis, maxbits):
     assert maxbits >= 9 and maxbits <= 16
-    assert bis.readBits(1) == 1 #block mode is always 1?
-    cnt = bis.cnt = 0  #reset bis.cnt counter needed for cumbersome padding formula
+    bis.cnt = cnt = 0  #reset bis.cnt counter needed for cumbersome padding formula
     nbits = 9
     while (c := bis.readBits(nbits)) != -1:
         cnt += 1
@@ -37,11 +33,20 @@ if __name__ == "__main__":
             cnt = 0
         if c == 256:
             #cumbersome padding formula
+            #got it only working with maxbits 13, 15 and 16
             assert maxbits == 13 or maxbits == 15 or maxbits == 16
             nb3 = nbits << 3
             while (bis.cnt - 1 + nb3) % nb3 != nb3 - 1:
                 bis.readBits(nbits)
             nbits = 9
             cnt = 0
+        yield c
+
+if __name__ == "__main__":
+    bis = BitInputStream(sys.argv[1])
+    assert bis.readBits(16) == 0x9d1f
+    maxbits = bis.readBits(7)
+    assert bis.readBits(1) == 1 #block mode bit is hardcoded in ncompress
+    for c in codes(bis, maxbits):
         print(f'{c}')
 
