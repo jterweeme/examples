@@ -150,10 +150,44 @@ public:
     }
 };
 
+class Codes
+{
+    BitStream _bis;
+    const unsigned _maxbits;
+    unsigned _cnt = 0, _nbits = 9;
+public:
+    Codes(istream &is, unsigned maxbits) : _bis(is), _maxbits(maxbits)
+    {
+        assert(maxbits >= 9 && maxbits <= 16);
+    }
+
+    int extract()
+    {
+        int code = _bis.readBits(_nbits);
+
+        //read 256 9-bit codes, 512 10-bit codes, 1024 11-bit codes, etc
+        if (++_cnt == 1U << _nbits - 1U && _nbits != _maxbits)
+            ++_nbits, _cnt = 0;
+
+        if (code == 256)
+        {
+            //other max. bits not working yet :S
+            assert(_maxbits == 13 || _maxbits == 15 || _maxbits == 16);
+
+            //cumbersome padding formula
+            for (const unsigned nb3 = _nbits << 3; (_bis.cnt() - 1U + nb3) % nb3 != nb3 - 1U;)
+                _bis.readBits(_nbits);
+
+            _cnt = 0, _nbits = 9;
+        }
+
+        return code;
+    }
+};
+
 int main(int argc, char **argv)
 {
     istream *is = &cin;
-    ostream *os = &cout;
     ifstream ifs;
 
     if (argc > 1)
@@ -162,35 +196,15 @@ int main(int argc, char **argv)
     assert(is->get() == 0x1f);
     assert(is->get() == 0x9d);
     int c = is->get();
-    assert(c >= 0 && c & 80);
+    assert(c >= 0 && c & 80);   //block mode bit is hardcoded in ncompress
     const unsigned maxbits = c & 0x7f;
-    assert(maxbits >= 9 && maxbits <= 16);
-    BitStream bis(*is);
-    unsigned cnt = 0, nbits = 9;
-    LZW lzw(maxbits, *os);
+    Codes codes(*is, maxbits);
+    LZW lzw(maxbits, cout);
 
-    for (int code; (code = bis.readBits(nbits)) != -1;)
-    {
-        //read 256 9-bit codes, 512 10-bit codes, 1024 11-bit codes, etc
-        if (++cnt == 1U << nbits - 1U && nbits != maxbits)
-            ++nbits, cnt = 0;
-
-        if (code == 256)
-        {
-            //other max. bits not working yet :S
-            assert(maxbits == 13 || maxbits == 15 || maxbits == 16);
-
-            //cumbersome padding formula
-            for (const unsigned nb3 = nbits << 3; (bis.cnt() - 1U + nb3) % nb3 != nb3 - 1U;)
-                bis.readBits(nbits);
-
-            cnt = 0, nbits = 9;
-        }
-
+    for (int code; (code = codes.extract()) != -1;)
         lzw.code(code);
-    }
 
-    os->flush();
+    cout.flush();
     ifs.close();
     return 0;
 }
