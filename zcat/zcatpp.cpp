@@ -10,8 +10,6 @@
 #include <vector>
 
 using std::vector;
-using std::make_pair;
-using std::pair;
 
 #ifdef FAST
 #include <unistd.h>
@@ -143,15 +141,15 @@ class LZW
     const unsigned _maxbits;
     unsigned _oldcode = 0;
     char _finchar;
-    vector<pair<unsigned, char>> _dict;
     ostream &_os;
+    Dictionary _dict;
     ByteStack _stack;
 public:
-    LZW(unsigned maxbits, ostream &os) : _maxbits(maxbits), _os(os) { }
+    LZW(unsigned maxbits, ostream &os) : _maxbits(maxbits), _os(os), _dict(maxbits) { }
 
     inline void code(const unsigned in)
     {
-        assert(in <= _dict.size() + 256);
+        assert(in <= _dict.size());
         auto c = in;
 
         if (in == 256)
@@ -160,17 +158,12 @@ public:
             return;
         }
 
-        if (c == _dict.size() + 256)
+        if (c == _dict.size())
             _stack.push(_finchar), c = _oldcode;
 
-        for (; c >= 256U; c = _dict[c - 256].first)
-            _stack.push(_dict[c - 256].second);
-
-        _os.put(_finchar = c);
-
-        if (_dict.size() + 256 < 1U << _maxbits)
-            _dict.push_back(make_pair(_oldcode, _finchar));
-
+        _dict.lookup(_stack, c);
+        _finchar = _stack.top();
+        _dict.append(_oldcode, _finchar);
         _oldcode = in;
         _stack.pop_all(_os);
     }
