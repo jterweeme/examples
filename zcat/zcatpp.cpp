@@ -8,15 +8,15 @@
 #include <cassert>
 #include <cstdint>
 #include <vector>
+
+using std::vector;
+using std::make_pair;
+using std::pair;
+
 #ifdef FAST
 #include <unistd.h>
 #include <fcntl.h>
-#else
-#include <iostream>
-#include <fstream>
-#endif
 
-#ifdef FAST
 class istream
 {
 private:
@@ -67,6 +67,9 @@ public:
 static istream cin(0, 8192);
 static ostream cout(1, 8192);
 #else
+#include <iostream>
+#include <fstream>
+
 using std::istream;
 using std::ostream;
 using std::ifstream;
@@ -97,12 +100,42 @@ public:
     }
 };
 
-class PrintStack
+class ByteStack
 {
-    std::vector<char> _stack;
+    vector<char> _stack;
 public:
-    void push_back(char c) { _stack.push_back(c); }
-    void print(ostream &os) { for (; _stack.size(); _stack.pop_back()) os.put(_stack.back()); }
+    void push(char c) { _stack.push_back(c); }
+    char top() const { return _stack.back(); }
+    void pop_all(ostream &os) { for (; _stack.size(); _stack.pop_back()) os.put(top()); }
+};
+
+class Dictionary
+{
+    unsigned _cap;
+    uint16_t *_codes;
+    uint8_t *_chars;
+    unsigned _pos = 0;
+public:
+    Dictionary(unsigned maxbits)
+      : _cap(1 << maxbits), _codes(new uint16_t[_cap - 256]), _chars(new uint8_t[_cap - 256]) { }
+
+    void lookup(ByteStack &s, uint16_t code)
+    {
+        for (; code >= 256U; code = _codes[code - 256])
+            s.push(_chars[code - 256]);
+
+        s.push(code);
+    }
+
+    void append(unsigned code, uint8_t c)
+    {
+        if (_pos + 256 < _cap)
+            _codes[_pos] = code, _chars[_pos] = c, ++_pos;
+    }
+
+    ~Dictionary() { delete[] _codes; delete[] _chars; }
+    auto size() const { return _pos + 256; }
+    void clear() { _pos = 0; }
 };
 
 class LZW
@@ -110,9 +143,9 @@ class LZW
     const unsigned _maxbits;
     unsigned _oldcode = 0;
     char _finchar;
-    std::vector<std::pair<unsigned, char>> _dict;
+    vector<pair<unsigned, char>> _dict;
     ostream &_os;
-    PrintStack _stack;
+    ByteStack _stack;
 public:
     LZW(unsigned maxbits, ostream &os) : _maxbits(maxbits), _os(os) { }
 
@@ -128,18 +161,18 @@ public:
         }
 
         if (c == _dict.size() + 256)
-            _stack.push_back(_finchar), c = _oldcode;
+            _stack.push(_finchar), c = _oldcode;
 
         for (; c >= 256U; c = _dict[c - 256].first)
-            _stack.push_back(_dict[c - 256].second);
+            _stack.push(_dict[c - 256].second);
 
         _os.put(_finchar = c);
 
         if (_dict.size() + 256 < 1U << _maxbits)
-            _dict.push_back(std::make_pair(_oldcode, _finchar));
+            _dict.push_back(make_pair(_oldcode, _finchar));
 
         _oldcode = in;
-        _stack.print(_os);
+        _stack.pop_all(_os);
     }
 };
 

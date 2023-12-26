@@ -7,7 +7,8 @@
 #include <cstdint>
 #include <vector>
 #include <string>
-#include <numeric>
+
+using std::string;
 
 #ifdef FAST
 #include <unistd.h>
@@ -74,7 +75,7 @@ using std::cout;
 using std::cin;
 #endif
 
-static int my_stoi(std::string &s)
+static int my_stoi(string &s)
 {
     int ret = 0;
 
@@ -89,7 +90,7 @@ static int my_stoi(std::string &s)
     return ret;
 }
 
-static bool my_getline(istream &is, std::string &s)
+static bool my_getline(istream &is, string &s)
 {
     s.clear();
     
@@ -104,32 +105,42 @@ static bool my_getline(istream &is, std::string &s)
     return false;
 }
 
-class PrintStack
+class ByteStack
 {
     std::vector<char> _stack;
 public:
     void push(char c) { _stack.push_back(c); }
-    void print(ostream &os) { for (; _stack.size(); _stack.pop_back()) os.put(_stack.back()); }
+    char top() const { return _stack.back(); }
+    void pop_all(ostream &os) { for (; _stack.size(); _stack.pop_back()) os.put(top()); }
 };
 
 class Dictionary
 {
-    unsigned *_codes;
+    unsigned _cap;
+    uint16_t *_codes;
     uint8_t *_chars;
-    unsigned _pos = 256;
+    unsigned _pos = 0;
 public:
     Dictionary(unsigned maxbits)
-      : _codes(new unsigned[1 << maxbits]), _chars(new uint8_t[1 << maxbits])
+      : _cap(1 << maxbits), _codes(new uint16_t[_cap - 256]), _chars(new uint8_t[_cap - 256]) { }
+
+    void lookup(ByteStack &s, uint16_t code)
     {
-        std::iota(_chars, _chars + 256, 0);
+        for (; code >= 256U; code = _codes[code - 256])
+            s.push(_chars[code - 256]);
+
+        s.push(code);
+    }
+
+    void append(unsigned code, uint8_t c)
+    {
+        if (_pos + 256 < _cap)
+            _codes[_pos] = code, _chars[_pos] = c, ++_pos;
     }
 
     ~Dictionary() { delete[] _codes; delete[] _chars; }
-    void push_back(unsigned code, uint8_t c) { _codes[_pos] = code, _chars[_pos] = c, ++_pos; }
-    auto code(unsigned i) const { return _codes[i]; }
-    auto c(unsigned i) const { return _chars[i]; }
-    auto size() const { return _pos; }
-    void clear() { _pos = 256; }
+    auto size() const { return _pos + 256; }
+    void clear() { _pos = 0; }
 };
 
 class LZW
@@ -139,7 +150,7 @@ class LZW
     uint8_t _finchar;
     Dictionary _dict;
     ostream &_os; 
-    PrintStack _stack;
+    ByteStack _stack;
 public:
     LZW(unsigned maxbits, ostream &os) : _maxbits(maxbits), _dict(maxbits), _os(os) { }
 
@@ -155,21 +166,13 @@ public:
         }
 
         if (c == _dict.size())
-        {
-            _stack.push(_finchar);
-            c = _oldcode;
-        }
+            _stack.push(_finchar), c = _oldcode;
 
-        for (; c >= 256U; c = _dict.code(c))
-            _stack.push(_dict.c(c));
-
-        _os.put(_finchar = c);
-
-        if (_dict.size() < 1U << _maxbits)
-            _dict.push_back(_oldcode, _finchar);
-
+        _dict.lookup(_stack, c);
+        _finchar = _stack.top();
+        _dict.append(_oldcode, _finchar);
         _oldcode = in;
-        _stack.print(_os);
+        _stack.pop_all(_os);
     }
 };
 

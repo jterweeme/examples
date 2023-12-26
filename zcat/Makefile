@@ -17,7 +17,7 @@ test:
 	$(TIME) zcat < logo.c.Z | md5sum
 	$(TIME) ./$(ZCATPP) < logo.c.Z | md5sum
 	$(TIME) ./zcat.py logo.c.Z | md5sum
-	$(TIME) ./extract_codes logo.c.Z | ./lzw.py | md5sum
+	$(TIME) ./extract_codes logo.c.Z | ./lzw | md5sum
 	$(TIME) zcat < mjkimage.c.Z | md5sum
 	$(TIME) ./$(ZCATPP) < mjkimage.c.Z | md5sum
 	$(TIME) ./zcat.py mjkimage.c.Z | md5sum
