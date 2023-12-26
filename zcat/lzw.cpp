@@ -59,7 +59,36 @@ public:
     void flush() { ::write(_fd, _buf, _pos), _pos = 0; }
 };
 
-static bool getline(istream &is, std::string &s)
+static istream cin(0, 8192);
+static ostream cout(1, 8192);
+static ostream cerr(2, 8192);
+#else
+#include <iostream>
+#include <fstream>
+
+using std::ostream;
+using std::istream;
+using std::ifstream;
+using std::cout;
+using std::cin;
+#endif
+
+static int my_stoi(std::string &s)
+{
+    int ret = 0;
+
+    for (char c : s)
+    {
+        if (!isdigit(c))
+            break;
+        
+        ret = ret * 10 + (c - '0');
+    }
+
+    return ret;
+}
+
+static bool my_getline(istream &is, std::string &s)
 {
     s.clear();
     
@@ -73,21 +102,6 @@ static bool getline(istream &is, std::string &s)
 
     return false;
 }
-
-static istream cin(0, 8192);
-static ostream cout(1, 8192);
-static ostream cerr(2, 8192);
-#else
-#include <iostream>
-#include <fstream>
-
-using std::ostream;
-using std::istream;
-using std::ifstream;
-using std::cout;
-using std::cin;
-using std::getline;
-#endif
 
 class PrintStack
 {
@@ -149,8 +163,8 @@ int main(int argc, char **argv)
 
     LZW lzw(16, *os);
 
-    for (std::string s; getline(*is, s);)
-        lzw.code(std::stoi(s));
+    for (std::string s; my_getline(*is, s);)
+        lzw.code(my_stoi(s));
 
     os->flush();
     ifs.close();
