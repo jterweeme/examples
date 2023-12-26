@@ -107,8 +107,19 @@ class PrintStack
 {
     std::vector<char> _stack;
 public:
-    void push_back(char c) { _stack.push_back(c); }
+    void push(char c) { _stack.push_back(c); }
     void print(ostream &os) { for (; _stack.size(); _stack.pop_back()) os.put(_stack.back()); }
+};
+
+class Dictionary
+{
+    std::vector<std::pair<unsigned, char>> _dict;
+public:
+    void push_back(unsigned code, char c) { _dict.push_back(std::pair<unsigned, char>(code, c)); }
+    auto code(unsigned i) const { return _dict[i].first; }
+    auto c(unsigned i) const { return _dict[i].second; }
+    auto size() const { return _dict.size(); }
+    void clear() { return _dict.clear(); }
 };
 
 class LZW
@@ -116,7 +127,7 @@ class LZW
     const unsigned _maxbits;
     unsigned _oldcode = 0;
     char _finchar;
-    std::vector<std::pair<unsigned, char>> _dict;
+    Dictionary _dict;
     ostream &_os; 
     PrintStack _stack;
 public:
@@ -135,17 +146,17 @@ public:
 
         if (c == _dict.size() + 256)
         {
-            _stack.push_back(_finchar);
+            _stack.push(_finchar);
             c = _oldcode;
         }
 
-        for (; c >= 256U; c = _dict[c - 256].first)
-            _stack.push_back(_dict[c - 256].second);
+        for (; c >= 256U; c = _dict.code(c - 256))
+            _stack.push(_dict.c(c - 256));
 
         _os.put(_finchar = c);
 
         if (_dict.size() + 256 < 1U << _maxbits)
-            _dict.push_back(std::pair<unsigned, char>(_oldcode, _finchar));
+            _dict.push_back(_oldcode, _finchar);
 
         _oldcode = in;
         _stack.print(_os);
