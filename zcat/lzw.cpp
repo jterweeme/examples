@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <vector>
 #include <string>
+#include <numeric>
 
 #ifdef FAST
 #include <unistd.h>
@@ -113,29 +114,38 @@ public:
 
 class Dictionary
 {
-    std::vector<std::pair<unsigned, char>> _dict;
+    unsigned *_codes;
+    uint8_t *_chars;
+    unsigned _pos = 256;
 public:
-    void push_back(unsigned code, char c) { _dict.push_back(std::pair<unsigned, char>(code, c)); }
-    auto code(unsigned i) const { return _dict[i].first; }
-    auto c(unsigned i) const { return _dict[i].second; }
-    auto size() const { return _dict.size(); }
-    void clear() { return _dict.clear(); }
+    Dictionary(unsigned maxbits)
+      : _codes(new unsigned[1 << maxbits]), _chars(new uint8_t[1 << maxbits])
+    {
+        std::iota(_chars, _chars + 256, 0);
+    }
+
+    ~Dictionary() { delete[] _codes; delete[] _chars; }
+    void push_back(unsigned code, uint8_t c) { _codes[_pos] = code, _chars[_pos] = c, ++_pos; }
+    auto code(unsigned i) const { return _codes[i]; }
+    auto c(unsigned i) const { return _chars[i]; }
+    auto size() const { return _pos; }
+    void clear() { _pos = 256; }
 };
 
 class LZW
 {
     const unsigned _maxbits;
     unsigned _oldcode = 0;
-    char _finchar;
+    uint8_t _finchar;
     Dictionary _dict;
     ostream &_os; 
     PrintStack _stack;
 public:
-    LZW(unsigned maxbits, ostream &os) : _maxbits(maxbits), _os(os) { }
+    LZW(unsigned maxbits, ostream &os) : _maxbits(maxbits), _dict(maxbits), _os(os) { }
 
     inline void code(const unsigned in)
     {
-        assert(in <= _dict.size() + 256);
+        assert(in <= _dict.size());
         auto c = in;
 
         if (in == 256)
@@ -144,18 +154,18 @@ public:
             return;
         }
 
-        if (c == _dict.size() + 256)
+        if (c == _dict.size())
         {
             _stack.push(_finchar);
             c = _oldcode;
         }
 
-        for (; c >= 256U; c = _dict.code(c - 256))
-            _stack.push(_dict.c(c - 256));
+        for (; c >= 256U; c = _dict.code(c))
+            _stack.push(_dict.c(c));
 
         _os.put(_finchar = c);
 
-        if (_dict.size() + 256 < 1U << _maxbits)
+        if (_dict.size() < 1U << _maxbits)
             _dict.push_back(_oldcode, _finchar);
 
         _oldcode = in;

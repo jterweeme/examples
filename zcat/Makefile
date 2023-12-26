@@ -9,10 +9,9 @@ DEBUG = -g
 
 all:
 	rm -vf $(ZCATPP) $(ZCATUX) $(ZCATC)
-	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o $(ZCATPP) $(ZCATPP).cpp
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o extract_codes extract_codes.cpp
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o lzw lzw.cpp
-	#gcc $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o $(ZCATC) $(ZCATC).c
+	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o $(ZCATPP) $(ZCATPP).cpp
 
 test:
 	$(TIME) zcat < logo.c.Z | md5sum
@@ -59,6 +58,6 @@ test:
 	$(TIME) ./$(ZCATPP) wingames.iso.Z | md5sum
 	#$(TIME) ./zcat.py wingames.iso.Z | md5sum
 	$(TIME) zcat enwik9.Z | md5sum
-	#$(TIME) ./$(ZCATPP) enwik9.Z | md5sum
+	$(TIME) ./$(ZCATPP) enwik9.Z | md5sum
 
 

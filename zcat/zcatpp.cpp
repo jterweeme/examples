@@ -128,22 +128,15 @@ public:
         }
 
         if (c == _dict.size() + 256)
-        {
-            _stack.push_back(_finchar);
-            c = _oldcode;
-        }
+            _stack.push_back(_finchar), c = _oldcode;
 
         for (; c >= 256U; c = _dict[c - 256].first)
-        {
             _stack.push_back(_dict[c - 256].second);
-        }
 
         _os.put(_finchar = c);
 
         if (_dict.size() + 256 < 1U << _maxbits)
-        {
-            _dict.push_back(std::pair<unsigned, char>(_oldcode, _finchar));
-        }
+            _dict.push_back(std::make_pair(_oldcode, _finchar));
 
         _oldcode = in;
         _stack.print(_os);
