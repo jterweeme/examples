@@ -1,21 +1,15 @@
 //This is a comment
 //I love comments
 
-//zcatpp (zcat c++)
-
 #define FAST
 
 #include <cassert>
 #include <cstdint>
+
 #ifdef FAST
 #include <unistd.h>
 #include <fcntl.h>
-#else
-#include <iostream>
-#include <fstream>
-#endif
 
-#ifdef FAST
 class istream
 {
 private:
@@ -79,6 +73,9 @@ public:
 static istream cin(0, 8192);
 static ostream cout(1, 8192);
 #else
+#include <iostream>
+#include <fstream>
+
 using std::istream;
 using std::ostream;
 using std::ifstream;
