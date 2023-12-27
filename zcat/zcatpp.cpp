@@ -18,8 +18,7 @@ using std::vector;
 class istream
 {
 private:
-    uint32_t _cap;
-    uint32_t _head = 0, _tail = 0;
+    uint32_t _cap, _head = 0, _tail = 0;
     uint8_t *_buf;
 protected:
     int _fd;
@@ -52,8 +51,7 @@ public:
 class ostream
 {
     int _fd;
-    uint32_t _cap;
-    uint32_t _pos = 0;
+    uint32_t _cap, _pos = 0;
     char *_buf;
 public:
     ostream(int fd, uint32_t capacity) : _fd(fd), _cap(capacity), _buf(new char[capacity]) { }
@@ -138,14 +136,13 @@ public:
 
 class LZW
 {
-    const unsigned _maxbits;
     unsigned _oldcode = 0;
     char _finchar;
     ostream &_os;
     Dictionary _dict;
     ByteStack _stack;
 public:
-    LZW(unsigned maxbits, ostream &os) : _maxbits(maxbits), _os(os), _dict(maxbits) { }
+    LZW(unsigned maxbits, ostream &os) : _os(os), _dict(maxbits) { }
 
     inline void code(const unsigned in)
     {

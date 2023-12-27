@@ -5,6 +5,10 @@
 
 #include <cassert>
 #include <cstdint>
+#include <boost/coroutine2/all.hpp>
+
+using boost::coroutines2::coroutine;
+using boost::coroutines2::fixedsize_stack;
 
 #ifdef FAST
 #include <unistd.h>
@@ -108,45 +112,33 @@ public:
     }
 };
 
-class Codes
+static istream *is = &cin;
+
+static void codes(coroutine<unsigned>::push_type &yield)
 {
-    BitStream _bis;
-    const unsigned _maxbits;
-    unsigned _cnt = 0, _nbits = 9;
-public:
-    Codes(istream &is, unsigned maxbits) : _bis(is), _maxbits(maxbits)
-    {
-        assert(maxbits >= 9 && maxbits <= 16);
-    }
+    BitStream bis(*is);
+    unsigned cnt = 0, nbits = 9, maxbits = 16;
+    cerr << "debug bericht\r\n";
 
-    int extract()
+    for (int code; (code = bis.readBits(nbits)) != -1;)
     {
-        int code = _bis.readBits(_nbits);
-
-        //read 256 9-bit codes, 512 10-bit codes, 1024 11-bit codes, etc
-        if (++_cnt == 1U << _nbits - 1U && _nbits != _maxbits)
-            ++_nbits, _cnt = 0;
+        if (++cnt == 1U << nbits - 1 && nbits != maxbits)
+            ++nbits, cnt = 0;
 
         if (code == 256)
         {
-            //other max. bits not working yet :S
-            assert(_maxbits == 13 || _maxbits == 15 || _maxbits == 16);
+            for (const unsigned nb3 = nbits << 3; (bis.cnt() - 1U + nb3) % nb3 != nb3 - 1U;)
+                bis.readBits(nbits);
 
-            //cumbersome padding formula
-            for (const unsigned nb3 = _nbits << 3; (_bis.cnt() - 1U + nb3) % nb3 != nb3 - 1U;)
-                _bis.readBits(_nbits);
-
-            _cnt = 0, _nbits = 9;
+            cnt = 0, nbits = 9;
         }
 
-        return code;
+        yield(code);
     }
-};
+}
 
-#if 1
 int main(int argc, char **argv)
 {
-    istream *is = &cin;
     ostream *os = &cout;
     ifstream ifs;
 
@@ -157,45 +149,15 @@ int main(int argc, char **argv)
     assert(is->get() == 0x9d);
     int c = is->get();
     assert(c >= 0 && c & 0x80);   //block mode bit is hardcoded in ncompress
-    Codes codes(*is, c & 0x7f);
+    coroutine<unsigned>::pull_type codes(fixedsize_stack(), ::codes);
 
-    for (int code; (code = codes.extract()) != -1;)
+    for (auto code : codes)
         *os << code << "\r\n";
 
     os->flush();
     ifs.close();
     return 0;
 }
-#else
-int main(int argc, char **argv)
-{
-    istream *is = &cin;
-    ostream *os = &cout;
-    ifstream ifs;
-    
-    if (argc > 1)
-        ifs.open(argv[1]), is = &ifs;
 
-    assert(is->get() == 0x1f);
-    assert(is->get() == 0x9d);
-    int c = is->get();
-    assert(c != -1 && c & 80);
-    const unsigned maxbits = c & 0x7f;
-    assert(maxbits >= 9 && maxbits <= 16);
-    cerr << maxbits << "\r\n";
-    unsigned nbits = 9;
-
-    uint8_t buf[512];
-
-    while (true)
-    {
-        is->read(buf, 256 * nbits / 8);
-        
-    }
-
-
-    return 0;
-}
-#endif
 
 
