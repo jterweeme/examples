@@ -1,12 +1,16 @@
 //This is a comment
 //I love comments
 
+//zcatpp (zcat c++)
+
 #include <cassert>
 #include <cstdint>
 #include <exception>
 #include <coroutine>
 #include <stdexcept>
+#include <vector>
 
+using std::vector;
 using std::exception_ptr;
 using std::convertible_to;
 using std::suspend_always;
@@ -15,7 +19,7 @@ using std::current_exception;
 using std::move;
 using std::rethrow_exception;
 using std::runtime_error;
-using std::forward; 
+using std::forward;
 
 //boilerplate
 template <typename T> class Generator
@@ -32,26 +36,26 @@ public:
 
         Generator get_return_object()
         { return Generator(coroutine_handle<promise_type>::from_promise(*this)); }
-                                                                             
+  
         template <convertible_to<T> From> suspend_always yield_value(From &&from)
         {
             value = forward<From>(from);
             return {};
         }
     };
-private:
+private: 
     coroutine_handle<promise_type> _h;
     bool _full = false;
-
+    
     void _fill()
     {
-        if (!_full)
+        if (!_full) 
         {
             _h();
     
             if (_h.promise().exception_)
                 rethrow_exception(_h.promise().exception_);
- 
+
             _full = true;
         }
     }
@@ -75,8 +79,7 @@ public:
 class istream
 {
 private:
-    uint32_t _cap;
-    uint32_t _head = 0, _tail = 0;
+    uint32_t _cap, _head = 0, _tail = 0;
     uint8_t *_buf;
 protected:
     int _fd;
@@ -109,33 +112,17 @@ public:
 class ostream
 {
     int _fd;
-    uint32_t _cap;
-    uint32_t _pos = 0;
+    uint32_t _cap, _pos = 0;
     char *_buf;
 public:
     ostream(int fd, uint32_t capacity) : _fd(fd), _cap(capacity), _buf(new char[capacity]) { }
     ~ostream() { delete[] _buf; }
-    inline void put(char c) { if (_pos > _cap) flush(); _buf[_pos++] = c; }
+    void put(char c) { if (_pos > _cap) flush(); _buf[_pos++] = c; }
     void flush() { ::write(_fd, _buf, _pos), _pos = 0; }
-    inline ostream& operator<<(const char *s) { while (*s) put(*s++); return *this; }
-
-    //LZW is sneller dan int naar string!
-    inline ostream& operator<<(unsigned n)
-    {
-        if (n == 0) { put('0'); return *this; }
-        char buf[100];
-        unsigned i = 0;
-        for (; n; n = n / 10)
-            buf[i++] = n % 10 + '0';
-        while (i)
-            put(buf[--i]);
-        return *this;
-    }
 };
 
 static istream cin(0, 8192);
 static ostream cout(1, 8192);
-static ostream cerr(2, 8192);
 #else
 #include <iostream>
 #include <fstream>
@@ -145,7 +132,6 @@ using std::ostream;
 using std::ifstream;
 using std::cin;
 using std::cout;
-using std::cerr;
 #endif
 
 class BitStream
@@ -171,18 +157,131 @@ public:
     }
 };
 
-static Generator<unsigned> codes(istream *is, unsigned maxbits)
+class ByteStack
 {
-    BitStream bis(*is);
+    vector<char> _stack;
+public:
+    void push(char c) { _stack.push_back(c); }
+    char top() const { return _stack.back(); }
+    void pop_all(ostream &os) { for (; _stack.size(); _stack.pop_back()) os.put(top()); }
+};
+
+class Dictionary
+{
+    unsigned _cap;
+    uint16_t *_codes;
+    uint8_t *_chars;
+    unsigned _pos = 0;
+public:
+    Dictionary(unsigned maxbits)
+      : _cap(1 << maxbits), _codes(new uint16_t[_cap - 256]), _chars(new uint8_t[_cap - 256]) { }
+
+    void lookup(ByteStack &s, uint16_t code)
+    {
+        for (; code >= 256U; code = _codes[code - 256])
+            s.push(_chars[code - 256]);
+
+        s.push(code);
+    }
+
+    void append(unsigned code, uint8_t c)
+    {
+        if (_pos + 256 < _cap)
+            _codes[_pos] = code, _chars[_pos] = c, ++_pos;
+    }
+
+    ~Dictionary() { delete[] _codes; delete[] _chars; }
+    auto size() const { return _pos + 256; }
+    void clear() { _pos = 0; }
+};
+
+class LZW
+{
+    unsigned _oldcode = 0;
+    char _finchar;
+    ostream &_os;
+    Dictionary _dict;
+    ByteStack _stack;
+public:
+    LZW(unsigned maxbits, ostream &os) : _os(os), _dict(maxbits) { }
+
+    inline void code(const unsigned in)
+    {
+        assert(in <= _dict.size());
+        auto c = in;
+
+        if (in == 256)
+        {
+            _dict.clear();
+            return;
+        }
+
+        if (c == _dict.size())
+            _stack.push(_finchar), c = _oldcode;
+
+        _dict.lookup(_stack, c);
+        _finchar = _stack.top();
+        _dict.append(_oldcode, _finchar);
+        _oldcode = in;
+        _stack.pop_all(_os);
+    }
+};
+
+#if 0
+class Codes
+{
+    BitStream _bis;
+    const unsigned _maxbits;
+    unsigned _cnt = 0, _nbits = 9;
+public:
+    Codes(istream &is, unsigned maxbits) : _bis(is), _maxbits(maxbits)
+    {
+        assert(maxbits >= 9 && maxbits <= 16);
+    }
+
+    int extract()
+    {
+        int code = _bis.readBits(_nbits);
+
+        //read 256 9-bit codes, 512 10-bit codes, 1024 11-bit codes, etc
+        if (++_cnt == 1U << _nbits - 1U && _nbits != _maxbits)
+            ++_nbits, _cnt = 0;
+
+        if (code == 256)
+        {
+            //other max. bits not working yet :S
+            assert(_maxbits == 13 || _maxbits == 15 || _maxbits == 16);
+
+            //cumbersome padding formula
+            for (const unsigned nb3 = _nbits << 3; (_bis.cnt() - 1U + nb3) % nb3 != nb3 - 1U;)
+                _bis.readBits(_nbits);
+
+            _cnt = 0, _nbits = 9;
+        }
+
+        return code;
+    }
+};
+#endif
+
+static Generator<unsigned> codes(istream &is, unsigned maxbits)
+{
+    assert(maxbits >= 9 && maxbits <= 16);
+    BitStream bis(is);
     unsigned cnt = 0, nbits = 9;
 
     for (int code; (code = bis.readBits(nbits)) != -1;)
     {
+        //read 256 9-bit codes, 512 10-bit codes, 1024 11-bit codes, etc
         if (++cnt == 1U << nbits - 1 && nbits != maxbits)
             ++nbits, cnt = 0;
 
         if (code == 256)
         {
+            //other max. bits not working yet :S
+            assert(maxbits == 13 || maxbits == 15 || maxbits == 16);
+
+            //cumbersome padding formula
             for (const unsigned nb3 = nbits << 3; (bis.cnt() - 1U + nb3) % nb3 != nb3 - 1U;)
                 bis.readBits(nbits);
 
@@ -196,7 +295,7 @@ static Generator<unsigned> codes(istream *is, unsigned maxbits)
 int main(int argc, char **argv)
 {
     istream *is = &cin;
-    ostream *os = &cout;
+    ostream * const os = &cout;
     ifstream ifs;
 
     if (argc > 1)
@@ -206,14 +305,20 @@ int main(int argc, char **argv)
     assert(is->get() == 0x9d);
     int c = is->get();
     assert(c >= 0 && c & 0x80);   //block mode bit is hardcoded in ncompress
+    const unsigned maxbits = c & 0x7f;
+    //Codes codes(*is, maxbits);
+    LZW lzw(maxbits, *os);
 
-    for (auto code = codes(is, c & 0x7f); code;)
-        *os << code() << "\r\n";
+    for (auto code = codes(*is, c & 0x7f); code;)
+        lzw.code(code());
 
+#if 0
+    for (int code; (code = codes.extract()) != -1;)
+        lzw.code(code);
+#endif
     os->flush();
     ifs.close();
     return 0;
 }
-
 
 

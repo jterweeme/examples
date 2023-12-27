@@ -10,9 +10,13 @@ DEBUG = -g
 all:
 	rm -vf $(ZCATPP) $(ZCATUX) $(ZCATC)
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o extract_codes extract_codes.cpp
-	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o extract_coro extract_coro.cpp -lboost_coroutine -lboost_context
+	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o extract_coro extract_coro.cpp -std=c++20
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o lzw lzw.cpp
-	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o $(ZCATPP) $(ZCATPP).cpp
+	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o $(ZCATPP) $(ZCATPP).cpp -std=c++20
+	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o zcatcoro zcatcoro.cpp -std=c++20
+
+clean:
+	rm -v fibonacci lzw zcatcoro zcatpp
 
 test:
 	$(TIME) zcat < logo.c.Z | md5sum
@@ -52,11 +56,13 @@ test:
 	$(TIME) ./zcat.py tty.1.Z | md5sum
 	$(TIME) zcat wk98.iso.Z | md5sum
 	$(TIME) ./$(ZCATPP) wk98.iso.Z | md5sum
+	$(TIME) ./zcatcoro wk98.iso.Z | md5sum
 	$(TIME) zcat side1.pnm.Z | md5sum
 	$(TIME) ./$(ZCATPP) side1.pnm.Z | md5sum
 	#$(TIME) ./zcat.py side1.pnm.Z | md5sum
 	$(TIME) zcat wingames.iso.Z | md5sum
 	$(TIME) ./$(ZCATPP) wingames.iso.Z | md5sum
+	$(TIME) ./extract_coro wingames.iso.Z | ./lzw | md5sum
 	#$(TIME) ./zcat.py wingames.iso.Z | md5sum
 	$(TIME) zcat enwik9.Z | md5sum
 	$(TIME) ./$(ZCATPP) enwik9.Z | md5sum
