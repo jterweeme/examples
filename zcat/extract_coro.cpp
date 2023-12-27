@@ -118,7 +118,6 @@ static void codes(coroutine<unsigned>::push_type &yield)
 {
     BitStream bis(*is);
     unsigned cnt = 0, nbits = 9, maxbits = 16;
-    cerr << "debug bericht\r\n";
 
     for (int code; (code = bis.readBits(nbits)) != -1;)
     {
@@ -149,9 +148,8 @@ int main(int argc, char **argv)
     assert(is->get() == 0x9d);
     int c = is->get();
     assert(c >= 0 && c & 0x80);   //block mode bit is hardcoded in ncompress
-    coroutine<unsigned>::pull_type codes(fixedsize_stack(), ::codes);
 
-    for (auto code : codes)
+    for (auto code : coroutine<unsigned>::pull_type(fixedsize_stack(), ::codes))
         *os << code << "\r\n";
 
     os->flush();
