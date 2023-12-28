@@ -1,18 +1,17 @@
 //This is a comment
 //I love comments
 
-#define FAST
-
 #include <cassert>
 #include <cstdint>
 #include <vector>
 #include <string>
-
-using std::string;
-
-#ifdef FAST
 #include <unistd.h>
 #include <fcntl.h>
+#include <iostream>
+#include <fstream>
+
+namespace fast
+{
 
 class istream
 {
@@ -64,16 +63,25 @@ public:
 static istream cin(0, 8192);
 static ostream cout(1, 8192);
 static ostream cerr(2, 8192);
-#else
-#include <iostream>
-#include <fstream>
 
+}
+
+#if 1
+using fast::ostream;
+using fast::istream;
+using fast::ifstream;
+using fast::cin;
+using fast::cout;
+using fast::cerr;
+#else
 using std::ostream;
 using std::istream;
 using std::ifstream;
 using std::cout;
 using std::cin;
 #endif
+using std::string;
+using std::vector;
 
 static int my_stoi(string &s)
 {
@@ -187,7 +195,7 @@ int main(int argc, char **argv)
 
     LZW lzw(16, *os);
 
-    for (std::string s; my_getline(*is, s);)
+    for (string s; my_getline(*is, s);)
         lzw.code(my_stoi(s));
 
     os->flush();

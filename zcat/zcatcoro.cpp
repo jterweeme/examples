@@ -9,6 +9,10 @@
 #include <coroutine>
 #include <stdexcept>
 #include <vector>
+#include <unistd.h>
+#include <fcntl.h>
+#include <iostream>
+#include <fstream>
 
 using std::vector;
 using std::exception_ptr;
@@ -27,11 +31,11 @@ template <typename T> class Generator
 public:
     struct promise_type
     {
+        exception_ptr exception;
         T value;
-        exception_ptr exception_;
         suspend_always initial_suspend() { return {}; }
         suspend_always final_suspend() noexcept { return {}; }
-        void unhandled_exception() { exception_ = current_exception(); }
+        void unhandled_exception() { exception = current_exception(); }
         void return_void() {}
 
         Generator get_return_object()
@@ -53,8 +57,8 @@ private:
         {
             _h();
     
-            if (_h.promise().exception_)
-                rethrow_exception(_h.promise().exception_);
+            if (_h.promise().exception)
+                rethrow_exception(_h.promise().exception);
 
             _full = true;
         }
@@ -72,10 +76,8 @@ public:
     }
 };
 
-#if 1
-#include <unistd.h>
-#include <fcntl.h>
-
+namespace fast
+{
 class istream
 {
 private:
@@ -123,10 +125,15 @@ public:
 
 static istream cin(0, 8192);
 static ostream cout(1, 8192);
-#else
-#include <iostream>
-#include <fstream>
+}
 
+#if 1
+using fast::istream;
+using fast::ostream;
+using fast::ifstream;
+using fast::cin;
+using fast::cout;
+#else
 using std::istream;
 using std::ostream;
 using std::ifstream;
@@ -227,43 +234,6 @@ public:
     }
 };
 
-#if 0
-class Codes
-{
-    BitStream _bis;
-    const unsigned _maxbits;
-    unsigned _cnt = 0, _nbits = 9;
-public:
-    Codes(istream &is, unsigned maxbits) : _bis(is), _maxbits(maxbits)
-    {
-        assert(maxbits >= 9 && maxbits <= 16);
-    }
-
-    int extract()
-    {
-        int code = _bis.readBits(_nbits);
-
-        //read 256 9-bit codes, 512 10-bit codes, 1024 11-bit codes, etc
-        if (++_cnt == 1U << _nbits - 1U && _nbits != _maxbits)
-            ++_nbits, _cnt = 0;
-
-        if (code == 256)
-        {
-            //other max. bits not working yet :S
-            assert(_maxbits == 13 || _maxbits == 15 || _maxbits == 16);
-
-            //cumbersome padding formula
-            for (const unsigned nb3 = _nbits << 3; (_bis.cnt() - 1U + nb3) % nb3 != nb3 - 1U;)
-                _bis.readBits(_nbits);
-
-            _cnt = 0, _nbits = 9;
-        }
-
-        return code;
-    }
-};
-#endif
-
 static Generator<unsigned> codes(istream &is, unsigned maxbits)
 {
     assert(maxbits >= 9 && maxbits <= 16);
@@ -306,16 +276,11 @@ int main(int argc, char **argv)
     int c = is->get();
     assert(c >= 0 && c & 0x80);   //block mode bit is hardcoded in ncompress
     const unsigned maxbits = c & 0x7f;
-    //Codes codes(*is, maxbits);
     LZW lzw(maxbits, *os);
 
     for (auto code = codes(*is, c & 0x7f); code;)
         lzw.code(code());
 
-#if 0
-    for (int code; (code = codes.extract()) != -1;)
-        lzw.code(code);
-#endif
     os->flush();
     ifs.close();
     return 0;

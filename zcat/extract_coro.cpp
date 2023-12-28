@@ -6,6 +6,10 @@
 #include <exception>
 #include <coroutine>
 #include <stdexcept>
+#include <unistd.h>
+#include <fcntl.h>
+#include <iostream>
+#include <fstream>
 
 using std::exception_ptr;
 using std::convertible_to;
@@ -68,10 +72,8 @@ public:
     }
 };
 
-#if 1
-#include <unistd.h>
-#include <fcntl.h>
-
+namespace fast
+{
 class istream
 {
 private:
@@ -136,10 +138,16 @@ public:
 static istream cin(0, 8192);
 static ostream cout(1, 8192);
 static ostream cerr(2, 8192);
-#else
-#include <iostream>
-#include <fstream>
+}
 
+#if 1
+using fast::istream;
+using fast::ostream;
+using fast::ifstream;
+using fast::cin;
+using fast::cout;
+using fast::cerr;
+#else
 using std::istream;
 using std::ostream;
 using std::ifstream;

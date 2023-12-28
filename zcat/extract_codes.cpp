@@ -1,14 +1,16 @@
 //This is a comment
 //I love comments
 
-#define FAST
 
 #include <cassert>
 #include <cstdint>
-
-#ifdef FAST
+#include <iostream>
+#include <fstream>
 #include <unistd.h>
 #include <fcntl.h>
+
+namespace fast
+{
 
 class istream
 {
@@ -73,10 +75,16 @@ public:
 static istream cin(0, 8192);
 static ostream cout(1, 8192);
 static ostream cerr(2, 8192);
-#else
-#include <iostream>
-#include <fstream>
+}
 
+#if 0
+using fast::istream;
+using fast::ostream;
+using fast::ifstream;
+using fast::cin;
+using fast::cout;
+using fast::cerr;
+#else
 using std::istream;
 using std::ostream;
 using std::ifstream;
@@ -179,20 +187,33 @@ int main(int argc, char **argv)
     assert(is->get() == 0x1f);
     assert(is->get() == 0x9d);
     int c = is->get();
-    assert(c != -1 && c & 80);
+    assert(c != -1 && c & 0x80);
     const unsigned maxbits = c & 0x7f;
     assert(maxbits >= 9 && maxbits <= 16);
-    cerr << maxbits << "\r\n";
     unsigned nbits = 9;
 
     uint8_t buf[512];
+    is->read((char *)buf, 32 * nbits);
+    unsigned ncodes = is->gcount() * 8 / nbits;
+    cerr << "ncodes " << ncodes << "\r\n";
 
-    while (true)
+    unsigned *window, code, cnt = 0;
+
+    for (unsigned i = 0; i < ncodes; ++i)
     {
-        is->read(buf, 256 * nbits / 8);
-        
+        unsigned byte = cnt / 8;
+        unsigned shift = i % 8;
+        //cerr << "byte: " << byte << "\r\n";
+        window = (unsigned *)(buf + byte);
+        code = *window >> shift & (1 << nbits) - 1;
+        *os << code << "\r\n";
+        cnt += nbits;
     }
-
+#if 0
+    window = (unsigned *)(buf + 1);
+    code = *window >> 1 & 0x1ff;
+    *os << code << "\r\n";
+#endif
 
     return 0;
 }

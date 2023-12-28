@@ -3,18 +3,16 @@
 
 //zcatpp (zcat c++)
 
-#define FAST
-
 #include <cassert>
 #include <cstdint>
 #include <vector>
-
-using std::vector;
-
-#ifdef FAST
 #include <unistd.h>
 #include <fcntl.h>
+#include <iostream>
+#include <fstream>
 
+namespace fast
+{
 class istream
 {
 private:
@@ -62,16 +60,22 @@ public:
 
 static istream cin(0, 8192);
 static ostream cout(1, 8192);
-#else
-#include <iostream>
-#include <fstream>
+}
 
+#if 1
+using fast::istream;
+using fast::ostream;
+using fast::ifstream;
+using fast::cin;
+using fast::cout;
+#else
 using std::istream;
 using std::ostream;
 using std::ifstream;
 using std::cin;
 using std::cout;
 #endif
+using std::vector;
 
 class BitStream
 {
