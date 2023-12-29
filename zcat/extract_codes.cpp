@@ -77,7 +77,7 @@ static ostream cout(1, 8192);
 static ostream cerr(2, 8192);
 }
 
-#if 0
+#if 1
 using fast::istream;
 using fast::ostream;
 using fast::ifstream;
@@ -151,7 +151,7 @@ public:
     }
 };
 
-#if 0
+#if 1
 int main(int argc, char **argv)
 {
     istream *is = &cin;

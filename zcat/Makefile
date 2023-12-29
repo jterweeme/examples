@@ -9,6 +9,7 @@ DEBUG = -g
 
 all:
 	rm -vf $(ZCATPP) $(ZCATUX) $(ZCATC)
+	gcc $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o extract extract.c
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o extract_codes extract_codes.cpp
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o extract_coro extract_coro.cpp -std=c++20
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o lzw lzw.cpp
@@ -16,7 +17,7 @@ all:
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o zcatcoro zcatcoro.cpp -std=c++20
 
 clean:
-	rm -vf fibonacci lzw zcatcoro zcatpp extract_coro extract_codes
+	rm -vf fibonacci lzw zcatcoro zcatpp extract extract_coro extract_codes
 
 test:
 	$(TIME) zcat < logo.c.Z | md5sum
