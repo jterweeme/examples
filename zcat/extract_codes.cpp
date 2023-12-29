@@ -151,7 +151,7 @@ public:
     }
 };
 
-#if 1
+#if 0
 int main(int argc, char **argv)
 {
     istream *is = &cin;
@@ -193,27 +193,35 @@ int main(int argc, char **argv)
     unsigned nbits = 9;
 
     uint8_t buf[512];
-    is->read((char *)buf, 32 * nbits);
-    unsigned ncodes = is->gcount() * 8 / nbits;
-    cerr << "ncodes " << ncodes << "\r\n";
 
-    unsigned *window, code, cnt = 0;
+    unsigned ncodes2 = 0;
 
-    for (unsigned i = 0; i < ncodes; ++i)
+    while (true)
     {
-        unsigned byte = cnt / 8;
-        unsigned shift = i % 8;
-        //cerr << "byte: " << byte << "\r\n";
-        window = (unsigned *)(buf + byte);
-        code = *window >> shift & (1 << nbits) - 1;
-        *os << code << "\r\n";
-        cnt += nbits;
+        is->read((char *)buf, 32 * nbits);
+
+        unsigned ncodes = is->gcount() * 8 / nbits;
+
+        if (ncodes <= 0)
+            break;
+
+        cerr << ncodes << " " << nbits << "-bit codes\r\n";
+        unsigned bits = 0;
+
+        for (unsigned i = 0; ncodes--; ++i)
+        {
+            unsigned byte = bits / 8;
+            unsigned shift = (i * (nbits - 8)) % 8;
+            unsigned *window = (unsigned *)(buf + byte);
+            unsigned code = *window >> shift & (1 << nbits) - 1;
+            *os << code << "\r\n";
+            bits += nbits;
+            ++ncodes2;
+        }
+
+        if (ncodes2 == 1U << nbits - 1U)
+            ++nbits,ncodes2 = 0;
     }
-#if 0
-    window = (unsigned *)(buf + 1);
-    code = *window >> 1 & 0x1ff;
-    *os << code << "\r\n";
-#endif
 
     return 0;
 }

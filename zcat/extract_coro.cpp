@@ -214,11 +214,17 @@ int main(int argc, char **argv)
     assert(is->get() == 0x9d);
     int c = is->get();
     assert(c >= 0 && c & 0x80);   //block mode bit is hardcoded in ncompress
+    unsigned cnt = 0;
 
     for (auto code = codes(is, c & 0x7f); code;)
+    {
         *os << code() << "\r\n";
+        ++cnt;
+    }
 
     os->flush();
+    cerr << cnt << " codes extracted.\r\n";
+    cerr.flush();
     ifs.close();
     return 0;
 }
