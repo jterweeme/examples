@@ -190,35 +190,24 @@ int main(int argc, char **argv)
     assert(c != -1 && c & 0x80);
     const unsigned maxbits = c & 0x7f;
     assert(maxbits >= 9 && maxbits <= 16);
-
     uint8_t buf[516];
-
-    unsigned total_codes = 0;
 
     for (unsigned ncodes2 = 0, nbits = 9; true;)
     {
-        //is->read((char *)buf, 8 * nbits);
         is->read((char *)buf, nbits);
-
         unsigned ncodes = is->gcount() * 8 / nbits;
 
         if (ncodes <= 0)
             break;
 
-        //cerr << ncodes << " " << nbits << "-bit codes\r\n";
-        unsigned bits = 0;
-        unsigned code;
-
-        for (unsigned i = 0; ncodes--; ++i)
+        for (unsigned i = 0, bits = 0; ncodes--; ++i)
         {
-            unsigned byte = bits / 8;
             unsigned shift = (i * (nbits - 8)) % 8;
-            unsigned *window = (unsigned *)(buf + byte);
-            code = *window >> shift & (1 << nbits) - 1;
+            unsigned *window = (unsigned *)(buf + bits / 8);
+            unsigned code = *window >> shift & (1 << nbits) - 1;
             *os << code << "\r\n";
             bits += nbits;
             ++ncodes2;
-            ++total_codes;
 
             if (code == 256)
             {
@@ -232,9 +221,6 @@ int main(int argc, char **argv)
     }
 
     os->flush();
-    cerr << total_codes << " codes extracted.\r\n";
-    cerr.flush();
-
     return 0;
 }
 #endif
