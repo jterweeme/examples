@@ -140,7 +140,7 @@ static ostream cout(1, 8192);
 static ostream cerr(2, 8192);
 }
 
-#if 1
+#if 0
 using fast::istream;
 using fast::ostream;
 using fast::ifstream;
@@ -156,6 +156,8 @@ using std::cout;
 using std::cerr;
 #endif
 
+unsigned tell = 0;
+
 class BitStream
 {
     istream &_is;
@@ -169,6 +171,7 @@ public:
         for (; _bits < n; _bits += 8)
         {
             int c = _is.get();
+            tell = _is.tellg();
             if (c == -1) return -1;
             _window |= c << _bits;
         }
@@ -191,6 +194,7 @@ static Generator<unsigned> codes(istream *is, unsigned maxbits)
 
         if (code == 256)
         {
+            //cerr << tell << "\r\n";
             for (const unsigned nb3 = nbits << 3; (bis.cnt() - 1U + nb3) % nb3 != nb3 - 1U;)
                 bis.readBits(nbits);
 

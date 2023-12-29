@@ -16,7 +16,7 @@ all:
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o zcatcoro zcatcoro.cpp -std=c++20
 
 clean:
-	rm -v fibonacci lzw zcatcoro zcatpp
+	rm -vf fibonacci lzw zcatcoro zcatpp extract_coro extract_codes
 
 test:
 	$(TIME) zcat < logo.c.Z | md5sum
