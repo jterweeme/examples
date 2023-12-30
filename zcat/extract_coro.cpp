@@ -49,15 +49,15 @@ private:
 
     void _fill()
     {
-        if (!_full)
-        {
-            _h();
+        if (_full)
+            return;
+
+        _h();
     
-            if (_h.promise().exception_)
-                rethrow_exception(_h.promise().exception_);
+        if (_h.promise().exception_)
+            rethrow_exception(_h.promise().exception_);
  
-            _full = true;
-        }
+        _full = true;
     }
 public:
     Generator(coroutine_handle<promise_type> h) : _h(h) {}
@@ -142,7 +142,7 @@ static ostream cout(1, 8192);
 static ostream cerr(2, 8192);
 }
 
-#if 0
+#if 1
 using fast::istream;
 using fast::ostream;
 using fast::ifstream;
@@ -216,7 +216,7 @@ public:
     }
 };
 
-static Generator<unsigned> codes(istream &is, unsigned maxbits)
+static Generator<unsigned> codes1(istream &is, unsigned maxbits)
 {
     BitStream bis(is);
     unsigned cnt = 0, nbits = 9;
@@ -238,36 +238,79 @@ static Generator<unsigned> codes(istream &is, unsigned maxbits)
     }
 }
 
+class Codes2
+{
+    char _buf[20];
+    unsigned _nbufcodes = 0;
+    istream &_is;
+    const unsigned _maxbits;
+    unsigned _nbits = 9;
+    unsigned _bits = 0;
+    unsigned _i = 0;
+    unsigned _ncodesblk = 0;
+public:
+    Codes2(istream &is, unsigned maxbits) : _is(is), _maxbits(maxbits)
+    {
+        assert(maxbits >= 9 && maxbits <= 16);
+    }
+
+    int extract()
+    {
+        if (_nbufcodes == 0)
+        {
+            _is.read(_buf, _nbits);
+            _nbufcodes = _is.gcount() * 8 / _nbits;
+            _i = 0;
+            _bits = 0;
+
+            if (_nbufcodes <= 0)
+                return -1;
+        }
+
+        --_nbufcodes;
+        unsigned shift = _i++ * (_nbits - 8) % 8;
+        unsigned *window = (unsigned *)(_buf + _bits / 8);
+        unsigned code = *window >> shift & (1 << _nbits) - 1;
+        _bits += _nbits;
+        ++_ncodesblk;
+
+        if (code == 256)
+            _nbits = 9, _ncodesblk = 0, _nbufcodes = 0;
+        else if (_ncodesblk == 1U << _nbits - 1U && _nbits != _maxbits)
+            ++_nbits, _ncodesblk = 0;
+
+        return code;
+    }
+};
+
 static Generator<unsigned> codes2(istream &is, unsigned maxbits)
 {
-    uint8_t buf[516];
+    char buf[20];
     
-    for (unsigned ncodes2 = 0, nbits = 9; true;)
+    for (unsigned ncodes = 0, nbits = 9; true;)
     {
-        is.read((char *)buf, nbits);
-        unsigned ncodes = is.gcount() * 8 / nbits;
+        is.read(buf, nbits);
+        unsigned nbufcodes = is.gcount() * 8 / nbits;
 
-        if (ncodes <= 0)
+        if (nbufcodes <= 0)
             break;
 
-        for (unsigned i = 0, bits = 0; ncodes--; ++i)
+        for (unsigned i = 0, bits = 0; nbufcodes--; ++i, bits += nbits, ++ncodes)
         {
-            unsigned shift = (i * (nbits - 8)) % 8;
+            //let op endianess!
             unsigned *window = (unsigned *)(buf + bits / 8);
-            unsigned code = *window >> shift & (1 << nbits) - 1;
+            unsigned code = *window >> i * (nbits - 8) % 8 & (1 << nbits) - 1;
             co_yield code;
-            bits += nbits;
-            ++ncodes2;
 
             if (code == 256)
             {
-                nbits = 9, ncodes2 = 0;
+                nbits = 9, ncodes = 0;
                 break;
             }
         }
 
-        if (ncodes2 == 1U << nbits - 1U && nbits != maxbits)
-            ++nbits, ncodes2 = 0;
+        if (ncodes == 1U << nbits - 1U && nbits != maxbits)
+            ++nbits, ncodes = 0;
     }
 }
 
@@ -284,13 +327,13 @@ int main(int argc, char **argv)
     assert(is->get() == 0x9d);
     int c = is->get();
     assert(c >= 0 && c & 0x80);   //block mode bit is hardcoded in ncompress
-#if 1
+#if 0
     Codes1 codes(*is, c & 0x7f);
 
     for (int code; (code = codes.extract()) != -1;)
         *os << code << "\r\n";
 #else
-    for (auto code = codes2(*is, c & 0x7f); code;)
+    for (auto code = codes1(*is, c & 0x7f); code;)
         *os << code() << "\r\n";
 #endif
     os->flush();
