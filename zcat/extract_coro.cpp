@@ -84,6 +84,8 @@ protected:
     int _fd;
 public:
     ~istream() { delete[] _buf; }
+    istream &read(char *s, size_t n) { assert(false); }
+    size_t gcount() const { assert(false); return 0; }
 
     istream(int fd = -1, uint32_t capacity = 8192)
       : _cap(capacity), _buf(new uint8_t[capacity]), _fd(fd) { }
@@ -156,8 +158,6 @@ using std::cout;
 using std::cerr;
 #endif
 
-unsigned tell = 0;
-
 class BitStream
 {
     istream &_is;
@@ -171,7 +171,6 @@ public:
         for (; _bits < n; _bits += 8)
         {
             int c = _is.get();
-            tell = _is.tellg();
             if (c == -1) return -1;
             _window |= c << _bits;
         }
@@ -182,9 +181,44 @@ public:
     }
 };
 
-static Generator<unsigned> codes(istream *is, unsigned maxbits)
+class Codes1
 {
-    BitStream bis(*is);
+    BitStream _bis;
+    const unsigned _maxbits;
+    unsigned _cnt = 0, _nbits = 9;
+public:
+    Codes1(istream &is, unsigned maxbits) : _bis(is), _maxbits(maxbits)
+    {
+        assert(maxbits >= 9 && maxbits <= 16);
+    }
+
+    int extract()
+    {
+        int code = _bis.readBits(_nbits);
+
+        //read 256 9-bit codes, 512 10-bit codes, 1024 11-bit codes, etc
+        if (++_cnt == 1U << _nbits - 1U && _nbits != _maxbits)
+            ++_nbits, _cnt = 0;
+
+        if (code == 256)
+        {
+            //other max. bits not working yet :S
+            assert(_maxbits == 13 || _maxbits == 15 || _maxbits == 16);
+
+            //cumbersome padding formula
+            for (const unsigned nb3 = _nbits << 3; (_bis.cnt() - 1U + nb3) % nb3 != nb3 - 1U;)
+                _bis.readBits(_nbits);
+
+            _cnt = 0, _nbits = 9;
+        }
+
+        return code;
+    }
+};
+
+static Generator<unsigned> codes(istream &is, unsigned maxbits)
+{
+    BitStream bis(is);
     unsigned cnt = 0, nbits = 9;
 
     for (int code; (code = bis.readBits(nbits)) != -1;)
@@ -194,7 +228,6 @@ static Generator<unsigned> codes(istream *is, unsigned maxbits)
 
         if (code == 256)
         {
-            //cerr << tell << "\r\n";
             for (const unsigned nb3 = nbits << 3; (bis.cnt() - 1U + nb3) % nb3 != nb3 - 1U;)
                 bis.readBits(nbits);
 
@@ -202,6 +235,39 @@ static Generator<unsigned> codes(istream *is, unsigned maxbits)
         }
 
         co_yield code;
+    }
+}
+
+static Generator<unsigned> codes2(istream &is, unsigned maxbits)
+{
+    uint8_t buf[516];
+    
+    for (unsigned ncodes2 = 0, nbits = 9; true;)
+    {
+        is.read((char *)buf, nbits);
+        unsigned ncodes = is.gcount() * 8 / nbits;
+
+        if (ncodes <= 0)
+            break;
+
+        for (unsigned i = 0, bits = 0; ncodes--; ++i)
+        {
+            unsigned shift = (i * (nbits - 8)) % 8;
+            unsigned *window = (unsigned *)(buf + bits / 8);
+            unsigned code = *window >> shift & (1 << nbits) - 1;
+            co_yield code;
+            bits += nbits;
+            ++ncodes2;
+
+            if (code == 256)
+            {
+                nbits = 9, ncodes2 = 0;
+                break;
+            }
+        }
+
+        if (ncodes2 == 1U << nbits - 1U && nbits != maxbits)
+            ++nbits, ncodes2 = 0;
     }
 }
 
@@ -218,17 +284,11 @@ int main(int argc, char **argv)
     assert(is->get() == 0x9d);
     int c = is->get();
     assert(c >= 0 && c & 0x80);   //block mode bit is hardcoded in ncompress
-    unsigned cnt = 0;
 
-    for (auto code = codes(is, c & 0x7f); code;)
-    {
+    for (auto code = codes2(*is, c & 0x7f); code;)
         *os << code() << "\r\n";
-        ++cnt;
-    }
 
     os->flush();
-    cerr << cnt << " codes extracted.\r\n";
-    cerr.flush();
     ifs.close();
     return 0;
 }

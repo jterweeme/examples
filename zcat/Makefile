@@ -4,7 +4,7 @@ ZCATC = zcatc
 
 OPTIMIZE = -ftree-ter
 OPTIMIZE = -O
-WARNINGS = -Wall -Wno-parentheses
+WARNINGS = -Wall -Wno-parentheses -Wno-unused-function
 DEBUG = -g
 
 all:

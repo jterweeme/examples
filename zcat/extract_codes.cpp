@@ -116,13 +116,13 @@ public:
     }
 };
 
-class Codes
+class Codes1
 {
     BitStream _bis;
     const unsigned _maxbits;
     unsigned _cnt = 0, _nbits = 9;
 public:
-    Codes(istream &is, unsigned maxbits) : _bis(is), _maxbits(maxbits)
+    Codes1(istream &is, unsigned maxbits) : _bis(is), _maxbits(maxbits)
     {
         assert(maxbits >= 9 && maxbits <= 16);
     }
@@ -151,7 +151,6 @@ public:
     }
 };
 
-#if 1
 int main(int argc, char **argv)
 {
     istream *is = &cin;
@@ -165,7 +164,7 @@ int main(int argc, char **argv)
     assert(is->get() == 0x9d);
     int c = is->get();
     assert(c >= 0 && c & 0x80);   //block mode bit is hardcoded in ncompress
-    Codes codes(*is, c & 0x7f);
+    Codes1 codes(*is, c & 0x7f);
 
     for (int code; (code = codes.extract()) != -1;)
         *os << code << "\r\n";
@@ -174,55 +173,5 @@ int main(int argc, char **argv)
     ifs.close();
     return 0;
 }
-#else
-int main(int argc, char **argv)
-{
-    istream *is = &cin;
-    ostream *os = &cout;
-    ifstream ifs;
-    
-    if (argc > 1)
-        ifs.open(argv[1]), is = &ifs;
-
-    assert(is->get() == 0x1f);
-    assert(is->get() == 0x9d);
-    int c = is->get();
-    assert(c != -1 && c & 0x80);
-    const unsigned maxbits = c & 0x7f;
-    assert(maxbits >= 9 && maxbits <= 16);
-    uint8_t buf[516];
-
-    for (unsigned ncodes2 = 0, nbits = 9; true;)
-    {
-        is->read((char *)buf, nbits);
-        unsigned ncodes = is->gcount() * 8 / nbits;
-
-        if (ncodes <= 0)
-            break;
-
-        for (unsigned i = 0, bits = 0; ncodes--; ++i)
-        {
-            unsigned shift = (i * (nbits - 8)) % 8;
-            unsigned *window = (unsigned *)(buf + bits / 8);
-            unsigned code = *window >> shift & (1 << nbits) - 1;
-            *os << code << "\r\n";
-            bits += nbits;
-            ++ncodes2;
-
-            if (code == 256)
-            {
-                nbits = 9, ncodes2 = 0;
-                break;
-            }
-        }
-
-        if (ncodes2 == 1U << nbits - 1U && nbits != maxbits)
-            ++nbits, ncodes2 = 0;
-    }
-
-    os->flush();
-    return 0;
-}
-#endif
 
 
