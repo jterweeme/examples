@@ -284,10 +284,15 @@ int main(int argc, char **argv)
     assert(is->get() == 0x9d);
     int c = is->get();
     assert(c >= 0 && c & 0x80);   //block mode bit is hardcoded in ncompress
+#if 1
+    Codes1 codes(*is, c & 0x7f);
 
+    for (int code; (code = codes.extract()) != -1;)
+        *os << code << "\r\n";
+#else
     for (auto code = codes2(*is, c & 0x7f); code;)
         *os << code() << "\r\n";
-
+#endif
     os->flush();
     ifs.close();
     return 0;

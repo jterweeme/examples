@@ -10,20 +10,19 @@ DEBUG = -g
 all:
 	rm -vf $(ZCATPP) $(ZCATUX) $(ZCATC)
 	gcc $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o extract extract.c
-	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o extract_codes extract_codes.cpp
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o extract_coro extract_coro.cpp -std=c++20
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o lzw lzw.cpp
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o $(ZCATPP) $(ZCATPP).cpp -std=c++20
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o zcatcoro zcatcoro.cpp -std=c++20
 
 clean:
-	rm -vf fibonacci lzw zcatcoro zcatpp extract extract_coro extract_codes
+	rm -vf fibonacci lzw zcatcoro zcatpp extract extract_coro
 
 test:
 	$(TIME) zcat < logo.c.Z | md5sum
 	$(TIME) ./$(ZCATPP) < logo.c.Z | md5sum
 	$(TIME) ./zcat.py logo.c.Z | md5sum
-	$(TIME) ./extract_codes logo.c.Z | ./lzw | md5sum
+	$(TIME) ./extract_coro logo.c.Z | ./lzw | md5sum
 	$(TIME) zcat < mjkimage.c.Z | md5sum
 	$(TIME) ./$(ZCATPP) < mjkimage.c.Z | md5sum
 	$(TIME) ./zcat.py mjkimage.c.Z | md5sum
