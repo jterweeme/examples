@@ -10,6 +10,7 @@ DEBUG = -g
 all:
 	rm -vf $(ZCATPP) $(ZCATUX) $(ZCATC)
 	gcc $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o extract extract.c
+	gcc $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o zcatc zcatc.c
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o extract_coro extract_coro.cpp -std=c++20
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o lzw lzw.cpp
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o $(ZCATPP) $(ZCATPP).cpp -std=c++20

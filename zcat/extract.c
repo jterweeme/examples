@@ -9,19 +9,16 @@ int main(int argc, char **argv)
     assert(fgetc(fp) == 0x9d);
     int c = fgetc(fp);
     assert(c != -1 && c & 0x80);
-    unsigned maxbits = c & 0x7f;
+    unsigned maxbits = c & 0x7f, ncodes, ncodes2 = 0, nbits = 9;
     assert(maxbits >= 9 && maxbits <= 16);
-    uint8_t buf[512];
+    uint8_t buf[20];
 
-    for (unsigned ncodes, ncodes2=0,nbits=9; (ncodes = fread(buf, 1, nbits, fp) * 8 / nbits) > 0;)
+    while ((ncodes = fread(buf, 1, nbits, fp) * 8 / nbits) > 0)
     {
-        for (unsigned i = 0, bits = 0; ncodes--; ++i)
+        for (unsigned i = 0, bits = 0; ncodes--; ++i, ++ncodes2, bits += nbits)
         {
-            unsigned shift = (i * (nbits - 8)) % 8;
             unsigned *window = (unsigned *)(buf + bits / 8);
-            unsigned code = *window >> shift & (1 << nbits) - 1;
-            bits += nbits;
-            ++ncodes2;
+            unsigned code = *window >> i * (nbits - 8) % 8 & (1 << nbits) - 1;
             printf("%u\r\n", code);
 
             if (code == 256)
