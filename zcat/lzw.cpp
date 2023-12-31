@@ -126,16 +126,16 @@ class Dictionary
 {
     unsigned _cap;
     uint16_t *_codes;
-    uint8_t *_chars;
+    char *_bytes;
     unsigned _pos = 0;
 public:
-    Dictionary(unsigned maxbits)
-      : _cap(1 << maxbits), _codes(new uint16_t[_cap - 256]), _chars(new uint8_t[_cap - 256]) { }
+    Dictionary(unsigned cap)
+      : _cap(cap), _codes(new uint16_t[cap - 256]), _bytes(new char[cap - 256]) { }
 
     void lookup(ByteStack &s, uint16_t code)
     {
         for (; code >= 256U; code = _codes[code - 256])
-            s.push(_chars[code - 256]);
+            s.push(_bytes[code - 256]);
 
         s.push(code);
     }
@@ -143,24 +143,23 @@ public:
     void append(unsigned code, uint8_t c)
     {
         if (_pos + 256 < _cap)
-            _codes[_pos] = code, _chars[_pos] = c, ++_pos;
+            _codes[_pos] = code, _bytes[_pos] = c, ++_pos;
     }
 
-    ~Dictionary() { delete[] _codes; delete[] _chars; }
+    ~Dictionary() { delete[] _codes; delete[] _bytes; }
     auto size() const { return _pos + 256; }
     void clear() { _pos = 0; }
 };
 
 class LZW
 {
-    const unsigned _maxbits;
     unsigned _oldcode = 0;
     uint8_t _finchar;
     Dictionary _dict;
     ostream &_os; 
     ByteStack _stack;
 public:
-    LZW(unsigned maxbits, ostream &os) : _maxbits(maxbits), _dict(maxbits), _os(os) { }
+    LZW(unsigned dictcap, ostream &os) : _dict(dictcap), _os(os) { }
 
     inline void code(const unsigned in)
     {
@@ -193,7 +192,7 @@ int main(int argc, char **argv)
     if (argc > 1)
         ifs.open(argv[1]), is = &ifs;
 
-    LZW lzw(16, *os);
+    LZW lzw(1 << 16, *os);
 
     for (string s; my_getline(*is, s);)
         lzw.code(my_stoi(s));

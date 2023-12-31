@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
             
             finchar = c;
 
-            if (pos < 1 << maxbits)
+            if (pos < sizeof(htab))
                 codes[pos] = oldcode, htab[pos] = finchar, ++pos;
 
             putchar(finchar);

@@ -5,8 +5,7 @@
 int main(int argc, char **argv)
 {
     FILE *fp = fopen(argv[1], "r");
-    assert(fgetc(fp) == 0x1f);
-    assert(fgetc(fp) == 0x9d);
+    assert(fgetc(fp) == 0x1f && fgetc(fp) == 0x9d);
     int c = fgetc(fp);
     assert(c != -1 && c & 0x80);
     unsigned maxbits = c & 0x7f, ncodes, ncodes2 = 0, nbits = 9;

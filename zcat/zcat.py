@@ -7,7 +7,7 @@ import sys
 class BitInputStream:
     def __init__(self, file):
         self.f = open(file, "rb")
-        self.bits = self.window = self.cnt = 0
+        self.bits = self.window = 0
     def readBits(self, n):
         while self.bits < n:
             b = self.f.read(1)
@@ -19,7 +19,6 @@ class BitInputStream:
         ret = self.window & (1 << n) - 1
         self.window >>= n
         self.bits -= n
-        self.cnt += n
         return ret
 
 class LZW:
@@ -50,7 +49,7 @@ class LZW:
 
 def codes(bis, maxbits):
     assert maxbits >= 9 and maxbits <= 16
-    bis.cnt = cnt = 0  #reset bis.cnt counter needed for cumbersome padding formula
+    cnt = 0
     nbits = 9
     while (c := bis.readBits(nbits)) != -1:
         cnt += 1
@@ -58,12 +57,9 @@ def codes(bis, maxbits):
             nbits += 1
             cnt = 0
         if c == 256:
-            #cumbersome padding formula
-            #got it only working with maxbits 13, 15 and 16
-            assert maxbits == 13 or maxbits == 15 or maxbits == 16
-            nb3 = nbits << 3
-            while (bis.cnt - 1 + nb3) % nb3 != nb3 - 1:
+            while cnt % 8 != 0:
                 bis.readBits(nbits)
+                cnt += 1
             nbits = 9
             cnt = 0
         yield c

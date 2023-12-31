@@ -191,11 +191,8 @@ public:
 
         if (code == 256)
         {
-            //other max. bits not working yet :S
-            assert(_maxbits == 13 || _maxbits == 15 || _maxbits == 16);
-
-            //cumbersome padding formula
-            for (const unsigned nb3 = _nbits << 3; (_bis.cnt() - 1U + nb3) % nb3 != nb3 - 1U;)
+            //padding (blocks of 8 codes)
+            while (_cnt++ % 8 != 0)
                 _bis.readBits(_nbits);
 
             _cnt = 0, _nbits = 9;
@@ -214,8 +211,7 @@ int main(int argc, char **argv)
     if (argc > 1)
         ifs.open(argv[1]), is = &ifs;
 
-    assert(is->get() == 0x1f);
-    assert(is->get() == 0x9d);
+    assert(is->get() == 0x1f && is->get() == 0x9d); //magic
     int c = is->get();
     assert(c >= 0 && c & 0x80);   //block mode bit is hardcoded in ncompress
     const unsigned maxbits = c & 0x7f;

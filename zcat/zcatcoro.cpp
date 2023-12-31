@@ -144,10 +144,9 @@ using std::cout;
 class BitStream
 {
     istream &_is;
-    unsigned _bits = 0, _window = 0, _cnt = 0;
+    unsigned _bits = 0, _window = 0;
 public:
     BitStream(istream &is) : _is(is) { }
-    unsigned cnt() const { return _cnt; }
 
     int readBits(unsigned n)
     {
@@ -159,78 +158,8 @@ public:
         }
 
         int ret = _window & (1 << n) - 1;
-        _window >>= n, _bits -= n, _cnt += n;
+        _window >>= n, _bits -= n;
         return ret;
-    }
-};
-
-class ByteStack
-{
-    vector<char> _stack;
-public:
-    void push(char c) { _stack.push_back(c); }
-    char top() const { return _stack.back(); }
-    void pop_all(ostream &os) { for (; _stack.size(); _stack.pop_back()) os.put(top()); }
-};
-
-class Dictionary
-{
-    unsigned _cap;
-    uint16_t *_codes;
-    uint8_t *_chars;
-    unsigned _pos = 0;
-public:
-    Dictionary(unsigned maxbits)
-      : _cap(1 << maxbits), _codes(new uint16_t[_cap - 256]), _chars(new uint8_t[_cap - 256]) { }
-
-    void lookup(ByteStack &s, uint16_t code)
-    {
-        for (; code >= 256U; code = _codes[code - 256])
-            s.push(_chars[code - 256]);
-
-        s.push(code);
-    }
-
-    void append(unsigned code, uint8_t c)
-    {
-        if (_pos + 256 < _cap)
-            _codes[_pos] = code, _chars[_pos] = c, ++_pos;
-    }
-
-    ~Dictionary() { delete[] _codes; delete[] _chars; }
-    auto size() const { return _pos + 256; }
-    void clear() { _pos = 0; }
-};
-
-class LZW
-{
-    unsigned _oldcode = 0;
-    char _finchar;
-    ostream &_os;
-    Dictionary _dict;
-    ByteStack _stack;
-public:
-    LZW(unsigned maxbits, ostream &os) : _os(os), _dict(maxbits) { }
-
-    inline void code(const unsigned in)
-    {
-        assert(in <= _dict.size());
-        auto c = in;
-
-        if (in == 256)
-        {
-            _dict.clear();
-            return;
-        }
-
-        if (c == _dict.size())
-            _stack.push(_finchar), c = _oldcode;
-
-        _dict.lookup(_stack, c);
-        _finchar = _stack.top();
-        _dict.append(_oldcode, _finchar);
-        _oldcode = in;
-        _stack.pop_all(_os);
     }
 };
 
@@ -248,11 +177,7 @@ static Generator<unsigned> codes(istream &is, unsigned maxbits)
 
         if (code == 256)
         {
-            //other max. bits not working yet :S
-            assert(maxbits == 13 || maxbits == 15 || maxbits == 16);
-
-            //cumbersome padding formula
-            for (const unsigned nb3 = nbits << 3; (bis.cnt() - 1U + nb3) % nb3 != nb3 - 1U;)
+            while (cnt++ % 8 != 0)
                 bis.readBits(nbits);
 
             cnt = 0, nbits = 9;
@@ -261,6 +186,76 @@ static Generator<unsigned> codes(istream &is, unsigned maxbits)
         co_yield code;
     }
 }
+
+class ByteStack
+{
+    vector<char> _stack;
+public:
+    void push(char c) { _stack.push_back(c); }
+    char top() const { return _stack.back(); }
+    void pop_all(ostream &os) { for (; _stack.size(); _stack.pop_back()) os.put(top()); }
+};
+
+class Dictionary
+{
+    unsigned _cap;
+    uint16_t *_codes;
+    char *_bytes;
+    unsigned _pos = 0;
+public:
+    Dictionary(unsigned cap)
+      : _cap(cap), _codes(new uint16_t[cap - 256]), _bytes(new char[cap - 256]) { }
+
+    void lookup(ByteStack &s, uint16_t code)
+    {
+        for (; code >= 256U; code = _codes[code - 256])
+            s.push(_bytes[code - 256]);
+
+        s.push(code);
+    }
+
+    void store(unsigned code, uint8_t c)
+    {
+        if (_pos + 256 < _cap)
+            _codes[_pos] = code, _bytes[_pos] = c, ++_pos;
+    }
+
+    ~Dictionary() { delete[] _codes; delete[] _bytes; }
+    auto size() const { return _pos + 256; }
+    void clear() { _pos = 0; }
+};
+
+class LZW
+{
+    unsigned _oldcode = 0;
+    char _finchar;
+    ostream &_os;
+    Dictionary _dict;
+    ByteStack _stack;
+public:
+    LZW(unsigned dictcap, ostream &os) : _os(os), _dict(dictcap) { }
+
+    inline void code(const unsigned in)
+    {
+        assert(in <= _dict.size());
+        auto c = in;
+
+        if (in == 256)
+        {
+            _dict.clear();
+            return;
+        }
+
+        if (c == _dict.size())
+            _stack.push(_finchar), c = _oldcode;
+
+        _dict.lookup(_stack, c);
+        _finchar = _stack.top();
+        _dict.store(_oldcode, _finchar);
+        _oldcode = in;
+        _stack.pop_all(_os);
+    }
+};
 
 int main(int argc, char **argv)
 {
@@ -271,14 +266,13 @@ int main(int argc, char **argv)
     if (argc > 1)
         ifs.open(argv[1]), is = &ifs;
 
-    assert(is->get() == 0x1f);
-    assert(is->get() == 0x9d);
+    assert(is->get() == 0x1f && is->get() == 0x9d); //magic
     int c = is->get();
     assert(c >= 0 && c & 0x80);   //block mode bit is hardcoded in ncompress
     const unsigned maxbits = c & 0x7f;
-    LZW lzw(maxbits, *os);
+    LZW lzw(1 << maxbits, *os);
 
-    for (auto code = codes(*is, c & 0x7f); code;)
+    for (auto code = codes(*is, maxbits); code;)
         lzw.code(code());
 
     os->flush();

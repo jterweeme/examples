@@ -3,6 +3,7 @@
 
 #include <string>
 #include <iostream>
+#include <cstdint>
 
 #if __cplusplus >= 201103L
 #define CPP11
