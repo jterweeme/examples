@@ -2,18 +2,16 @@
 
 #include <stdio.h>
 #include <assert.h>
-#include <stdint.h>
 
 int main(int argc, char **argv) {
     FILE *fp = argc > 1 ? fopen(argv[1], "r") : stdin;
-    assert(fgetc(fp) == 0x1f);
-    assert(fgetc(fp) == 0x9d);
+    assert(fgetc(fp) == 0x1f && fgetc(fp) == 0x9d);
     int c = fgetc(fp);
     assert(c != -1 && c & 0x80);
     unsigned maxbits = c & 0x7f, oldcode = 0, pos = 256, ncodes, ncodes2 = 0, nbits = 9;
     assert(maxbits >= 9 && maxbits <= 16);
     char buf[20], finchar = 0, htab[1 << 16], stack[1000];
-    uint16_t codes[1 << 16];
+    unsigned short codes[1 << 16];
 
     while ((ncodes = fread(buf, 1, nbits, fp) * 8 / nbits) > 0) {
         for (unsigned i = 0, bits = 0; ncodes; ++i, ++ncodes2, bits += nbits, --ncodes) {
