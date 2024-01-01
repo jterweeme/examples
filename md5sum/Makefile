@@ -1,4 +1,4 @@
 all:
-	g++ -O -o md5sum main.cpp
+	g++ -O -o md5sumpp md5sumpp.cpp
 
 
