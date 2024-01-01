@@ -30,13 +30,12 @@ int main(int argc, char **argv) {
             for (;c >= 256; c = codes[c])
                 stack[--pstack] = htab[c];
             
-            finchar = c;
+            putchar(finchar = c);
+            fwrite(stack + pstack, 1, sizeof(stack) - pstack, stdout);
 
             if (pos < sizeof(htab))
                 codes[pos] = oldcode, htab[pos] = finchar, ++pos;
-
-            putchar(finchar);
-            fwrite(stack + pstack, 1, sizeof(stack) - pstack, stdout);
+            
             oldcode = newcode;
         }
 

@@ -200,10 +200,11 @@ public:
         if (++_cnt == 1U << _nbits - 1U && _nbits != _maxbits)
             ++_nbits, _cnt = 0;
 
+        //and x number of maxbit (usually 16-bit) codes until code 256
         if (code == 256)
         {
             //padding (blocks of 8 codes)
-            while (_cnt++ % 8 != 0)
+            while (_cnt++ % 8)
                 _bis.readBits(_nbits);
 
             _cnt = 0, _nbits = 9;
