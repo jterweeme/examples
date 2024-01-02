@@ -3,6 +3,7 @@
 #include <string>
 #include <iostream>
 #include <cstdint>
+#include <cassert>
 
 #ifdef WIN32
 #include <io.h>
@@ -31,48 +32,18 @@ using std::wcout;
 class Toolbox
 {
 public:
-    static char nibble(uint8_t n) { return n <= 9 ? '0' + char(n) : 'a' + char(n - 10); }
-    static string hex8(uint8_t b);
-    static void hex8(ostream &os, uint8_t b);
-    static string hex16(uint16_t w);
-    static string hex32(uint32_t dw);
+    static char nibble(uint8_t n)
+    { return n <= 9 ? '0' + char(n) : 'a' + char(n - 10); }
+
+    static void hex32(unsigned dw, ostream &os)
+    { for (unsigned i = 0; i <= 28; i += 4) os.put(nibble(dw >> 28 - i & 0xf)); }
 
     static uint32_t swapEndian(uint32_t n)
-    {
-        return n >> 24 & 0xff | n << 8 & 0xff0000 | n >> 8 & 0xff00 | n << 24 & 0xff000000;
-    }
-    static uint32_t be32tohost(uint32_t n) { return swapEndian(n); } //NIET PORTABLE!
+    { return n >> 24 & 0xff | n << 8 & 0xff0000 | n >> 8 & 0xff00 | n << 24 & 0xff000000; }
+
+    static uint32_t be32tohost(uint32_t n)
+    { return swapEndian(n); } //NIET PORTABLE!
 };
-
-string Toolbox::hex8(uint8_t b)
-{
-    string ret;
-    ret += nibble(b >> 4 & 0xf);
-    ret += nibble(b >> 0 & 0xf);
-    return ret;
-}
-
-void Toolbox::hex8(ostream &os, uint8_t b)
-{
-    os.put(nibble(b >> 4 & 0xf));
-    os.put(nibble(b >> 0 & 0xf));
-}
-
-string Toolbox::hex16(uint16_t w)
-{
-    string ret;
-    ret += hex8(w >> 8 & 0xff);
-    ret += hex8(w >> 0 & 0xff);
-    return ret;
-}
-
-string Toolbox::hex32(uint32_t dw)
-{
-    string ret;
-    ret += hex16(dw >> 16 & 0xffff);
-    ret += hex16(dw >>  0 & 0xffff);
-    return ret;
-}
 
 class Hash
 {
@@ -89,32 +60,34 @@ public:
       : _h0(h0), _h1(h1), _h2(h2), _h3(h3) { }
 
     void reset() { _h0 = H0, _h1 = H1, _h2 = H2, _h3 = H3; }
-    void add(const Hash &h) { _h0 += h.h0(), _h1 += h.h1(), _h2 += h.h2(), _h3 += h.h3(); }
-    uint32_t h0() const { return _h0; }
-    uint32_t h1() const { return _h1; }
-    uint32_t h2() const { return _h2; }
-    uint32_t h3() const { return _h3; }
+
+    uint32_t h(unsigned i) const
+    {
+        switch (i)
+        {
+        case 0:
+            return _h0;
+        case 1:
+            return _h1;
+        case 2:
+            return _h2;
+        case 3:
+            return _h3;
+        default:
+            assert(false);
+        }
+    }
 
     void dump(ostream &os) const
     {
         typedef Toolbox t;
-    
-        os << t::hex32(t::be32tohost(h0())) <<
-              t::hex32(t::be32tohost(h1())) <<
-              t::hex32(t::be32tohost(h2())) <<
-              t::hex32(t::be32tohost(h3()));
+        t::hex32(t::be32tohost(h(0)), os);
+        t::hex32(t::be32tohost(h(1)), os);
+        t::hex32(t::be32tohost(h(2)), os);
+        t::hex32(t::be32tohost(h(3)), os);
     }
-    
-    string toString() const
-    {
-        Toolbox t;
-        string ret;
-        ret.append(t.hex32(t.be32tohost(h0())));
-        ret.append(t.hex32(t.be32tohost(h1())));
-        ret.append(t.hex32(t.be32tohost(h2())));
-        ret.append(t.hex32(t.be32tohost(h3())));
-        return ret;
-    }
+
+    void add(const Hash &h) { _h0 += h.h(0), _h1 += h.h(1), _h2 += h.h(2), _h3 += h.h(3); }
 };
 
 class Chunk
@@ -124,7 +97,6 @@ private:
     static const uint32_t _k[64];
     static const uint32_t _r[64];
     static constexpr uint32_t leftRotate(uint32_t x, uint32_t c) { return x << c | x >> 32 - c; }
-    static uint32_t to_uint32(const uint8_t *bytes);
 public:
     Hash calc(const Hash &hash);
     void read(const uint8_t *msg);
@@ -132,20 +104,10 @@ public:
     void clear() {  for (int i = 0; i < 16; ++i) _w[i] = 0; }
 };
 
-
-
-uint32_t Chunk::to_uint32(const uint8_t * const bytes)
-{
-    return uint32_t(bytes[0])
-        | (uint32_t(bytes[1]) << 8)
-        | (uint32_t(bytes[2]) << 16)
-        | (uint32_t(bytes[3]) << 24);
-}
-
 void Chunk::read(const uint8_t *msg)
 {
     for (int i = 0; i < 16; ++i)
-        _w[i] = to_uint32(msg + i * 4);
+        _w[i] = *(uint32_t *)(msg + i * 4);
 }   
 
 const uint32_t Chunk::_k[64] = {
@@ -174,10 +136,10 @@ const uint32_t Chunk::_r[64] = { 7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22, 
 Hash Chunk::calc(const Hash &hash)
 {
     uint32_t a, b, c, d, f, g, temp;
-    a = hash.h0();
-    b = hash.h1();
-    c = hash.h2();
-    d = hash.h3();
+    a = hash.h(0);
+    b = hash.h(1);
+    c = hash.h(2);
+    d = hash.h(3);
 
     for (int i = 0; i < 64; ++i)
     {
@@ -273,7 +235,8 @@ int main(int argc, char **argv)
     _setmode(_fileno(stdin), _O_BINARY);
 #endif
     Hash hash = ::stream(cin);
-    cout << hash.toString() << "\r\n";
+    hash.dump(cout);
+    cout << "\r\n";
     cout.flush();
     return 0;
 }
