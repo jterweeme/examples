@@ -47,47 +47,19 @@ public:
 
 class Hash
 {
-private:
-    static CONSTEXPR uint32_t H0 = 0x67452301;
-    static CONSTEXPR uint32_t H1 = 0xefcdab89;
-    static CONSTEXPR uint32_t H2 = 0x98badcfe;
-    static CONSTEXPR uint32_t H3 = 0x10325476;
-    uint32_t _h0, _h1, _h2, _h3;
+    uint32_t _h[4];
 public:
-    Hash() : _h0(H0), _h1(H1), _h2(H2), _h3(H3) { }
+    Hash() { _h[0] = 0x67452301, _h[1] = 0xefcdab89, _h[2] = 0x98badcfe, _h[3] = 0x10325476; }
+    uint32_t h(unsigned i) const { return _h[i]; }
 
     Hash(uint32_t h0, uint32_t h1, uint32_t h2, uint32_t h3)
-      : _h0(h0), _h1(h1), _h2(h2), _h3(h3) { }
-
-    void reset() { _h0 = H0, _h1 = H1, _h2 = H2, _h3 = H3; }
-
-    uint32_t h(unsigned i) const
-    {
-        switch (i)
-        {
-        case 0:
-            return _h0;
-        case 1:
-            return _h1;
-        case 2:
-            return _h2;
-        case 3:
-            return _h3;
-        default:
-            assert(false);
-        }
-    }
+    { _h[0] = h0, _h[1] = h1, _h[2] = h2, _h[3] = h3; }
 
     void dump(ostream &os) const
-    {
-        typedef Toolbox t;
-        t::hex32(t::be32tohost(h(0)), os);
-        t::hex32(t::be32tohost(h(1)), os);
-        t::hex32(t::be32tohost(h(2)), os);
-        t::hex32(t::be32tohost(h(3)), os);
-    }
+    { for (unsigned i = 0; i < 4; ++i) Toolbox::hex32(Toolbox::be32tohost(h(i)), os); }
 
-    void add(const Hash &h) { _h0 += h.h(0), _h1 += h.h(1), _h2 += h.h(2), _h3 += h.h(3); }
+    void add(const Hash &h)
+    { _h[0] += h.h(0), _h[1] += h.h(1), _h[2] += h.h(2), _h[3] += h.h(3); }
 };
 
 class Chunk
@@ -99,16 +71,18 @@ private:
     static constexpr uint32_t leftRotate(uint32_t x, uint32_t c) { return x << c | x >> 32 - c; }
 public:
     Hash calc(const Hash &hash);
-    void read(const uint8_t *msg);
+
+    void read(const uint8_t *msg)
+    {
+        for (int i = 0; i < 16; ++i)
+            _w[i] = *(uint32_t *)(msg + i * 4);
+    }
+
     void fillTail(uint32_t size) { _w[14] = size * 8, _w[15] = size >> 29; }
     void clear() {  for (int i = 0; i < 16; ++i) _w[i] = 0; }
 };
 
-void Chunk::read(const uint8_t *msg)
-{
-    for (int i = 0; i < 16; ++i)
-        _w[i] = *(uint32_t *)(msg + i * 4);
-}   
+   
 
 const uint32_t Chunk::_k[64] = {
 0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee ,
