@@ -1,6 +1,5 @@
 #include <fstream>
 #include <cstring>
-#include <string>
 #include <iostream>
 #include <cstdint>
 #include <cassert>
@@ -64,25 +63,17 @@ public:
 
 class Chunk
 {
-private:
     uint32_t _w[16];
     static const uint32_t _k[64];
     static const uint32_t _r[64];
-    static constexpr uint32_t leftRotate(uint32_t x, uint32_t c) { return x << c | x >> 32 - c; }
 public:
     Hash calc(const Hash &hash);
+    void fillTail(uint32_t size) { _w[14] = size * 8, _w[15] = size >> 29; }
+    void clear() { for (int i = 0; i < 16; ++i) _w[i] = 0; }
 
     void read(const uint8_t *msg)
-    {
-        for (int i = 0; i < 16; ++i)
-            _w[i] = *(uint32_t *)(msg + i * 4);
-    }
-
-    void fillTail(uint32_t size) { _w[14] = size * 8, _w[15] = size >> 29; }
-    void clear() {  for (int i = 0; i < 16; ++i) _w[i] = 0; }
+    { for (int i = 0; i < 16; ++i) _w[i] = *(uint32_t *)(msg + i * 4); }
 };
-
-   
 
 const uint32_t Chunk::_k[64] = {
 0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee ,
@@ -107,15 +98,11 @@ const uint32_t Chunk::_r[64] = { 7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22, 
                                  4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,
                                  6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21};
 
-Hash Chunk::calc(const Hash &hash)
+Hash Chunk::calc(const Hash &h)
 {
-    uint32_t a, b, c, d, f, g, temp;
-    a = hash.h(0);
-    b = hash.h(1);
-    c = hash.h(2);
-    d = hash.h(3);
+    uint32_t a = h.h(0), b = h.h(1), c = h.h(2), d = h.h(3);
 
-    for (int i = 0; i < 64; ++i)
+    for (unsigned i = 0, f, g; i < 64; ++i)
     {
         if (i < 16)
             f = b & c | ~b & d, g = i;
@@ -126,10 +113,11 @@ Hash Chunk::calc(const Hash &hash)
         else
             f = c ^ (b | ~d), g = (7 * i) % 16;
 
-        temp = d;
+        uint32_t temp = d;
         d = c;
         c = b;
-        b = b + leftRotate(a + f + _k[i] + _w[g], _r[i]);
+        uint32_t x = a + f + _k[i] + _w[g];
+        b += x << _r[i] | x >> 32 - _r[i];
         a = temp;
     }
 
