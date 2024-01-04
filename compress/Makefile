@@ -19,7 +19,7 @@ clean:
 
 test:
 	$(TIME) ./zcatpp < accept.2.Z | md5sum -c accept.2.md5
-	$(TIME) ./zcatc hocus.dat.Z | md5sum -c hocus.dat.md5
+	$(TIME) ./zcat_min.py hocus.dat.Z | md5sum -c hocus.dat.md5
 	$(TIME) ./zcatc httpd-2.0.35.tar.Z | md5sum -c httpd-2.0.35.tar.md5
 	$(TIME) ./extract.py keen1.tar.Z | ./lzw | md5sum -c keen1.tar.md5
 	$(TIME) ./zcatpp < logo.c.Z | md5sum -c logo.c.md5

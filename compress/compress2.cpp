@@ -127,26 +127,6 @@ int main(int argc, char **argv)
 
     bos.write(fcode.e.ent, n_bits);
     bos.flush();
-
-    //print message
-    std::cerr << "Compression: ";
-    int q;
-    const long num = bytes_in - bos.cnt / 8;
-
-    if (bytes_in > 0)
-    {
-        if (num > 214748L)
-            q = int(num / (bytes_in / 10000L));
-        else
-            q = int(10000 * num / bytes_in);
-    }
-    else q = 10000;
-
-    if (q < 0)
-        std::cerr.put('-'), q = -q;
-
-    std::cerr << q / 100 << "." << q % 100 << "%\r\n";
-    std::cerr.flush();
     return 0;
 }
 

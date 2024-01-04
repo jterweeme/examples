@@ -14,13 +14,9 @@ if __name__ == "__main__":
     nbits = 9
     ncodes2 = oldcode = finchar = 0
     xdict = list()
-    while True:
-        buf = bytearray(f.read(nbits))
-        ncodes = len(buf) * 8 // nbits
+    while (ncodes := len(buf := bytearray(f.read(nbits))) * 8 // nbits) > 0:
         buf.append(0)
         bits = 0
-        if ncodes <= 0:
-            break;
         i = 0
         while ncodes > 0:
             window = buf[bits // 8] | buf[bits // 8 + 1] << 8 | buf[bits // 8 + 2] << 16
