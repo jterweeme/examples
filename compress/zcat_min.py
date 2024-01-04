@@ -16,8 +16,7 @@ if __name__ == "__main__":
     xdict = list()
     while (ncodes := len(buf := bytearray(f.read(nbits))) * 8 // nbits) > 0:
         buf.append(0)
-        bits = 0
-        i = 0
+        bits = i = 0
         while ncodes > 0:
             window = buf[bits // 8] | buf[bits // 8 + 1] << 8 | buf[bits // 8 + 2] << 16
             newcode = c = window >> i * (nbits - 8) % 8 & (1 << nbits) - 1
