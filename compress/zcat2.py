@@ -4,7 +4,7 @@
 
 import sys
 
-def codes2(f, bitdepth):
+def codes(f, bitdepth):
     nbits = 9
     ncodes2 = 0
     while (ncodes := len(buf := bytearray(f.read(nbits))) * 8 // nbits) > 0:
@@ -56,6 +56,6 @@ if __name__ == "__main__":
     assert c != -1 and c & 0x80 == 0x80
     bitdepth = c & 0x7f
     assert bitdepth >= 9 and bitdepth <= 16
-    for x in lzw(codes2(f, bitdepth), bitdepth):
+    for x in lzw(codes(f, bitdepth), bitdepth):
         sys.stdout.buffer.write(x)
 

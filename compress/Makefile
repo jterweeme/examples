@@ -26,7 +26,7 @@ test:
 	$(TIME) ./zcat.py logo.c.Z | md5sum -c logo.c.md5
 	$(TIME) ./extractpp logo.c.Z | ./lzw | md5sum -c logo.c.md5
 	$(TIME) ./zcatpp < mjkimage.c.Z | md5sum -c mjkimage.c.md5
-	$(TIME) ./zcat.py mjkimage.c.Z | md5sum -c mjkimage.c.md5
+	$(TIME) ./zcat2.py mjkimage.c.Z | md5sum -c mjkimage.c.md5
 	$(TIME) ./extract.py mjkimage.c.Z | ./lzw | md5sum -c mjkimage.c.md5
 	$(TIME) ./zcat.py mo.m68.tar.Z | md5sum -c mo.m68.tar.md5
 	$(TIME) ./zcat.py mo.ns32.tar.Z | md5sum -c mo.ns32.tar.md5

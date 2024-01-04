@@ -5,12 +5,12 @@
 import sys
 
 class BitInputStream:
-    def __init__(self, file):
-        self.f = open(file, "rb")
+    def __init__(self, fp):
+        self.fp = fp
         self.bits = self.window = 0
     def readBits(self, n):
         while self.bits < n:
-            b = self.f.read(1)
+            b = self.fp.read(1)
             if len(b) == 0:
                 return -1
             c = int.from_bytes(b, 'little')
@@ -61,7 +61,7 @@ def lzw(codegen, bitdepth):
         yield stack
 
 if __name__ == "__main__":
-    bis = BitInputStream(sys.argv[1])
+    bis = BitInputStream(open(sys.argv[1], "rb"))
     assert bis.readBits(16) == 0x9d1f
     bitdepth = bis.readBits(7)
     assert bitdepth >= 9 and bitdepth <= 16
