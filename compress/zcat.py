@@ -21,39 +21,12 @@ class BitInputStream:
         self.bits -= n
         return ret
 
-class LZW:
-    def __init__(self, maxbits):
-        self.maxbits = maxbits
-        self.oldcode = self.finchar = 0
-        self.dict = list()
-    def code(self, incode):
-        c = incode
-        assert c <= len(self.dict) + 256
-        if c == 256:
-            self.dict.clear()
-            return bytearray()
-        stack = bytearray()
-        if c == len(self.dict) + 256:
-            stack.append(self.finchar)
-            c = self.oldcode
-        while c >= 256:
-            stack.append(self.dict[c - 256][1])
-            c = self.dict[c - 256][0]
-        self.finchar = c
-        if len(self.dict) + 256 < 1 << self.maxbits:
-            self.dict.append((self.oldcode, self.finchar))
-        stack.append(self.finchar)
-        stack.reverse()
-        self.oldcode = incode
-        return stack
-
-def codes(bis, maxbits):
-    assert maxbits >= 9 and maxbits <= 16
+def codes(bis, bitdepth):
     cnt = 0
     nbits = 9
     while (c := bis.readBits(nbits)) != -1:
         cnt += 1
-        if cnt == 1 << nbits - 1 and nbits != maxbits:
+        if cnt == 1 << nbits - 1 and nbits != bitdepth:
             nbits += 1
             cnt = 0
         if c == 256:
@@ -64,12 +37,35 @@ def codes(bis, maxbits):
             cnt = 0
         yield c
 
+def lzw(codegen, bitdepth):
+    oldcode = finchar = 0
+    xdict = list()
+    for newcode in codegen:
+        c = newcode
+        assert c <= len(xdict) + 256
+        if c == 256:
+            xdict.clear()
+            continue
+        stack = bytearray()
+        if c == len(xdict) + 256:
+            stack.append(finchar)
+            c = oldcode
+        while c >= 256:
+            stack.append(xdict[c - 256][1])
+            c = xdict[c - 256][0]
+        stack.append(finchar := c)
+        stack.reverse()
+        if len(xdict) + 256 < 1 << bitdepth:
+            xdict.append((oldcode, finchar))
+        oldcode = newcode
+        yield stack
+
 if __name__ == "__main__":
     bis = BitInputStream(sys.argv[1])
     assert bis.readBits(16) == 0x9d1f
-    maxbits = bis.readBits(7)
+    bitdepth = bis.readBits(7)
+    assert bitdepth >= 9 and bitdepth <= 16
     assert bis.readBits(1) == 1 #block mode bit is hardcoded in ncompress
-    lzw = LZW(maxbits)
-    for c in codes(bis, maxbits):
-        sys.stdout.buffer.write(lzw.code(c))
+    for x in lzw(codes(bis, bitdepth), bitdepth):
+        sys.stdout.buffer.write(x)
 

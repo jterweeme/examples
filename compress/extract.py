@@ -4,49 +4,36 @@
 
 import sys
 
-class BitInputStream:
-    def __init__(self, file):
-        self.f = open(file, "rb")
-        self.bits = self.window = self.cnt = 0
-    def readBits(self, n):
-        while self.bits < n:
-            b = self.f.read(1)
-            if len(b) == 0:
-                return -1
-            c = int.from_bytes(b, 'little')
-            self.window |= c << self.bits
-            self.bits += 8
-        ret = self.window & (1 << n) - 1
-        self.window >>= n
-        self.bits -= n
-        self.cnt += n
-        return ret
-
-def codes(bis, maxbits):
-    assert maxbits >= 9 and maxbits <= 16
-    bis.cnt = cnt = 0  #reset bis.cnt counter needed for cumbersome padding formula
-    nbits = 9
-    while (c := bis.readBits(nbits)) != -1:
-        cnt += 1
-        if cnt == 1 << nbits - 1 and nbits != maxbits:
-            nbits += 1
-            cnt = 0
-        if c == 256:
-            #cumbersome padding formula
-            #got it only working with maxbits 13, 15 and 16
-            assert maxbits == 13 or maxbits == 15 or maxbits == 16
-            nb3 = nbits << 3
-            while (bis.cnt - 1 + nb3) % nb3 != nb3 - 1:
-                bis.readBits(nbits)
-            nbits = 9
-            cnt = 0
-        yield c
-
 if __name__ == "__main__":
-    bis = BitInputStream(sys.argv[1])
-    assert bis.readBits(16) == 0x9d1f
-    maxbits = bis.readBits(7)
-    assert bis.readBits(1) == 1 #block mode bit is hardcoded in ncompress
-    for c in codes(bis, maxbits):
-        print(f'{c}')
+    f = open(sys.argv[1], "rb")
+    assert f.read(2) == b'\x1f\x9d'
+    c = int.from_bytes(f.read(1), 'little')
+    assert c != -1 and c & 0x80 == 0x80
+    bitdepth = c & 0x7f
+    assert bitdepth >= 9 and bitdepth <= 16
+    nbits = 9
+    ncodes2 = 0
+    while True:
+        buf = bytearray(f.read(nbits))
+        ncodes = len(buf) * 8 // nbits
+        buf.append(0)
+        bits = 0
+        if ncodes <= 0:
+            break;
+        i = 0
+        while ncodes > 0:
+            window = buf[bits // 8] | buf[bits // 8 + 1] << 8 | buf[bits // 8 + 2] << 16
+            code = window >> i * (nbits - 8) % 8 & (1 << nbits) - 1
+            print(code)
+            if code == 256:
+                nbits = 9
+                ncodes2 = 0
+                break
+            i += 1
+            ncodes -= 1
+            bits += nbits
+            ncodes2 += 1
+        if ncodes2 == 1 << nbits - 1 and nbits != bitdepth:
+            nbits += 1
+            ncodes2 = 0
 
