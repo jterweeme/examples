@@ -8,10 +8,10 @@ int main(int argc, char **argv) {
     assert(fgetc(fp) == 0x1f && fgetc(fp) == 0x9d);
     int c = fgetc(fp);
     assert(c != -1 && c & 0x80);
-    unsigned maxbits = c & 0x7f, oldcode = 0, pos = 256, ncodes, ncodes2 = 0, nbits = 9;
-    assert(maxbits >= 9 && maxbits <= 16);
-    char buf[20], finchar = 0, htab[1 << 16], stack[1000];
-    unsigned short codes[1 << 16];
+    unsigned bitdepth = c & 0x7f, oldcode = 0, pos = 256, ncodes, ncodes2 = 0, nbits = 9;
+    assert(bitdepth >= 9 && bitdepth <= 16);
+    char buf[20], finchar = 0, htab[1 << bitdepth], stack[1000];
+    unsigned short codes[1 << bitdepth];
 
     while ((ncodes = fread(buf, 1, nbits, fp) * 8 / nbits) > 0) {
         for (unsigned i = 0, bits = 0; ncodes; ++i, ++ncodes2, bits += nbits, --ncodes) {
@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
             oldcode = newcode;
         }
 
-        if (ncodes2 == 1U << nbits - 1U && nbits != maxbits)
+        if (ncodes2 == 1U << nbits - 1U && nbits != bitdepth)
             ++nbits, ncodes2 = 0;
     }
 }

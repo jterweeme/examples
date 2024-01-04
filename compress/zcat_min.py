@@ -9,8 +9,7 @@ if __name__ == "__main__":
     assert f.read(2) == b'\x1f\x9d'
     c = int.from_bytes(f.read(1), 'little')
     assert c != -1 and c & 0x80 == 0x80
-    bitdepth = c & 0x7f
-    assert bitdepth >= 9 and bitdepth <= 16
+    assert (bitdepth := c & 0x7f) in range(9, 17)
     nbits = 9
     ncodes2 = oldcode = finchar = 0
     xdict = list()

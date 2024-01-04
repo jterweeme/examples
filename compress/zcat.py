@@ -63,8 +63,7 @@ def lzw(codegen, bitdepth):
 if __name__ == "__main__":
     bis = BitInputStream(open(sys.argv[1], "rb"))
     assert bis.readBits(16) == 0x9d1f
-    bitdepth = bis.readBits(7)
-    assert bitdepth >= 9 and bitdepth <= 16
+    assert (bitdepth := bis.readBits(7)) in range(9, 17)
     assert bis.readBits(1) == 1 #block mode bit is hardcoded in ncompress
     for x in lzw(codes(bis, bitdepth), bitdepth):
         sys.stdout.buffer.write(x)
