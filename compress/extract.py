@@ -11,23 +11,23 @@ if __name__ == "__main__":
     assert c != -1 and c & 0x80 == 0x80
     assert (bitdepth := c & 0x7f) in range(9, 17)
     nbits = 9
-    ncodes2 = 0
-    while (ncodes := len(buf := bytearray(f.read(nbits))) * 8 // nbits) > 0:
-        buf.append(0)
-        bits = i = 0
-        while ncodes > 0:
-            window = buf[bits // 8] | buf[bits // 8 + 1] << 8 | buf[bits // 8 + 2] << 16
-            code = window >> i * (nbits - 8) % 8 & (1 << nbits) - 1
-            print(code)
+    cnt = 0
+    while (ncodes := len(arr := f.read(nbits)) * 8 // nbits) > 0:
+        n = shift = 0
+        for byte in arr:
+            n |= byte << shift
+            shift += 8
+        for i in range(ncodes):
+            code = n & (1 << nbits) - 1
+            print(f'{code}')
+            n = n >> nbits
+            cnt += 1
             if code == 256:
                 nbits = 9
-                ncodes2 = 0
+                cnt = 0
                 break
-            i += 1
-            ncodes -= 1
-            bits += nbits
-            ncodes2 += 1
-        if ncodes2 == 1 << nbits - 1 and nbits != bitdepth:
+        if cnt == 1 << nbits - 1 and nbits != bitdepth:
             nbits += 1
-            ncodes2 = 0
+            cnt = 0
+            
 

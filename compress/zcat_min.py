@@ -11,19 +11,22 @@ if __name__ == "__main__":
     assert c != -1 and c & 0x80 == 0x80
     assert (bitdepth := c & 0x7f) in range(9, 17)
     nbits = 9
-    ncodes2 = oldcode = finchar = 0
+    cnt = oldcode = finchar = 0
     xdict = list()
-    while (ncodes := len(buf := bytearray(f.read(nbits))) * 8 // nbits) > 0:
-        buf.append(0)
-        bits = i = 0
-        while ncodes > 0:
-            window = buf[bits // 8] | buf[bits // 8 + 1] << 8 | buf[bits // 8 + 2] << 16
-            newcode = c = window >> i * (nbits - 8) % 8 & (1 << nbits) - 1
+    while (ncodes := len(arr := f.read(nbits)) * 8 // nbits) > 0:
+        n = shift = 0
+        for byte in arr:
+            n |= byte << shift
+            shift += 8
+        for i in range(ncodes):
+            newcode = c = n & (1 << nbits) - 1
+            n = n >> nbits
+            cnt += 1
             assert c <= len(xdict) + 256
             if c == 256:
-                xdict.clear()
                 nbits = 9
-                ncodes2 = 0
+                cnt = 0
+                xdict.clear()
                 break
             stack = bytearray()
             if c == len(xdict) + 256:
@@ -37,15 +40,9 @@ if __name__ == "__main__":
             if len(xdict) + 256 < 1 << bitdepth:
                 xdict.append((oldcode, finchar))
             oldcode = newcode
-            i += 1
-            ncodes -= 1
-            bits += nbits
-            ncodes2 += 1
             sys.stdout.buffer.write(stack)
-        if ncodes2 == 1 << nbits - 1 and nbits != bitdepth:
+        if cnt == 1 << nbits - 1 and nbits != bitdepth:
             nbits += 1
-            ncodes2 = 0
-            
-            
+            cnt = 0
 
 

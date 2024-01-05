@@ -4,38 +4,26 @@
 
 import sys
 
-class BitInputStream:
-    def __init__(self, fp):
-        self.fp = fp
-        self.bits = self.window = 0
-    def readBits(self, n):
-        while self.bits < n:
-            b = self.fp.read(1)
-            if len(b) == 0:
-                return -1
-            c = int.from_bytes(b, 'little')
-            self.window |= c << self.bits
-            self.bits += 8
-        ret = self.window & (1 << n) - 1
-        self.window >>= n
-        self.bits -= n
-        return ret
-
-def codes(bis, bitdepth):
-    cnt = 0
+def codes(f, bitdepth):
     nbits = 9
-    while (c := bis.readBits(nbits)) != -1:
-        cnt += 1
+    cnt = 0
+    while (ncodes := len(arr := f.read(nbits)) * 8 // nbits) > 0:
+        n = shift = 0
+        for byte in arr:
+            n |= byte << shift
+            shift += 8
+        for i in range(ncodes):
+            code = n & (1 << nbits) - 1
+            yield code
+            n = n >> nbits
+            cnt += 1
+            if code == 256:
+                nbits = 9
+                cnt = 0
+                break
         if cnt == 1 << nbits - 1 and nbits != bitdepth:
             nbits += 1
             cnt = 0
-        if c == 256:
-            while cnt % 8 != 0:
-                bis.readBits(nbits)
-                cnt += 1
-            nbits = 9
-            cnt = 0
-        yield c
 
 def lzw(codegen, bitdepth):
     oldcode = finchar = 0
@@ -61,10 +49,11 @@ def lzw(codegen, bitdepth):
         yield stack
 
 if __name__ == "__main__":
-    bis = BitInputStream(open(sys.argv[1], "rb"))
-    assert bis.readBits(16) == 0x9d1f
-    assert (bitdepth := bis.readBits(7)) in range(9, 17)
-    assert bis.readBits(1) == 1 #block mode bit is hardcoded in ncompress
-    for x in lzw(codes(bis, bitdepth), bitdepth):
+    f = open(sys.argv[1], "rb")
+    assert f.read(2) == b'\x1f\x9d'
+    c = int.from_bytes(f.read(1), 'little')
+    assert c != -1 and c & 0x80 == 0x80
+    assert (bitdepth := c & 0x7f) in range(9, 17)
+    for x in lzw(codes(f, bitdepth), bitdepth):
         sys.stdout.buffer.write(x)
 

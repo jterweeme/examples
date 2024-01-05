@@ -142,7 +142,7 @@ static ostream cout(1, 8192);
 static ostream cerr(2, 8192);
 }
 
-#if 1
+#if 0
 using fast::istream;
 using fast::ostream;
 using fast::ifstream;
@@ -157,6 +157,19 @@ using std::cin;
 using std::cout;
 using std::cerr;
 #endif
+
+class Toolbox
+{
+public:
+    template <class T> static T min(T a, T b) { return b < a ? b : a; }
+    template <class T> static T max(T a, T b) { return a < b ? b : a; }
+
+    static char nibble(uint8_t n)
+    { return n <= 9 ? '0' + char(n) : 'a' + char(n - 10); }
+
+    static void hex32(ostream &os, unsigned dw, unsigned nibbles = 8)
+    { for (unsigned i = 32 - nibbles * 4; i != 32; i += 4) os.put(nibble(dw >> 28 - i & 0xf)); }
+};
 
 class BitStream
 {
@@ -292,7 +305,14 @@ static Generator<unsigned> codes2(istream &is, unsigned maxbits)
 
         if (nbufcodes <= 0)
             break;
+#if 0
+        cout << "0x";
 
+        for (unsigned i = is.gcount(); i > 0; --i)
+            Toolbox::hex32(cout, buf[i - 1], 2);
+
+        cout << "\r\n";
+#endif
         for (unsigned i = 0, bits = 0; nbufcodes--; ++i, bits += nbits, ++ncodes)
         {
             //let op endianess!
@@ -331,7 +351,7 @@ int main(int argc, char **argv)
     for (int code; (code = codes.extract()) != -1;)
         *os << code << "\r\n";
 #else
-    for (auto code = codes1(*is, c & 0x7f); code;)
+    for (auto code = codes2(*is, c & 0x7f); code;)
         *os << code() << "\r\n";
 #endif
     os->flush();
