@@ -5,9 +5,7 @@
 
 #include <cassert>
 #include <cstdint>
-#include <exception>
 #include <coroutine>
-#include <stdexcept>
 #include <vector>
 #include <unistd.h>
 #include <fcntl.h>

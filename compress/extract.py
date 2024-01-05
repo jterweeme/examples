@@ -1,6 +1,6 @@
 #!/usr/bin/pypy3
 
-#Usage ./extract_codes.py archive.Z | ./codesin.py > archive
+#Usage ./extract_codes.py archive.Z | ./lzw > archive
 
 import sys
 
@@ -12,11 +12,8 @@ if __name__ == "__main__":
     assert (bitdepth := c & 0x7f) in range(9, 17)
     nbits = 9
     cnt = 0
-    while (ncodes := len(arr := f.read(nbits)) * 8 // nbits) > 0:
-        n = shift = 0
-        for byte in arr:
-            n |= byte << shift
-            shift += 8
+    while (ncodes := len(buf := f.read(nbits)) * 8 // nbits) > 0:
+        n = int.from_bytes(buf, "little")
         for i in range(ncodes):
             code = n & (1 << nbits) - 1
             print(f'{code}')
