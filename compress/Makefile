@@ -11,11 +11,10 @@ all: clean
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o extractpp extractpp.cpp -std=c++20
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o lzw lzw.cpp
 	gcc $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o zcatc zcatc.c
-	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o zcatcoro zcatcoro.cpp -std=c++20
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o zcatpp zcatpp.cpp -std=c++20
 
 clean:
-	rm -vf compress compress2 extractc extractpp lzw zcatc zcatcoro zcatpp
+	rm -vf compress compress2 extractc extractpp lzw zcatc zcatpp
 
 test:
 	$(TIME) ./zcatpp < accept.2.Z | md5sum -c accept.2.md5
@@ -42,7 +41,6 @@ test:
 	$(TIME) ./zcat_min.py relnotes.ps.Z | md5sum -c relnotes.ps.md5
 	$(TIME) ./zcat_min.py tty.1.Z | md5sum -c tty.1.md5
 	$(TIME) ./zcatpp wk98.iso.Z16 | md5sum -c wk98.iso.md5
-	$(TIME) ./zcatcoro wk98.iso.Z16 | md5sum -c wk98.iso.md5
 	$(TIME) ./extractpp wingames.iso.Z | ./lzw | md5sum -c wingames.iso.md5
 	$(TIME) ./zcat_min.py wingames.iso.Z | md5sum -c wingames.iso.md5
 	$(TIME) ./zcatpp enwik9.Z | md5sum -c enwik9.md5

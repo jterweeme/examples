@@ -48,7 +48,7 @@ def lzw(codegen, bitdepth):
 if __name__ == "__main__":
     f = open(sys.argv[1], "rb")
     assert f.read(2) == b'\x1f\x9d'
-    c = int.from_bytes(f.read(1), 'little')
+    c = int.from_bytes(f.read(1), "little")
     assert c != -1 and c & 0x80 == 0x80
     assert (bitdepth := c & 0x7f) in range(9, 17)
     for x in lzw(codes(f, bitdepth), bitdepth):
