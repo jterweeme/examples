@@ -225,6 +225,7 @@ public:
     void clear() { _pos = 0; }
 };
 
+#if 0
 class LZW
 {
     unsigned _oldcode = 0;
@@ -288,6 +289,36 @@ public:
         return code;
     }
 };
+#endif
+
+static void lzw(unsigned dictcap, ostream &os, Generator<unsigned> codes)
+{
+    Dictionary dict(dictcap);
+    ByteStack stack;
+    unsigned oldcode = 0;
+    char finchar = 0;
+
+    while (codes)
+    {
+        unsigned newcode, c;
+        newcode = c = codes();
+        assert(c <= dict.size());
+        
+        if (c == 256)
+        {
+            dict.clear();
+            continue;
+        }
+
+        if (c == dict.size())
+            stack.push(finchar), c = oldcode;
+
+        dict.lookup(stack, c);
+        dict.store(oldcode, finchar = stack.top());
+        oldcode = newcode;
+        stack.pop_all(os);
+    }
+}
 
 int main(int argc, char **argv)
 {
@@ -302,14 +333,13 @@ int main(int argc, char **argv)
     int c = is->get();
     assert(c >= 0 && c & 0x80);   //block mode bit is hardcoded in ncompress
     const unsigned bitdepth = c & 0x7f;
-    LZW lzw(1 << bitdepth, *os);
 #if 0
+    LZW lzw(1 << bitdepth, *os);
     Codes codes(*is, bitdepth);
     for (auto code; (code = codes.extract()) != -1;)
         lzw.code(code);
 #else
-    for (auto code = codes(*is, bitdepth); code;)
-        lzw.code(code());
+    ::lzw(1 << bitdepth, *os, codes(*is, bitdepth));
 #endif
     os->flush();
     ifs.close();
