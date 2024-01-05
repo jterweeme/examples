@@ -7,11 +7,8 @@ import sys
 def codes(f, bitdepth):
     nbits = 9
     cnt = 0
-    while (ncodes := len(arr := f.read(nbits)) * 8 // nbits) > 0:
-        n = shift = 0
-        for byte in arr:
-            n |= byte << shift
-            shift += 8
+    while (ncodes := len(buf := f.read(nbits)) * 8 // nbits) > 0:
+        n = int.from_bytes(buf, "little")
         for i in range(ncodes):
             code = n & (1 << nbits) - 1
             yield code

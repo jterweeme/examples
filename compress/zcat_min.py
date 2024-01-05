@@ -7,17 +7,14 @@ import sys
 if __name__ == "__main__":
     f = open(sys.argv[1], "rb")
     assert f.read(2) == b'\x1f\x9d'
-    c = int.from_bytes(f.read(1), 'little')
+    c = int.from_bytes(f.read(1), "little")
     assert c != -1 and c & 0x80 == 0x80
     assert (bitdepth := c & 0x7f) in range(9, 17)
     nbits = 9
     cnt = oldcode = finchar = 0
     xdict = list()
-    while (ncodes := len(arr := f.read(nbits)) * 8 // nbits) > 0:
-        n = shift = 0
-        for byte in arr:
-            n |= byte << shift
-            shift += 8
+    while (ncodes := len(buf := f.read(nbits)) * 8 // nbits) > 0:
+        n = int.from_bytes(buf, "little")
         for i in range(ncodes):
             newcode = c = n & (1 << nbits) - 1
             n = n >> nbits
