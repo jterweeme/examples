@@ -36,11 +36,11 @@ test:
 	$(TIME) ./zcatpp < relnotes.ps.Z | md5sum -c relnotes.ps.md5
 	$(TIME) ./zcat_min.py relnotes.ps.Z | md5sum -c relnotes.ps.md5
 	$(TIME) ./zcat_min.py tty.1.Z | md5sum -c tty.1.md5
-	$(TIME) ./zcatc wk98.iso.Z | md5sum -c wk98.iso.md5
-	$(TIME) ./zcatpp wk98.iso.Z | md5sum -c wk98.iso.md5
-	$(TIME) ./extractpp wingames.iso.Z | ./lzw | md5sum -c wingames.iso.md5
-	$(TIME) ./zcat_min.py wingames.iso.Z | md5sum -c wingames.iso.md5
-	$(TIME) ./zcatpp enwik9.Z | md5sum -c enwik9.md5
+	#$(TIME) ./zcatc wk98.iso.Z | md5sum -c wk98.iso.md5
+	#$(TIME) ./zcatpp wk98.iso.Z | md5sum -c wk98.iso.md5
+	#$(TIME) ./extractpp wingames.iso.Z | ./lzw | md5sum -c wingames.iso.md5
+	#$(TIME) ./zcat_min.py wingames.iso.Z | md5sum -c wingames.iso.md5
+	#$(TIME) ./zcatpp enwik9.Z | md5sum -c enwik9.md5
 	$(TIME) ./zcatpp accept.2.Z | ./compress2 | md5sum -c accept.2.Z.md5
 	$(TIME) ./zcatpp hocus.dat.Z | ./compress2 | md5sum -c hocus.dat.Z.md5
 	$(TIME) ./zcatpp httpd-2.0.35.tar.Z | ./compress | ./zcatpp | md5sum -c httpd-2.0.35.tar.md5

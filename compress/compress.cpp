@@ -24,25 +24,27 @@ union Fcode
     } e;
 };
 
-uint8_t outbuf[OBUFSIZ + 2048];
-int outbits;
+static uint8_t outbuf[OBUFSIZ + 2048];
+static int outbits;
 static constexpr long CHECK_GAP = 10000;
-uint8_t inbuf[IBUFSIZ + 64];
-uint64_t htab[HSIZE];
-uint16_t codetab[HSIZE];
-long bytes_in = 0, bytes_out = 0, hp, checkpoint = CHECK_GAP;
-int rpos, rlop, stcode = 1, boff = 0, n_bits = 9, ratio = 0;
-uint32_t free_ent = FIRST;
-uint32_t extcode = 513;
-Fcode fcode;
+static uint8_t inbuf[IBUFSIZ + 64];
+static uint64_t htab[HSIZE];
+static uint16_t codetab[HSIZE];
+static long bytes_in = 0, bytes_out = 0, hp, checkpoint = CHECK_GAP;
+static int rpos, rlop, stcode = 1, boff = 0, ratio = 0, n_bits = 9;
+static uint32_t free_ent = FIRST;
+static uint32_t extcode = 513;
+static Fcode fcode;
 
-#define	output(c)	{ uint8_t *p = &outbuf[(outbits)>>3];\
-    long i = ((long)(c))<<((outbits)&0x7);\
-    p[0] |= uint8_t(i);\
-    p[1] |= uint8_t(i>>8);\
-    p[2] |= uint8_t(i>>16);}
-
-
+static void output(uint16_t c)
+{
+    uint8_t *p = outbuf + outbits / 8;
+    long i = long(c) << (outbits & 0x7);
+    p[0] |= uint8_t(i >>  0);
+    p[1] |= uint8_t(i >>  8);
+    p[2] |= uint8_t(i >> 16);
+    outbits += n_bits;
+}
 
 int main(int argc, char **argv)
 {
@@ -107,7 +109,6 @@ int main(int argc, char **argv)
                     ratio = 0;
                     memset(htab, -1, sizeof(htab));
                     output(256);
-                    outbits += n_bits;
                     const unsigned nb3 = n_bits << 3;
                     boff = outbits = outbits - 1 + nb3 - ((outbits - boff - 1 + nb3) % nb3);
                     n_bits = 9, stcode = 1, free_ent = FIRST;
@@ -177,7 +178,6 @@ int main(int argc, char **argv)
                         continue;
                 
                     output(fcode.e.ent);
-                    outbits += n_bits;
 				    fc = fcode.code;
     				fcode.e.ent = fcode.e.c;
 
@@ -207,10 +207,7 @@ int main(int argc, char **argv)
 	}
 
 	if (bytes_in > 0)
-    {
 		output(fcode.e.ent);
-        outbits += n_bits;
-    }
 
     assert(write(1, outbuf, outbits + 7 >> 3) == outbits + 7 >> 3);
     return 0;
