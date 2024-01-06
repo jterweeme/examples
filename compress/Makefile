@@ -47,6 +47,7 @@ test:
 	$(TIME) ./zcatpp keen1.tar.Z | ./compress2 | md5sum -c keen1.tar.Z.md5
 	$(TIME) ./zcatpp logo.c.Z | ./compress2 | md5sum -c logo.c.Z.md5
 	$(TIME) ./zcatpp mjkimage.c.Z | ./compress2 | md5sum -c mjkimage.c.Z.md5
+	$(TIME) ./zcatpp mo.m68.tar.Z | ./compress | ./zcatpp | md5sum -c mo.m68.tar.md5
 	$(TIME) ./zcatpp relnotes.ps.Z | ./compress2 | md5sum -c relnotes.ps.Z.md5
 	$(TIME) ./zcatpp wingames.iso.Z | ./compress | md5sum -c wingames.iso.Z.md5
 	$(TIME) ./zcatpp wk98.iso.Z | ./compress | md5sum -c wk98.iso.Z.md5

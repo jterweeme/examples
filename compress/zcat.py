@@ -22,7 +22,7 @@ def codes(f, bitdepth):
             nbits += 1
             cnt = 0
 
-def lzw(codegen, bitdepth):
+def lzw(codegen):
     oldcode = finchar = 0
     xdict = list()
     for newcode in codegen:
@@ -40,8 +40,7 @@ def lzw(codegen, bitdepth):
             c = xdict[c - 256][0]
         stack.append(finchar := c)
         stack.reverse()
-        if len(xdict) + 256 < 1 << bitdepth:
-            xdict.append((oldcode, finchar))
+        xdict.append((oldcode, finchar))
         oldcode = newcode
         yield stack
 
@@ -51,6 +50,6 @@ if __name__ == "__main__":
     c = int.from_bytes(f.read(1), "little")
     assert c != -1 and c & 0x80 == 0x80
     assert (bitdepth := c & 0x7f) in range(9, 17)
-    for x in lzw(codes(f, bitdepth), bitdepth):
+    for x in lzw(codes(f, bitdepth)):
         sys.stdout.buffer.write(x)
 

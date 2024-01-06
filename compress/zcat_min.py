@@ -34,8 +34,7 @@ if __name__ == "__main__":
                 c = xdict[c - 256][0]
             stack.append(finchar := c)
             stack.reverse()
-            if len(xdict) + 256 < 1 << bitdepth:
-                xdict.append((oldcode, finchar))
+            xdict.append((oldcode, finchar))
             oldcode = newcode
             sys.stdout.buffer.write(stack)
         if cnt == 1 << nbits - 1 and nbits != bitdepth:
