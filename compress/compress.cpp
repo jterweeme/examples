@@ -13,7 +13,9 @@
 #define FIRST 257
 #define HSIZE 69001
 
-#define	output(b,o,c)	{ uint8_t *p = &(b)[(o)>>3];\
+uint8_t outbuf[OBUFSIZ + 2048];
+
+#define	output(o,c)	{ uint8_t *p = &outbuf[(o)>>3];\
     long i = ((long)(c))<<((o)&0x7);\
     p[0] |= uint8_t(i);\
     p[1] |= uint8_t(i>>8);\
@@ -34,11 +36,10 @@ int main(int argc, char **argv)
     static constexpr long CHECK_GAP = 10000;
     const int fdout = 1;
     uint8_t inbuf[IBUFSIZ + 64];
-    uint8_t outbuf[OBUFSIZ + 2048];
     uint64_t htab[HSIZE];
     uint16_t codetab[HSIZE];
     long bytes_in = 0, bytes_out = 0, hp, fc, checkpoint = CHECK_GAP;
-    int rpos, outbits, rlop, stcode = 1, boff, n_bits = 9, ratio = 0;
+    int rpos, outbits = 0, rlop, stcode = 1, boff = 0, n_bits = 9, ratio = 0;
     uint32_t free_ent = FIRST;
     uint32_t extcode = (1 << n_bits) + 1;
     Fcode fcode;
@@ -46,7 +47,7 @@ int main(int argc, char **argv)
     outbuf[0] = 0x1f;
     outbuf[1] = 0x9d;
     outbuf[2] = char(16 | 0x80);
-    boff = outbits = 3 << 3;
+    outbits = boff = 3 << 3;
     fcode.code = 0;
     memset(htab, -1, sizeof(htab));
     ssize_t rsize;
@@ -69,7 +70,7 @@ int main(int argc, char **argv)
             {
                 if (n_bits < 16)
                 {
-                    const uint8_t nb3 = n_bits << 3;
+                    const unsigned nb3 = n_bits << 3;
                     boff = outbits = outbits - 1 + nb3 - ((outbits - boff - 1 + nb3) % nb3);
                     ++n_bits;
                     extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << 16;
@@ -83,7 +84,7 @@ int main(int argc, char **argv)
 
             if (!stcode && bytes_in >= checkpoint && fcode.e.ent < FIRST)
             {
-                long int rat;
+                long rat;
                 checkpoint = bytes_in + CHECK_GAP;
 
                 if (bytes_in > 0x007fffff)
@@ -102,9 +103,9 @@ int main(int argc, char **argv)
                 {
                     ratio = 0;
                     memset(htab, -1, sizeof(htab));
-                    output(outbuf, outbits, 256);
+                    output(outbits, 256);
                     outbits += n_bits;
-                    const uint8_t nb3 = n_bits << 3;
+                    const unsigned nb3 = n_bits << 3;
                     boff = outbits = outbits - 1 + nb3 - ((outbits - boff - 1 + nb3) % nb3);
                     n_bits = 9, stcode = 1, free_ent = FIRST;
                     extcode = 1 << n_bits;
@@ -132,57 +133,67 @@ int main(int argc, char **argv)
                 rlop += i, bytes_in += i;
             }
 
-            goto next;
-hfound:
-            fcode.e.ent = codetab[hp];
-next:
-            if (rpos >= rlop)
-                goto endlop;
-next2:
-            fcode.e.c = inbuf[rpos++];
-            long i;
-            fc = fcode.code;
-            hp = long(fcode.e.c) <<  8 ^ long(fcode.e.ent);
+            bool flag = false;
 
-            if ((i = htab[hp]) == fc)
-                goto hfound;
-
-            if (i != -1)
+            while (true)
             {
-                long disp = HSIZE - hp - 1;	
+                if (flag)
+                    fcode.e.ent = codetab[hp];
 
-                do
+                flag = false;
+
+                if (rpos >= rlop)
+                    break;
+next2:
+                fcode.e.c = inbuf[rpos++];
+                long i;
+                fc = fcode.code;
+                hp = long(fcode.e.c) <<  8 ^ long(fcode.e.ent);
+
+                if ((i = htab[hp]) == fc)
                 {
-                    if ((hp -= disp) < 0)
-                        hp += HSIZE;
-
-                    if ((i = htab[hp]) == fc)
-                        goto hfound;
+                    flag = true;
+                    continue;
                 }
-                while (i != -1);
-            }
-            output(outbuf, outbits, fcode.e.ent);
-            outbits += n_bits;
 
-			{
-				const long fc = fcode.code;
+                if (i != -1)
+                {
+                    long disp = HSIZE - hp - 1;	
+
+                    do
+                    {
+                        if ((hp -= disp) < 0)
+                            hp += HSIZE;
+
+                        if ((i = htab[hp]) == fc)
+                        {
+                            flag = true;
+                            break;
+                        }
+                    }
+                    while (i != -1);
+
+                    if (flag)
+                        continue;
+                }
+                output(outbits, fcode.e.ent);
+                outbits += n_bits;
+				const long fc2 = fcode.code;
 				fcode.e.ent = fcode.e.c;
 
 				if (stcode)
 				{
 					codetab[hp] = (uint16_t)free_ent++;
-					htab[hp] = fc;
+					htab[hp] = fc2;
 				}
-			}
+            }
 
-			goto next;
-endlop:
             if (fcode.e.ent >= FIRST && rpos < rsize)
 				goto next2;
 
 			if (rpos > rlop)
 			{
-				bytes_in += rpos-rlop;
+				bytes_in += rpos - rlop;
 				rlop = rpos;
 			}
 		}
@@ -193,7 +204,7 @@ endlop:
 
 	if (bytes_in > 0)
     {
-		output(outbuf, outbits, fcode.e.ent);
+		output(outbits, fcode.e.ent);
         outbits += n_bits;
     }
 
