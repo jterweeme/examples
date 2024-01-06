@@ -5,6 +5,7 @@ WARNINGS = -Wall -Wno-parentheses -Wno-unused-function
 DEBUG = -g
 
 all: clean
+	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o codify codify.cpp
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o compress compress.cpp
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o compress2 compress2.cpp
 	gcc $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o extractc extractc.c
