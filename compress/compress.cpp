@@ -7,20 +7,12 @@
 #include <algorithm>
 #include <fcntl.h>
 #include <unistd.h>
+#include <iostream>
 
 #define	IBUFSIZ	8192
 #define	OBUFSIZ	8192
 #define FIRST 257
 #define HSIZE 69001
-
-uint8_t outbuf[OBUFSIZ + 2048];
-int outbits;
-
-#define	output(c)	{ uint8_t *p = &outbuf[(outbits)>>3];\
-    long i = ((long)(c))<<((outbits)&0x7);\
-    p[0] |= uint8_t(i);\
-    p[1] |= uint8_t(i>>8);\
-    p[2] |= uint8_t(i>>16);}
 
 union Fcode
 {
@@ -32,18 +24,28 @@ union Fcode
     } e;
 };
 
+uint8_t outbuf[OBUFSIZ + 2048];
+int outbits;
+static constexpr long CHECK_GAP = 10000;
+uint8_t inbuf[IBUFSIZ + 64];
+uint64_t htab[HSIZE];
+uint16_t codetab[HSIZE];
+long bytes_in = 0, bytes_out = 0, hp, checkpoint = CHECK_GAP;
+int rpos, rlop, stcode = 1, boff = 0, n_bits = 9, ratio = 0;
+uint32_t free_ent = FIRST;
+uint32_t extcode = 513;
+Fcode fcode;
+
+#define	output(c)	{ uint8_t *p = &outbuf[(outbits)>>3];\
+    long i = ((long)(c))<<((outbits)&0x7);\
+    p[0] |= uint8_t(i);\
+    p[1] |= uint8_t(i>>8);\
+    p[2] |= uint8_t(i>>16);}
+
+
+
 int main(int argc, char **argv)
 {
-    static constexpr long CHECK_GAP = 10000;
-    const int fdout = 1;
-    uint8_t inbuf[IBUFSIZ + 64];
-    uint64_t htab[HSIZE];
-    uint16_t codetab[HSIZE];
-    long bytes_in = 0, bytes_out = 0, hp, fc, checkpoint = CHECK_GAP;
-    int rpos, rlop, stcode = 1, boff = 0, n_bits = 9, ratio = 0;
-    uint32_t free_ent = FIRST;
-    uint32_t extcode = (1 << n_bits) + 1;
-    Fcode fcode;
     memset(outbuf, 0, sizeof(outbuf));
     outbuf[0] = 0x1f;
     outbuf[1] = 0x9d;
@@ -116,7 +118,7 @@ int main(int argc, char **argv)
 
             if (outbits >= OBUFSIZ << 3)
             {
-                assert(write(fdout, outbuf, OBUFSIZ) == OBUFSIZ);
+                assert(write(1, outbuf, OBUFSIZ) == OBUFSIZ);
                 outbits -= OBUFSIZ << 3;
                 boff = -(((OBUFSIZ << 3) - boff) % (n_bits << 3));
                 bytes_out += OBUFSIZ;
@@ -124,16 +126,13 @@ int main(int argc, char **argv)
                 memset(outbuf + (outbits >> 3) + 1, '\0', OBUFSIZ);
             }
 
-            {
-                int i = std::min(int(rsize - rlop), int(extcode - free_ent));
-                i = std::min(i, int(((sizeof(outbuf) - 32) * 8 - outbits) / n_bits));
+            int i = std::min(int(rsize - rlop), int(extcode - free_ent));
+            i = std::min(i, int(((sizeof(outbuf) - 32) * 8 - outbits) / n_bits));
 
-                if (!stcode)
-                    i = std::min(i, int(checkpoint - bytes_in));
+            if (!stcode)
+                i = std::min(i, int(checkpoint - bytes_in));
 
-                rlop += i, bytes_in += i;
-            }
-
+            rlop += i, bytes_in += i;
             bool flag = false;
             bool flag2 = true;
 
@@ -151,7 +150,7 @@ int main(int argc, char **argv)
                     flag2 = true;
                     fcode.e.c = inbuf[rpos++];
                     long i;
-                    fc = fcode.code;
+                    long fc = fcode.code;
                     hp = long(fcode.e.c) <<  8 ^ long(fcode.e.ent);
 
                     if ((i = htab[hp]) == fc)
@@ -179,13 +178,13 @@ int main(int argc, char **argv)
                 
                     output(fcode.e.ent);
                     outbits += n_bits;
-				    const long fc2 = fcode.code;
+				    fc = fcode.code;
     				fcode.e.ent = fcode.e.c;
 
 	    			if (stcode)
 		    		{
 			    		codetab[hp] = (uint16_t)free_ent++;
-				    	htab[hp] = fc2;
+				    	htab[hp] = fc;
     				}
                 }
 
@@ -207,15 +206,13 @@ int main(int argc, char **argv)
 		while (rlop < rsize);
 	}
 
-    assert(rsize >= 0);
-
 	if (bytes_in > 0)
     {
 		output(fcode.e.ent);
         outbits += n_bits;
     }
 
-    assert(write(fdout, outbuf, outbits + 7 >> 3) == outbits + 7 >> 3);
+    assert(write(1, outbuf, outbits + 7 >> 3) == outbits + 7 >> 3);
     return 0;
 }
 
