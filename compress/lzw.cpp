@@ -10,7 +10,10 @@
 #include <iostream>
 #include <fstream>
 
-namespace fast
+using std::string;
+using std::vector;
+
+namespace my
 {
 
 class istream
@@ -60,30 +63,7 @@ public:
     void flush() { ::write(_fd, _buf, _pos), _pos = 0; }
 };
 
-static istream cin(0, 8192);
-static ostream cout(1, 8192);
-static ostream cerr(2, 8192);
-
-}
-
-#if 1
-using fast::ostream;
-using fast::istream;
-using fast::ifstream;
-using fast::cin;
-using fast::cout;
-using fast::cerr;
-#else
-using std::ostream;
-using std::istream;
-using std::ifstream;
-using std::cout;
-using std::cin;
-#endif
-using std::string;
-using std::vector;
-
-static int my_stoi(string &s)
+static int stoi(string &s)
 {
     int ret = 0;
 
@@ -98,7 +78,7 @@ static int my_stoi(string &s)
     return ret;
 }
 
-static bool my_getline(istream &is, string &s)
+static bool getline(istream &is, string &s)
 {
     s.clear();
     
@@ -112,6 +92,26 @@ static bool my_getline(istream &is, string &s)
 
     return false;
 }
+
+static istream cin(0, 8192);
+static ostream cout(1, 8192);
+static ostream cerr(2, 8192);
+}
+
+#if 1
+using my::ostream;
+using my::istream;
+using my::ifstream;
+using my::cin;
+using my::cout;
+using my::cerr;
+#else
+using std::ostream;
+using std::istream;
+using std::ifstream;
+using std::cout;
+using std::cin;
+#endif
 
 class ByteStack
 {
@@ -194,8 +194,8 @@ int main(int argc, char **argv)
 
     LZW lzw(1 << 16, *os);
 
-    for (string s; my_getline(*is, s);)
-        lzw.code(my_stoi(s));
+    for (string s; my::getline(*is, s);)
+        lzw.code(std::stoi(s));
 
     os->flush();
     ifs.close();

@@ -161,30 +161,6 @@ public:
     }
 };
 
-static Generator<unsigned> codes(istream &is, unsigned maxbits)
-{
-    assert(maxbits >= 9 && maxbits <= 16);
-    BitStream bis(is);
-    unsigned cnt = 0, nbits = 9;
-
-    for (int code; (code = bis.readBits(nbits)) != -1;)
-    {
-        //read 256 9-bit codes, 512 10-bit codes, 1024 11-bit codes, etc
-        if (++cnt == 1U << nbits - 1 && nbits != maxbits)
-            ++nbits, cnt = 0;
-
-        if (code == 256)
-        {
-            while (cnt++ % 8 != 0)
-                bis.readBits(nbits);
-
-            cnt = 0, nbits = 9;
-        }
-
-        co_yield code;
-    }
-}
-
 class ByteStack
 {
     vector<char> _stack;
@@ -223,73 +199,34 @@ public:
     void clear() { _pos = 0; }
 };
 
-#if 0
-class LZW
+static Generator<unsigned>
+codes(istream &is, unsigned bitdepth)
 {
-    unsigned _oldcode = 0;
-    char _finchar;
-    ostream &_os;
-    Dictionary _dict;
-    ByteStack _stack;
-public:
-    LZW(unsigned dictcap, ostream &os) : _os(os), _dict(dictcap) { }
+    assert(bitdepth >= 9 && bitdepth <= 16);
+    BitStream bis(is);
+    unsigned cnt = 0, nbits = 9;
 
-    inline void code(const unsigned in)
+    for (int code; (code = bis.readBits(nbits)) != -1;)
     {
-        assert(in <= _dict.size());
-        auto c = in;
-
-        if (in == 256)
-        {
-            _dict.clear();
-            return;
-        }
-
-        if (c == _dict.size())
-            _stack.push(_finchar), c = _oldcode;
-
-        _dict.lookup(_stack, c);
-        _finchar = _stack.top();
-        _dict.store(_oldcode, _finchar);
-        _oldcode = in;
-        _stack.pop_all(_os);
-    }
-};
-
-class Codes
-{
-    BitStream _bis;
-    const unsigned _maxbits;
-    unsigned _cnt = 0, _nbits = 9;
-public:
-    Codes(istream &is, unsigned maxbits) : _bis(is), _maxbits(maxbits)
-    {
-        assert(maxbits >= 9 && maxbits <= 16);
-    }
-
-    int extract()
-    {
-        int code = _bis.readBits(_nbits);
-
         //read 256 9-bit codes, 512 10-bit codes, 1024 11-bit codes, etc
-        if (++_cnt == 1U << _nbits - 1U && _nbits != _maxbits)
-            ++_nbits, _cnt = 0;
+        if (++cnt == 1U << nbits - 1 && nbits != bitdepth)
+            ++nbits, cnt = 0;
 
+        //and x number of bitdepth (usually 16 bit) codes until code 256
         if (code == 256)
         {
-            //padding (blocks of 8 codes)
-            while (_cnt++ % 8 != 0)
-                _bis.readBits(_nbits);
+            while (cnt++ % 8 != 0)
+                bis.readBits(nbits);
 
-            _cnt = 0, _nbits = 9;
+            cnt = 0, nbits = 9;
         }
 
-        return code;
+        co_yield code;
     }
-};
-#endif
+}
 
-static void lzw(unsigned dictcap, ostream &os, Generator<unsigned> codes)
+static void
+lzw(unsigned dictcap, ostream &os, Generator<unsigned> codes)
 {
     Dictionary dict(dictcap);
     ByteStack stack;
@@ -331,14 +268,7 @@ int main(int argc, char **argv)
     int c = is->get();
     assert(c >= 0 && c & 0x80);   //block mode bit is hardcoded in ncompress
     const unsigned bitdepth = c & 0x7f;
-#if 0
-    LZW lzw(1 << bitdepth, *os);
-    Codes codes(*is, bitdepth);
-    for (auto code; (code = codes.extract()) != -1;)
-        lzw.code(code);
-#else
     ::lzw(1 << bitdepth, *os, codes(*is, bitdepth));
-#endif
     os->flush();
     ifs.close();
     return 0;
