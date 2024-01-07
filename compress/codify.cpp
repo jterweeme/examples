@@ -41,20 +41,12 @@ static Fcode fcode;
 static void output(uint16_t c)
 {
     cout << c << "\r\n";
-    uint8_t *p = outbuf + outbits / 8;
-    long i = long(c) << (outbits & 0x7);
-    p[0] |= uint8_t(i >>  0);
-    p[1] |= uint8_t(i >>  8);
-    p[2] |= uint8_t(i >> 16);
     outbits += n_bits;
 }
 
 int main(int argc, char **argv)
 {
     memset(outbuf, 0, sizeof(outbuf));
-    outbuf[0] = 0x1f;
-    outbuf[1] = 0x9d;
-    outbuf[2] = char(16 | 0x80);
     outbits = boff = 3 << 3;
     fcode.code = 0;
     memset(htab, -1, sizeof(htab));
@@ -122,12 +114,9 @@ int main(int argc, char **argv)
 
             if (outbits >= OBUFSIZ << 3)
             {
-                //assert(write(1, outbuf, OBUFSIZ) == OBUFSIZ);
                 outbits -= OBUFSIZ << 3;
                 boff = -(((OBUFSIZ << 3) - boff) % (n_bits << 3));
                 bytes_out += OBUFSIZ;
-                memcpy(outbuf, outbuf + OBUFSIZ, (outbits >> 3) + 1);
-                memset(outbuf + (outbits >> 3) + 1, '\0', OBUFSIZ);
             }
 
             int i = std::min(int(rsize - rlop), int(extcode - free_ent));
@@ -212,7 +201,6 @@ int main(int argc, char **argv)
 	if (bytes_in > 0)
 		output(fcode.e.ent);
 
-    //assert(write(1, outbuf, outbits + 7 >> 3) == outbits + 7 >> 3);
     return 0;
 }
 
