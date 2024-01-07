@@ -196,7 +196,7 @@ int main()
 
         if (code == 256)
         {
-            for (; cnt % 8; ++cnt)
+            while (cnt++ % 8)
                 bos.write(0, nbits);
 
             nbits = 9, cnt = 0;

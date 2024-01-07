@@ -227,19 +227,19 @@ public:
     }
 };
 
-static Generator<unsigned> codes1(istream &is, unsigned maxbits)
+static Generator<unsigned> codes1(istream &is, unsigned bitdepth)
 {
     BitStream bis(is);
     unsigned cnt = 0, nbits = 9;
 
     for (int code; (code = bis.readBits(nbits)) != -1;)
     {
-        if (++cnt == 1U << nbits - 1 && nbits != maxbits)
+        if (++cnt == 1U << nbits - 1 && nbits != bitdepth)
             ++nbits, cnt = 0;
 
         if (code == 256)
         {
-            for (const unsigned nb3 = nbits << 3; (bis.cnt() - 1U + nb3) % nb3 != nb3 - 1U;)
+            while (cnt++ % 8)
                 bis.readBits(nbits);
 
             cnt = 0, nbits = 9;
@@ -351,7 +351,7 @@ int main(int argc, char **argv)
     for (int code; (code = codes.extract()) != -1;)
         *os << code << "\r\n";
 #else
-    for (auto code = codes2(*is, c & 0x7f); code;)
+    for (auto code = codes1(*is, c & 0x7f); code;)
         *os << code() << "\r\n";
 #endif
     os->flush();
