@@ -1,17 +1,76 @@
 //This is a comment
 //I love comments
 
+#include <coroutine>
 #include <cassert>
 #include <cstdint>
 #include <vector>
-#include <string>
 #include <unistd.h>
 #include <fcntl.h>
 #include <iostream>
 #include <fstream>
 
-using std::string;
 using std::vector;
+using std::exception_ptr;
+using std::convertible_to;
+using std::suspend_always;
+using std::coroutine_handle;
+using std::current_exception;
+using std::move;
+using std::rethrow_exception;
+using std::runtime_error;
+using std::forward;
+
+//boilerplate
+template <typename T> class Generator
+{
+public:
+    struct promise_type
+    {
+        exception_ptr exception;
+        T value;
+        suspend_always initial_suspend() { return {}; }
+        suspend_always final_suspend() noexcept { return {}; }
+        void unhandled_exception() { exception = current_exception(); }
+        void return_void() {}
+
+        Generator get_return_object()
+        { return Generator(coroutine_handle<promise_type>::from_promise(*this)); }
+
+        template <convertible_to<T> From> suspend_always yield_value(From &&from)
+        {
+            value = forward<From>(from);
+            return {};
+        }
+    };
+private:
+    coroutine_handle<promise_type> _h;
+    bool _full = false;
+
+    void _fill()
+    {
+        if (!_full)
+        {
+            _h();
+
+            if (_h.promise().exception)
+                rethrow_exception(_h.promise().exception);
+
+            _full = true;
+        }
+    }
+public:
+    Generator(coroutine_handle<promise_type> h) : _h(h) {}
+    ~Generator() { _h.destroy(); }
+    explicit operator bool() { _fill(); return !_h.done(); }
+
+    T operator()()
+    {
+        _fill();
+        _full = false;
+        return move(_h.promise().value);
+    }
+};
 
 namespace my
 {
@@ -63,36 +122,6 @@ public:
     void flush() { ::write(_fd, _buf, _pos), _pos = 0; }
 };
 
-static int stoi(string &s)
-{
-    int ret = 0;
-
-    for (char c : s)
-    {
-        if (!isdigit(c))
-            break;
-        
-        ret = ret * 10 + (c - '0');
-    }
-
-    return ret;
-}
-
-static bool getline(istream &is, string &s)
-{
-    s.clear();
-    
-    for (int c; (c = is.get()) != -1;)
-    {
-        if (c != '\r' && c != '\n')
-            s.push_back(c);
-        else if (s.size() > 0)
-            return true;
-    }
-
-    return false;
-}
-
 static istream cin(0, 8192);
 static ostream cout(1, 8192);
 static ostream cerr(2, 8192);
@@ -132,7 +161,7 @@ public:
         s.push(code);
     }
 
-    void append(unsigned code, uint8_t c)
+    void store(unsigned code, uint8_t c)
     {
         if (_pos + 256 < _cap)
             _codes[_pos] = code, _bytes[_pos] = c, ++_pos;
@@ -143,37 +172,58 @@ public:
     void clear() { _pos = 0; }
 };
 
-class LZW
+static Generator<unsigned> codes(istream &is)
 {
-    unsigned _oldcode = 0;
-    uint8_t _finchar;
-    Dictionary _dict;
-    ostream &_os; 
-    ByteStack _stack;
-public:
-    LZW(unsigned dictcap, ostream &os) : _dict(dictcap), _os(os) { }
+    unsigned n = 0;
+    bool flag = false;
 
-    inline void code(const unsigned in)
+    for (int c; (c = is.get()) != -1;)
     {
-        assert(in <= _dict.size());
-        auto c = in;
-
-        if (in == 256)
+        if (isdigit(c))
         {
-            _dict.clear();
-            return;
+            flag = true;
+            n = n * 10 + c - '0';
+        }
+        else
+        {
+            if (flag)
+                co_yield n;
+
+            flag = false;
+            n = 0;
+        }
+    }
+}
+
+static void
+lzw(unsigned dictcap, ostream &os, Generator<unsigned> codes)
+{
+    Dictionary dict(dictcap);
+    ByteStack stack;
+    unsigned oldcode = 0;
+    char finchar = 0;
+
+    while (codes)
+    {
+        unsigned newcode, c;
+        newcode = c = codes();
+        assert(c <= dict.size());
+
+        if (c == 256)
+        {
+            dict.clear();
+            continue;
         }
 
-        if (c == _dict.size())
-            _stack.push(_finchar), c = _oldcode;
+        if (c == dict.size())
+            stack.push(finchar), c = oldcode;
 
-        _dict.lookup(_stack, c);
-        _finchar = _stack.top();
-        _dict.append(_oldcode, _finchar);
-        _oldcode = in;
-        _stack.pop_all(_os);
+        dict.lookup(stack, c);
+        dict.store(oldcode, finchar = stack.top());
+        oldcode = newcode;
+        stack.pop_all(os);
     }
-};
+}
 
 int main(int argc, char **argv)
 {
@@ -184,11 +234,7 @@ int main(int argc, char **argv)
     if (argc > 1)
         ifs.open(argv[1]), is = &ifs;
 
-    LZW lzw(1 << 16, *os);
-
-    for (string s; my::getline(*is, s);)
-        lzw.code(std::stoi(s));
-
+    ::lzw(1 << 16, *os, ::codes(*is));
     os->flush();
     ifs.close();
     return 0;

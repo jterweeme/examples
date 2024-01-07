@@ -10,7 +10,7 @@ all: clean
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o compress2 compress2.cpp
 	gcc $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o extractc extractc.c
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o extractpp extractpp.cpp -std=c++20
-	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o lzw lzw.cpp
+	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o lzw lzw.cpp -std=c++20
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o press press.cpp -std=c++20
 	gcc $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o zcatc zcatc.c
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o zcatpp zcatpp.cpp -std=c++20
