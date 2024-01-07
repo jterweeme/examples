@@ -98,20 +98,12 @@ static ostream cout(1, 8192);
 static ostream cerr(2, 8192);
 }
 
-#if 1
 using my::ostream;
 using my::istream;
 using my::ifstream;
 using my::cin;
 using my::cout;
 using my::cerr;
-#else
-using std::ostream;
-using std::istream;
-using std::ifstream;
-using std::cout;
-using std::cin;
-#endif
 
 class ByteStack
 {

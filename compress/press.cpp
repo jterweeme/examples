@@ -14,7 +14,6 @@ using std::move;
 using std::rethrow_exception;
 using std::runtime_error;
 using std::forward;
-using std::string;
 
 
 //boilerplate
@@ -120,36 +119,6 @@ public:
     inline ostream& operator<<(const char *s) { while (*s) put(*s++); return *this; }
 };
 
-static int stoi(string &s)
-{
-    int ret = 0;
-    
-    for (char c : s)
-    {
-        if (!isdigit(c))
-            break; 
-
-        ret = ret * 10 + (c - '0');
-    }
-
-    return ret; 
-}   
-
-static bool getline(istream &is, string &s)
-{
-    s.clear();
-    
-    for (int c; (c = is.get()) != -1;)
-    {
-        if (c != '\r' && c != '\n')
-            s.push_back(c);
-        else if (s.size() > 0)
-            return true;
-    }
-
-    return false;
-}
-
 static istream cin(0, 8192);
 static ostream cout(1, 8192);
 static ostream cerr(2, 8192);
@@ -188,8 +157,25 @@ public:
 
 static Generator<unsigned> codes(istream &is)
 {
-    for (string s; my::getline(is, s);)
-        co_yield my::stoi(s);
+    unsigned n = 0;
+    bool flag = false;
+
+    for (int c; (c = is.get()) != -1;)
+    {
+        if (isdigit(c))
+        {
+            flag = true;
+            n = n * 10 + c - '0';
+        }
+        else
+        {
+            if (flag)
+                co_yield n;
+
+            flag = false;
+            n = 0;
+        }
+    }
 }
 
 int main()
@@ -205,7 +191,6 @@ int main()
     for (auto codes = ::codes(cin); codes;)
     {
         unsigned code = codes();
-        //cerr << code << "\r\n";
         bos.write(code, nbits);
         ++cnt;
 
