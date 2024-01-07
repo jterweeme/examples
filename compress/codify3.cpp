@@ -26,7 +26,6 @@ int main(int argc, char **argv)
     fcode.e.ent = is->get();
     unsigned n_bits = 9, free_ent = 257;
     unsigned extcode = (1 << n_bits) + 1, htab[HSIZE];
-    bool stcode = true;
 
     for (int byte; (byte = is->get()) != -1;)
     {
@@ -38,7 +37,7 @@ int main(int argc, char **argv)
             {
                 std::fill(codetab, codetab + HSIZE, 0);
                 *os << 256 << "\r\n";
-                n_bits = 9, stcode = true, free_ent = 257;
+                n_bits = 9, free_ent = 257;
                 extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << n_bits;
             }
         }
@@ -66,9 +65,7 @@ int main(int argc, char **argv)
             *os << fcode.e.ent << "\r\n";
             fc = fcode.code;
             fcode.e.ent = fcode.e.c;
-
-            if (stcode)
-                codetab[hp] = free_ent++, htab[hp] = fc;
+            codetab[hp] = free_ent++, htab[hp] = fc;
         }
     }
 
