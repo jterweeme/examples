@@ -164,6 +164,8 @@ static Generator<unsigned> codify(istream &is)
 int main(int argc, char **argv)
 {
     auto os = &cout;
+    static constexpr unsigned bitdepth = 16;
+#if 1
     BitOutputStream bos(*os);
     bos.write(0x9d1f, 16);
     bos.write(16, 7);
@@ -189,6 +191,16 @@ int main(int argc, char **argv)
     }
 
     bos.flush();
+#else
+    char buf[20];
+start_block:
+    for (unsigned nbits = 9; nbits <= bitdepth; ++nbits)
+    {
+        for (unsigned i = 0; i < 1U << nbits - 1 || nbits == bitdepth; ++i)
+        {
+        }
+    }
+#endif
     os->flush();
     return 0;
 }

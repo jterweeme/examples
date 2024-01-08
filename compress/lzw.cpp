@@ -1,5 +1,4 @@
-//This is a comment
-//I love comments
+//Usage: ./extractc archive.Z | ./lzw > archive
 
 #include <coroutine>
 #include <cassert>

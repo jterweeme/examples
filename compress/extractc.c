@@ -1,6 +1,7 @@
+//Usage: ./extractc archive.Z | ./lzw > archive
+
 #include <stdio.h>
 #include <assert.h>
-#include <stdint.h>
 
 int main(int argc, char **argv)
 {
@@ -10,7 +11,7 @@ int main(int argc, char **argv)
     assert(c != -1 && c & 0x80);
     unsigned bitdepth = c & 0x7f;
     assert(bitdepth >= 9 && bitdepth <= 16);
-    uint8_t buf[20];
+    char buf[20];
 start_block:
     for (unsigned nbits = 9; nbits <= bitdepth; ++nbits)
     {
