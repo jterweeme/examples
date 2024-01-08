@@ -19,7 +19,7 @@ all: clean
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o zcatpp zcatpp.cpp -std=c++20
 
 clean:
-	rm -vf codify codify2 codify3 compress compress2 extractc extractpp lzw press zcatc zcatpp
+	rm -vf codify codify2 codify3 compress compress2 compress3 extractc extractpp lzw press zcatc zcatpp
 
 test:
 	$(TIME) ./zcatpp < accept.2.Z | md5sum -c accept.2.md5

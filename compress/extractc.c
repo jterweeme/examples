@@ -8,27 +8,27 @@ int main(int argc, char **argv)
     assert(fgetc(fp) == 0x1f && fgetc(fp) == 0x9d);
     int c = fgetc(fp);
     assert(c != -1 && c & 0x80);
-    unsigned maxbits = c & 0x7f, ncodes, ncodes2 = 0, nbits = 9;
-    assert(maxbits >= 9 && maxbits <= 16);
+    unsigned bitdepth = c & 0x7f;
+    assert(bitdepth >= 9 && bitdepth <= 16);
     uint8_t buf[20];
-
-    while ((ncodes = fread(buf, 1, nbits, fp) * 8 / nbits) > 0)
+start_block:
+    for (unsigned nbits = 9; nbits <= bitdepth; ++nbits)
     {
-        for (unsigned i = 0, bits = 0; ncodes--; ++i, ++ncodes2, bits += nbits)
+        for (unsigned i = 0, ncodes; i < 1U << nbits - 1 || nbits == bitdepth;)
         {
-            unsigned *window = (unsigned *)(buf + bits / 8);
-            unsigned code = *window >> i * (nbits - 8) % 8 & (1 << nbits) - 1;
-            printf("%u\r\n", code);
+            if ((ncodes = fread(buf, 1, nbits, fp) * 8 / nbits) == 0)
+                return 0;
 
-            if (code == 256)
+            for (unsigned j = 0, bits = 0; ncodes--; ++j, ++i, bits += nbits)
             {
-                nbits = 9, ncodes2 = 0;
-                break;
+                unsigned *window = (unsigned *)(buf + bits / 8);
+                unsigned code = *window >> j * (nbits - 8) % 8 & (1 << nbits) - 1;
+                printf("%u\r\n", code);
+
+                if (code == 256)
+                    goto start_block;
             }
         }
-
-        if (ncodes2 == 1U << nbits - 1U && nbits != maxbits)
-            ++nbits, ncodes2 = 0;
     }
 }
 

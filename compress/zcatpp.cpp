@@ -125,41 +125,12 @@ static istream cin(0, 8192);
 static ostream cout(1, 8192);
 }
 
-#if 1
-using fast::istream;
 using fast::ostream;
-using fast::ifstream;
-using fast::cin;
-using fast::cout;
-#else
 using std::istream;
-using std::ostream;
 using std::ifstream;
 using std::cin;
-using std::cout;
-#endif
-
-class BitStream
-{
-    istream &_is;
-    unsigned _bits = 0, _window = 0;
-public:
-    BitStream(istream &is) : _is(is) { }
-
-    int readBits(unsigned n)
-    {
-        for (; _bits < n; _bits += 8)
-        {
-            int c = _is.get();
-            if (c == -1) return -1;
-            _window |= c << _bits;
-        }
-
-        int ret = _window & (1 << n) - 1;
-        _window >>= n, _bits -= n;
-        return ret;
-    }
-};
+using fast::cout;
+using std::cerr;
 
 class ByteStack
 {
@@ -202,26 +173,28 @@ public:
 static Generator<unsigned>
 codes(istream &is, unsigned bitdepth)
 {
-    assert(bitdepth >= 9 && bitdepth <= 16);
-    BitStream bis(is);
-    unsigned cnt = 0, nbits = 9;
-
-    for (int code; (code = bis.readBits(nbits)) != -1;)
+    char buf[20];
+start_block:
+    for (unsigned nbits = 9; nbits <= bitdepth; ++nbits)
     {
-        //read 256 9-bit codes, 512 10-bit codes, 1024 11-bit codes, etc
-        if (++cnt == 1U << nbits - 1 && nbits != bitdepth)
-            ++nbits, cnt = 0;
-
-        //and x number of bitdepth (usually 16 bit) codes until code 256
-        if (code == 256)
+        for (unsigned i = 0; i < 1U << nbits - 1 || nbits == bitdepth;)
         {
-            while (cnt++ % 8 != 0)
-                bis.readBits(nbits);
+            is.read(buf, nbits);
+            unsigned ncodes = is.gcount() * 8 / nbits;
 
-            cnt = 0, nbits = 9;
+            if (ncodes == 0)
+                co_return;
+            
+            for (unsigned bits = 0, j = 0; ncodes--; bits += nbits, ++i, ++j)
+            {
+                unsigned *window = (unsigned *)(buf + bits / 8);
+                unsigned code = *window >> j * (nbits - 8) % 8 & (1 << nbits) - 1;
+                co_yield code;
+
+                if (code == 256)
+                    goto start_block;
+            }
         }
-
-        co_yield code;
     }
 }
 
@@ -255,7 +228,8 @@ lzw(unsigned dictcap, ostream &os, Generator<unsigned> codes)
     }
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
     istream *is = &cin;
     ostream * const os = &cout;
