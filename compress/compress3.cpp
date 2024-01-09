@@ -161,18 +161,46 @@ static Generator<unsigned> codify(istream &is)
     co_yield fcode.e.ent;
 }
 
+static bool process_block(BitOutputStream &bos, Generator<unsigned> codes, unsigned bitdepth)
+{
+    unsigned cnt = 0, nbits = 9;
+
+    while (codes)
+    {
+        unsigned code = codes();
+        bos.write(code, nbits);
+        ++cnt;
+
+        if (code == 256)
+        {
+            while (cnt++ % 8)
+                bos.write(0, nbits);
+
+            return true;
+            nbits = 9, cnt = 0;
+        }
+
+        if (nbits != bitdepth && cnt == 1U << nbits - 1)
+            ++nbits, cnt = 0;
+    }
+
+    return false;
+}
+
 int main(int argc, char **argv)
 {
     auto os = &cout;
     static constexpr unsigned bitdepth = 16;
-#if 1
     BitOutputStream bos(*os);
     bos.write(0x9d1f, 16);
-    bos.write(16, 7);
+    bos.write(bitdepth, 7);
     bos.write(1, 1);
+    auto codes = codify(cin);
+    //while (process_block(bos, codes, bitdepth));
+
     unsigned cnt = 0, nbits = 9;
-    
-    for (auto codes = codify(cin); codes;)
+
+    while (codes)
     {
         unsigned code = codes();
         bos.write(code, nbits);
@@ -186,12 +214,12 @@ int main(int argc, char **argv)
             nbits = 9, cnt = 0;
         }
 
-        if (nbits != 16 && cnt == 1U << nbits - 1)
+        if (nbits != bitdepth && cnt == 1U << nbits - 1)
             ++nbits, cnt = 0;
     }
 
     bos.flush();
-#else
+#if 0
     char buf[20];
 start_block:
     for (unsigned nbits = 9; nbits <= bitdepth; ++nbits)

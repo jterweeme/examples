@@ -15,22 +15,19 @@ def codes(f, bitdepth):
             n = n >> nbits
             cnt += 1
             if code == 256:
-                nbits = 9
-                cnt = 0
-                break
+                return
         if cnt == 1 << nbits - 1 and nbits != bitdepth:
             nbits += 1
             cnt = 0
 
-def lzw(codegen):
+def decompress_block(f, codegen):
     oldcode = finchar = 0
     xdict = list()
     for newcode in codegen:
         c = newcode
         assert c <= len(xdict) + 256
         if c == 256:
-            xdict.clear()
-            continue
+            return True
         stack = bytearray()
         if c == len(xdict) + 256:
             stack.append(finchar)
@@ -42,7 +39,8 @@ def lzw(codegen):
         stack.reverse()
         xdict.append((oldcode, finchar))
         oldcode = newcode
-        yield stack
+        f.buffer.write(stack)
+    return False
 
 if __name__ == "__main__":
     f = open(sys.argv[1], "rb")
@@ -50,6 +48,5 @@ if __name__ == "__main__":
     c = int.from_bytes(f.read(1), "little")
     assert c != -1 and c & 0x80 == 0x80
     assert (bitdepth := c & 0x7f) in range(9, 17)
-    for x in lzw(codes(f, bitdepth)):
-        sys.stdout.buffer.write(x)
-
+    while decompress_block(sys.stdout, codes(f, bitdepth)):
+        pass

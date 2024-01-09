@@ -40,10 +40,7 @@ public:
         { return Generator(coroutine_handle<promise_type>::from_promise(*this)); }
 
         template <convertible_to<T> From> suspend_always yield_value(From &&from)
-        {
-            value = forward<From>(from);
-            return {};
-        }
+        { value = forward<From>(from); return {}; }
     };
 private:
     coroutine_handle<promise_type> _h;
@@ -81,10 +78,12 @@ class istream
 private:
     uint32_t _cap, _head = 0, _tail = 0;
     uint8_t *_buf;
+    ssize_t _gcount = -1;
 protected:
     int _fd;
 public:
     ~istream() { delete[] _buf; }
+    ssize_t gcount() const { return _gcount; }
 
     istream(int fd = -1, uint32_t capacity = 8192)
       : _cap(capacity), _buf(new uint8_t[capacity]), _fd(fd) { }
@@ -99,6 +98,14 @@ public:
             _tail = 0;
         }
         return _buf[_tail++];
+    }
+
+    void read(char *buf, unsigned n)
+    {
+        _gcount = 0;
+
+        for (int c; n-- && (c = get()) != -1;)
+            buf[_gcount++] = c;
     }
 };
 
@@ -123,14 +130,15 @@ public:
 
 static istream cin(0, 8192);
 static ostream cout(1, 8192);
+static ostream cerr(1, 8192);
 }
 
 using fast::ostream;
-using std::istream;
-using std::ifstream;
-using std::cin;
+using fast::istream;
+using fast::ifstream;
+using fast::cin;
 using fast::cout;
-using std::cerr;
+using fast::cerr;
 
 class ByteStack
 {
