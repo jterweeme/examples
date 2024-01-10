@@ -11,14 +11,14 @@ static int decompress_block(FILE *in, FILE *out, unsigned bitdepth)
 
     for (unsigned nbits = 9; nbits <= bitdepth; ++nbits)
     {
-        for (unsigned i = 0, ncodes; i < 1U << nbits - 1 || nbits == bitdepth;)
+        for (unsigned i = 0, ncodes; i < 1U << nbits - 1 || nbits == bitdepth; i += ncodes)
         {
             if ((ncodes = fread(buf, 1, nbits, in) * 8 / nbits) == 0)
                 return 0;
 
-            for (unsigned j = 0, bits = 0; ncodes--; ++j, ++i, bits += nbits)
+            for (unsigned j = 0; j < ncodes; ++j)
             {
-                unsigned *window = (unsigned *)(buf + bits / 8);
+                unsigned *window = (unsigned *)(buf + nbits * j / 8);
                 unsigned newcode, c, pstack = sizeof(stack);
                 newcode = c = *window >> j * (nbits - 8) % 8 & (1 << nbits) - 1;
                 assert(c <= pos);

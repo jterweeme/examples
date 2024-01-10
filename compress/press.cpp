@@ -2,8 +2,10 @@
 #include <coroutine>
 #include <cstdint>
 #include <cassert>
+#include <cstring>
 #include <unistd.h>
 #include <fcntl.h>
+#include <vector>
 
 using std::exception_ptr;
 using std::convertible_to;
@@ -187,12 +189,21 @@ int main()
     bos.write(1, 1);
     unsigned cnt = 0, nbits = 9;
     const unsigned bitdepth = 16;
-
+    char buf[20] = {0};
+    
     for (auto codes = ::codes(cin); codes;)
     {
         unsigned code = codes();
+        unsigned *window = (unsigned *)(buf + nbits * (cnt % 8) / 8);
+        *window |= code << (cnt % 8) * (nbits - 8) % 8;
         bos.write(code, nbits);
         ++cnt;
+
+        if (cnt % 8 == 0 || code == 256)
+        {
+            //fwrite(buf, 1, nbits, stdout);
+            memset(buf, 0, sizeof(buf));
+        }
 
         if (code == 256)
         {
@@ -206,9 +217,9 @@ int main()
             ++nbits, cnt = 0;
     }
 
+    //fwrite(buf, 1, nbits, stdout);
     bos.flush();
     os->flush();
-
     return 0;
 }
 

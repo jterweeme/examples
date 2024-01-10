@@ -2,34 +2,32 @@
 
 import sys
 
+def foo(s, nbits, l):
+    s.reverse()
+    n = 0
+    for x in s:
+        n = n << nbits | x
+    x = divmod(l * nbits, 8)
+    sys.stdout.buffer.write(n.to_bytes(x[0] + (1 if x[1] else 0), 'little'))
+    s.clear()
+
 if __name__ == "__main__":
     sys.stdout.buffer.write(b'\x1f\x9d\x90')
-    n = 0
     nbits = 9
     cnt = 0
     stack = list()
-    for line in sys.stdin:
-        c = int(line)
+    for lin in sys.stdin:
+        c = int(lin)
         stack.append(c)
         cnt += 1
-        if cnt % 8 == 0 or c == 256:
-            stack.reverse()
-            for x in stack:
-                n = n << nbits | x
-            stack.clear()
-            sys.stdout.buffer.write(n.to_bytes(nbits, 'little'))
-            n = 0
+        if len(stack) == 8 or c == 256:
+            foo(stack, nbits, 8)
         if c == 256:
             nbits = 9
             cnt = 0
         if cnt == 1 << nbits - 1 and nbits != 16:
             nbits += 1
             cnt = 0
-    stack.reverse()
-    for x in stack:
-        n = n << nbits | x
-    x = cnt % 8
-    x *= nbits
-    sys.stdout.buffer.write(n.to_bytes(x // 8 + 1, 'little'))
+    foo(stack, nbits, len(stack))
 
 

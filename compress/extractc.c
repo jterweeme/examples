@@ -20,9 +20,9 @@ start_block:
             if ((ncodes = fread(buf, 1, nbits, fp) * 8 / nbits) == 0)
                 return 0;
 
-            for (unsigned j = 0, bits = 0; ncodes--; ++j, ++i, bits += nbits)
+            for (unsigned j = 0; j < ncodes; ++j, ++i)
             {
-                unsigned *window = (unsigned *)(buf + bits / 8);
+                unsigned *window = (unsigned *)(buf + (nbits * j) / 8);
                 unsigned code = *window >> j * (nbits - 8) % 8 & (1 << nbits) - 1;
                 printf("%u\r\n", code);
 

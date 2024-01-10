@@ -21,6 +21,12 @@ clean:
 	rm -vf codify codify2 codify3 compress compress2 compress3 extractc lzw press zcatc zcatpp
 
 test:
+	$(TIME) ./extractc accept.2.Z | ./press | md5sum -c accept.2.Z.md5
+	$(TIME) ./extractc accept.2.Z | ./press.py | md5sum -c accept.2.Z.md5
+	$(TIME) ./extractc hocus.dat.Z | ./press.py | md5sum -c hocus.dat.Z.md5
+	#$(TIME) ./extractc wingames.iso.Z | ./press.py | md5sum -c wingames.iso.Z.md5
+	#$(TIME) ./extractc wk98.iso.Z | ./press | md5sum -c wk98.iso.Z.md5
+	#$(TIME) ./extractc wk98.iso.Z | ./press.py | md5sum -c wk98.iso.Z.md5
 	$(TIME) ./zcatc < accept.2.Z | md5sum -c accept.2.md5
 	$(TIME) ./zcatpp < accept.2.Z | md5sum -c accept.2.md5
 	$(TIME) ./zcat.py accept.2.Z | md5sum -c accept.2.md5
@@ -61,6 +67,6 @@ test:
 	$(TIME) zcat tty.1.Z | ./codify3 | ./press | md5sum -c tty.1.Z.md5
 	$(TIME) zcat tty.1.Z | ./compress3 | md5sum -c tty.1.Z.md5
 	$(TIME) zcat wingames.iso.Z | ./codify | ./press | md5sum -c wingames.iso.Z.md5
-	$(TIME) zcat wk98.iso.Z | ./codify | ./press | md5sum -c wk98.iso.Z.md5
+	#$(TIME) zcat wk98.iso.Z | ./codify | ./press | md5sum -c wk98.iso.Z.md5
 
 

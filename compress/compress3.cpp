@@ -116,7 +116,7 @@ static Generator<unsigned> codify(istream &is)
     unsigned n_bits = 9, free_ent = 257;
     unsigned extcode = (1 << n_bits) + 1, htab[HSIZE];
 
-    for (int byte; (byte = is.get()) != -1;)
+    while (true)
     {
         if (free_ent >= extcode && fcode.e.ent < 257)
         {
@@ -129,6 +129,14 @@ static Generator<unsigned> codify(istream &is)
                 n_bits = 9, free_ent = 257;
                 extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << n_bits;
             }
+        }
+
+        int byte = is.get();
+
+        if (byte == -1)
+        {
+            co_yield fcode.e.ent;
+            co_return;
         }
 
         fcode.e.c = byte;
@@ -157,8 +165,6 @@ static Generator<unsigned> codify(istream &is)
             codetab[hp] = free_ent++, htab[hp] = fc;
         }
     }
-
-    co_yield fcode.e.ent;
 }
 
 static bool process_block(BitOutputStream &bos, Generator<unsigned> codes, unsigned bitdepth)
@@ -196,8 +202,9 @@ int main(int argc, char **argv)
     bos.write(bitdepth, 7);
     bos.write(1, 1);
     auto codes = codify(cin);
-    //while (process_block(bos, codes, bitdepth));
-
+#if 0
+    while (process_block(bos, codes, bitdepth));
+#else
     unsigned cnt = 0, nbits = 9;
 
     while (codes)
@@ -217,7 +224,7 @@ int main(int argc, char **argv)
         if (nbits != bitdepth && cnt == 1U << nbits - 1)
             ++nbits, cnt = 0;
     }
-
+#endif
     bos.flush();
 #if 0
     char buf[20];
