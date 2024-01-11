@@ -3,15 +3,12 @@
 
 #include "generator.h"
 #include "mystl.h"
-#include <cassert>
-#include <iostream>
-#include <fstream>
 
 using mystl::cin;
-using std::cout;
+using mystl::cout;
 using mystl::ifstream;
 using mystl::istream;
-using std::ostream;
+using mystl::ostream;
 using std::fill;
 using std::div;
 
@@ -25,10 +22,9 @@ union Fcode
     } e;
 };
 
-static constexpr unsigned HSIZE = 69001;
-
 class Dictionary
 {
+    static constexpr unsigned HSIZE = 69001;
     uint16_t codetab[HSIZE];
     unsigned htab[HSIZE];
 public:
@@ -59,7 +55,7 @@ static Generator<unsigned> codify(istream &is)
     Fcode fcode;
     fcode.e.ent = is.get();
     unsigned n_bits = 9;
-    unsigned extcode = (1 << n_bits) + 1;
+    unsigned extcode = 513;
 
     for (int byte; (byte = is.get()) != -1;)
     {
@@ -80,16 +76,14 @@ static Generator<unsigned> codify(istream &is)
         unsigned hp = fcode.e.c << 8 ^ fcode.e.ent;
         uint16_t x = dict.find(hp, fcode.code);
 
-        if (!x)
+        if (x)
+            fcode.e.ent = x;
+        else
         {
             co_yield fcode.e.ent;
             unsigned fc = fcode.code;
             fcode.e.ent = fcode.e.c;
             dict.store(hp, fc);
-        }
-        else
-        {
-            fcode.e.ent = x;
         }
     }
 

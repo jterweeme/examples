@@ -5,7 +5,13 @@
 #include <cstring>
 #include <cassert>
 #include <iostream>
-#include <vector>
+#include <fstream>
+
+using std::istream;
+using std::ifstream;
+using std::cin;
+using std::cout;
+using std::fill;
 
 class BitOutputStream
 {
@@ -42,27 +48,57 @@ union Fcode
     } e;
 };
 
+static constexpr unsigned CHECK_GAP = 10000, HSIZE = 69001;
+
+class Dictionary
+{
+    uint16_t codetab[HSIZE];
+    unsigned htab[HSIZE];
+public:
+    unsigned free_ent;
+    void clear() { fill(codetab, codetab + HSIZE, 0), free_ent = 257; }
+    Dictionary() { clear(); }
+    void store(unsigned hp, unsigned fc) { codetab[hp] = free_ent++, htab[hp] = fc; }
+
+    uint16_t find(unsigned &hp, unsigned fc) const
+    {
+        while (codetab[hp])
+        {
+            if (htab[hp] == fc)
+                return codetab[hp];
+
+            if ((hp += hp + 1) >= HSIZE)
+                hp -= HSIZE;
+        }
+
+        return 0;
+    }
+};
+
 int main(int argc, char **argv)
 {
-    auto is = &std::cin;
-    static constexpr unsigned CHECK_GAP = 10000, HSIZE = 69001;
-    uint16_t codetab[HSIZE];
-    std::fill(codetab, codetab + HSIZE, 0);
-    BitOutputStream bos(std::cout);
+    istream *is = &std::cin;
+    ifstream ifs;
+
+    if (argc > 1)
+        ifs.open(argv[1]), is = &ifs;
+
+    Dictionary dict;
+    BitOutputStream bos(cout);
     bos.write(0x9d1f, 16);  //magic
     bos.write(16, 7);       //max. 16 bits (hardcoded)
     bos.write(1, 1);        //block mode
     bos.cnt = 0;
     Fcode fcode;
     fcode.e.ent = is->get();
-    unsigned n_bits = 9, checkpoint = CHECK_GAP, free_ent = 257;
-    unsigned ratio = 0, extcode = (1 << n_bits) + 1, htab[HSIZE];
+    unsigned n_bits = 9, checkpoint = CHECK_GAP;
+    unsigned ratio = 0, extcode = (1 << n_bits) + 1;
     bool stcode = true;
     unsigned bytes_in = 1;
 
     for (int byte; (byte = is->get()) != -1;)
     {
-        if (free_ent >= extcode && fcode.e.ent < 257)
+        if (dict.free_ent >= extcode && fcode.e.ent < 257)
         {
             if (n_bits < 16)
                 ++n_bits, extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << 16;
@@ -80,48 +116,32 @@ int main(int argc, char **argv)
             else
             {
                 ratio = 0;
-                std::fill(codetab, codetab + HSIZE, 0);
+                dict.clear();
                 bos.write(256, n_bits);
 
                 for (unsigned nb3 = n_bits << 3; (bos.cnt - 1U + nb3) % nb3 != nb3 - 1U;)
                     bos.write(0, 16);
 
-                n_bits = 9, stcode = true, free_ent = 257;
+                n_bits = 9, stcode = true;
                 extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << n_bits;
             }
         }
 
         ++bytes_in;
         fcode.e.c = byte;
-        unsigned fc = fcode.code;
-        //unsigned hp = (fcode.code & 0xff) << 8 ^ fcode.code >> 16;
         unsigned hp = fcode.e.c << 8 ^ fcode.e.ent;
- 
-        bool hfound = false;
+        uint16_t x = dict.find(hp, fcode.code);
 
-        //secondary hash (after G. Knott)
-        while (codetab[hp])
-        {
-            if (htab[hp] == fc)
-            {
-                fcode.e.ent = codetab[hp];
-                hfound = true;
-                break;
-            }
-
-            if ((hp += hp + 1) >= HSIZE)
-                hp -= HSIZE;
-        }
-
-        if (!hfound)
+        if (x)
+            fcode.e.ent = x;
+        else
         {
             bos.write(fcode.e.ent, n_bits);
-            //bos.write(fcode.code >> 16, n_bits);
-            fc = fcode.code;
+            unsigned fc = fcode.code;
             fcode.e.ent = fcode.e.c;
 
             if (stcode)
-                codetab[hp] = free_ent++, htab[hp] = fc;
+                dict.store(hp, fc);
         }
     }
 

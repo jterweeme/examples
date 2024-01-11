@@ -15,6 +15,7 @@
 #define HSIZE 69001
 
 using std::cout;
+using std::min;
 
 union Fcode
 {
@@ -119,11 +120,11 @@ int main(int argc, char **argv)
                 bytes_out += OBUFSIZ;
             }
 
-            int i = std::min(int(rsize - rlop), int(extcode - free_ent));
-            i = std::min(i, int(((sizeof(outbuf) - 32) * 8 - outbits) / n_bits));
+            int i = min(int(rsize - rlop), int(extcode - free_ent));
+            i = min(i, int(((sizeof(outbuf) - 32) * 8 - outbits) / n_bits));
 
             if (!stcode)
-                i = std::min(i, int(checkpoint - bytes_in));
+                i = min(i, int(checkpoint - bytes_in));
 
             rlop += i, bytes_in += i;
             bool flag = false;

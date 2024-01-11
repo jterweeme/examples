@@ -1,12 +1,12 @@
 #include "mystl.h"
-#include <iostream>
-#include <cassert>
+#include <algorithm>
+#include <ctype.h>
 
 using mystl::istream;
-using std::ostream;
+using mystl::ostream;
 using mystl::cin;
-using std::cout;
-using std::cerr;
+using mystl::cout;
+using mystl::cerr;
 using std::fill;
 using std::div;
 
