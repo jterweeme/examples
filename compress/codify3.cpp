@@ -1,9 +1,15 @@
 //This is a comment
 //I love comments
 
-#include <cstdint>
+#include "mystl.h"
 #include <cassert>
 #include <iostream>
+
+using mystl::cin;
+using std::cout;
+using mystl::istream;
+using std::ostream;
+using std::fill;
 
 union Fcode
 {
@@ -15,57 +21,72 @@ union Fcode
     } e;
 };
 
-int main(int argc, char **argv)
+static constexpr unsigned HSIZE = 69001;
+
+class Dictionary
 {
-    auto is = &std::cin;
-    auto os = &std::cout;
-    static constexpr unsigned HSIZE = 69001;
     uint16_t codetab[HSIZE];
-    std::fill(codetab, codetab + HSIZE, 0);
-    Fcode fcode;
-    fcode.e.ent = is->get();
-    unsigned n_bits = 9, free_ent = 257;
-    unsigned extcode = (1 << n_bits) + 1, htab[HSIZE];
-
-    for (int byte; (byte = is->get()) != -1;)
+    unsigned htab[HSIZE];
+public:
+    unsigned free_ent = 257;
+    void clear() { fill(codetab, codetab + HSIZE, 0), free_ent = 257; }
+    void store(unsigned hp, unsigned fc) { codetab[hp] = free_ent++, htab[hp] = fc; }
+    
+    uint16_t find(unsigned &hp, unsigned fc) const
     {
-        if (free_ent >= extcode && fcode.e.ent < 257)
-        {
-            if (n_bits < 16)
-                ++n_bits, extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << 16;
-            else
-            {
-                std::fill(codetab, codetab + HSIZE, 0);
-                *os << 256 << "\r\n";
-                n_bits = 9, free_ent = 257;
-                extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << n_bits;
-            }
-        }
-
-        fcode.e.c = byte;
-        unsigned fc = fcode.code;
-        unsigned hp = fcode.e.c << 8 ^ fcode.e.ent;
-        bool hfound = false;
-
         while (codetab[hp])
         {
             if (htab[hp] == fc)
-            {
-                fcode.e.ent = codetab[hp];
-                hfound = true;
-                break;
-            }
+                return codetab[hp]; 
 
             if ((hp += hp + 1) >= HSIZE)
                 hp -= HSIZE;
         }
 
-        if (!hfound)
+        return 0;
+    }
+};
+
+int main(int argc, char **argv)
+{
+    istream *is = &cin;
+    ostream *os = &cout;
+    Dictionary dict;
+    dict.clear();
+    Fcode fcode;
+    fcode.e.ent = is->get();
+    unsigned n_bits = 9;
+    unsigned extcode = (1 << n_bits) + 1;
+
+    for (int byte; (byte = is->get()) != -1;)
+    {
+        if (dict.free_ent >= extcode && fcode.e.ent < 257)
+        {
+            if (n_bits < 16)
+                ++n_bits, extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << 16;
+            else
+            {
+                *os << 256 << "\r\n";
+                dict.clear();
+                n_bits = 9;
+                extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << n_bits;
+            }
+        }
+
+        fcode.e.c = byte;
+        unsigned hp = fcode.e.c << 8 ^ fcode.e.ent;
+        uint16_t x = dict.find(hp, fcode.code);
+        
+        if (!x)
         {
             *os << fcode.e.ent << "\r\n";
-            fc = fcode.code;
+            unsigned fc = fcode.code;
             fcode.e.ent = fcode.e.c;
-            codetab[hp] = free_ent++, htab[hp] = fc;
+            dict.store(hp, fc);
+        }
+        else
+        {
+            fcode.e.ent = x;
         }
     }
 

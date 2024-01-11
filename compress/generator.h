@@ -1,19 +1,14 @@
+//boilerplate code for coroutines
+
 #include <coroutine>
 #include <exception>
 #include <stdexcept>
 
 using std::exception_ptr;
-using std::convertible_to;
 using std::suspend_always; 
 using std::coroutine_handle;
-using std::current_exception;
-using std::move;
-using std::rethrow_exception;
 using std::runtime_error;
-using std::forward;
-    
 
-//boilerplate
 template <typename T> class Generator
 {           
 public:     
@@ -23,15 +18,15 @@ public:
         T value;
         suspend_always initial_suspend() { return {}; }
         suspend_always final_suspend() noexcept { return {}; }
-        void unhandled_exception() { exception = current_exception(); }
+        void unhandled_exception() { exception = std::current_exception(); }
         void return_void() {}
 
         Generator get_return_object()
         { return Generator(coroutine_handle<promise_type>::from_promise(*this)); }
 
-        template <convertible_to<T> From> suspend_always yield_value(From &&from)
+        template <std::convertible_to<T> From> suspend_always yield_value(From &&from)
         {
-            value = forward<From>(from);
+            value = std::forward<From>(from);
             return {};
         }
     };
@@ -46,7 +41,7 @@ private:
             _h();
 
             if (_h.promise().exception)
-                rethrow_exception(_h.promise().exception);
+                std::rethrow_exception(_h.promise().exception);
 
             _full = true;
         }
@@ -60,7 +55,7 @@ public:
     { 
         _fill();
         _full = false;
-        return move(_h.promise().value);
+        return std::move(_h.promise().value);
     }
 };
 
