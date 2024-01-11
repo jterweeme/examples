@@ -7,7 +7,6 @@ DEBUG = -g
 all: clean
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o codify codify.cpp
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o codify2 codify2.cpp
-	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o codify3 codify3.cpp -std=c++20
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o compress compress.cpp
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o compress2 compress2.cpp
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o compress3 compress3.cpp -std=c++20
@@ -18,7 +17,7 @@ all: clean
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o zcatpp zcatpp.cpp -std=c++20
 
 clean:
-	rm -vf codify codify2 codify3 compress compress2 compress3 extractc lzw press zcatc zcatpp
+	rm -vf codify codify2 compress compress2 compress3 extractc lzw press zcatc zcatpp
 
 test:
 	$(TIME) ./extractc accept.2.Z | ./press | md5sum -c accept.2.Z.md5
@@ -59,12 +58,9 @@ test:
 	$(TIME) zcat httpd-2.0.35.tar.Z | ./codify | ./press | zcat | md5sum -c httpd-2.0.35.tar.md5
 	$(TIME) zcat keen1.tar.Z | ./codify2 | ./press | md5sum -c keen1.tar.Z.md5
 	$(TIME) zcat keen1.tar.Z | ./compress3 | zcat | md5sum -c keen1.tar.md5
-	$(TIME) zcat logo.c.Z | ./codify3 | ./press | md5sum -c logo.c.Z.md5
 	$(TIME) zcat logo.c.Z | ./compress3 | md5sum -c logo.c.Z.md5
 	$(TIME) zcat mjkimage.c.Z | ./codify2 | ./press | md5sum -c mjkimage.c.Z.md5
 	$(TIME) zcat mo.m68.tar.Z | ./codify2 | ./press | zcat | md5sum -c mo.m68.tar.md5
-	$(TIME) zcat relnotes.ps.Z | ./codify3 | ./press | md5sum -c relnotes.ps.Z.md5
-	$(TIME) zcat tty.1.Z | ./codify3 | ./press | md5sum -c tty.1.Z.md5
 	$(TIME) zcat tty.1.Z | ./compress3 | md5sum -c tty.1.Z.md5
 	$(TIME) zcat wingames.iso.Z | ./codify | ./press | md5sum -c wingames.iso.Z.md5
 	#$(TIME) zcat wk98.iso.Z | ./codify | ./press | md5sum -c wk98.iso.Z.md5
