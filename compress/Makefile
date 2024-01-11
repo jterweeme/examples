@@ -7,7 +7,7 @@ DEBUG = -g
 all: clean
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o codify codify.cpp
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o codify2 codify2.cpp
-	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o codify3 codify3.cpp
+	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o codify3 codify3.cpp -std=c++20
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o compress compress.cpp
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o compress2 compress2.cpp
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o compress3 compress3.cpp -std=c++20

@@ -1,6 +1,7 @@
 //This is a comment
 //I love comments
 
+#include "generator.h"
 #include "mystl.h"
 #include <cassert>
 #include <iostream>
@@ -47,18 +48,16 @@ public:
     }
 };
 
-int main(int argc, char **argv)
+static Generator<unsigned> codify(istream &is)
 {
-    istream *is = &cin;
-    ostream *os = &cout;
     Dictionary dict;
     dict.clear();
     Fcode fcode;
-    fcode.e.ent = is->get();
+    fcode.e.ent = is.get();
     unsigned n_bits = 9;
     unsigned extcode = (1 << n_bits) + 1;
 
-    for (int byte; (byte = is->get()) != -1;)
+    for (int byte; (byte = is.get()) != -1;)
     {
         if (dict.free_ent >= extcode && fcode.e.ent < 257)
         {
@@ -66,20 +65,20 @@ int main(int argc, char **argv)
                 ++n_bits, extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << 16;
             else
             {
-                *os << 256 << "\r\n";
+                co_yield 256;
                 dict.clear();
                 n_bits = 9;
-                extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << n_bits;
+                extcode = 1 << n_bits;
             }
         }
 
         fcode.e.c = byte;
         unsigned hp = fcode.e.c << 8 ^ fcode.e.ent;
         uint16_t x = dict.find(hp, fcode.code);
-        
+
         if (!x)
         {
-            *os << fcode.e.ent << "\r\n";
+            co_yield fcode.e.ent;
             unsigned fc = fcode.code;
             fcode.e.ent = fcode.e.c;
             dict.store(hp, fc);
@@ -90,7 +89,15 @@ int main(int argc, char **argv)
         }
     }
 
-    *os << fcode.e.ent << "\r\n";
+    co_yield fcode.e.ent;
+}
+
+
+int main(int argc, char **argv)
+{
+    for (auto code = codify(cin); code;)
+        cout << code() << "\r\n";
+
     return 0;
 }
 
