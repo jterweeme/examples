@@ -1,4 +1,3 @@
-#include "generator.h"
 #include "mystl.h"
 #include <iostream>
 #include <cassert>
@@ -11,9 +10,9 @@ using std::cerr;
 using std::fill;
 using std::div;
 
-static Generator<unsigned> codes(istream &is)
+static int code(istream &is)
 {
-    unsigned n = 0;
+    int n = 0;
     bool flag = false;
 
     for (int c; (c = is.get()) != -1;)
@@ -26,12 +25,14 @@ static Generator<unsigned> codes(istream &is)
         else
         {
             if (flag)
-                co_yield n;
+                return n;
 
             flag = false;
             n = 0;
         }
     }
+
+    return -1;
 }
 
 int main()
@@ -44,9 +45,8 @@ int main()
     const unsigned bitdepth = 16;
     char buf[20] = {0};
     
-    for (auto codes = ::codes(cin); codes;)
+    for (int code; (code = ::code(cin)) != -1;)
     {
-        unsigned code = codes();
         unsigned *window = (unsigned *)(buf + nbits * (cnt % 8) / 8);
         *window |= code << (cnt % 8) * (nbits - 8) % 8;
         ++cnt;

@@ -7,6 +7,10 @@
 #include <iostream>
 #include <vector>
 
+using std::istream;
+using std::cin;
+using std::fill;
+
 class BitOutputStream
 {
     std::ostream &_os;
@@ -32,18 +36,62 @@ union Fcode
     } e;
 };
 
+static constexpr unsigned CHECK_GAP = 10000, HSIZE = 69001;
+
+class Dictionary
+{
+    uint16_t codetab[HSIZE];
+    unsigned htab[HSIZE];
+public:
+    unsigned free_ent = 257;
+    void clear() { fill(codetab, codetab + HSIZE, 0), free_ent = 257; }
+    void store(unsigned hp, unsigned fc) { codetab[hp] = free_ent++, htab[hp] = fc; }
+
+    uint16_t find(unsigned &hp, unsigned fc) const
+    {
+        while (codetab[hp])
+        {
+            if (htab[hp] == fc)
+                return codetab[hp];
+
+            if ((hp += hp + 1) >= HSIZE)
+                hp -= HSIZE;
+        }
+
+        return 0;
+    }
+};
+
+uint16_t codetab[HSIZE];
+unsigned htab[HSIZE];
+unsigned free_ent = 257;
+
+uint16_t find(unsigned &hp, unsigned fc)
+{
+    while (codetab[hp])
+    {
+        if (htab[hp] == fc)
+            return codetab[hp];
+
+        if ((hp += hp + 1) >= HSIZE)
+            hp -= HSIZE;
+    }
+
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
-    auto is = &std::cin;
-    static constexpr unsigned CHECK_GAP = 10000, HSIZE = 69001;
-    uint16_t codetab[HSIZE];
+    istream *is = &cin;
+    Dictionary dict;
+    dict.clear();
     std::fill(codetab, codetab + HSIZE, 0);
     BitOutputStream bos(std::cout);
     bos.cnt = 0;
     Fcode fcode;
     fcode.e.ent = is->get();
-    unsigned n_bits = 9, checkpoint = CHECK_GAP, free_ent = 257;
-    unsigned ratio = 0, extcode = (1 << n_bits) + 1, htab[HSIZE];
+    unsigned n_bits = 9, checkpoint = CHECK_GAP;
+    unsigned ratio = 0, extcode = (1 << n_bits) + 1;
     bool stcode = true;
     uint64_t bytes_in = 1;
 
@@ -67,6 +115,7 @@ int main(int argc, char **argv)
             else
             {
                 ratio = 0;
+                dict.clear();
                 std::fill(codetab, codetab + HSIZE, 0);
                 bos.write(256, n_bits);
                 n_bits = 9, stcode = true, free_ent = 257;
@@ -76,8 +125,10 @@ int main(int argc, char **argv)
 
         ++bytes_in;
         fcode.e.c = byte;
-        unsigned fc = fcode.code;
+        //unsigned fc = fcode.code;
         unsigned hp = fcode.e.c << 8 ^ fcode.e.ent;
+        uint16_t x = find(hp, fcode.code);
+#if 0
         bool hfound = false;
 
         while (codetab[hp])
@@ -92,15 +143,21 @@ int main(int argc, char **argv)
             if ((hp += hp + 1) >= HSIZE)
                 hp -= HSIZE;
         }
-
-        if (!hfound)
+#endif
+        //if (!hfound)
+        if (!x)
         {
             bos.write(fcode.e.ent, n_bits);
-            fc = fcode.code;
+            unsigned fc = fcode.code;
             fcode.e.ent = fcode.e.c;
 
             if (stcode)
+                //dict.store(hp, fc);
                 codetab[hp] = free_ent++, htab[hp] = fc;
+        }
+        else
+        {
+            fcode.e.ent = codetab[hp];
         }
     }
 
