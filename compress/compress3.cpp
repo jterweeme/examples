@@ -32,8 +32,9 @@ class Dictionary
     uint16_t codetab[HSIZE];
     unsigned htab[HSIZE];
 public:
-    unsigned free_ent = 257;
+    unsigned free_ent;
     void clear() { fill(codetab, codetab + HSIZE, 0), free_ent = 257; }
+    Dictionary() { clear(); }
     void store(unsigned hp, unsigned fc) { codetab[hp] = free_ent++, htab[hp] = fc; }
 
     uint16_t find(unsigned &hp, unsigned fc) const
