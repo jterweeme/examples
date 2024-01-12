@@ -23,8 +23,6 @@ union Fcode
     } e;
 };
 
-long hp;
-
 class Dictionary
 {
     static constexpr unsigned HSIZE = 69001;
@@ -35,7 +33,7 @@ public:
     void clear() { memset(htab, -1, sizeof(htab)), free_ent = 257; }
     void store(unsigned hp, unsigned fc) { codetab[hp] = free_ent++, htab[hp] = fc; }
 
-    uint16_t find(long fc)
+    uint16_t find(long &hp, long fc)
     {
         long disp = HSIZE - hp - 1;
 
@@ -64,6 +62,7 @@ static Generator<unsigned> codify(istream &is)
     int n_bits = 9;
     int rpos, rlop, stcode = 1, boff = 0, ratio = 0;
     uint32_t extcode = 513;
+    long hp;
     Fcode fcode;
     Dictionary dict;
     dict.clear();
@@ -160,7 +159,7 @@ static Generator<unsigned> codify(istream &is)
                     fcode.e.c = inbuf[rpos++];
                     long fc = fcode.code;
                     hp = long(fcode.e.c) <<  8 ^ long(fcode.e.ent);
-                    uint16_t x = dict.find(fc);
+                    uint16_t x = dict.find(hp, fc);
 
                     if (x)
                     {

@@ -31,19 +31,25 @@ public:
     unsigned free_ent;
     void clear() { fill(codetab, codetab + HSIZE, 0), free_ent = 257; }
     Dictionary() { clear(); }
-    void store(unsigned hp, unsigned fc) { codetab[hp] = free_ent++, htab[hp] = fc; }
 
-    uint16_t find(unsigned &hp, unsigned fc) const
+    uint16_t find(unsigned c, unsigned ent)
     {
+        Fcode fc;
+        fc.e.c = c;
+        fc.e.ent = ent;
+        unsigned hp = fc.e.c << 8 ^ fc.e.ent;
+
         while (codetab[hp])
         {
-            if (htab[hp] == fc)
+            if (htab[hp] == fc.code)
                 return codetab[hp];
     
             if ((hp += hp + 1) >= HSIZE)
                 hp -= HSIZE;
         }
     
+        codetab[hp] = free_ent++;
+        htab[hp] = fc.code;
         return 0;
     }
 };
@@ -73,17 +79,14 @@ static Generator<unsigned> codify(istream &is)
         }
 
         fcode.e.c = byte;
-        unsigned hp = fcode.e.c << 8 ^ fcode.e.ent;
-        uint16_t x = dict.find(hp, fcode.code);
+        uint16_t x = dict.find(fcode.e.c, fcode.e.ent);
 
         if (x)
             fcode.e.ent = x;
         else
         {
             co_yield fcode.e.ent;
-            unsigned fc = fcode.code;
             fcode.e.ent = fcode.e.c;
-            dict.store(hp, fc);
         }
     }
 

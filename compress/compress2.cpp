@@ -32,11 +32,13 @@ public:
     Dictionary() { clear(); }
     void store(unsigned hp, unsigned fc) { codetab[hp] = free_ent++, htab[hp] = fc; }
 
-    uint16_t find(unsigned &hp, unsigned fc) const
+    uint16_t find(unsigned &hp, Fcode fc) const
     {
+        hp = fc.e.c << 8 ^ fc.e.ent;
+
         while (codetab[hp])
         {
-            if (htab[hp] == fc)
+            if (htab[hp] == fc.code)
                 return codetab[hp];
 
             if ((hp += hp + 1) >= HSIZE)
@@ -89,18 +91,17 @@ static Generator<unsigned> codify(istream &is)
 
         ++bytes_in;
         fcode.e.c = byte;
-        unsigned hp = fcode.e.c << 8 ^ fcode.e.ent;
-        uint16_t x = dict.find(hp, fcode.code);
+        unsigned hp;
+        uint16_t x = dict.find(hp, fcode);
 
         if (!x)
         {
+            if (stcode)
+                dict.store(hp, fcode.code);
+
             co_yield fcode.e.ent;
             cnt += n_bits;
-            unsigned fc = fcode.code;
             fcode.e.ent = fcode.e.c;
-
-            if (stcode)
-                dict.store(hp, fc);
         }
         else
         {
