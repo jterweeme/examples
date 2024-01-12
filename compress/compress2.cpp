@@ -11,16 +11,6 @@ using mystl::cin;
 using mystl::cout;
 using std::fill;
 
-union Fcode
-{
-    uint32_t code = 0;
-    struct
-    {
-        uint16_t c;
-        uint16_t ent;
-    } e;
-};
-
 class Dictionary
 {
     static constexpr unsigned HSIZE = 69001;
@@ -30,19 +20,24 @@ public:
     unsigned free_ent;
     void clear() { fill(codetab, codetab + HSIZE, 0), free_ent = 257; }
     Dictionary() { clear(); }
-    void store(unsigned hp, unsigned fc) { codetab[hp] = free_ent++, htab[hp] = fc; }
 
-    uint16_t find(unsigned &hp, Fcode fc) const
+    uint16_t find(unsigned c, unsigned ent, bool stcode)
     {
-        hp = fc.e.c << 8 ^ fc.e.ent;
+        unsigned hp = c << 8 ^ ent;
 
         while (codetab[hp])
         {
-            if (htab[hp] == fc.code)
+            if (htab[hp] == (c << 16 | ent))
                 return codetab[hp];
 
             if ((hp += hp + 1) >= HSIZE)
                 hp -= HSIZE;
+        }
+
+        if (stcode)
+        {
+            codetab[hp] = free_ent++;
+            htab[hp] = c << 16 | ent;
         }
 
         return 0;
@@ -54,8 +49,7 @@ static Generator<unsigned> codify(istream &is)
     static constexpr unsigned CHECK_GAP = 10000;
     Dictionary dict;
     uint64_t cnt = 0;
-    Fcode fcode;
-    fcode.e.ent = is.get();
+    unsigned ent = is.get();
     unsigned n_bits = 9, checkpoint = CHECK_GAP;
     unsigned ratio = 0, extcode = (1 << n_bits) + 1;
     bool stcode = true;
@@ -63,7 +57,7 @@ static Generator<unsigned> codify(istream &is)
 
     for (int byte; (byte = is.get()) != -1;)
     {
-        if (dict.free_ent >= extcode && fcode.e.ent < 257)
+        if (dict.free_ent >= extcode && ent < 257)
         {
             if (n_bits < 16)
                 ++n_bits, extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << 16;
@@ -71,7 +65,7 @@ static Generator<unsigned> codify(istream &is)
                 stcode = false;
         }
 
-        if (!stcode && bytes_in >= checkpoint && fcode.e.ent < 257)
+        if (!stcode && bytes_in >= checkpoint && ent < 257)
         {
             checkpoint = bytes_in + CHECK_GAP;
             unsigned rat = (bytes_in << 8) / (cnt >> 3);
@@ -90,26 +84,19 @@ static Generator<unsigned> codify(istream &is)
         }
 
         ++bytes_in;
-        fcode.e.c = byte;
-        unsigned hp;
-        uint16_t x = dict.find(hp, fcode);
+        uint16_t x = dict.find(byte, ent, stcode);
 
-        if (!x)
-        {
-            if (stcode)
-                dict.store(hp, fcode.code);
-
-            co_yield fcode.e.ent;
-            cnt += n_bits;
-            fcode.e.ent = fcode.e.c;
-        }
+        if (x)
+            ent = x;
         else
         {
-            fcode.e.ent = x;
+            co_yield ent;
+            cnt += n_bits;
+            ent = byte;
         }
     }
 
-    co_yield fcode.e.ent;
+    co_yield ent;
     cnt += n_bits;
 }
 

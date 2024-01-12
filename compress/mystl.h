@@ -54,7 +54,7 @@ class ostream
     char *_buf;
 public:
     ostream(int fd, uint32_t capacity) : _fd(fd), _cap(capacity), _buf(new char[capacity]) { }
-    ~ostream() { delete[] _buf; }
+    ~ostream() { flush(); delete[] _buf; }
     inline void put(char c) { if (_pos > _cap) flush(); _buf[_pos++] = c; }
     void flush() { ::write(_fd, _buf, _pos), _pos = 0; }
     inline ostream& operator<<(const char *s) { while (*s) put(*s++); return *this; }
