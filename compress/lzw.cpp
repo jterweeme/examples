@@ -51,7 +51,8 @@ public:
     void clear() { _pos = 0; }
 };
 
-static Generator<unsigned> codes(istream &is)
+static Generator<unsigned>
+codes(istream &is)
 {
     unsigned n = 0;
     bool flag = false;

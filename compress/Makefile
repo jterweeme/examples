@@ -5,18 +5,17 @@ WARNINGS = -Wall -Wno-parentheses -Wno-unused-function
 DEBUG = -g
 
 all: clean
-	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o codify codify.cpp
-	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o compress compress.cpp
+	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o codify codify.cpp -std=c++20
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o compress2 compress2.cpp -std=c++20
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o compress3 compress3.cpp -std=c++20
 	gcc $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o extractc extractc.c
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o lzw lzw.cpp -std=c++20
-	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o press press.cpp -std=c++20
+	gcc $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o press press.c
 	gcc $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o zcatc zcatc.c
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o zcatpp zcatpp.cpp -std=c++20
 
 clean:
-	rm -vf codify compress compress2 compress3 extractc lzw press zcatc zcatpp
+	rm -vf codify compress1 compress2 compress3 extractc lzw press zcatc zcatpp
 
 test:
 	$(TIME) ./extractc accept.2.Z | ./press | md5sum -c accept.2.Z.md5
