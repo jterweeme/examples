@@ -42,6 +42,27 @@ public:
     }
 };
 
+static Generator<unsigned> test(istream &is)
+{
+    Dictionary dict;
+    unsigned ent = is.get();
+
+    for (int byte; (byte = is.get()) != -1;)
+    {
+        unsigned x = dict.find(byte, ent);
+
+        if (x)
+            ent = x;
+        else
+        {
+            co_yield ent;
+            ent = byte;
+        }
+    }
+
+    co_yield ent;
+}
+
 static Generator<unsigned> codify(istream &is)
 {
     Dictionary dict;
