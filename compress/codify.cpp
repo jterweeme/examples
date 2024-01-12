@@ -1,6 +1,8 @@
 //This is a comment
 //I love comments
 
+#include "generator.h"
+#include "mystl.h"
 #include <cstdint>
 #include <cstring>
 #include <cassert>
@@ -8,9 +10,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <iostream>
-
-#define	IBUFSIZ	8192
-#define	OBUFSIZ	8192
 
 using std::cout;
 using std::min;
@@ -28,11 +27,14 @@ union Fcode
 static constexpr unsigned HSIZE = 69001;
 static constexpr long CHECK_GAP = 10000;
 
+static constexpr unsigned IBUFSIZ = 8192;
+static constexpr int OBUFSIZ = 8192;
+
 static uint8_t outbuf[OBUFSIZ + 2048];
 static int outbits;
 
 static uint8_t inbuf[IBUFSIZ + 64];
-static uint64_t htab[HSIZE];
+static int64_t htab[HSIZE];
 static uint16_t codetab[HSIZE];
 static long bytes_in = 0, bytes_out = 0, hp, checkpoint = CHECK_GAP;
 static int rpos, rlop, stcode = 1, boff = 0, ratio = 0, n_bits = 9;
@@ -40,7 +42,7 @@ static uint32_t free_ent = 257;
 static uint32_t extcode = 513;
 static Fcode fcode;
 
-int main(int argc, char **argv)
+static Generator<unsigned> codify()
 {
     memset(outbuf, 0, sizeof(outbuf));
     outbits = boff = 3 << 3;
@@ -99,7 +101,7 @@ int main(int argc, char **argv)
                 {
                     ratio = 0;
                     memset(htab, -1, sizeof(htab));
-                    cout << 256 << "\r\n";
+                    co_yield 256;
                     outbits += n_bits;
                     const unsigned nb3 = n_bits << 3;
                     boff = outbits = outbits - 1 + nb3 - ((outbits - boff - 1 + nb3) % nb3);
@@ -165,7 +167,7 @@ int main(int argc, char **argv)
                     if (flag)
                         continue;
                 
-                    cout << fcode.e.ent << "\r\n";
+                    co_yield fcode.e.ent;
                     outbits += n_bits;
 				    fc = fcode.code;
     				fcode.e.ent = fcode.e.c;
@@ -197,9 +199,16 @@ int main(int argc, char **argv)
 
 	if (bytes_in > 0)
     {
-        cout << fcode.e.ent << "\r\n";
+        co_yield fcode.e.ent;
         outbits += n_bits;
     }
+}
+
+int main(int argc, char **argv)
+{
+    for (auto codes = codify(); codes;)
+        cout << codes() << "\r\n";
+
     return 0;
 }
 
