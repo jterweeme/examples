@@ -12,16 +12,6 @@ using mystl::ostream;
 using std::fill;
 using std::div;
 
-union Fcode
-{
-    uint32_t code = 0;
-    struct
-    {
-        uint16_t c;
-        uint16_t ent;
-    } e;
-};
-
 class Dictionary
 {
     static constexpr unsigned HSIZE = 69001;
@@ -34,14 +24,12 @@ public:
 
     uint16_t find(unsigned c, unsigned ent)
     {
-        Fcode fc;
-        fc.e.c = c;
-        fc.e.ent = ent;
-        unsigned hp = fc.e.c << 8 ^ fc.e.ent;
+        unsigned hp = c << 8 ^ ent;
+        unsigned code = c << 16 | ent;
 
         while (codetab[hp])
         {
-            if (htab[hp] == fc.code)
+            if (htab[hp] == code)
                 return codetab[hp];
     
             if ((hp += hp + 1) >= HSIZE)
@@ -49,7 +37,7 @@ public:
         }
     
         codetab[hp] = free_ent++;
-        htab[hp] = fc.code;
+        htab[hp] = code;
         return 0;
     }
 };
@@ -57,15 +45,13 @@ public:
 static Generator<unsigned> codify(istream &is)
 {
     Dictionary dict;
-    dict.clear();
-    Fcode fcode;
-    fcode.e.ent = is.get();
+    unsigned ent = is.get();
     unsigned n_bits = 9;
     unsigned extcode = 513;
 
     for (int byte; (byte = is.get()) != -1;)
     {
-        if (dict.free_ent >= extcode && fcode.e.ent < 257)
+        if (dict.free_ent >= extcode && ent < 257)
         {
             if (n_bits < 16)
                 ++n_bits, extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << 16;
@@ -78,19 +64,19 @@ static Generator<unsigned> codify(istream &is)
             }
         }
 
-        fcode.e.c = byte;
-        uint16_t x = dict.find(fcode.e.c, fcode.e.ent);
+        unsigned c = byte;
+        uint16_t x = dict.find(c, ent);
 
         if (x)
-            fcode.e.ent = x;
+            ent = x;
         else
         {
-            co_yield fcode.e.ent;
-            fcode.e.ent = fcode.e.c;
+            co_yield ent;
+            ent = c;
         }
     }
 
-    co_yield fcode.e.ent;
+    co_yield ent;
 }
 
 static void press(Generator<unsigned> codes, ostream &os, unsigned bitdepth)
