@@ -21,10 +21,9 @@ union Fcode
     } e;
 };
 
-static constexpr unsigned CHECK_GAP = 10000, HSIZE = 69001;
-
 class Dictionary
 {
+    static constexpr unsigned HSIZE = 69001;
     uint16_t codetab[HSIZE];
     unsigned htab[HSIZE];
 public:
@@ -50,6 +49,7 @@ public:
 
 static Generator<unsigned> codify(istream &is)
 {
+    static constexpr unsigned CHECK_GAP = 10000;
     Dictionary dict;
     uint64_t cnt = 0;
     Fcode fcode;

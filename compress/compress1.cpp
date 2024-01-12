@@ -23,32 +23,55 @@ union Fcode
     } e;
 };
 
-static constexpr unsigned HSIZE = 69001;
-static constexpr long CHECK_GAP = 10000;
+long hp;
 
-static constexpr unsigned IBUFSIZ = 8192;
-static constexpr int OBUFSIZ = 8192;
+class Dictionary
+{
+    static constexpr unsigned HSIZE = 69001;
+    uint16_t codetab[HSIZE];
+    int64_t htab[HSIZE];
+public:
+    unsigned free_ent = 257;
+    void clear() { memset(htab, -1, sizeof(htab)), free_ent = 257; }
+    void store(unsigned hp, unsigned fc) { codetab[hp] = free_ent++, htab[hp] = fc; }
 
-static uint8_t outbuf[OBUFSIZ + 2048];
-static int outbits;
+    uint16_t find(long fc)
+    {
+        long disp = HSIZE - hp - 1;
 
-static uint8_t inbuf[IBUFSIZ + 64];
-static int64_t htab[HSIZE];
-static uint16_t codetab[HSIZE];
-static long bytes_in = 0, bytes_out = 0, hp, checkpoint = CHECK_GAP;
-static int rpos, rlop, stcode = 1, boff = 0, ratio = 0, n_bits = 9;
-static uint32_t free_ent = 257;
-static uint32_t extcode = 513;
-static Fcode fcode;
+        while (htab[hp] != -1)
+        {
+            if (htab[hp] == fc)
+                return codetab[hp];
+
+            if ((hp -= disp) < 0)
+                hp += HSIZE;
+        }
+
+        return 0;
+    }
+};
 
 static Generator<unsigned> codify(istream &is)
 {
+    static constexpr long CHECK_GAP = 10000;
+    static constexpr unsigned IBUFSIZ = 8192;
+    static constexpr int OBUFSIZ = 8192;
+    uint8_t outbuf[OBUFSIZ + 2048];
+    int outbits;
+    uint8_t inbuf[IBUFSIZ + 64];
+    long bytes_in = 0, bytes_out = 0, checkpoint = CHECK_GAP;
+    int n_bits = 9;
+    int rpos, rlop, stcode = 1, boff = 0, ratio = 0;
+    uint32_t extcode = 513;
+    Fcode fcode;
+    Dictionary dict;
+    dict.clear();
     memset(outbuf, 0, sizeof(outbuf));
     outbits = boff = 3 << 3;
     fcode.code = 0;
-    memset(htab, -1, sizeof(htab));
-    ssize_t rsize;
 
+    ssize_t rsize;
     while ((rsize = read(0, inbuf, IBUFSIZ)) > 0)
     {
         if (bytes_in == 0)
@@ -63,7 +86,7 @@ static Generator<unsigned> codify(istream &is)
 
         do
         {
-            if (free_ent >= extcode && fcode.e.ent < 257)
+            if (dict.free_ent >= extcode && fcode.e.ent < 257)
             {
                 if (n_bits < 16)
                 {
@@ -98,13 +121,13 @@ static Generator<unsigned> codify(istream &is)
                     ratio = int(rat);
                 else
                 {
-                    ratio = 0;
-                    memset(htab, -1, sizeof(htab));
                     co_yield 256;
+                    ratio = 0;
+                    dict.clear();
                     outbits += n_bits;
                     const unsigned nb3 = n_bits << 3;
                     boff = outbits = outbits - 1 + nb3 - ((outbits - boff - 1 + nb3) % nb3);
-                    n_bits = 9, stcode = 1, free_ent = 257;
+                    n_bits = 9, stcode = 1, dict.free_ent = 257;
                     extcode = 1 << n_bits;
                     if (n_bits < 16) ++extcode;
                 }
@@ -117,14 +140,13 @@ static Generator<unsigned> codify(istream &is)
                 bytes_out += OBUFSIZ;
             }
 
-            int i = min(int(rsize - rlop), int(extcode - free_ent));
+            int i = min(int(rsize - rlop), int(extcode - dict.free_ent));
             i = min(i, int(((sizeof(outbuf) - 32) * 8 - outbits) / n_bits));
 
             if (!stcode)
                 i = min(i, int(checkpoint - bytes_in));
 
             rlop += i, bytes_in += i;
-            bool flag = false;
             bool flag2 = true;
 
             while (true)
@@ -134,39 +156,25 @@ static Generator<unsigned> codify(istream &is)
                     if (rpos >= rlop && flag2)
                         break;
 
-                    flag = false;
                     flag2 = true;
                     fcode.e.c = inbuf[rpos++];
                     long fc = fcode.code;
                     hp = long(fcode.e.c) <<  8 ^ long(fcode.e.ent);
-                    long disp = HSIZE - hp - 1;
+                    uint16_t x = dict.find(fc);
 
-                    while (htab[hp] != -1)
+                    if (x)
                     {
-                        if (htab[hp] == fc)
-                        {
-                            flag = true;
-                            fcode.e.ent = codetab[hp];
-                            break;
-                        }
-
-                        if ((hp -= disp) < 0)
-                            hp += HSIZE;
+                        fcode.e.ent = x;
+                        continue;
                     }
 
-                    if (flag)
-                        continue;
-                
                     co_yield fcode.e.ent;
                     outbits += n_bits;
 				    fc = fcode.code;
     				fcode.e.ent = fcode.e.c;
 
 	    			if (stcode)
-		    		{
-			    		codetab[hp] = (uint16_t)free_ent++;
-				    	htab[hp] = fc;
-    				}
+                        dict.store(hp, fc);
                 }
 
                 if (fcode.e.ent >= 257 && rpos < rsize)
