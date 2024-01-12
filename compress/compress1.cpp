@@ -131,9 +131,6 @@ static Generator<unsigned> codify(istream &is)
             {
                 while (true)
                 {
-                    if (flag)
-                        fcode.e.ent = codetab[hp];
-
                     if (rpos >= rlop && flag2)
                         break;
 
@@ -142,25 +139,19 @@ static Generator<unsigned> codify(istream &is)
                     fcode.e.c = inbuf[rpos++];
                     long fc = fcode.code;
                     hp = long(fcode.e.c) <<  8 ^ long(fcode.e.ent);
-
-                    if (htab[hp] == fc)
-                    {
-                        flag = true;
-                        continue;
-                    }
-
                     long disp = HSIZE - hp - 1;
 
                     while (htab[hp] != -1)
                     {
-                        if ((hp -= disp) < 0)
-                            hp += HSIZE;
-
                         if (htab[hp] == fc)
                         {
                             flag = true;
+                            fcode.e.ent = codetab[hp];
                             break;
                         }
+
+                        if ((hp -= disp) < 0)
+                            hp += HSIZE;
                     }
 
                     if (flag)
