@@ -5,7 +5,7 @@ WARNINGS = -Wall -Wno-parentheses -Wno-unused-function
 DEBUG = -g
 
 all: clean
-	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o codify codify.cpp -std=c++20
+	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o compress1 compress1.cpp -std=c++20
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o compress2 compress2.cpp -std=c++20
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o compress3 compress3.cpp -std=c++20
 	gcc $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o extractc extractc.c
@@ -15,7 +15,7 @@ all: clean
 	g++ $(DEBUG) $(OPTIMIZE) $(WARNINGS) -o zcatpp zcatpp.cpp -std=c++20
 
 clean:
-	rm -vf codify compress1 compress2 compress3 extractc lzw press zcatc zcatpp
+	rm -vf compress1 compress2 compress3 extractc lzw press zcatc zcatpp
 
 test:
 	$(TIME) ./extractc accept.2.Z | ./press | md5sum -c accept.2.Z.md5
@@ -53,13 +53,13 @@ test:
 	$(TIME) zcat accept.2.Z | ./compress3 | md5sum -c accept.2.Z.md5
 	$(TIME) zcat hocus.dat.Z | ./compress2 | md5sum -c hocus.dat.Z.md5
 	$(TIME) zcat hocus.dat.Z | ./compress3 | zcat | md5sum -c hocus.dat.md5
-	$(TIME) zcat httpd-2.0.35.tar.Z | ./codify | ./press | zcat | md5sum -c httpd-2.0.35.tar.md5
+	$(TIME) zcat httpd-2.0.35.tar.Z | ./compress1 | zcat | md5sum -c httpd-2.0.35.tar.md5
 	$(TIME) zcat keen1.tar.Z | ./compress2 | md5sum -c keen1.tar.Z.md5
 	$(TIME) zcat keen1.tar.Z | ./compress3 | zcat | md5sum -c keen1.tar.md5
 	$(TIME) zcat logo.c.Z | ./compress3 | md5sum -c logo.c.Z.md5
 	$(TIME) zcat mjkimage.c.Z | ./compress2 | md5sum -c mjkimage.c.Z.md5
 	$(TIME) zcat tty.1.Z | ./compress3 | md5sum -c tty.1.Z.md5
-	$(TIME) zcat wingames.iso.Z | ./codify | ./press | md5sum -c wingames.iso.Z.md5
-	$(TIME) zcat wk98.iso.Z | ./codify | ./press | md5sum -c wk98.iso.Z.md5
+	$(TIME) zcat wingames.iso.Z | ./compress1 | md5sum -c wingames.iso.Z.md5
+	$(TIME) zcat wk98.iso.Z | ./compress1 | md5sum -c wk98.iso.Z.md5
 
 

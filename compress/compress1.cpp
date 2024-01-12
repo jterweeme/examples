@@ -3,16 +3,15 @@
 
 #include "generator.h"
 #include "mystl.h"
-#include <cstdint>
 #include <cstring>
-#include <cassert>
-#include <algorithm>
-#include <fcntl.h>
-#include <unistd.h>
-#include <iostream>
 
-using std::cout;
+using mystl::cin;
+using mystl::cout;
 using std::min;
+using mystl::ifstream;
+using mystl::istream;
+using mystl::ostream;
+using std::fill;
 
 union Fcode
 {
@@ -42,7 +41,7 @@ static uint32_t free_ent = 257;
 static uint32_t extcode = 513;
 static Fcode fcode;
 
-static Generator<unsigned> codify()
+static Generator<unsigned> codify(istream &is)
 {
     memset(outbuf, 0, sizeof(outbuf));
     outbits = boff = 3 << 3;
@@ -204,11 +203,50 @@ static Generator<unsigned> codify()
     }
 }
 
+static void press(Generator<unsigned> codes, ostream &os, unsigned bitdepth)
+{
+    unsigned cnt = 0, nbits = 9;
+    char buf[20] = {0};
+
+    while (codes)
+    {
+        unsigned code = codes();
+        unsigned *window = (unsigned *)(buf + nbits * (cnt % 8) / 8);
+        *window |= code << (cnt % 8) * (nbits - 8) % 8;
+        ++cnt;
+
+        if (cnt % 8 == 0 || code == 256)
+        {
+            os.write(buf, nbits);
+            fill(buf, buf + sizeof(buf), 0);
+        }
+
+        if (code == 256)
+            nbits = 9, cnt = 0;
+
+        if (nbits != bitdepth && cnt == 1U << nbits - 1)
+            ++nbits, cnt = 0;
+    }
+
+    auto dv = div((cnt % 8) * nbits, 8);
+    os.write(buf, dv.quot + (dv.rem ? 1 : 0));
+    os.flush();
+}
+
 int main(int argc, char **argv)
 {
-    for (auto codes = codify(); codes;)
-        cout << codes() << "\r\n";
+    static constexpr unsigned bitdepth = 16;
+    istream *is = &cin;
+    ostream *os = &cout;
+    ifstream ifs;
 
+    if (argc > 1)
+        ifs.open(argv[1]), is = &ifs;
+
+    os->put(0x1f);
+    os->put(0x9d);
+    os->put(bitdepth | 0x80);
+    press(codify(*is), *os, bitdepth);
     return 0;
 }
 
