@@ -1,42 +1,15 @@
 //This is a comment
 //I love comments
 
-#include <cstdint>
-#include <cstring>
-#include <cassert>
-#include <iostream>
-#include <fstream>
+#include "generator.h"
+#include "mystl.h"
 
-using std::istream;
-using std::ifstream;
-using std::cin;
-using std::cout;
+using mystl::istream;
+using mystl::ifstream;
+using mystl::ostream;
+using mystl::cin;
+using mystl::cout;
 using std::fill;
-
-class BitOutputStream
-{
-    std::ostream &_os;
-    unsigned _window = 0, _bits = 0;
-public:
-    uint64_t cnt = 0;
-    BitOutputStream(std::ostream &os) : _os(os) { }
-
-    void write(uint16_t code, unsigned n_bits)
-    {
-        _window |= code << _bits, cnt += n_bits, _bits += n_bits;
-        while (_bits >= 8) flush();
-    }
-
-    void flush()
-    {
-        if (_bits)
-        {
-            const unsigned bits = std::min(_bits, 8U);
-            _os.put(_window & 0xff);
-            _window = _window >> bits, _bits -= bits;
-        }
-    }
-};
 
 union Fcode
 {
@@ -75,28 +48,18 @@ public:
     }
 };
 
-int main(int argc, char **argv)
+static Generator<unsigned> codify(istream &is)
 {
-    istream *is = &std::cin;
-    ifstream ifs;
-
-    if (argc > 1)
-        ifs.open(argv[1]), is = &ifs;
-
     Dictionary dict;
-    BitOutputStream bos(cout);
-    bos.write(0x9d1f, 16);  //magic
-    bos.write(16, 7);       //max. 16 bits (hardcoded)
-    bos.write(1, 1);        //block mode
-    bos.cnt = 0;
+    uint64_t cnt = 0;
     Fcode fcode;
-    fcode.e.ent = is->get();
+    fcode.e.ent = is.get();
     unsigned n_bits = 9, checkpoint = CHECK_GAP;
     unsigned ratio = 0, extcode = (1 << n_bits) + 1;
     bool stcode = true;
-    unsigned bytes_in = 1;
+    uint64_t bytes_in = 1;
 
-    for (int byte; (byte = is->get()) != -1;)
+    for (int byte; (byte = is.get()) != -1;)
     {
         if (dict.free_ent >= extcode && fcode.e.ent < 257)
         {
@@ -109,19 +72,16 @@ int main(int argc, char **argv)
         if (!stcode && bytes_in >= checkpoint && fcode.e.ent < 257)
         {
             checkpoint = bytes_in + CHECK_GAP;
-            unsigned rat = (bytes_in << 8) / (bos.cnt >> 3);
+            unsigned rat = (bytes_in << 8) / (cnt >> 3);
 
             if (rat >= ratio)
                 ratio = rat;
             else
             {
+                co_yield 256;
                 ratio = 0;
                 dict.clear();
-                bos.write(256, n_bits);
-
-                for (unsigned nb3 = n_bits << 3; (bos.cnt - 1U + nb3) % nb3 != nb3 - 1U;)
-                    bos.write(0, 16);
-
+                cnt += n_bits;
                 n_bits = 9, stcode = true;
                 extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << n_bits;
             }
@@ -132,22 +92,72 @@ int main(int argc, char **argv)
         unsigned hp = fcode.e.c << 8 ^ fcode.e.ent;
         uint16_t x = dict.find(hp, fcode.code);
 
-        if (x)
-            fcode.e.ent = x;
-        else
+        if (!x)
         {
-            bos.write(fcode.e.ent, n_bits);
+            co_yield fcode.e.ent;
+            cnt += n_bits;
             unsigned fc = fcode.code;
             fcode.e.ent = fcode.e.c;
 
             if (stcode)
                 dict.store(hp, fc);
         }
+        else
+        {
+            fcode.e.ent = x;
+        }
     }
 
-    bos.write(fcode.e.ent, n_bits);
-    bos.flush();
+    co_yield fcode.e.ent;
+    cnt += n_bits;
+}
+
+static void press(Generator<unsigned> codes, ostream &os, unsigned bitdepth)
+{
+    unsigned cnt = 0, nbits = 9;
+    char buf[20] = {0};
+
+    while (codes)
+    {
+        unsigned code = codes();
+        unsigned *window = (unsigned *)(buf + nbits * (cnt % 8) / 8);
+        *window |= code << (cnt % 8) * (nbits - 8) % 8;
+        ++cnt;
+
+        if (cnt % 8 == 0 || code == 256)
+        {
+            os.write(buf, nbits);
+            fill(buf, buf + sizeof(buf), 0);
+        }
+
+        if (code == 256)
+            nbits = 9, cnt = 0;
+
+        if (nbits != bitdepth && cnt == 1U << nbits - 1)
+            ++nbits, cnt = 0;
+    }
+
+    auto dv = div((cnt % 8) * nbits, 8);
+    os.write(buf, dv.quot + (dv.rem ? 1 : 0));
+    os.flush();
+}
+
+int main(int argc, char **argv)
+{
+    static constexpr unsigned bitdepth = 16;
+    istream *is = &cin;
+    ostream *os = &cout;
+    ifstream ifs;
+
+    if (argc > 1)
+        ifs.open(argv[1]), is = &ifs;
+
+    os->put(0x1f);
+    os->put(0x9d);
+    os->put(bitdepth | 0x80);
+    press(codify(*is), *os, bitdepth);
     return 0;
 }
+
 
 
