@@ -1,25 +1,22 @@
 #!/usr/bin/pypy3
 
-#Usage ./compress.py archive > archive.Z
+#Usage ./compress.py < archive > archive.Z
 
 import sys
 
 class Dictionary:
     def __init__(self):
-        self.HSIZE = 69001
-        self.codetab = [0 for x in range(self.HSIZE)]
-        self.htab = [0xffffffff for x in range(self.HSIZE)]
+        self.xdict = [0 for x in range(69001)]
         self.free_ent = 257
     def find(self, c, ent):
         hp = c << 8 ^ ent
-        disp = self.HSIZE - hp - 1
-        while self.htab[hp] != 0xffffffff:
-            if self.htab[hp] == (c << 16 | ent):
-                return self.codetab[hp]
-            hp = hp + self.HSIZE - disp if hp < disp else hp - disp
-        self.codetab[hp] = self.free_ent
+        disp = len(self.xdict) - hp - 1
+        while self.xdict[hp] != 0:
+            if self.xdict[hp][0] == (c << 16 | ent):
+                return self.xdict[hp][1]
+            hp = hp + len(self.xdict) - disp if hp < disp else hp - disp
+        self.xdict[hp] = (c << 16 | ent, self.free_ent)
         self.free_ent += 1
-        self.htab[hp] = c << 16 | ent
         return 0
 
 def codify(f):
@@ -72,7 +69,6 @@ def press(codes, bitdepth, out):
 
 if __name__ == "__main__":
     sys.stdout.buffer.write(b'\x1f\x9d\x90')
-    #f = open(sys.argv[1], "rb")
     f = sys.stdin.buffer
     press(codify(f), 16, sys.stdout.buffer)
     
