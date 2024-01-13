@@ -9,14 +9,15 @@ static int decompress_block(FILE *in, FILE *out, unsigned bitdepth)
     unsigned short codes[1 << bitdepth];
     unsigned pos = 256, oldcode = 0, finchar = 0;
 
-    for (unsigned nbits = 9; nbits <= bitdepth; ++nbits)
+    for (unsigned nbits = 9;; ++nbits)
     {
-        for (unsigned i = 0, ncodes; i < 1U << nbits - 1 || nbits == bitdepth; i += ncodes)
+        for (unsigned i = 0; i < 1U << nbits - 1 || nbits == bitdepth;)
         {
-            if ((ncodes = fread(buf, 1, nbits, in) * 8 / nbits) == 0)
+            unsigned ncodes = fread(buf, 1, nbits, in) * 8 / nbits;
+            if (ncodes == 0)
                 return 0;
 
-            for (unsigned j = 0; j < ncodes; ++j)
+            for (unsigned j = 0; j < ncodes; ++i, ++j)
             {
                 unsigned *window = (unsigned *)(buf + nbits * j / 8);
                 unsigned newcode, c, pstack = sizeof(stack);

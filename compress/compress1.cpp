@@ -4,24 +4,17 @@
 #include "generator.h"
 #include "mystl.h"
 #include <cstring>
+#include <cassert>
+#include <iostream>
 
 using mystl::cin;
 using mystl::cout;
+using std::cerr;
 using std::min;
 using mystl::ifstream;
 using mystl::istream;
 using mystl::ostream;
 using std::fill;
-
-union Fcode
-{
-    long code;
-    struct
-    {
-        uint8_t c;
-        uint16_t ent;
-    } e;
-};
 
 class Dictionary
 {
@@ -29,23 +22,28 @@ class Dictionary
     uint16_t codetab[HSIZE];
     int64_t htab[HSIZE];
 public:
-    unsigned free_ent = 257;
+    unsigned free_ent;
     void clear() { memset(htab, -1, sizeof(htab)), free_ent = 257; }
-    void store(unsigned hp, unsigned fc) { codetab[hp] = free_ent++, htab[hp] = fc; }
+    Dictionary() { clear(); }
 
-    uint16_t find(long &hp, long fc)
+    uint16_t find(unsigned c, unsigned ent, bool stcode)
     {
-        long disp = HSIZE - hp - 1;
+        unsigned hp = c <<  8 ^ ent;
+        unsigned disp = HSIZE - hp - 1;
 
         while (htab[hp] != -1)
         {
-            if (htab[hp] == fc)
+            if (htab[hp] == (c << 16 | ent))
                 return codetab[hp];
 
-            if ((hp -= disp) < 0)
-                hp += HSIZE;
+            hp = hp < disp ? hp + HSIZE - disp : hp - disp;
         }
 
+        if (stcode)
+        {
+            codetab[hp] = free_ent++;
+            htab[hp] = c << 16 | ent;
+        }
         return 0;
     }
 };
@@ -62,30 +60,19 @@ static Generator<unsigned> codify(istream &is)
     int n_bits = 9;
     int rpos, rlop, stcode = 1, boff = 0, ratio = 0;
     uint32_t extcode = 513;
-    long hp;
-    Fcode fcode;
     Dictionary dict;
-    dict.clear();
-    memset(outbuf, 0, sizeof(outbuf));
     outbits = boff = 3 << 3;
-    fcode.code = 0;
+    unsigned ent;
 
     ssize_t rsize;
     while ((rsize = read(0, inbuf, IBUFSIZ)) > 0)
     {
-        if (bytes_in == 0)
-        {
-            fcode.e.ent = inbuf[0];
-            rpos = 1;
-        }
-        else
-            rpos = 0;
-
+        bytes_in == 0 ? ent = inbuf[0], rpos = 1 : rpos = 0;
         rlop = 0;
 
         do
         {
-            if (dict.free_ent >= extcode && fcode.e.ent < 257)
+            if (dict.free_ent >= extcode && ent < 257)
             {
                 if (n_bits < 16)
                 {
@@ -101,7 +88,7 @@ static Generator<unsigned> codify(istream &is)
                 }
             }
 
-            if (!stcode && bytes_in >= checkpoint && fcode.e.ent < 257)
+            if (!stcode && bytes_in >= checkpoint && ent < 257)
             {
                 long rat;
                 checkpoint = bytes_in + CHECK_GAP;
@@ -156,27 +143,21 @@ static Generator<unsigned> codify(istream &is)
                         break;
 
                     flag2 = true;
-                    fcode.e.c = inbuf[rpos++];
-                    long fc = fcode.code;
-                    hp = long(fcode.e.c) <<  8 ^ long(fcode.e.ent);
-                    uint16_t x = dict.find(hp, fc);
+                    unsigned c = inbuf[rpos++];
+                    uint16_t x = dict.find(c, ent, stcode);
 
                     if (x)
                     {
-                        fcode.e.ent = x;
+                        ent = x;
                         continue;
                     }
 
-                    co_yield fcode.e.ent;
+                    co_yield ent;
                     outbits += n_bits;
-				    fc = fcode.code;
-    				fcode.e.ent = fcode.e.c;
-
-	    			if (stcode)
-                        dict.store(hp, fc);
+    				ent = c;
                 }
 
-                if (fcode.e.ent >= 257 && rpos < rsize)
+                if (ent >= 257 && rpos < rsize)
                 {
                     flag2 = false;
                     continue;
@@ -196,7 +177,7 @@ static Generator<unsigned> codify(istream &is)
 
 	if (bytes_in > 0)
     {
-        co_yield fcode.e.ent;
+        co_yield ent;
         outbits += n_bits;
     }
 }

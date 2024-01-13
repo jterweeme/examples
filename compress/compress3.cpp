@@ -15,73 +15,34 @@ using std::ostream;
 using std::fill;
 using std::div;
 
-class Toolbox
-{
-public:
-    template <class T> static T min(T a, T b) { return b < a ? b : a; }
-    template <class T> static T max(T a, T b) { return a < b ? b : a; }
-
-    static char nibble(uint8_t n)
-    { return n <= 9 ? '0' + char(n) : 'a' + char(n - 10); }
-
-    static void hex32(unsigned dw, ostream &os)
-    { for (unsigned i = 0; i <= 28; i += 4) os.put(nibble(dw >> 28 - i & 0xf)); }
-};
-
 class Dictionary
 {
     static constexpr unsigned HSIZE = 69001;
     uint16_t codetab[HSIZE];
-    unsigned htab[HSIZE];
+    uint32_t htab[HSIZE];
 public:
     unsigned free_ent;
-    void clear() { fill(codetab, codetab + HSIZE, 0), free_ent = 257; }
+    void clear() { fill(htab, htab + HSIZE, 0xffffffff), free_ent = 257; }
     Dictionary() { clear(); }
 
     uint16_t find(unsigned c, unsigned ent)
     {
         unsigned hp = c << 8 ^ ent;
+        unsigned disp = HSIZE - hp - 1;
 
-        while (codetab[hp])
+        while (htab[hp] != 0xffffffff)
         {
             if (htab[hp] == (c << 16 | ent))
                 return codetab[hp];
-    
-            if ((hp += hp + 1) >= HSIZE)
-                hp -= HSIZE;
+
+            hp = hp < disp ? hp + HSIZE - disp : hp - disp;
         }
-    
+
         codetab[hp] = free_ent++;
         htab[hp] = c << 16 | ent;
         return 0;
     }
 };
-
-static Generator<unsigned> test(istream &is)
-{
-    Dictionary dict;
-    unsigned ent = is.get();
-    typedef Toolbox T;
-    unsigned a = 0;
-
-    for (int byte; (byte = is.get()) != -1;)
-    {
-        unsigned x = dict.find(byte, ent);
-        cerr << a++ << " ";
-        T::hex32(x, cerr);
-        cerr << "\r\n";
-
-        if (x)
-            ent = x;
-        else
-        {
-            co_yield ent;
-            ent = byte;
-        }
-    }
-
-    co_yield ent;
-}
 
 static Generator<unsigned> codify(istream &is)
 {

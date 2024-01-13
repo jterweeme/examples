@@ -13,7 +13,7 @@ int main(int argc, char **argv)
     assert(bitdepth >= 9 && bitdepth <= 16);
     char buf[20];
 start_block:
-    for (unsigned nbits = 9; nbits <= bitdepth; ++nbits)
+    for (unsigned nbits = 9;; ++nbits)
     {
         for (unsigned i = 0, ncodes; i < 1U << nbits - 1 || nbits == bitdepth;)
         {
