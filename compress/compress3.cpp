@@ -55,26 +55,25 @@ static Generator<unsigned> codify(istream &is)
     {
         if (dict.free_ent >= extcode && ent < 257)
         {
-            if (n_bits < 16)
-                ++n_bits, extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << 16;
-            else
+            if (++n_bits > 16)
             {
                 co_yield 256;
                 dict.clear();
                 n_bits = 9;
-                extcode = 513;
             }
+
+            extcode = 1 << n_bits;
+
+            if (n_bits < 16)
+                ++extcode;
         }
 
         uint16_t x = dict.find(byte, ent);
 
-        if (x)
-            ent = x;
-        else
-        {
+        if (x == 0)
             co_yield ent;
-            ent = byte;
-        }
+
+        ent = x ? x : byte;
     }
 
     co_yield ent;
@@ -90,9 +89,8 @@ static void press(Generator<unsigned> codes, ostream &os, unsigned bitdepth)
         unsigned code = codes();
         unsigned *window = (unsigned *)(buf + nbits * (cnt % 8) / 8);
         *window |= code << (cnt % 8) * (nbits - 8) % 8;
-        ++cnt;
 
-        if (cnt % 8 == 0 || code == 256)
+        if (++cnt % 8 == 0 || code == 256)
         {
             os.write(buf, nbits);
             fill(buf, buf + sizeof(buf), 0);
