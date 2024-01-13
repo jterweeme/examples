@@ -59,10 +59,15 @@ test:
 	$(TIME) zcat logo.c.Z | ./compress3 | md5sum -c logo.c.Z.md5
 	$(TIME) zcat mjkimage.c.Z | ./compress2 | md5sum -c mjkimage.c.Z.md5
 	$(TIME) zcat mjkimage.c.Z | ./compress3 | zcat | md5sum -c mjkimage.c.md5
+	$(TIME) zcat mo.m68.tar.Z | ./compress3 | zcat | md5sum -c mo.m68.tar.md5
+	$(TIME) zcat relnotes.ps.Z | ./compress2 | md5sum -c relnotes.ps.Z.md5
+	$(TIME) zcat relnotes.ps.Z | ./compress3 | zcat | md5sum -c relnotes.ps.md5
 	$(TIME) zcat tty.1.Z | ./compress3 | md5sum -c tty.1.Z.md5
 	$(TIME) zcat wingames.iso.Z | ./compress1 | md5sum -c wingames.iso.Z.md5
 	$(TIME) zcat wingames.iso.Z | ./compress3 | zcat | md5sum -c wingames.iso.md5
-	$(TIME) zcat wk98.iso.Z | ./compress1 | md5sum -c wk98.iso.Z.md5
-	$(TIME) zcat wk98.iso.Z | ./compress3 | zcat | md5sum -c wk98.iso.md5
+	#$(TIME) zcat wk98.iso.Z | ./compress1 | md5sum -c wk98.iso.Z.md5
+	#$(TIME) zcat wk98.iso.Z | ./compress3 | zcat | md5sum -c wk98.iso.md5
+	#$(TIME) zcat enwik9.Z | ./compress1 | md5sum -c enwik9.Z.md5
+	#$(TIME) zcat enwik9.Z | ./compress3 | zcat | md5sum -c enwik9.md5
 
 

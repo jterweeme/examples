@@ -7,11 +7,11 @@
 #include <fstream>
 
 using mystl::cin;
-using std::cout;
-using std::cerr;
+using mystl::cout;
+using mystl::cerr;
 using mystl::ifstream;
 using mystl::istream;
-using std::ostream;
+using mystl::ostream;
 using std::fill;
 using std::div;
 

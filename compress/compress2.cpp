@@ -15,26 +15,27 @@ class Dictionary
 {
     static constexpr unsigned HSIZE = 69001;
     uint16_t codetab[HSIZE];
-    unsigned htab[HSIZE];
+    uint32_t htab[HSIZE];
 public:
+    bool _store;
     unsigned free_ent;
-    void clear() { fill(codetab, codetab + HSIZE, 0), free_ent = 257; }
+    void clear() { fill(htab, htab + HSIZE, 0xffffffff), free_ent = 257, _store = true; }
     Dictionary() { clear(); }
 
-    uint16_t find(unsigned c, unsigned ent, bool stcode)
+    uint16_t find(unsigned c, unsigned ent)
     {
         unsigned hp = c << 8 ^ ent;
+        unsigned disp = HSIZE - hp - 1;
 
-        while (codetab[hp])
+        while (htab[hp] != 0xffffffff)
         {
             if (htab[hp] == (c << 16 | ent))
                 return codetab[hp];
 
-            if ((hp += hp + 1) >= HSIZE)
-                hp -= HSIZE;
+            hp = hp < disp ? hp + HSIZE - disp : hp - disp;
         }
 
-        if (stcode)
+        if (_store)
         {
             codetab[hp] = free_ent++;
             htab[hp] = c << 16 | ent;
@@ -52,7 +53,6 @@ static Generator<unsigned> codify(istream &is)
     unsigned ent = is.get();
     unsigned n_bits = 9, checkpoint = CHECK_GAP;
     unsigned ratio = 0, extcode = (1 << n_bits) + 1;
-    bool stcode = true;
     uint64_t bytes_in = 1;
 
     for (int byte; (byte = is.get()) != -1;)
@@ -62,10 +62,10 @@ static Generator<unsigned> codify(istream &is)
             if (n_bits < 16)
                 ++n_bits, extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << 16;
             else
-                stcode = false;
+                dict._store = false;
         }
 
-        if (!stcode && bytes_in >= checkpoint && ent < 257)
+        if (!dict._store && bytes_in >= checkpoint && ent < 257)
         {
             checkpoint = bytes_in + CHECK_GAP;
             unsigned rat = (bytes_in << 8) / (cnt >> 3);
@@ -78,13 +78,13 @@ static Generator<unsigned> codify(istream &is)
                 ratio = 0;
                 dict.clear();
                 cnt += n_bits;
-                n_bits = 9, stcode = true;
+                n_bits = 9;
                 extcode = n_bits < 16 ? (1 << n_bits) + 1 : 1 << n_bits;
             }
         }
 
         ++bytes_in;
-        uint16_t x = dict.find(byte, ent, stcode);
+        uint16_t x = dict.find(byte, ent);
 
         if (x)
             ent = x;

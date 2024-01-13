@@ -20,10 +20,10 @@ class Dictionary
 {
     static constexpr unsigned HSIZE = 69001;
     uint16_t codetab[HSIZE];
-    int64_t htab[HSIZE];
+    uint32_t htab[HSIZE];
 public:
     unsigned free_ent;
-    void clear() { memset(htab, -1, sizeof(htab)), free_ent = 257; }
+    void clear() { memset(htab, 0xffffffff, sizeof(htab)), free_ent = 257; }
     Dictionary() { clear(); }
 
     uint16_t find(unsigned c, unsigned ent, bool stcode)
@@ -31,7 +31,7 @@ public:
         unsigned hp = c <<  8 ^ ent;
         unsigned disp = HSIZE - hp - 1;
 
-        while (htab[hp] != -1)
+        while (htab[hp] != 0xffffffff)
         {
             if (htab[hp] == (c << 16 | ent))
                 return codetab[hp];
@@ -113,7 +113,7 @@ static Generator<unsigned> codify(istream &is)
                     outbits += n_bits;
                     const unsigned nb3 = n_bits << 3;
                     boff = outbits = outbits - 1 + nb3 - ((outbits - boff - 1 + nb3) % nb3);
-                    n_bits = 9, stcode = 1, dict.free_ent = 257;
+                    n_bits = 9, stcode = 1;
                     extcode = 1 << n_bits;
                     if (n_bits < 16) ++extcode;
                 }
