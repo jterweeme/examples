@@ -1,6 +1,6 @@
 #!/usr/bin/pypy3
 
-#Usage: ./zcat_min.py < archive.Z > archive
+#Usage: ./zcat.py < archive.Z > archive
 
 import sys
 

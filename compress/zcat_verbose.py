@@ -1,6 +1,6 @@
 #!/usr/bin/pypy3
 
-#Usage ./zcat.py < archive.Z > archive
+#Usage ./zcat_verbose.py < archive.Z > archive
 
 import sys
 
