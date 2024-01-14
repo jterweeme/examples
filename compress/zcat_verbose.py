@@ -39,7 +39,7 @@ def decompress_block(f, codegen):
         stack.reverse()
         xdict.append((oldcode, finchar))
         oldcode = newcode
-        f.buffer.write(stack)
+        f.write(stack)
     return False
 
 if __name__ == "__main__":
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     c = int.from_bytes(f.read(1), "little")
     assert c != -1 and c & 0x80 == 0x80
     assert (bitdepth := c & 0x7f) in range(9, 17)
-    while decompress_block(sys.stdout, extract_block(f, bitdepth)):
+    while decompress_block(sys.stdout.buffer, extract_block(f, bitdepth)):
         pass
 
 
