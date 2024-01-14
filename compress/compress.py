@@ -22,18 +22,19 @@ def codify(f):
             extcode = 1 << nbits
             if nbits < 16:
                 extcode += 1
-        if (x := xdict.get((byte, ent))) == None:
-            xdict[(byte, ent)] = free_ent
+        if (x := xdict.get(byte << 16 | ent)) == None:
+            xdict[byte << 16 | ent] = free_ent
             free_ent += 1
             yield ent
         ent = x if x else byte
     yield ent
 
-def press(codes, bitdepth, out):
+if __name__ == "__main__":
+    out = sys.stdout.buffer
     out.write(b'\x1f\x9d\x90')
     nbits = 9
     cnt = n = 0
-    for c in codes:
+    for c in codify(sys.stdin.buffer):
         n = c << nbits * (cnt % 8) | n
         cnt += 1
         if cnt % 8 == 0 or c == 256:
@@ -47,8 +48,5 @@ def press(codes, bitdepth, out):
             cnt = 0
     a = divmod(nbits * (cnt % 8), 8)
     out.write(n.to_bytes(a[0] + (1 if a[1] else 0), 'little'))
-
-if __name__ == "__main__":
-    press(codify(sys.stdin.buffer), 16, sys.stdout.buffer)
 
 
