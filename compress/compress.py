@@ -6,18 +6,14 @@ import sys
 
 class Dictionary:
     def __init__(self):
-        self.xdict = [0 for x in range(69001)]
+        self.xdict = dict()
         self.free_ent = 257
     def find(self, c, ent):
-        hp = c << 8 ^ ent
-        disp = len(self.xdict) - hp - 1
-        while self.xdict[hp] != 0:
-            if self.xdict[hp][0] == (c << 16 | ent):
-                return self.xdict[hp][1]
-            hp = hp + len(self.xdict) - disp if hp < disp else hp - disp
-        self.xdict[hp] = (c << 16 | ent, self.free_ent)
+        if (ret := self.xdict.get(c << 16 | ent)):
+            return ret
+        self.xdict[c << 16 | ent] = self.free_ent
         self.free_ent += 1
-        return 0
+        return None
 
 def codify(f):
     xdict = Dictionary()
@@ -35,8 +31,7 @@ def codify(f):
             extcode = 1 << nbits
             if nbits < 16:
                 extcode += 1
-        x = xdict.find(byte, ent)
-        if x == 0:
+        if (x := xdict.find(byte, ent)) == None:
             yield ent
         ent = x if x else byte
     yield ent
