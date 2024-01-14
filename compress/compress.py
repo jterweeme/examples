@@ -4,34 +4,27 @@
 
 import sys
 
-class Dictionary:
-    def __init__(self):
-        self.xdict = dict()
-        self.free_ent = 257
-    def find(self, c, ent):
-        if (ret := self.xdict.get(c << 16 | ent)):
-            return ret
-        self.xdict[c << 16 | ent] = self.free_ent
-        self.free_ent += 1
-        return None
-
 def codify(f):
-    xdict = Dictionary()
+    xdict = dict()
+    free_ent = 257
     ent = int.from_bytes(f.read(1), 'little')
     nbits = 9
     extcode = 513
     while len(buf := f.read(1)) > 0:
         byte = int.from_bytes(buf, 'little')
-        if xdict.free_ent >= extcode and ent < 257:
+        if free_ent >= extcode and ent < 257:
             nbits += 1
             if nbits > 16:
                 yield 256
-                xdict = Dictionary()
+                xdict.clear()
+                free_ent = 257
                 nbits = 9
             extcode = 1 << nbits
             if nbits < 16:
                 extcode += 1
-        if (x := xdict.find(byte, ent)) == None:
+        if (x := xdict.get(byte << 16 | ent)) == None:
+            xdict[byte << 16 | ent] = free_ent
+            free_ent += 1
             yield ent
         ent = x if x else byte
     yield ent
