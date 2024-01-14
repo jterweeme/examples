@@ -9,7 +9,7 @@ def extract_block(f, bitdepth):
     cnt = 0
     while (ncodes := len(buf := f.read(nbits)) * 8 // nbits) > 0:
         n = int.from_bytes(buf, "little")
-        for i in range(ncodes):
+        for _ in range(ncodes):
             code = n & (1 << nbits) - 1
             yield code
             n = n >> nbits

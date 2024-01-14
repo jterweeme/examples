@@ -5,7 +5,6 @@
 import sys
 
 if __name__ == "__main__":
-    #f = open(sys.argv[1], "rb")
     f = sys.stdin.buffer
     assert f.read(2) == b'\x1f\x9d'
     c = int.from_bytes(f.read(1), "little")
@@ -16,7 +15,7 @@ if __name__ == "__main__":
     xdict = list()
     while (ncodes := len(buf := f.read(nbits)) * 8 // nbits) > 0:
         n = int.from_bytes(buf, "little")
-        for i in range(ncodes):
+        for _ in range(ncodes):
             newcode = c = n & (1 << nbits) - 1
             n = n >> nbits
             cnt += 1
