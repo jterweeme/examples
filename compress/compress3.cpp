@@ -7,7 +7,6 @@
 #include <fstream>
 #include <unordered_map>
 #include <cassert>
-#include <map>
 
 using mystl::cin;
 using mystl::cout;
@@ -15,105 +14,45 @@ using mystl::cerr;
 using mystl::ifstream;
 using mystl::istream;
 using mystl::ostream;
-using std::map;
 using std::unordered_map;
+using std::make_pair;
+using std::pair;
 using std::fill;
 using std::div;
-using std::pair;
 
 class Dictionary
 {
     static constexpr unsigned HSIZE = 69001;
     uint16_t codetab[HSIZE];
     uint32_t htab[HSIZE];
-    pair<uint32_t, uint16_t> _current;
-public:
-    void clear() { fill(htab, htab + HSIZE, 0xffffffff); }
-    Dictionary() { clear(); }
-    auto end() const { return nullptr; }
-
-    pair<uint32_t, uint16_t> *find(uint32_t key, unsigned &free_ent)
-    {
-        unsigned c = key >> 16;
-        unsigned ent = key & 0xffff;
-        unsigned hp = c << 8 ^ ent;
-        unsigned disp = HSIZE - hp - 1;
-
-        while (htab[hp] != 0xffffffff)
-        {
-            if (htab[hp] == key)
-            {
-                _current = std::make_pair(key, codetab[hp]);
-                return &_current;
-            }
-
-            hp = hp < disp ? hp + HSIZE - disp : hp - disp;
-        }
-
-        codetab[hp] = free_ent++;
-        htab[hp] = key;
-        return end();
-    }
-};
-
-#if 0
-class unnamed
-{
-    unordered_map<uint32_t, uint16_t> _map;
-    static constexpr unsigned HSIZE = 69001;
-    uint16_t codetab[HSIZE];
-    uint32_t htab[HSIZE];
-    pair<uint32_t, uint16_t> _current;
+    pair<uint32_t, uint16_t> _found;
     unsigned _hp;
 public:
-    void clear() { _map.clear(); fill(htab, htab + HSIZE, 0xffffffff); }
+    void clear() { fill(htab, htab + HSIZE, 0xffffffff); }
+    void store(uint32_t key, unsigned value) { codetab[_hp] = value, htab[_hp] = key; }
+    Dictionary() { clear(); }
+    auto end() const { return nullptr; }
 
     pair<uint32_t, uint16_t> *find(uint32_t key)
     {
         unsigned c = key >> 16;
-        unsigned ent = key & 0xffff;
-        _hp = c << 8 ^ ent;
-        unsigned disp = HSIZE - _hp - 1;
 
-        while (htab[_hp] != 0xffffffff)
+        for (unsigned disp = HSIZE - (_hp = c << 8 ^ key & 0xffff) - 1; htab[_hp] != 0xffffffff;)
         {
             if (htab[_hp] == key)
-            {
-                _current = std::make_pair(key, codetab[_hp]);
-                return &_current;
-            }
+                return &(_found = make_pair(key, codetab[_hp]));
 
             _hp = _hp < disp ? _hp + HSIZE - disp : _hp - disp;
         }
-        return nullptr;       
-        //return _map.find(key);
-    }
 
-    //auto end() const { return _map.end(); }
-    auto end() const { return nullptr; }
-
-    void set(uint32_t key, uint16_t val)
-    {
-        //assert(i == htab[_hp]);
-        htab[_hp] = key;
-        codetab[_hp] = val;
-    }
-
-    auto &operator [](uint32_t i)
-    {
-
-        return _map[i];
+        return end();
     }
 };
-#endif
 
 static Generator<unsigned> codify(istream &is)
 {
-#if 0
-    unordered_map<uint32_t, uint16_t> dict;
-#else
+    //unordered_map<uint32_t, uint16_t> dict;
     Dictionary dict;
-#endif
     unsigned free_ent = 257;
     unsigned ent = is.get();
     unsigned n_bits = 9;
@@ -136,24 +75,16 @@ static Generator<unsigned> codify(istream &is)
             if (n_bits < 16)
                 ++extcode;
         }
-#if 0
+
         if (auto search = dict.find(byte << 16 | ent); search != dict.end())
             ent = search->second;
         else
         {
-            dict[byte << 16 | ent] = free_ent++;
+            //dict[byte << 16 | ent] = free_ent++;
+            dict.store(byte << 16 | ent, free_ent++);
             co_yield ent;
             ent = byte;
         }
-#else
-        if (auto search = dict.find(byte << 16 | ent, free_ent); search != dict.end())
-            ent = search->second;
-        else
-        {
-            co_yield ent;
-            ent = byte;
-        }
-#endif
     }
 
     co_yield ent;
