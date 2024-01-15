@@ -20,6 +20,7 @@ using std::pair;
 using std::fill;
 using std::div;
 
+//(faster than unordered_map)
 class Dictionary
 {
     static constexpr unsigned HSIZE = 69001;
@@ -32,6 +33,12 @@ public:
     void store(uint32_t key, unsigned value) { codetab[_hp] = value, htab[_hp] = key; }
     Dictionary() { clear(); }
     auto end() const { return nullptr; }
+
+    auto &operator [](unsigned i)
+    {
+        htab[_hp] = i;
+        return codetab[_hp];
+    }
 
     pair<uint32_t, uint16_t> *find(uint32_t key)
     {
@@ -80,8 +87,7 @@ static Generator<unsigned> codify(istream &is)
             ent = search->second;
         else
         {
-            //dict[byte << 16 | ent] = free_ent++;
-            dict.store(byte << 16 | ent, free_ent++);
+            dict[byte << 16 | ent] = free_ent++;
             co_yield ent;
             ent = byte;
         }
