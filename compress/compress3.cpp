@@ -5,6 +5,8 @@
 #include "mystl.h"
 #include <iostream>
 #include <fstream>
+#include <unordered_map>
+#include <map>
 
 using mystl::cin;
 using mystl::cout;
@@ -12,9 +14,13 @@ using mystl::cerr;
 using mystl::ifstream;
 using mystl::istream;
 using mystl::ostream;
+using std::map;
+using std::unordered_map;
 using std::fill;
 using std::div;
+using std::pair;
 
+#if 0
 class Dictionary
 {
     static constexpr unsigned HSIZE = 69001;
@@ -43,21 +49,38 @@ public:
         return 0;
     }
 };
+#endif
+
+class unnamed
+{
+    unordered_map<uint32_t, uint16_t> _map;
+public:
+    void clear() { _map.clear(); }
+    auto find(uint32_t key) { return _map.find(key); }
+    auto end() const { return _map.end(); }
+    auto &operator [](int i) { return _map[i]; }
+};
 
 static Generator<unsigned> codify(istream &is)
 {
-    Dictionary dict;
+#if 0
+    unordered_map<uint32_t, uint16_t> dict;
+#else
+    unnamed dict;
+#endif
+    unsigned free_ent = 257;
     unsigned ent = is.get();
     unsigned n_bits = 9;
     unsigned extcode = 513;
 
     for (int byte; (byte = is.get()) != -1;)
     {
-        if (dict.free_ent >= extcode && ent < 257)
+        if (free_ent >= extcode && ent < 257)
         {
             if (++n_bits > 16)
             {
                 co_yield 256;
+                free_ent = 257;
                 dict.clear();
                 n_bits = 9;
             }
@@ -68,12 +91,14 @@ static Generator<unsigned> codify(istream &is)
                 ++extcode;
         }
 
-        uint16_t x = dict.find(byte, ent);
-
-        if (x == 0)
+        if (auto search = dict.find(byte << 16 | ent); search != dict.end())
+            ent = search->second;
+        else
+        {
+            dict[byte << 16 | ent] = free_ent++;
             co_yield ent;
-
-        ent = x ? x : byte;
+            ent = byte;
+        }
     }
 
     co_yield ent;
