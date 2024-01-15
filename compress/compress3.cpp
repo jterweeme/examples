@@ -26,26 +26,33 @@ class Dictionary
     static constexpr unsigned HSIZE = 69001;
     uint16_t codetab[HSIZE];
     uint32_t htab[HSIZE];
+    pair<uint32_t, uint16_t> _current;
 public:
     void clear() { fill(htab, htab + HSIZE, 0xffffffff); }
     Dictionary() { clear(); }
+    auto end() const { return nullptr; }
 
-    uint16_t find(unsigned c, unsigned ent, unsigned &free_ent)
+    pair<uint32_t, uint16_t> *find(uint32_t key, unsigned &free_ent)
     {
+        unsigned c = key >> 16;
+        unsigned ent = key & 0xffff;
         unsigned hp = c << 8 ^ ent;
         unsigned disp = HSIZE - hp - 1;
 
         while (htab[hp] != 0xffffffff)
         {
-            if (htab[hp] == (c << 16 | ent))
-                return codetab[hp];
+            if (htab[hp] == key)
+            {
+                _current = std::make_pair(key, codetab[hp]);
+                return &_current;
+            }
 
             hp = hp < disp ? hp + HSIZE - disp : hp - disp;
         }
 
         codetab[hp] = free_ent++;
-        htab[hp] = c << 16 | ent;
-        return 0;
+        htab[hp] = key;
+        return end();
     }
 };
 
@@ -139,8 +146,8 @@ static Generator<unsigned> codify(istream &is)
             ent = byte;
         }
 #else
-        if (auto search = dict.find(byte, ent, free_ent); search)
-            ent = search;
+        if (auto search = dict.find(byte << 16 | ent, free_ent); search != dict.end())
+            ent = search->second;
         else
         {
             co_yield ent;
