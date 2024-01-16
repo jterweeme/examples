@@ -1,38 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include <stdbool.h>
 #include <stdint.h>
-#include <ctype.h>
-
-static int code(FILE *fp)
-{
-#if 0
-    int n = 0;
-    bool flag = false;
-
-    for (int c; (c = fgetc(fp)) != -1;)
-    {
-        if (isdigit(c))
-        {
-            flag = true;
-            n = n * 10 + c - '0';
-        }
-        else
-        {
-            if (flag)
-                return n;
-
-            flag = false;
-            n = 0;
-        }
-    }
-
-    return -1;
-#else
-    uint16_t buf;
-    return fread(&buf, 1, 2, fp) == 2 ? buf : -1;
-#endif
-}
 
 int main()
 {
@@ -44,7 +12,7 @@ int main()
     const unsigned bitdepth = 16;
     char buf[20] = {0};
     
-    for (int c; (c = code(stdin)) != -1;)
+    for (uint16_t c; (fread(&c, 1, 2, stdin)) == 2;)
     {
         unsigned *window = (unsigned *)(buf + nbits * (cnt % 8) / 8);
         *window |= c << (cnt % 8) * (nbits - 8) % 8;
