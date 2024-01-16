@@ -5,8 +5,8 @@ import sys
 if __name__ == "__main__":
     oldcode = finchar = 0
     xdict = list()
-    for line in sys.stdin:
-        newcode = c = int(line)
+    while len(buf := sys.stdin.buffer.read(2)) == 2:
+        newcode = c = int.from_bytes(buf, 'little')
         assert c <= len(xdict) + 256
         if c == 256:
             xdict.clear()

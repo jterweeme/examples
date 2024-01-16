@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <ctype.h>
 
 static int code(FILE *fp)
 {
+#if 0
     int n = 0;
     bool flag = false;
 
@@ -26,6 +28,10 @@ static int code(FILE *fp)
     }
 
     return -1;
+#else
+    uint16_t buf;
+    return fread(&buf, 1, 2, fp) == 2 ? buf : -1;
+#endif
 }
 
 int main()

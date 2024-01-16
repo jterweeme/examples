@@ -54,6 +54,7 @@ public:
 static Generator<unsigned>
 codes(istream &is)
 {
+#if 0
     unsigned n = 0;
     bool flag = false;
 
@@ -73,6 +74,19 @@ codes(istream &is)
             n = 0;
         }
     }
+#else
+    uint16_t buf;
+    
+    while (true)
+    {
+        is.read((char *)&buf, 2);
+
+        if (is.gcount() != 2)
+            break;
+
+        co_yield buf;
+    }
+#endif
 }
 
 static void

@@ -7,8 +7,8 @@ if __name__ == "__main__":
     out.write(b'\x1f\x9d\x90')
     nbits = 9
     cnt = n = 0
-    for lin in sys.stdin:
-        c = int(lin)
+    while len(buf := sys.stdin.buffer.read(2)) == 2:
+        c = int.from_bytes(buf, 'little')
         n = c << nbits * (cnt % 8) | n
         cnt += 1
         if cnt % 8 == 0 or c == 256:
