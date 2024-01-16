@@ -22,11 +22,13 @@ def codify(f):
             extcode = 1 << nbits
             if nbits < 16:
                 extcode += 1
-        if (x := xdict.get(byte << 16 | ent)) == None:
+        if (x := xdict.get(byte << 16 | ent)):
+            ent = x
+        else:
             xdict[byte << 16 | ent] = free_ent
             free_ent += 1
             yield ent
-        ent = x if x else byte
+            ent = byte
     yield ent
 
 if __name__ == "__main__":

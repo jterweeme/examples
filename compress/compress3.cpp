@@ -24,32 +24,30 @@ using std::div;
 class Dictionary
 {
     static constexpr unsigned HSIZE = 69001;
-    uint16_t codetab[HSIZE];
-    uint32_t htab[HSIZE];
+    uint16_t _codetab[HSIZE];
+    uint32_t _htab[HSIZE];
     pair<uint32_t, uint16_t> _found;
     unsigned _hp;
 public:
-    void clear() { fill(htab, htab + HSIZE, 0xffffffff); }
-    void store(uint32_t key, unsigned value) { codetab[_hp] = value, htab[_hp] = key; }
+    void clear() { fill(_htab, _htab + HSIZE, 0xffffffff); }
+    void store(uint32_t key, unsigned value) { _codetab[_hp] = value, _htab[_hp] = key; }
     Dictionary() { clear(); }
     auto end() const { return nullptr; }
-
-    auto &operator [](unsigned i)
-    {
-        htab[_hp] = i;
-        return codetab[_hp];
-    }
+    auto &operator [](unsigned i) { _htab[_hp] = i; return _codetab[_hp]; }
 
     pair<uint32_t, uint16_t> *find(uint32_t key)
     {
         const unsigned disp = HSIZE - 1 - (_hp = (key >> 16) << 8 ^ key & 0xffff);
 
-        while (htab[_hp] != 0xffffffff)
+        while (_htab[_hp] != 0xffffffff)
         {
-            if (htab[_hp] == key)
-                return &(_found = make_pair(key, codetab[_hp]));
+            if (_htab[_hp] == key)
+                return &(_found = make_pair(key, _codetab[_hp]));
 
-            _hp = _hp < disp ? _hp + HSIZE - disp : _hp - disp;
+            if (_hp < disp)
+                _hp += HSIZE;
+
+            _hp -= disp;
         }
 
         return end();
