@@ -24,6 +24,7 @@ start_block:
             {
                 unsigned *window = (unsigned *)(buf + (nbits * j) / 8);
                 unsigned code = *window >> j * (nbits - 8) % 8 & (1 << nbits) - 1;
+                //fwrite(&code, 4, 1, stdout);
                 printf("%u\r\n", code);
 
                 if (code == 256)

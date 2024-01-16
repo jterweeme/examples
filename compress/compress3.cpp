@@ -42,9 +42,9 @@ public:
 
     pair<uint32_t, uint16_t> *find(uint32_t key)
     {
-        unsigned c = key >> 16;
+        const unsigned disp = HSIZE - 1 - (_hp = (key >> 16) << 8 ^ key & 0xffff);
 
-        for (unsigned disp = HSIZE - (_hp = c << 8 ^ key & 0xffff) - 1; htab[_hp] != 0xffffffff;)
+        while (htab[_hp] != 0xffffffff)
         {
             if (htab[_hp] == key)
                 return &(_found = make_pair(key, codetab[_hp]));

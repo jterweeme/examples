@@ -35,7 +35,7 @@ test:
 	$(TIME) ./zcat.py < httpd-2.0.35.tar.Z | md5sum -c httpd-2.0.35.tar.md5
 	$(TIME) ./zcatpp < logo.c.Z | md5sum -c logo.c.md5
 	$(TIME) ./zcat.py < logo.c.Z | md5sum -c logo.c.md5
-	$(TIME) ./extractc logo.c.Z | ./lzw | md5sum -c logo.c.md5
+	$(TIME) ./extractc logo.c.Z | ./lzw.py | md5sum -c logo.c.md5
 	$(TIME) ./zcatpp < mjkimage.c.Z | md5sum -c mjkimage.c.md5
 	$(TIME) ./zcat.py < mjkimage.c.Z | md5sum -c mjkimage.c.md5
 	$(TIME) ./zcat.py < mo.m68.tar.Z | md5sum -c mo.m68.tar.md5
@@ -47,7 +47,7 @@ test:
 	$(TIME) ./zcat.py < tty.1.Z | md5sum -c tty.1.md5
 	#$(TIME) ./zcatc wk98.iso.Z | md5sum -c wk98.iso.md5
 	#$(TIME) ./zcatpp wk98.iso.Z | md5sum -c wk98.iso.md5
-	$(TIME) ./extractc wingames.iso.Z | ./lzw | md5sum -c wingames.iso.md5
+	$(TIME) ./extractc wingames.iso.Z | ./lzw.py | md5sum -c wingames.iso.md5
 	#$(TIME) ./zcat_min.py wingames.iso.Z | md5sum -c wingames.iso.md5
 	#$(TIME) ./zcatpp enwik9.Z | md5sum -c enwik9.md5
 	$(TIME) zcat accept.2.Z | ./compress3 | md5sum -c accept.2.Z.md5
