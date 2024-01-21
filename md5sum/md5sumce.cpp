@@ -9,14 +9,24 @@
 #include <fcntl.h>
 #endif
 
+#if __cplusplus >= 201103L
+#define CPP11
+#endif
+
+#ifdef CPP11
+#define CONSTEXPR constexpr
+#else
+#define CONSTEXPR const
+#endif
+
 using std::ifstream;
 using std::istream;
 using std::ostream;
 using std::string;
-using std::fill;
 using std::cin;
 using std::cout;
 using std::cerr;
+using std::wcout;
 
 class Toolbox
 {
@@ -118,28 +128,31 @@ Hash Chunk::calc(const Hash &h)
 static Hash stream(istream &is)
 {
     Hash hash;
-    Chunk chunk;
-    uint8_t data[64];
 
     for (unsigned i = 0; is; ++i)
     {
-        fill(data, data + 64, 0);
+        uint8_t data[64] = {0};
         is.read((char *)data, 64);
-        chunk.clear();
-
-        if (is.gcount() < 64)
-            data[is.gcount()] = 0x80;
-
-        chunk.read(data);
+        Chunk chunk;
 
         if (is.gcount() < 56)
+        {
+            data[is.gcount()] = 0x80;
+            chunk.read(data);
             chunk.fillTail(i * 64 + is.gcount());
+        }
         else if (is.gcount() < 64)
         {
+            data[is.gcount()] = 0x80;
+            chunk.read(data);
             Hash foo = chunk.calc(hash);
             hash.add(foo);
             chunk.clear();
             chunk.fillTail(i * 64 + is.gcount());
+        }
+        else
+        {
+            chunk.read(data);
         }
 
         Hash foo = chunk.calc(hash);
@@ -149,6 +162,33 @@ static Hash stream(istream &is)
     return hash;
 }
 
+#ifdef WINCE
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, INT nCmdShow)
+{
+    wcout << lpCmdLine << "\n";
+    wcout.flush();
+    size_t len = wcslen(lpCmdLine);
+
+    if (len < 1)
+        return 0;
+
+    ifstream ifs;
+    ifs.open(lpCmdLine, ifstream::in | ifstream::binary);
+
+    if (!ifs.good())
+    {
+        cerr << "Cannot open file!\n";
+        cerr.flush();
+    }
+
+    Hash hash = ::stream(ifs);
+    hash.dump(cout);
+    cout << "\n";
+    cout.flush();
+    ifs.close();
+    return 0;
+}
+#else
 int main(int argc, char **argv)
 {
     (void)argc;
@@ -162,5 +202,4 @@ int main(int argc, char **argv)
     cout.flush();
     return 0;
 }
-
-
+#endif

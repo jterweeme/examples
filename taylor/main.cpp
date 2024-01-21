@@ -27,17 +27,13 @@ static auto cosinus(double x)
 
 static auto sine(double x)
 {
-    x = fmod(x, DPI);
-    double res = 0, pow = x, fact = 1;
+    double fact = 1, ret, pow;
+    x = pow = ret = fmod(x, DPI);
 
     for (int i = 1; i < 20; ++i)
-    {
-        res += pow / fact;
-        pow *= -1 * x * x;
-        fact *= 2 * i * (2 * i + 1);
-    }
+        ret += (pow = -pow * x * x) / (fact = fact * 2 * i * (2 * i + 1));
 
-    return res;
+    return ret;
 }
 
 static auto myfunction(double x)

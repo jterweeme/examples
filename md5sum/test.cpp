@@ -44,18 +44,15 @@ int main()
 
     for (unsigned i = 0; i < 64; ++i)
     {
-        double x = fmod(i + 1, DPI);
-        double res = 0, pow = x, fact = 1;
+        double fact = 1, res, pow, x;
+        x = pow = res = fmod(i + 1, DPI);
 
         for (unsigned j = 1; j < 20; ++j)
-        {
-            res += pow / fact;
-            pow *= -1 * x * x;
-            fact *= 2 * j * (2 * j + 1);
-        }
+            res += (pow = -pow * x * x) / (fact *= 2 * j * (2 * j + 1));
 
-        auto b = res > 0 ? res : -res;
-        a[i] = uint32_t(double(0x100000000) * b);
+        x = res > 0 ? res : -res;
+        //cerr << b << "\r\n";
+        a[i] = uint32_t(double(0x100000000) * x);
     }
 
     for (unsigned i = 0; i < 64; ++i)
