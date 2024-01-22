@@ -9,8 +9,16 @@
 #include <cstdint>
 #include <vector>
 #include <string>
+#include <cassert>
 #include <iostream>
 #include <stdexcept>
+
+using std::ifstream;
+using std::istream;
+using std::ostream;
+using std::cerr;
+using std::cout;
+using std::cin;
 
 static constexpr uint16_t END = 256;
 static constexpr uint16_t BLKSIZE = 512;
@@ -33,8 +41,6 @@ public:
     uint32_t count() const;
     uint32_t node() const;
 };
-
-void pack(std::ifstream &ifs, std::ostream &os, uint32_t &l_insize, uint32_t &outsize);
 
 void Heap::set(const Heap &heap)
 {
@@ -82,7 +88,7 @@ static void heapify(uint32_t i, const uint32_t n, Heap *heap)
     heap[i].set(heapsubi);
 }
 
-void pack(std::ifstream &ifs, std::ostream &os, uint32_t &insize, uint32_t &outsize)
+void pack(ifstream &ifs, ostream &os, uint32_t &insize, uint32_t &outsize)
 {           
     uint32_t maxlev = 0;
     uint32_t levcount[25] = {0};
@@ -251,10 +257,7 @@ void pack(std::ifstream &ifs, std::ostream &os, uint32_t &insize, uint32_t &outs
                 bitsleft -= length[c];
 
                 while (bitsleft < 0)
-                {
-                    *++outp = **q++;
-                    bitsleft += 8;
-                }
+                    *++outp = **q++, bitsleft += 8;
 
                 if (outp >= &outbuff[BLKSIZE])
                 {
@@ -276,94 +279,13 @@ void pack(std::ifstream &ifs, std::ostream &os, uint32_t &insize, uint32_t &outs
     }
 }
 
-class Options
-{
-private:
-    std::vector<std::string> _files;
-public:
-    typedef std::vector<std::string>::const_iterator fit;
-    void parse(int argc, char **argv);
-    fit fcbegin() const;
-    fit fcend() const;
-};
-
-void Options::parse(int argc, char **argv)
-{
-    for (int i = 1; i < argc; ++i)
-    {
-        _files.push_back(argv[i]);
-    }
-}
-
-Options::fit Options::fcbegin() const
-{
-    return _files.cbegin();
-}
-
-Options::fit Options::fcend() const
-{
-    return _files.cend();
-}
-
-static void packfile(std::string fn, std::ostream &msgs)
-{
-    msgs << fn << "\r\n";
-    std::ifstream ifs;
-    ifs.open(fn, std::ifstream::binary);
-
-    if (ifs.is_open() == false)
-        throw std::runtime_error("Cannot open input file");
-
-    fn.append(".z");
-    std::ofstream ofs;
-    ofs.open(fn, std::ofstream::binary);
-    uint32_t insize, outsize;
-    pack(ifs, ofs, insize, outsize);
-    msgs << ": " << insize << " in, " << outsize << " out\r\n";
-    ofs.close();
-    ifs.close();
-}
-
 int main(int argc, char **argv)
 {
-#if 1
-    Options o;
-    o.parse(argc, argv);
-    int failcount = 0;
-
-    for (Options::fit it = o.fcbegin(); it != o.fcend(); ++it)
-    {
-        try
-        {
-            packfile(*it, std::cout);
-        }
-        catch (...)
-        {
-            failcount++;
-            std::cerr << "Error\r\n";
-        }
-    }
-
-    return failcount;
-#else
-    (void)argc;
-    (void)argv;
-
-    try
-    {
-        packfile("d:\\temp\\50sport.iso", std::cout);
-    }
-    catch (const std::exception &e)
-    {
-        std::cerr << e.what() << "\r\n";
-    }
-    catch (...)
-    {
-        std::cerr << "Unspecified error\r\n";
-    }
-
+    uint32_t insize, outsize;
+    ifstream ifs(argv[1]);
+    pack(ifs, cout, insize, outsize);
+    cerr << ": " << insize << " in, " << outsize << " out\r\n";
     return 0;
-#endif
 }
 
 
