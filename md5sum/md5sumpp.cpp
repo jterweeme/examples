@@ -23,15 +23,6 @@ class Toolbox
 public:
     static char nibble(uint8_t n)
     { return n <= 9 ? '0' + char(n) : 'a' + char(n - 10); }
-
-    static void hex32(unsigned dw, ostream &os)
-    { for (unsigned i = 0; i <= 28; i += 4) os.put(nibble(dw >> 28 - i & 0xf)); }
-
-    static uint32_t swapEndian(uint32_t n)
-    { return n >> 24 & 0xff | n << 8 & 0xff0000 | n >> 8 & 0xff00 | n << 24 & 0xff000000; }
-
-    static uint32_t be32tohost(uint32_t n)
-    { return swapEndian(n); } //NIET PORTABLE!
 };
 
 class Hash
@@ -45,7 +36,11 @@ public:
     { _h[0] = h0, _h[1] = h1, _h[2] = h2, _h[3] = h3; }
 
     void dump(ostream &os) const
-    { for (unsigned i = 0; i < 4; ++i) Toolbox::hex32(Toolbox::be32tohost(h(i)), os); }
+    {
+        uint8_t *a = (uint8_t *)_h;
+        for (unsigned i = 0; i < 16; ++i)
+            os << Toolbox::nibble(a[i] >> 4) << Toolbox::nibble(a[i] & 0xf);
+    }
 
     void add(const Hash &h)
     { _h[0] += h.h(0), _h[1] += h.h(1), _h[2] += h.h(2), _h[3] += h.h(3); }
@@ -61,7 +56,7 @@ public:
     void fillTail(uint32_t size) { _w[14] = size * 8, _w[15] = size >> 29; }
     void clear() { for (int i = 0; i < 16; ++i) _w[i] = 0; }
 
-    void read(const uint8_t *msg)
+    void read(const char *msg)
     { for (int i = 0; i < 16; ++i) _w[i] = *(uint32_t *)(msg + i * 4); }
 };
 
@@ -111,41 +106,43 @@ Hash Chunk::calc(const Hash &h)
         a = temp;
     }
 
-    Hash foo(a, b, c, d);
-    return foo;
+    return Hash(a, b, c, d);
 }
 
 static Hash stream(istream &is)
 {
     Hash hash;
     Chunk chunk;
-    uint8_t data[64];
+    char data[64];
+    unsigned sz = 0;
 
     for (unsigned i = 0; is; ++i)
     {
         fill(data, data + 64, 0);
-        is.read((char *)data, 64);
-        chunk.clear();
+        is.read(data, 64);
+        sz += is.gcount();
 
         if (is.gcount() < 64)
-            data[is.gcount()] = 0x80;
+            break;
 
         chunk.read(data);
-
-        if (is.gcount() < 56)
-            chunk.fillTail(i * 64 + is.gcount());
-        else if (is.gcount() < 64)
-        {
-            Hash foo = chunk.calc(hash);
-            hash.add(foo);
-            chunk.clear();
-            chunk.fillTail(i * 64 + is.gcount());
-        }
-
-        Hash foo = chunk.calc(hash);
-        hash.add(foo);
+        hash.add(chunk.calc(hash));
     }
 
+    data[is.gcount()] = 0x80;
+    chunk.clear();
+    chunk.read(data);
+
+    if (is.gcount() < 56)
+        chunk.fillTail(sz);
+    else if (is.gcount() < 64)
+    {
+        hash.add(chunk.calc(hash));
+        chunk.clear();
+        chunk.fillTail(sz);
+    }
+
+    hash.add(chunk.calc(hash));
     return hash;
 }
 

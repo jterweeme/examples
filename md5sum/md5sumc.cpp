@@ -33,8 +33,8 @@ const uint32_t _r[64] = { 7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,  7, 12,
 
 union Buf
 {
-    uint8_t b[64];
-    uint32_t w[16];
+    char b[68];
+    uint32_t w[17];
 };
 
 Buf buf;
@@ -66,35 +66,41 @@ void calc()
     h[0] += a, h[1] += b, h[2] += c, h[3] += d;
 }
 
-static void stream(istream &is)
+int main(int argc, char **argv)
 {
+    istream *is = &cin;
     h[0] = 0x67452301, h[1] = 0xefcdab89, h[2] = 0x98badcfe, h[3] = 0x10325476;
+    unsigned sz = 0, gc;
 
-    for (unsigned i = 0; is; ++i)
+    while (true)
     {
-        fill(buf.b, buf.b + 64, 0);
-        is.read((char *)buf.b, 64);
+        for (unsigned i = 0; i < 16; ++i) buf.w[i] = 0;
+        is->read(buf.b, 64);
+        gc = is->gcount();
+        sz += gc;
 
-        if (is.gcount() < 64)
-            buf.b[is.gcount()] = 0x80;
-
-        unsigned sz = i * 64 + is.gcount();
-
-        if (is.gcount() < 56)
-        {
-            buf.w[14] = sz * 8;
-            buf.w[15] = sz >> 29;
-        }
-        else if (is.gcount() < 64)
-        {
-            calc();
-            fill(buf.b, buf.b + 64, 0);
-            buf.w[14] = sz * 8;
-            buf.w[15] = sz >> 29;
-        }
+        if (gc < 64)
+            break;
 
         calc();
     }
+
+    buf.b[gc] |= 0x80;
+   
+    if (gc < 56)
+    {
+        buf.w[14] = sz * 8;
+        buf.w[15] = sz >> 29;
+        calc();
+    }
+    else if (gc < 64)
+    {
+        calc();
+        for (unsigned i = 0; i < 14; ++i) buf.w[i] = 0;
+        buf.w[14] = sz * 8;
+        buf.w[15] = sz >> 29;
+        calc();
+    }   
 
     uint8_t *a = (uint8_t *)h;
     for (unsigned i = 0; i < 16; ++i)
@@ -102,11 +108,6 @@ static void stream(istream &is)
 
     printf("\r\n");
     fflush(stdout);
-}
-
-int main(int argc, char **argv)
-{
-    stream(cin);
     return 0;
 }
 

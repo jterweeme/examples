@@ -63,7 +63,7 @@ public:
 
 static istream cin(0, 8192);
 static ostream cout(1, 8192);
-static ostream cerr(1, 8192);
+static ostream cerr(2, 8192);
 }
 
 
