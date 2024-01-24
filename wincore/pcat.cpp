@@ -4,43 +4,28 @@
 
 #ifdef WIN32
 #include <io.h>
-#include <fcntl.h>
 #endif
 
 using mystd::ifstream;
 using mystd::istream;
 using mystd::ostream;
+using mystd::byteswap;
 using mystd::cin;
 using mystd::cerr;
 using mystd::cout;
-
-class Toolbox
-{
-public:
-    static uint32_t swapEndian(uint32_t x);
-    static uint32_t be32tohost(uint32_t num);
-};
-
-uint32_t Toolbox::be32tohost(uint32_t num)
-{
-    return swapEndian(num);
-}
-
-uint32_t Toolbox::swapEndian(uint32_t num)
-{
-    return num >> 24 & 0xff | num << 8 & 0xff0000 | num >> 8 & 0xff00 | num << 24 & 0xff000000;
-}
+using mystd::endl;
 
 static void unpack(istream &is, ostream &os, ostream &msg)
 {
-    uint16_t magic;
-    is.read((char *)(&magic), 2);
-    uint32_t origsize = 0;
+    assert(is.get() == 0x1f);
+    assert(is.get() == 0x1e);
+    uint32_t origsize;
     is.read((char *)(&origsize), 4);
-    origsize = Toolbox::be32tohost(origsize);
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+    origsize = byteswap(origsize);
+#endif
     uint8_t maxlev = uint8_t(is.get());
-    msg << "Length: " << origsize << ", Levels: " << uint16_t(maxlev) << "\r\n";
-    msg.flush();
+    msg << "Length: " << origsize << ", Levels: " << unsigned(maxlev) << endl;
     uint16_t intnodes[maxlev];
 
     for (uint8_t i = 0; i < maxlev; ++i)

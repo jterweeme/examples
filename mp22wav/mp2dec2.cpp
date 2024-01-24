@@ -7,7 +7,10 @@
 #include <fcntl.h>
 #include <fstream>
 #include <iostream>
+#include <algorithm>
 #include <math.h>
+
+using std::istream;
 
 struct Quantizer_spec
 {
@@ -16,28 +19,23 @@ struct Quantizer_spec
     uint8_t cw_bits;
 };
 
-//static constexpr uint8_t STEREO = 0;
-static constexpr uint8_t JOINT_STEREO = 1;
-//static constexpr uint8_t DUAL_CHANNEL = 2;
-static constexpr uint8_t MONO = 3;
-
 static constexpr short bitrates[28] = {
     32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384,  // MPEG-1
      8, 16, 24, 32, 40, 48,  56,  64,  80,  96, 112, 128, 144, 160   // MPEG-2
 };
 
-// scale factor base values (24-bit fixed-point)
+//scale factor base values (24-bit fixed-point)
 static constexpr int scf_base[3] = { 0x02000000, 0x01965FEA, 0x01428A30 };
 
-// quantizer lookup, step 1: bitrate classes
+//quantizer lookup, step 1: bitrate classes
 static constexpr char quant_lut_step1[2][16] = {
-    // 32, 48, 56, 64, 80, 96,112,128,160,192,224,256,320,384 <- bitrate
-    {   0,  0,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,  2,  2 },  // mono
-    // 16, 24, 28, 32, 40, 48, 56, 64, 80, 96,112,128,160,192 <- BR / chan
-    {   0,  0,  0,  0,  0,  0,  1,  1,  1,  2,  2,  2,  2,  2 }   // stereo
+    //32, 48, 56, 64, 80, 96,112,128,160,192,224,256,320,384 <- bitrate
+    {  0,  0,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,  2,  2 },  // mono
+    //16, 24, 28, 32, 40, 48, 56, 64, 80, 96,112,128,160,192 <- BR / chan
+    {  0,  0,  0,  0,  0,  0,  1,  1,  1,  2,  2,  2,  2,  2 }   // stereo
 };
 
-// quantizer lookup, step 2: bitrate class, sample rate -> B2 table idx, sblimit
+//quantizer lookup, step 2: bitrate class, sample rate -> B2 table idx, sblimit
 static constexpr char QUANT_TAB_A = (27 | 64);   // Table 3-B.2a: high-rate, sblimit = 27
 static constexpr char QUANT_TAB_B = (30 | 64);   // Table 3-B.2b: high-rate, sblimit = 30
 static constexpr char QUANT_TAB_C =  8;         // Table 3-B.2c:  low-rate, sblimit =  8
@@ -50,21 +48,20 @@ static constexpr char quant_lut_step2[3][4] = {
     { QUANT_TAB_B, QUANT_TAB_A, QUANT_TAB_B },  // 96+     kbit/sec/ch
 };
 
-
-// quantizer lookup, step 3: B2 table, subband -> nbal, row index
-// (upper 4 bits: nbal, lower 4 bits: row index)
+//quantizer lookup, step 3: B2 table, subband -> nbal, row index
+//(upper 4 bits: nbal, lower 4 bits: row index)
 static constexpr char quant_lut_step3[3][32] = {
-    // low-rate table (3-B.2c and 3-B.2d)
+    //low-rate table (3-B.2c and 3-B.2d)
     { 0x44,0x44,                                                   // SB  0 -  1
       0x34,0x34,0x34,0x34,0x34,0x34,0x34,0x34,0x34,0x34            // SB  2 - 12
     },
-    // high-rate table (3-B.2a and 3-B.2b)
+    //high-rate table (3-B.2a and 3-B.2b)
     { 0x43,0x43,0x43,                                              // SB  0 -  2
       0x42,0x42,0x42,0x42,0x42,0x42,0x42,0x42,                     // SB  3 - 10
       0x31,0x31,0x31,0x31,0x31,0x31,0x31,0x31,0x31,0x31,0x31,0x31, // SB 11 - 22
       0x20,0x20,0x20,0x20,0x20,0x20,0x20                           // SB 23 - 29
     },
-    // MPEG-2 LSR table (B.2 in ISO 13818-3)
+    //MPEG-2 LSR table (B.2 in ISO 13818-3)
     { 0x45,0x45,0x45,0x45,                                         // SB  0 -  3
       0x34,0x34,0x34,0x34,0x34,0x34,0x34,                          // SB  4 - 10
       0x24,0x24,0x24,0x24,0x24,0x24,0x24,0x24,0x24,0x24,           // SB 11 -
@@ -102,7 +99,7 @@ static constexpr struct Quantizer_spec quantizer_table[17] = {
     { 65535, 0, 16 }   // 17
 };
 
-// synthesis window
+//synthesis window
 static constexpr int D[512] = {
 0, 0, 0, 0, 0, 0, 0, -1, -1, -1, -1, -2, -2, -3, -3, -4, -4, -5, -6, -6, -7,
 -8, -9, -10, -12, -13, -15, -16, -18, -20, -23, -25, -28, -30, -34, -37, -40,
@@ -156,10 +153,10 @@ private:
     int _bit_window;
     int _bits_in_window;
     uint64_t _counter2 = 0;
-    std::istream *_is;
+    istream *_is;
     void fill();
 public:
-    BitBuffer(std::istream *is);
+    BitBuffer(istream *is);
     bool peek() { return _bits_in_window > 0; }
     int get_bits(int bit_count);
     uint64_t counter2() const { return _counter2; }
@@ -169,6 +166,10 @@ public:
 class Decoder
 {
 private:
+    static constexpr uint8_t STEREO = 0; //not used
+    static constexpr uint8_t JOINT_STEREO = 1;
+    static constexpr uint8_t DUAL_CHANNEL = 2; //not used
+    static constexpr uint8_t MONO = 3;
     int _Voffs;
     int _N[64][32];
     int _V[2][1024];
@@ -290,49 +291,7 @@ void COptions::parse(int argc, char **argv)
     }
 }
 
-int main(int argc, char **argv)
-{
-    COptions opts;
-    opts.parse(argc, argv);
-    CMain inst;
-    FILE *fout;
-    std::ifstream ifs;
-    std::istream *fin;
 
-    if (opts.stdinput())
-    {
-        fin = &std::cin;
-#ifdef _WIN32
-        setmode(fileno(stdin), O_BINARY);
-#endif
-    }
-    else
-    {
-        ifs.open(opts.ifn());
-        fin = &ifs;
-    }
-
-    if (opts.stdoutput())
-    {
-        fout = stdout;
-    }
-    else
-    {
-        fout = fopen(opts.ofn().c_str(), "wb");
-    }
-
-    int ret = -1;
-    try
-    {
-        ret = inst.run(fin, fout);
-    }
-    catch (const char *e)
-    {
-        std::cerr << e << "\r\n";
-        std::cerr.flush();
-    }
-    return ret;
-}
 
 int CMain::run(std::istream *is, FILE *fout)
 {
@@ -602,9 +561,9 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
     int sf[2][32][3];
 
     // read scale factors
-    for (int sb = 0;  sb < sblimit;  ++sb)
+    for (int sb = 0; sb < sblimit; ++sb)
     {
-        for (int ch = 0;  ch < nch;  ++ch)
+        for (int ch = 0; ch < nch; ++ch)
         {
             if (alloc[ch][sb])
             {
@@ -635,49 +594,49 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
         }
 
         if (mode == MONO)
-            for (int part = 0;  part < 3;  ++part)
+            for (int part = 0; part < 3; ++part)
                 sf[1][sb][part] = sf[0][sb][part];
     }
 
     int sample[2][32][3];
 
     // coefficient input and reconstruction
-    for (int part = 0;  part < 3;  ++part)
+    for (int part = 0; part < 3; ++part)
     {
-        for (int gr = 0;  gr < 4;  ++gr)
+        for (int gr = 0; gr < 4; ++gr)
         {
             // read the samples
-            for (int sb = 0;  sb < bound;  ++sb)
-                for (int ch = 0;  ch < 2;  ++ch)
+            for (int sb = 0; sb < bound; ++sb)
+                for (int ch = 0; ch < 2; ++ch)
                     read_samples(alloc[ch][sb], sf[ch][sb][part], sample[ch][sb], b);
 
-            for (int sb = bound;  sb < sblimit;  ++sb)
+            for (int sb = bound; sb < sblimit; ++sb)
             {
                 read_samples(alloc[0][sb], sf[0][sb][part], sample[0][sb], b);
 
-                for (int idx = 0;  idx < 3;  ++idx)
+                for (int idx = 0; idx < 3; ++idx)
                     sample[1][sb][idx] = sample[0][sb][idx];
             }
 
-            for (int ch = 0;  ch < 2;  ++ch)
-               for (int sb = sblimit;  sb < 32;  ++sb)
-                    for (int idx = 0;  idx < 3;  ++idx)
+            for (int ch = 0; ch < 2; ++ch)
+               for (int sb = sblimit; sb < 32; ++sb)
+                    for (int idx = 0; idx < 3; ++idx)
                         sample[ch][sb][idx] = 0;
 
             // synthesis loop
-            for (int idx = 0;  idx < 3;  ++idx)
+            for (int idx = 0; idx < 3; ++idx)
             {
                 // shifting step
                 _Voffs = table_idx = _Voffs - 64 & 1023;
 
-                for (int ch = 0;  ch < 2;  ++ch)
+                for (int ch = 0; ch < 2; ++ch)
                 {
                     // matrixing
-                    for (int i = 0;  i < 64;  ++i)
+                    for (int i = 0; i < 64; ++i)
                     {
                         int sum = 0;
 
-                        for (int j = 0;  j < 32;  ++j)
+                        for (int j = 0; j < 32; ++j)
                             sum += _N[i][j] * sample[ch][j][idx];  // 8b*15b=23b
 
                         // intermediate value is 28 bit (23 + 5), clamp to 14b
@@ -687,9 +646,9 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
                     int U[512];
 
                     // construction of U
-                    for (int i = 0;  i < 8;  ++i)
+                    for (int i = 0; i < 8; ++i)
                     {
-                        for (int j = 0;  j < 32;  ++j)
+                        for (int j = 0; j < 32; ++j)
                         {
                             U[(i<<6) + j]      = _V[ch][(table_idx + (i<<7) + j     ) & 1023];
                             U[(i<<6) + j + 32] = _V[ch][(table_idx + (i<<7) + j + 96) & 1023];
@@ -697,7 +656,7 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
                     }
 
                     // apply window
-                    for (int i = 0;  i < 512;  ++i)
+                    for (int i = 0; i < 512; ++i)
                         U[i] = U[i] * D[i] + 32 >> 6;
 
                     // output samples
@@ -705,12 +664,15 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
                     {
                         int sum = 0;
 
-                        for (int i = 0;  i < 16;  ++i)
+                        for (int i = 0; i < 16; ++i)
                             sum -= U[(i << 5) + j];
 
-                        sum = (sum + 8) >> 4;
+                        sum = sum + 8 >> 4;
+
+                        //TODO: clamp?
                         sum = std::max(sum, -32768);
                         sum = std::min(sum, 32767);
+
                         pcm[idx << 6 | j << 1 | ch] = int16_t(sum);
                     }
                 } // end of synthesis channel loop
@@ -725,4 +687,46 @@ Decoder::kjmp2_decode_frame(BitBuffer &b, int16_t *pcm, int &samplerate)
     return frame_size;
 }
 
+int main(int argc, char **argv)
+{
+    COptions opts;
+    opts.parse(argc, argv);
+    CMain inst;
+    FILE *fout;
+    std::ifstream ifs;
+    std::istream *fin;
 
+    if (opts.stdinput())
+    {
+        fin = &std::cin;
+#ifdef _WIN32
+        setmode(fileno(stdin), O_BINARY);
+#endif
+    }
+    else
+    {
+        ifs.open(opts.ifn());
+        fin = &ifs;
+    }
+
+    if (opts.stdoutput())
+    {
+        fout = stdout;
+    }
+    else
+    {
+        fout = fopen(opts.ofn().c_str(), "wb");
+    }
+
+    int ret = -1;
+    try
+    {
+        ret = inst.run(fin, fout);
+    }
+    catch (const char *e)
+    {
+        std::cerr << e << "\r\n";
+        std::cerr.flush();
+    }
+    return ret;
+}

@@ -7,7 +7,7 @@ all:
 	g++ $(WARNINGS) -O -o gzcat gzcat.cpp -std=c++20
 	g++ $(WARNINGS) -O -o md5sum md5sum.cpp -std=c++20
 	g++ $(WARNINGS) -O -o pack pack.cpp -std=c++20
-	g++ $(WARNINGS) -O -o pcat pcat.cpp -std=c++20
+	g++ $(WARNINGS) -O -o pcat pcat.cpp -std=c++23
 	g++ $(WARNINGS) -O -o zcat zcat.cpp -std=c++20
 
 clean:

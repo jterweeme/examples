@@ -1,9 +1,14 @@
+// kjmp2 example application: decodes .mp2 into .wav
+// this file is public domain -- do with it whatever you want!
+
 #include <cstdio>
 #include <cstring>
 #include <cstdint>
 #include <fcntl.h>
 #include <iostream>
 #include <math.h>
+
+using std::istream;
 
 struct Quantizer_spec
 {
@@ -264,11 +269,11 @@ void CWavHeader::write(std::ostream &os) const
 
 void Frame::init()
 {
-    for (int i = 0;  i < 64;  ++i)
-        for (int j = 0;  j < 32;  ++j)
+    for (int i = 0; i < 64; ++i)
+        for (int j = 0; j < 32; ++j)
             _N[i][j] = int(256.0 * cos(((16 + i) * ((j << 1) + 1)) * 0.0490873852123405));
 
-    for (int i = 0;  i < 2;  ++i)
+    for (int i = 0; i < 2; ++i)
         for (int j = 1023;  j >= 0;  --j)
             _V[i][j] = 0;
 
@@ -311,7 +316,7 @@ void Frame::_read_samples(const Quantizer_spec *q, int scalefactor, int *sample,
     else
     {
         // decode direct samples
-        for (int idx = 0;  idx < 3;  ++idx)
+        for (int idx = 0; idx < 3; ++idx)
         {
             sample[idx] = _buf.get_bits(offset, q->cw_bits);
             offset += q->cw_bits;
@@ -322,7 +327,7 @@ void Frame::_read_samples(const Quantizer_spec *q, int scalefactor, int *sample,
     int scale = 65536 / (adj + 1);
     adj = (adj + 1 >> 1) - 1;
 
-    for (int idx = 0;  idx < 3;  ++idx)
+    for (int idx = 0; idx < 3; ++idx)
     {
         // step 1: renormalization to [-1..1]
         int val = (adj - sample[idx]) * scale;
@@ -390,16 +395,16 @@ void Frame::decode()
         for (int ch = 0; ch < 2; ++ch)
             alloc[ch][sb] = _read_allocation(sb, table_idx, offset);
 
-    for (int sb = bound;  sb < sblimit;  ++sb)
+    for (int sb = bound; sb < sblimit; ++sb)
         alloc[0][sb] = alloc[1][sb] = _read_allocation(sb, table_idx, offset);
     
     // read scale factor selector information
     int nch = (mode == MONO) ? 1 : 2;
     int scfsi[2][32];
 
-    for (int sb = 0;  sb < sblimit;  ++sb)
+    for (int sb = 0; sb < sblimit; ++sb)
     {
-        for (int ch = 0;  ch < nch;  ++ch)
+        for (int ch = 0; ch < nch; ++ch)
         {
             if (alloc[ch][sb])
             {
@@ -415,9 +420,9 @@ void Frame::decode()
     int sf[2][32][3];
 
     // read scale factors
-    for (int sb = 0;  sb < sblimit;  ++sb)
+    for (int sb = 0; sb < sblimit; ++sb)
     {
-        for (int ch = 0;  ch < nch;  ++ch)
+        for (int ch = 0; ch < nch; ++ch)
         {
             if (alloc[ch][sb])
             {
@@ -457,33 +462,33 @@ void Frame::decode()
     int16_t *pcm = _samples;
 
     // coefficient input and reconstruction
-    for (int part = 0;  part < 3;  ++part)
+    for (int part = 0; part < 3; ++part)
     {
-        for (int gr = 0;  gr < 4;  ++gr)
+        for (int gr = 0; gr < 4; ++gr)
         {
             // read the samples
-            for (int sb = 0;  sb < bound;  ++sb)
-                for (int ch = 0;  ch < 2;  ++ch)
+            for (int sb = 0; sb < bound; ++sb)
+                for (int ch = 0; ch < 2; ++ch)
                     _read_samples(alloc[ch][sb], sf[ch][sb][part], sample[ch][sb], offset);
 
-            for (int sb = bound;  sb < sblimit;  ++sb)
+            for (int sb = bound; sb < sblimit; ++sb)
             {
                 _read_samples(alloc[0][sb], sf[0][sb][part], sample[0][sb], offset);
 
-                for (int idx = 0;  idx < 3;  ++idx)
+                for (int idx = 0; idx < 3; ++idx)
                     sample[1][sb][idx] = sample[0][sb][idx];
             }
 
-            for (int ch = 0;  ch < 2;  ++ch)
-               for (int sb = sblimit;  sb < 32;  ++sb)
-                    for (int idx = 0;  idx < 3;  ++idx)
+            for (int ch = 0; ch < 2; ++ch)
+               for (int sb = sblimit; sb < 32; ++sb)
+                    for (int idx = 0; idx < 3; ++idx)
                         sample[ch][sb][idx] = 0;
 
             // synthesis loop
-            for (int idx = 0;  idx < 3;  ++idx)
+            for (int idx = 0; idx < 3; ++idx)
             {
                 // shifting step
-                _Voffs = table_idx = (_Voffs - 64) & 1023;
+                _Voffs = table_idx = _Voffs - 64 & 1023;
 
                 for (int ch = 0; ch < 2; ++ch)
                 {
@@ -502,16 +507,16 @@ void Frame::decode()
                     int U[512];
 
                     // construction of U
-                    for (int i = 0;  i < 8;  ++i)
+                    for (int i = 0; i < 8; ++i)
                     {
-                        for (int j = 0;  j < 32;  ++j)
+                        for (int j = 0; j < 32; ++j)
                         {
                             U[(i<<6) + j]      = _V[ch][(table_idx + (i<<7) + j     ) & 1023];
                             U[(i<<6) + j + 32] = _V[ch][(table_idx + (i<<7) + j + 96) & 1023];
                         }
                     }
                     // apply window
-                    for (int i = 0;  i < 512;  ++i)
+                    for (int i = 0; i < 512; ++i)
                         U[i] = U[i] * D[i] + 32 >> 6;
 
                     // output samples
@@ -519,12 +524,15 @@ void Frame::decode()
                     {
                         int sum = 0;
 
-                        for (int i = 0;  i < 16;  ++i)
+                        for (int i = 0; i < 16; ++i)
                             sum -= U[(i << 5) + j];
 
-                        sum = (sum + 8) >> 4;
+                        sum = sum + 8 >> 4;
+
+                        //TODO: clamp?
                         sum = std::max(sum, -32768);
                         sum = std::min(sum, 32767);
+
                         pcm[idx << 6 | j << 1 | ch] = int16_t(sum);
                     }
                 } // end of synthesis channel loop
