@@ -41,7 +41,7 @@ public:
     Chunk()
     { for (unsigned i = 0; i < 64; ++i) _k[i] = uint32_t(fabs(sin(i + 1)) * double(1UL << 32)); }
 
-    void fillTail(uint32_t size) { _w[14] |= size * 8, _w[15] = size >> 29; }
+    void fillTail(uint32_t size) { _w[14] = size * 8, _w[15] = size >> 29; }
     Hash calc(const Hash &hash) const;
     void clear() { for (int i = 0; i < 16; ++i) _w[i] = 0; }
     void stopBit(unsigned gc) { ((char *)_w)[gc] = 0x80; }
