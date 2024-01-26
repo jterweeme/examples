@@ -41,17 +41,18 @@ public:
     Chunk()
     { for (unsigned i = 0; i < 64; ++i) _k[i] = uint32_t(fabs(sin(i + 1)) * double(1UL << 32)); }
 
-    void fillTail(uint32_t size) { _w[14] = size * 8, _w[15] = size >> 29; }
+    void fillTail(uint32_t size) { _w[14] = size << 3, _w[15] = size >> 29; }
     Hash calc(const Hash &hash) const;
     void clear() { for (int i = 0; i < 16; ++i) _w[i] = 0; }
     void stopBit(unsigned gc) { ((char *)_w)[gc] = 0x80; }
     auto read(istream &is) { clear(); is.read((char *)_w, 64); return is.gcount(); }
 };
 
-const uint32_t Chunk::_r[64] = { 7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,
-                                 5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,
-                                 4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,
-                                 6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21};
+const uint32_t Chunk::_r[64] = {
+ 7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,
+ 5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,
+ 4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,
+ 6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21};
 
 Hash Chunk::calc(const Hash &h) const
 {
@@ -95,14 +96,10 @@ static Hash stream(istream &is)
     sz += gc;
     chunk.stopBit(gc);
 
-    if (gc < 56) {
-        chunk.fillTail(sz);
-    } else if (gc < 64) {
-        hash += chunk.calc(hash);
-        chunk.clear();
-        chunk.fillTail(sz);
-    }
+    if (gc >= 56)
+        hash += chunk.calc(hash), chunk.clear();
 
+    chunk.fillTail(sz);
     return hash += chunk.calc(hash);
 }
 

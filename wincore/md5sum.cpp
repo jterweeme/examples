@@ -98,14 +98,10 @@ static Hash stream(istream &is)
     sz += gc;
     chunk.stopBit(gc);
 
-    if (is.gcount() < 56) {
-        chunk.fillTail(sz);
-    } else if (is.gcount() < 64) {
-        hash += chunk.calc(hash);
-        chunk.clear();
-        chunk.fillTail(sz);
-    }
+    if (gc >= 56)
+        hash += chunk.calc(hash), chunk.clear();
 
+    chunk.fillTail(sz);
     return hash += chunk.calc(hash);
 }
 
