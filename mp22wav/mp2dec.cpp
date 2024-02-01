@@ -29,10 +29,10 @@ static constexpr int scf_base[3] = { 0x02000000, 0x01965FEA, 0x01428A30 };
 
 //quantizer lookup, step 1: bitrate classes
 static constexpr char quant_lut_step1[2][16] = {
-    // 32, 48, 56, 64, 80, 96,112,128,160,192,224,256,320,384 <- bitrate
-    {   0,  0,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,  2,  2 },  // mono
-    // 16, 24, 28, 32, 40, 48, 56, 64, 80, 96,112,128,160,192 <- BR / chan
-    {   0,  0,  0,  0,  0,  0,  1,  1,  1,  2,  2,  2,  2,  2 }   // stereo
+    //32, 48, 56, 64, 80, 96,112,128,160,192,224,256,320,384 <- bitrate
+    {  0,  0,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2,  2,  2 },  // mono
+    //16, 24, 28, 32, 40, 48, 56, 64, 80, 96,112,128,160,192 <- BR / chan
+    {  0,  0,  0,  0,  0,  0,  1,  1,  1,  2,  2,  2,  2,  2 }   // stereo
 };
 
 //quantizer lookup, step 2: bitrate class, sample rate -> B2 table idx, sblimit
@@ -52,7 +52,7 @@ static constexpr char quant_lut_step2[3][4] = {
 //(upper 4 bits: nbal, lower 4 bits: row index)
 static constexpr char quant_lut_step3[3][32] = {
     //low-rate table (3-B.2c and 3-B.2d)
-    { 0x44,0x44,                                                   // SB  0 -  1
+    { 68,68,                                                   // SB  0 -  1
       0x34,0x34,0x34,0x34,0x34,0x34,0x34,0x34,0x34,0x34            // SB  2 - 12
     },
     //high-rate table (3-B.2a and 3-B.2b)
@@ -149,15 +149,38 @@ static constexpr uint16_t sample_rates[8] = {
 
 class Buffer
 {
-    char *_buf;
-    uint16_t _size;
-public:
-    Buffer();
-    std::streamsize read(uint16_t offset, std::istream &is, uint16_t n);
-    void reserve(uint16_t size);
+    char *_buf = new char[1000];
+    uint16_t _size = 1000;
     unsigned get_bit(uint16_t offset);
+public:
+    auto read(uint16_t offset, std::istream &is, uint16_t n);
     unsigned get_bits(uint16_t offset, uint16_t n);
 };
+
+auto Buffer::read(uint16_t offset, std::istream &is, uint16_t n)
+{
+    is.read(_buf + offset, n);
+    return is.gcount();
+}
+
+unsigned Buffer::get_bit(uint16_t offset)
+{
+    unsigned mask = 7 - offset % 8;
+    return (_buf[offset / 8] & 1 << mask) >> mask;
+}
+
+unsigned Buffer::get_bits(uint16_t offset, uint16_t n)
+{
+    unsigned ret = 0;
+
+    for (uint16_t i = 0; i < n; ++i)
+    {
+        ret <<= 1;
+        ret |= get_bit(i + offset);
+    }
+
+    return ret;
+}
 
 class Decoder
 {
@@ -181,10 +204,19 @@ public:
 class Toolbox
 {
 public:
-    static char hex4(uint8_t n);
-    static std::string hex8(uint8_t b);
-    static void writeWLE(char *buf, uint16_t w);
-    static void writeDwLE(char *buf, uint32_t dw);
+    static void writeWLE(char *buf, uint16_t w)
+    {
+        buf[0] = char(w >> 0 & 0xff);
+        buf[1] = char(w >> 8 & 0xff);
+    }
+
+    static void writeDwLE(char *buf, uint32_t dw)
+    {
+        buf[0] = char(dw >>  0 & 0xff);
+        buf[1] = char(dw >>  8 & 0xff);
+        buf[2] = char(dw >> 16 & 0xff);
+        buf[3] = char(dw >> 24 & 0xff);
+    }
 };
 
 class COptions
@@ -213,48 +245,6 @@ public:
     void write(FILE *fp) const;
 };
 
-//voor het gemak maken we een fixed size buffer van 1000 byte
-Buffer::Buffer()
-{
-    _buf = new char[1000];
-    _size = 1000;
-}
-
-std::streamsize Buffer::read(uint16_t offset, std::istream &is, uint16_t n)
-{
-    is.read(_buf + offset, n);
-    return is.gcount();
-}
-
-//buffer moet minstens [size] grootte worden
-void Buffer::reserve(uint16_t size)
-{
-    //buffer is al groot genoeg
-    if (size <= _size)
-        return;
-
-    throw "not implemented";
-}
-
-unsigned Buffer::get_bit(uint16_t offset)
-{
-    unsigned mask = 7 - offset % 8;
-    return (_buf[offset / 8] & 1 << mask) >> mask;
-}
-
-unsigned Buffer::get_bits(uint16_t offset, uint16_t n)
-{
-    unsigned ret = 0;
-
-    for (uint16_t i = 0; i < n; ++i)
-    {
-        ret <<= 1;
-        ret |= get_bit(i + offset);
-    }
-
-    return ret;
-}
-
 void CWavHeader::write(FILE *fp) const
 {
     Toolbox t;
@@ -275,33 +265,6 @@ void CWavHeader::write(FILE *fp) const
 
     //write wav header to file
     fwrite((const void*) header, 44, 1, fp);
-}
-
-char Toolbox::hex4(uint8_t n)
-{
-    return n <= 9 ? '0' + char(n) : 'A' + char(n - 10);
-}
-
-std::string Toolbox::hex8(uint8_t b)
-{
-    std::string ret;
-    ret += hex4(b >> 4 & 0xf);
-    ret += hex4(b >> 0 & 0xf);
-    return ret;
-}
-
-void Toolbox::writeWLE(char *buf, uint16_t w)
-{
-    buf[0] = char(w >> 0 & 0xff);
-    buf[1] = char(w >> 8 & 0xff);
-}
-
-void Toolbox::writeDwLE(char *buf, uint32_t dw)
-{
-    buf[0] = char(dw >>  0 & 0xff);
-    buf[1] = char(dw >>  8 & 0xff);
-    buf[2] = char(dw >> 16 & 0xff);
-    buf[3] = char(dw >> 24 & 0xff);
 }
 
 void COptions::parse(int argc, char **argv)
@@ -644,7 +607,7 @@ int main(int argc, char **argv)
     opts.parse(argc, argv);
     FILE *fout;
     std::ifstream ifs;
-    std::istream *is;
+    istream *is;
 
     if (opts.stdinput())
     {
@@ -672,50 +635,41 @@ int main(int argc, char **argv)
     }
 
     int ret = -1;
-    try
+    Decoder d;
+    CWavHeader h;
+    int out_bytes = 0;
+    d.kjmp2_init();
+
+    while (true)
     {
-        Decoder d;
-        CWavHeader h;
-        int out_bytes = 0;
-        d.kjmp2_init();
-    
-        while (true)
+        int samplerate;
+        int16_t samples[1152 * 2];
+
+        if (d.kjmp2_decode_frame(*is, samples, samplerate) == 0)
+            break;
+
+        //schrijf wav header voor eerste frame
+        if (out_bytes == 0)
         {
-            int samplerate;
-            int16_t samples[1152 * 2];
-    
-            if (d.kjmp2_decode_frame(*is, samples, samplerate) == 0)
-                break;
-    
-            //schrijf wav header voor eerste frame
-            if (out_bytes == 0)
-            {
-                h.rate(samplerate);
-                h.write(fout);
-            }
-    
-            out_bytes += (int) fwrite((const void*)samples, 1, 1152 * 4, fout);
-        }
-    
-        if (fout != stdout)
-        {
-            h.filesize(out_bytes + 36);
-    
-            //rewrite WAV header
-            fseek(fout, 0, SEEK_SET);
+            h.rate(samplerate);
             h.write(fout);
         }
-    
-        fflush(fout);
-        fclose(fout);
-        fprintf(stderr, "Done.\n");
-        ret = 0;
+
+        out_bytes += (int) fwrite((const void*)samples, 1, 1152 * 4, fout);
     }
-    catch (const char *e)
+
+    if (fout != stdout)
     {
-        std::cerr << e << "\r\n";
-        std::cerr.flush();
+        h.filesize(out_bytes + 36);
+
+        //rewrite WAV header
+        fseek(fout, 0, SEEK_SET);
+        h.write(fout);
     }
+
+    fflush(fout);
+    fclose(fout);
+    ret = 0;
     return ret;
 }
 

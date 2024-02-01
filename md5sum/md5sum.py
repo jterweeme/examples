@@ -3,10 +3,6 @@
 import sys
 import math
 
-def print_hash(a):
-    for i in range(4): sys.stdout.write(a[i].to_bytes(4, 'little').hex())
-    print()
-
 def int32(n):
     return int(n) & 0xffffffff
 
@@ -22,7 +18,7 @@ def calc(h, w):
         b = int32(b + (x << r[i] | x >> 32 - r[i]))
     return [int32(x + y) for x, y in zip(h, [a, b, c, d])]
 
-def init(n):
+def initk(n):
     #return int(2**32 * math.fabs(math.sin(n)))
     fact = 1
     p = n % 3.141592653589793
@@ -31,13 +27,13 @@ def init(n):
     for j in range(1, 11):
         p *= -z
         fact = fact * 2 * j * (2 * j + 1)
-        assert(fact < 2**66)
+        assert fact < 2**66, "groter dan 2**66"
         r += p * 2**64 // fact
     return int(r) >> 32
 
 if __name__ == "__main__":
     h = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476]
-    k = list(init(i) for i in range(1, 65))
+    k = list(initk(i) for i in range(1, 65))
     r = (7, 12, 17, 22) * 4 + (5, 9, 14, 20) * 4 + (4, 11, 16, 23) * 4 + (6, 10, 15, 21) * 4
     w = [0] * 16
     fp = sys.stdin.buffer
@@ -60,5 +56,6 @@ if __name__ == "__main__":
         w = [0] * 16
     w[14], w[15] = sz << 3, sz >> 29
     h = calc(h, w)
-    print_hash(h)
+    for i in range(4): sys.stdout.write(h[i].to_bytes(4, 'little').hex())
+    print()
 
