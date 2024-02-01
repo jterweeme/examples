@@ -24,15 +24,14 @@ public:
     static uint32_t be32tohost(uint32_t num);
 };
 
-
 uint32_t Toolbox::be32tohost(uint32_t num)
 {
     return swapEndian(num);
 }
 
-uint32_t Toolbox::swapEndian(uint32_t num)
+uint32_t Toolbox::swapEndian(uint32_t n)
 {
-    return (num >> 24 & 0xff) | (num << 8 & 0xff0000) | (num >> 8 & 0xff00) | (num << 24 & 0xff000000);
+    return n >> 24 & 0xff | n << 8 & 0xff0000 | n >> 8 & 0xff00 | n << 24 & 0xff000000;
 }
 
 static void dumpIntnodes(ostream &os, uint16_t *intnodes, uint8_t n)

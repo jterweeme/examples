@@ -1,28 +1,11 @@
 #!/usr/bin/pypy3
-# 
-# Simple FLAC decoder (Python)
-# 
-# Copyright (c) 2020 Project Nayuki. (MIT License)
-# https://www.nayuki.io/page/simple-flac-implementation
-# 
-# Permission is hereby granted, free of charge, to any person obtaining a copy of
-# this software and associated documentation files (the "Software"), to deal in
-# the Software without restriction, including without limitation the rights to
-# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-# the Software, and to permit persons to whom the Software is furnished to do so,
-# subject to the following conditions:
-# - The above copyright notice and this permission notice shall be included in
-#   all copies or substantial portions of the Software.
-# - The Software is provided "as is", without warranty of any kind, express or
-#   implied, including but not limited to the warranties of merchantability,
-#   fitness for a particular purpose and noninfringement. In no event shall the
-#   authors or copyright holders be liable for any claim, damages or other
-#   liability, whether in an action of contract, tort or otherwise, arising from,
-#   out of or in connection with the Software or the use or other dealings in the
-#   Software.
-# 
 
-import pathlib, struct, sys
+#Usage: ./flac2wav < song.flac | ffplay -
+
+#https://www.nayuki.io/page/simple-flac-implementation
+
+
+import struct, sys
 
 class BitInputStream:
     def __init__(self, inp):
@@ -128,7 +111,7 @@ def decode_subframe(inp, blocksize, sampledepth):
 		result = decode_linear_predictive_coding_subframe(inp, xtype - 31, blocksize, sampledepth)
 	else:
 		raise ValueError("Reserved subframe type")
-	return [(v << shift) for v in result]
+	return [v << shift for v in result]
 
 def decode_frame(inp, numchannels, sampledepth, out):
     temp = inp.read_byte()
@@ -192,7 +175,7 @@ def decode_frame(inp, numchannels, sampledepth, out):
     return True
 
 if __name__ == "__main__":
-    inp = BitInputStream(pathlib.Path(sys.argv[1]).open("rb"))
+    inp = BitInputStream(sys.stdin.buffer)
     out = sys.stdout.buffer
     assert inp.read_uint(32) == 0x664C6143, "Invalid magic string"
     samplerate = None
