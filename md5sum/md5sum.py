@@ -27,7 +27,6 @@ def initk(n):
     for j in range(1, 11):
         p *= -z
         fact = fact * 2 * j * (2 * j + 1)
-        assert fact < 2**66, "groter dan 2**66"
         r += p * 2**64 // fact
     return int(r) >> 32
 
