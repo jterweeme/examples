@@ -30,31 +30,30 @@ def initk(n):
         r += p * 2**64 // fact
     return int(r) >> 32
 
-if __name__ == "__main__":
-    h = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476]
-    k = list(initk(i) for i in range(1, 65))
-    r = (7, 12, 17, 22) * 4 + (5, 9, 14, 20) * 4 + (4, 11, 16, 23) * 4 + (6, 10, 15, 21) * 4
-    w = [0] * 16
-    fp = sys.stdin.buffer
-    sz, bar = 0, 17
-    while bar > 16:
-        foo = 0
-        for i in range(16):
-            gc = len(buf := fp.read(4))
-            sz += gc
-            foo += gc
-            w[i] = int.from_bytes(buf, 'little')
-            if gc < 4:
-                bar = i
-                break
-        if bar > 16: h = calc(h, w)
-    w[bar] |= 0x80 << 8 * gc
-    for i in range(bar + 1, 16): w[i] = 0;
-    if foo >= 56:
-        h = calc(h, w)
-        w = [0] * 16
-    w[14], w[15] = sz << 3, sz >> 29
+h = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476]
+k = list(initk(i) for i in range(1, 65))
+r = (7, 12, 17, 22) * 4 + (5, 9, 14, 20) * 4 + (4, 11, 16, 23) * 4 + (6, 10, 15, 21) * 4
+w = [0] * 16
+fp = sys.stdin.buffer
+sz, bar = 0, 17
+while bar > 16:
+    foo = 0
+    for i in range(16):
+        gc = len(buf := fp.read(4))
+        sz += gc
+        foo += gc
+        w[i] = int.from_bytes(buf, 'little')
+        if gc < 4:
+            bar = i
+            break
+    if bar > 16: h = calc(h, w)
+w[bar] |= 0x80 << 8 * gc
+for i in range(bar + 1, 16): w[i] = 0;
+if foo >= 56:
     h = calc(h, w)
-    for i in range(4): sys.stdout.write(h[i].to_bytes(4, 'little').hex())
-    print()
+    w = [0] * 16
+w[14], w[15] = sz << 3, sz >> 29
+h = calc(h, w)
+for i in range(4): sys.stdout.write(h[i].to_bytes(4, 'little').hex())
+print()
 

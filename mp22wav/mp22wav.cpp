@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdint>
+#include <cassert>
 #include <fcntl.h>
 #include <fstream>
 #include <iostream>
@@ -52,8 +53,8 @@ static constexpr char quant_lut_step2[3][4] = {
 //(upper 4 bits: nbal, lower 4 bits: row index)
 static constexpr char quant_lut_step3[3][32] = {
     //low-rate table (3-B.2c and 3-B.2d)
-    { 68,68,                                                   // SB  0 -  1
-      0x34,0x34,0x34,0x34,0x34,0x34,0x34,0x34,0x34,0x34            // SB  2 - 12
+    { 68,68,                         //SB  0 -  1
+      52,52,52,52,52,52,52,52,52,52  //SB  2 - 12
     },
     //high-rate table (3-B.2a and 3-B.2b)
     { 0x43,0x43,0x43,                                              // SB  0 -  2
@@ -227,11 +228,29 @@ private:
     std::string _ifn;
     std::string _ofn;
 public:
-    void parse(int argc, char **argv);
     bool stdinput() const { return _stdinput; }
     bool stdoutput() const { return _stdoutput; }
     std::string ifn() const { return _ifn; }
     std::string ofn() const { return _ofn; }
+
+    void parse(int argc, char **argv)
+    {
+        if (argc < 2)
+        {
+            _stdinput = true;
+            _stdoutput = true;
+        }
+        else if (argc == 2)
+        {
+            _ifn = argv[1];
+            _stdoutput = true;
+        }
+        else
+        {
+            _ifn = argv[1];
+            _ofn = argv[2];
+        }
+    }
 };
 
 class CWavHeader
@@ -242,49 +261,29 @@ private:
 public:
     void rate(int val) { _rate = val; }
     void filesize(uint32_t val) { _filesize = val; }
-    void write(FILE *fp) const;
+
+    void write(FILE *fp) const
+    {
+        Toolbox t;
+        uint8_t header[44];
+        strncpy((char *)header + 0, "RIFF", 4);
+        t.writeDwLE((char *)(header + 4), _filesize - 36);
+        strncpy((char *)header + 8, "WAVE", 4);
+        strncpy((char *)header + 12, "fmt ", 4);
+        t.writeDwLE((char *)(header + 16), 16);
+        t.writeWLE((char *)(header + 20), 1);
+        t.writeWLE((char *)(header + 22), 2);
+        t.writeDwLE((char *)(header + 24), _rate);
+        t.writeDwLE((char *)(header + 28), _rate << 2);
+        t.writeWLE((char *)(header + 32), 4);
+        t.writeWLE((char *)(header + 34), 16);
+        strncpy((char *)header + 36, "data", 4);
+        t.writeDwLE((char *)(header + 40), _filesize);
+    
+        //write wav header to file
+        fwrite((const void*) header, 44, 1, fp);
+    }
 };
-
-void CWavHeader::write(FILE *fp) const
-{
-    Toolbox t;
-    uint8_t header[44];
-    strncpy((char *)header + 0, "RIFF", 4);
-    t.writeDwLE((char *)(header + 4), _filesize - 36);
-    strncpy((char *)header + 8, "WAVE", 4);
-    strncpy((char *)header + 12, "fmt ", 4);
-    t.writeDwLE((char *)(header + 16), 16);
-    t.writeWLE((char *)(header + 20), 1);
-    t.writeWLE((char *)(header + 22), 2);
-    t.writeDwLE((char *)(header + 24), _rate);
-    t.writeDwLE((char *)(header + 28), _rate << 2);
-    t.writeWLE((char *)(header + 32), 4);
-    t.writeWLE((char *)(header + 34), 16);
-    strncpy((char *)header + 36, "data", 4);
-    t.writeDwLE((char *)(header + 40), _filesize);
-
-    //write wav header to file
-    fwrite((const void*) header, 44, 1, fp);
-}
-
-void COptions::parse(int argc, char **argv)
-{
-    if (argc < 2)
-    {
-        _stdinput = true;
-        _stdoutput = true;
-    }
-    else if (argc == 2)
-    {
-        _ifn = argv[1];
-        _stdoutput = true;
-    }
-    else
-    {
-        _ifn = argv[1];
-        _ofn = argv[2];
-    }
-}
 
 void Decoder::kjmp2_init()
 {
@@ -305,7 +304,7 @@ const Quantizer_spec *Decoder::read_allocation(int sb, int b2_table, unsigned &o
     unsigned n = table_idx >> 4;
     table_idx = quant_lut_step4[table_idx & 15][_buf.get_bits(offset, n)];
     offset += n;
-    return table_idx ? (&quantizer_table[table_idx - 1]) : 0;
+    return table_idx ? &quantizer_table[table_idx - 1] : 0;
 }
 
 void Decoder::read_samples(const Quantizer_spec *q, int scalefactor, int *sample, unsigned &offset)
@@ -369,6 +368,7 @@ void Decoder::read_samples(const Quantizer_spec *q, int scalefactor, int *sample
 uint32_t
 Decoder::kjmp2_decode_frame(std::istream &is, int16_t *pcm, int &samplerate)
 {
+    //int _Voffs = 0;
     std::streamsize ret = _buf.read(0, is, 10);
     
     if (ret != 10)
@@ -377,13 +377,12 @@ Decoder::kjmp2_decode_frame(std::istream &is, int16_t *pcm, int &samplerate)
     uint8_t frame0 = _buf.get_bits(0, 8);
     uint8_t frame1 = _buf.get_bits(8, 8);
     uint8_t frame2 = _buf.get_bits(16, 8);
-#if 0
-    // check for valid header: syncword OK, MPEG-Audio Layer 2
-    if ((frame0 != 0xFF) || ((frame1 & 0xF6) != 0xF4))
-        throw "invalid magic";
+    assert(frame0 == 0xff);
+    assert((frame1 & 0xf6) == 0xf4);
 
-    samplerate[(((frame[1] & 0x08) >> 1) ^ 4)  // MPEG-1/2 switch
-                      + ((frame[2] >> 2) & 3)];         // actual rate
+#if 0
+    samplerate[(((frame1 & 0x08) >> 1) ^ 4)  // MPEG-1/2 switch
+                      + ((frame2 >> 2) & 3)];         // actual rate
 #endif
     samplerate = 44100;
 
@@ -465,10 +464,7 @@ Decoder::kjmp2_decode_frame(std::istream &is, int16_t *pcm, int &samplerate)
     {
         for (int ch = 0; ch < nch; ++ch)
             if (alloc[ch][sb])
-            {
-                scfsi[ch][sb] = _buf.get_bits(offset, 2);
-                offset += 2;
-            }
+                scfsi[ch][sb] = _buf.get_bits(offset, 2), offset += 2;
 
         if (mode == MONO)
             scfsi[1][sb] = scfsi[0][sb];
