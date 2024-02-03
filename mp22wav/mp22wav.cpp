@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <math.h>
 
+using std::ifstream;
 using std::istream;
 
 struct Quantizer_spec
@@ -148,6 +149,11 @@ static constexpr uint16_t sample_rates[8] = {
     22050, 24000, 16000, 0   // MPEG-2
 };
 
+static constexpr uint8_t STEREO = 0; //not used
+static constexpr uint8_t JOINT_STEREO = 1;
+static constexpr uint8_t DUAL_CHANNEL = 2; //not used
+static constexpr uint8_t MONO = 3;
+
 class Buffer
 {
     char *_buf = new char[1000];
@@ -182,24 +188,6 @@ unsigned Buffer::get_bits(uint16_t offset, uint16_t n)
 
     return ret;
 }
-
-static constexpr uint8_t STEREO = 0; //not used
-static constexpr uint8_t JOINT_STEREO = 1;
-static constexpr uint8_t DUAL_CHANNEL = 2; //not used
-static constexpr uint8_t MONO = 3;
-
-class Decoder
-{
-private:
-    Buffer _buf;
-    int _Voffs;
-    int _N[64][32];
-    int _V[2][1024];
-    int16_t _samples[1152 * 2];
-public:
-    void kjmp2_init();
-    uint32_t kjmp2_decode_frame(std::istream &is, int16_t *pcm, int &samplerate);
-};
 
 class Toolbox
 {
@@ -284,328 +272,12 @@ public:
     }
 };
 
-void Decoder::kjmp2_init()
-{
-    for (int i = 0;  i < 64;  ++i)
-        for (int j = 0;  j < 32;  ++j)
-            _N[i][j] = int(256.0 * cos(((16 + i) * ((j << 1) + 1)) * 0.0490873852123405));
-
-    for (int i = 0;  i < 2;  ++i)
-        for (int j = 1023;  j >= 0;  --j)
-            _V[i][j] = 0;
-
-    _Voffs = 0;
-}
-
-uint32_t
-Decoder::kjmp2_decode_frame(std::istream &is, int16_t *pcm, int &samplerate)
-{
-    //int _Voffs = 0;
-    std::streamsize ret = _buf.read(0, is, 10);
-    
-    if (ret != 10)
-        return 0;
-
-    uint8_t frame0 = _buf.get_bits(0, 8);
-    uint8_t frame1 = _buf.get_bits(8, 8);
-    uint8_t frame2 = _buf.get_bits(16, 8);
-    assert(frame0 == 0xff);
-    assert((frame1 & 0xf6) == 0xf4);
-
-#if 0
-    samplerate[(((frame1 & 0x08) >> 1) ^ 4)  // MPEG-1/2 switch
-                      + ((frame2 >> 2) & 3)];         // actual rate
-#endif
-    samplerate = 44100;
-
-    // read the rest of the header
-    unsigned bit_rate_index_minus1 = _buf.get_bits(16, 4) - 1;
-
-    if (bit_rate_index_minus1 > 13)
-        return 0;  // invalid bit rate or 'free format'
-
-    unsigned freq = _buf.get_bits(20, 2);
-
-    if (freq == 3)
-        return 0;
-
-    if ((frame1 & 0x08) == 0) {  // MPEG-2
-        freq += 4;
-        bit_rate_index_minus1 += 14;
-    }
-
-    unsigned padding_bit = _buf.get_bits(22, 1);
-    unsigned mode = _buf.get_bits(24, 2);
-    int sblimit, table_idx;
-    int bound = _buf.get_bits(26, 2) + 1 << 2;
-
-    if (mode != JOINT_STEREO)
-        bound = mode == MONO ? 0 : 32;
-
-    _buf.get_bits(28, 4);
-    unsigned offset = 32;
-
-    if ((frame1 & 1) == 0)
-    {
-        _buf.get_bits(offset, 16);
-        offset += 16;
-    }
-
-    // compute the frame size
-    uint32_t frame_size = 144000 * bitrates[bit_rate_index_minus1]
-               / sample_rates[freq] + padding_bit;
-
-    _buf.read(10, is, frame_size - 10);
-
-    if (!pcm)
-        return frame_size;  // no decoding
-
-    // prepare the quantizer table lookups
-    if (freq & 4)
-    {
-        // MPEG-2 (LSR)
-        table_idx = 2;
-        sblimit = 30;
-    }
-    else
-    {
-        // MPEG-1
-        table_idx = (mode == MONO) ? 0 : 1;
-        table_idx = quant_lut_step1[table_idx][bit_rate_index_minus1];
-        table_idx = quant_lut_step2[table_idx][freq];
-        sblimit = table_idx & 63;
-        table_idx >>= 6;
-    }
-
-    bound = std::min(bound, sblimit);
-    const Quantizer_spec *alloc[2][32];
-
-    // read the allocation information
-    for (int sb = 0; sb < sblimit; ++sb)
-    {
-        for (int ch = 0; ch < 2; ++ch)
-        {
-            int xtable_idx = quant_lut_step3[table_idx][sb];
-            unsigned n = xtable_idx >> 4;
-            xtable_idx = quant_lut_step4[xtable_idx & 15][_buf.get_bits(offset, n)];
-            offset += n;
-            const Quantizer_spec *foo = xtable_idx ? &quantizer_table[xtable_idx - 1] : 0;
-            alloc[ch][sb] = foo;  //xtable_idx ? &quantizer_table[xtable_idx - 1] : 0;
-
-            if (sb >= bound)
-            {
-                alloc[++ch][sb] = foo;
-                break;
-            }
-        }
-    }
-
-    // read scale factor selector information
-    int nch = (mode == MONO) ? 1 : 2;
-    int scfsi[2][32];
-
-    for (int sb = 0; sb < sblimit; ++sb)
-    {
-        for (int ch = 0; ch < nch; ++ch)
-            if (alloc[ch][sb])
-                scfsi[ch][sb] = _buf.get_bits(offset, 2), offset += 2;
-
-        if (mode == MONO)
-            scfsi[1][sb] = scfsi[0][sb];
-    }
-
-    int sf[2][32][3];
-
-    // read scale factors
-    for (int sb = 0; sb < sblimit; ++sb)
-    {
-        for (int ch = 0; ch < nch; ++ch)
-        {
-            if (alloc[ch][sb])
-            {
-                switch (scfsi[ch][sb])
-                {
-                case 0:
-                    sf[ch][sb][0] = _buf.get_bits(offset, 6);
-                    sf[ch][sb][1] = _buf.get_bits(offset + 6, 6);
-                    sf[ch][sb][2] = _buf.get_bits(offset + 12, 6);
-                    offset += 18;
-                    break;
-                case 1:
-                    sf[ch][sb][0] =
-                    sf[ch][sb][1] = _buf.get_bits(offset, 6);
-                    sf[ch][sb][2] = _buf.get_bits(offset + 6, 6);
-                    offset += 12;
-                    break;
-                case 2:
-                    sf[ch][sb][0] =
-                    sf[ch][sb][1] =
-                    sf[ch][sb][2] = _buf.get_bits(offset, 6);
-                    offset += 6;
-                    break;
-                case 3:
-                    sf[ch][sb][0] = _buf.get_bits(offset, 6);
-                    sf[ch][sb][1] =
-                    sf[ch][sb][2] = _buf.get_bits(offset + 6, 6);
-                    offset += 12;
-                    break;
-                }
-            }
-        }
-
-        if (mode == MONO)
-            for (int part = 0;  part < 3;  ++part)
-                sf[1][sb][part] = sf[0][sb][part];
-    }
-
-    int sample[2][32][3];
-
-    // coefficient input and reconstruction
-    for (int part = 0; part < 3; ++part)
-    {
-        for (int gr = 0; gr < 4; ++gr)
-        {
-            // read the samples
-            for (int sb = 0; sb < sblimit; ++sb)
-            {
-                int foo = sb < bound ? 2 : 1;
-
-                for (int ch = 0; ch < foo; ++ch)
-                {
-                    const Quantizer_spec *q = alloc[ch][sb];
-                    int scalefactor = sf[ch][sb][part];
-                    //int *sample = sample[ch][sb];
-
-                    if (!q)
-                    {
-                        // no bits allocated for this subband
-                        sample[ch][sb][0] = sample[ch][sb][1] = sample[ch][sb][2] = 0;
-                        continue;
-                    }
-                
-                    // resolve scalefactor
-                    if (scalefactor == 63)
-                    {
-                        scalefactor = 0;
-                    }
-                    else
-                    {
-                        int xadj = scalefactor / 3;
-                        scalefactor = (scf_base[scalefactor % 3] + ((1 << xadj) >> 1)) >> xadj;
-                    }
-                
-                    // decode samples
-                    int adj = q->nlevels;
-                
-                    if (q->grouping)
-                    {
-                        // decode grouped samples
-                        int val = _buf.get_bits(offset, q->cw_bits);
-                        offset += q->cw_bits;
-                        sample[ch][sb][0] = val % adj;
-                        val /= adj;
-                        sample[ch][sb][1] = val % adj;
-                        sample[ch][sb][2] = val / adj;
-                    }
-                    else
-                    {
-                        // decode direct samples
-                        for (int idx = 0;  idx < 3;  ++idx)
-                        {
-                            sample[ch][sb][idx] = _buf.get_bits(offset, q->cw_bits);
-                            offset += q->cw_bits;
-                        }
-                    }
-                
-                    // postmultiply samples
-                    int scale = 65536 / (adj + 1);
-                    adj = (adj + 1 >> 1) - 1;
-                
-                    for (int idx = 0;  idx < 3;  ++idx)
-                    {
-                        // step 1: renormalization to [-1..1]
-                        int val = (adj - sample[ch][sb][idx]) * scale;
-                        // step 2: apply scalefactor
-                        sample[ch][sb][idx] = ( val * (scalefactor >> 12)      // upper part
-                                    + ((val * (scalefactor & 4095) + 2048) >> 12)) // lower part
-                                    >> 12;  // scale adjust
-                    }
-
-                    if (sb >= bound)
-                        for (int idx = 0; idx < 3; ++idx)
-                            sample[1][sb][idx] = sample[0][sb][idx];
-                }
-            }
-
-            for (int ch = 0; ch < 2; ++ch)
-               for (int sb = sblimit; sb < 32; ++sb)
-                    for (int idx = 0; idx < 3; ++idx)
-                        sample[ch][sb][idx] = 0;
-
-            // synthesis loop
-            for (int idx = 0; idx < 3; ++idx)
-            {
-                // shifting step
-                _Voffs = table_idx = _Voffs - 64 & 1023;
-
-                for (int ch = 0; ch < 2; ++ch)
-                {
-                    // matrixing
-                    for (int i = 0; i < 64; ++i)
-                    {
-                        int sum = 0;
-
-                        for (int j = 0; j < 32; ++j)
-                            sum += _N[i][j] * sample[ch][j][idx];  // 8b*15b=23b
-
-                        // intermediate value is 28 bit (23 + 5), clamp to 14b
-                        _V[ch][table_idx + i] = sum + 8192 >> 14;
-                    }
-
-                    int U[512];
-
-                    // construction of U
-                    for (int i = 0; i < 8; ++i)
-                    {
-                        for (int j = 0; j < 32; ++j)
-                        {
-                            U[(i<<6) + j]      = _V[ch][(table_idx + (i<<7) + j     ) & 1023];
-                            U[(i<<6) + j + 32] = _V[ch][(table_idx + (i<<7) + j + 96) & 1023];
-                        }
-                    }
-
-                    // apply window
-                    for (int i = 0;  i < 512;  ++i)
-                        U[i] = U[i] * D[i] + 32 >> 6;
-
-                    // output samples
-                    for (int j = 0; j < 32; ++j)
-                    {
-                        int sum = 0;
-
-                        for (int i = 0; i < 16; ++i)
-                            sum -= U[(i << 5) + j];
-
-                        sum = std::clamp(sum + 8 >> 4, -32768, 32767);
-                        pcm[idx << 6 | j << 1 | ch] = int16_t(sum);
-                    }
-                } // end of synthesis channel loop
-            } // end of synthesis sub-block loop
-
-            // adjust PCM output pointer: decoded 3 * 32 = 96 stereo samples
-            pcm += 192;
-
-        } // decoding of the granule finished
-    }
-    return 1;
-}
-
 int main(int argc, char **argv)
 {
     COptions opts;
     opts.parse(argc, argv);
     FILE *fout;
-    std::ifstream ifs;
+    ifstream ifs;
     istream *is;
 
     if (opts.stdinput())
@@ -634,18 +306,320 @@ int main(int argc, char **argv)
     }
 
     int ret = -1;
-    Decoder d;
     CWavHeader h;
     int out_bytes = 0;
-    d.kjmp2_init();
+    Buffer _buf;
+    int _Voffs;
+    int _N[64][32];
+    int _V[2][1024];
+    int16_t _samples[1152 * 2];
+
+    for (int i = 0;  i < 64;  ++i)
+        for (int j = 0;  j < 32;  ++j)
+            _N[i][j] = int(256.0 * cos(((16 + i) * ((j << 1) + 1)) * 0.0490873852123405));
+
+    for (int i = 0;  i < 2;  ++i)
+        for (int j = 1023;  j >= 0;  --j)
+            _V[i][j] = 0;
+
+    _Voffs = 0;
 
     while (true)
     {
         int samplerate;
         int16_t samples[1152 * 2];
+        int16_t *pcm = samples;
 
-        if (d.kjmp2_decode_frame(*is, samples, samplerate) == 0)
+        std::streamsize ret = _buf.read(0, *is, 10);
+        
+        if (ret != 10)
             break;
+    
+        uint8_t frame0 = _buf.get_bits(0, 8);
+        uint8_t frame1 = _buf.get_bits(8, 8);
+        uint8_t frame2 = _buf.get_bits(16, 8);
+        assert(frame0 == 0xff);
+        assert((frame1 & 0xf6) == 0xf4);
+
+#if 0
+        samplerate[(((frame1 & 0x08) >> 1) ^ 4)  // MPEG-1/2 switch
+                      + ((frame2 >> 2) & 3)];         // actual rate
+#endif
+        samplerate = 44100;
+    
+        // read the rest of the header
+        unsigned bit_rate_index_minus1 = _buf.get_bits(16, 4) - 1;
+        assert(bit_rate_index_minus1 <= 13);    //invalid bit rate or 'free format'
+        unsigned freq = _buf.get_bits(20, 2);
+        assert(freq != 3);
+    
+        //MPEG-2
+        if ((frame1 & 0x08) == 0)
+        {  
+            freq += 4;
+            bit_rate_index_minus1 += 14;
+        }
+    
+        unsigned padding_bit = _buf.get_bits(22, 1);
+        unsigned mode = _buf.get_bits(24, 2);
+        int sblimit, table_idx;
+        int bound = _buf.get_bits(26, 2) + 1 << 2;
+    
+        if (mode != JOINT_STEREO)
+            bound = mode == MONO ? 0 : 32;
+    
+        _buf.get_bits(28, 4);
+        unsigned offset = 32;
+    
+        if ((frame1 & 1) == 0)
+        {
+            _buf.get_bits(offset, 16);
+            offset += 16;
+        }
+    
+        // compute the frame size
+        uint32_t frame_size = 144000 * bitrates[bit_rate_index_minus1]
+                   / sample_rates[freq] + padding_bit;
+    
+        _buf.read(10, *is, frame_size - 10);
+
+        // prepare the quantizer table lookups
+        if (freq & 4)
+        {
+            // MPEG-2 (LSR)
+            table_idx = 2;
+            sblimit = 30;
+        }
+        else
+        {
+            // MPEG-1
+            table_idx = (mode == MONO) ? 0 : 1;
+            table_idx = quant_lut_step1[table_idx][bit_rate_index_minus1];
+            table_idx = quant_lut_step2[table_idx][freq];
+            sblimit = table_idx & 63;
+            table_idx >>= 6;
+        }
+    
+        bound = std::min(bound, sblimit);
+        const Quantizer_spec *alloc[2][32];
+    
+        // read the allocation information
+        for (int sb = 0; sb < sblimit; ++sb)
+        {
+            for (int ch = 0; ch < 2; ++ch)
+            {
+                int xtable_idx = quant_lut_step3[table_idx][sb];
+                unsigned n = xtable_idx >> 4;
+                xtable_idx = quant_lut_step4[xtable_idx & 15][_buf.get_bits(offset, n)];
+                offset += n;
+                const Quantizer_spec *foo = xtable_idx ? &quantizer_table[xtable_idx - 1] : 0;
+                alloc[ch][sb] = foo;  //xtable_idx ? &quantizer_table[xtable_idx - 1] : 0;
+    
+                if (sb >= bound)
+                {
+                    alloc[++ch][sb] = foo;
+                    break;
+                }
+            }
+        }
+    
+        // read scale factor selector information
+        int nch = (mode == MONO) ? 1 : 2;
+        int scfsi[2][32];
+    
+        for (int sb = 0; sb < sblimit; ++sb)
+        {
+            for (int ch = 0; ch < nch; ++ch)
+                if (alloc[ch][sb])
+                    scfsi[ch][sb] = _buf.get_bits(offset, 2), offset += 2;
+    
+            if (mode == MONO)
+                scfsi[1][sb] = scfsi[0][sb];
+        }
+    
+        int sf[2][32][3];
+    
+        // read scale factors
+        for (int sb = 0; sb < sblimit; ++sb)
+        {
+            for (int ch = 0; ch < nch; ++ch)
+            {
+                if (alloc[ch][sb])
+                {
+                    switch (scfsi[ch][sb])
+                    {
+                    case 0:
+                        sf[ch][sb][0] = _buf.get_bits(offset, 6);
+                        sf[ch][sb][1] = _buf.get_bits(offset + 6, 6);
+                        sf[ch][sb][2] = _buf.get_bits(offset + 12, 6);
+                        offset += 18;
+                        break;
+                    case 1:
+                        sf[ch][sb][0] =
+                        sf[ch][sb][1] = _buf.get_bits(offset, 6);
+                        sf[ch][sb][2] = _buf.get_bits(offset + 6, 6);
+                        offset += 12;
+                        break;
+                    case 2:
+                        sf[ch][sb][0] =
+                        sf[ch][sb][1] =
+                        sf[ch][sb][2] = _buf.get_bits(offset, 6);
+                        offset += 6;
+                        break;
+                    case 3:
+                        sf[ch][sb][0] = _buf.get_bits(offset, 6);
+                        sf[ch][sb][1] =
+                        sf[ch][sb][2] = _buf.get_bits(offset + 6, 6);
+                        offset += 12;
+                        break;
+                    }
+                }
+            }
+    
+            if (mode == MONO)
+                for (int part = 0;  part < 3;  ++part)
+                    sf[1][sb][part] = sf[0][sb][part];
+        }
+    
+        int sample[2][32][3];
+    
+        // coefficient input and reconstruction
+        for (int part = 0; part < 3; ++part)
+        {
+            for (int gr = 0; gr < 4; ++gr)
+            {
+                // read the samples
+                for (int sb = 0; sb < sblimit; ++sb)
+                {
+                    int foo = sb < bound ? 2 : 1;
+    
+                    for (int ch = 0; ch < foo; ++ch)
+                    {
+                        const Quantizer_spec *q = alloc[ch][sb];
+                        int scalefactor = sf[ch][sb][part];
+                        //int *sample = sample[ch][sb];
+    
+                        if (!q)
+                        {
+                            // no bits allocated for this subband
+                            sample[ch][sb][0] = sample[ch][sb][1] = sample[ch][sb][2] = 0;
+                            continue;
+                        }
+                    
+                        // resolve scalefactor
+                        if (scalefactor == 63)
+                        {
+                            scalefactor = 0;
+                        }
+                        else
+                        {
+                            int xadj = scalefactor / 3;
+                            scalefactor = (scf_base[scalefactor % 3] + ((1 << xadj) >> 1)) >> xadj;
+                        }
+                    
+                        // decode samples
+                        int adj = q->nlevels;
+                    
+                        if (q->grouping)
+                        {
+                            // decode grouped samples
+                            int val = _buf.get_bits(offset, q->cw_bits);
+                            offset += q->cw_bits;
+                            sample[ch][sb][0] = val % adj;
+                            val /= adj;
+                            sample[ch][sb][1] = val % adj;
+                            sample[ch][sb][2] = val / adj;
+                        }
+                        else
+                        {
+                            // decode direct samples
+                            for (int idx = 0;  idx < 3;  ++idx)
+                            {
+                                sample[ch][sb][idx] = _buf.get_bits(offset, q->cw_bits);
+                                offset += q->cw_bits;
+                            }
+                        }
+                    
+                        // postmultiply samples
+                        int scale = 65536 / (adj + 1);
+                        adj = (adj + 1 >> 1) - 1;
+                    
+                        for (int idx = 0;  idx < 3;  ++idx)
+                        {
+                            // step 1: renormalization to [-1..1]
+                            int val = (adj - sample[ch][sb][idx]) * scale;
+                            // step 2: apply scalefactor
+                            sample[ch][sb][idx] = ( val * (scalefactor >> 12)      // upper part
+                                   + ((val * (scalefactor & 4095) + 2048) >> 12)) // lower part
+                                     >> 12;  // scale adjust
+                        }
+    
+                        if (sb >= bound)
+                            for (int idx = 0; idx < 3; ++idx)
+                                sample[1][sb][idx] = sample[0][sb][idx];
+                    }
+                }
+    
+                for (int ch = 0; ch < 2; ++ch)
+                   for (int sb = sblimit; sb < 32; ++sb)
+                        for (int idx = 0; idx < 3; ++idx)
+                            sample[ch][sb][idx] = 0;
+    
+                // synthesis loop
+                for (int idx = 0; idx < 3; ++idx)
+                {
+                    // shifting step
+                    _Voffs = table_idx = _Voffs - 64 & 1023;
+    
+                    for (int ch = 0; ch < 2; ++ch)
+                    {
+                        // matrixing
+                        for (int i = 0; i < 64; ++i)
+                        {
+                            int sum = 0;
+    
+                            for (int j = 0; j < 32; ++j)
+                                sum += _N[i][j] * sample[ch][j][idx];  // 8b*15b=23b
+    
+                            // intermediate value is 28 bit (23 + 5), clamp to 14b
+                            _V[ch][table_idx + i] = sum + 8192 >> 14;
+                        }
+    
+                        int U[512];
+    
+                        // construction of U
+                        for (int i = 0; i < 8; ++i)
+                        {
+                            for (int j = 0; j < 32; ++j)
+                            {
+                                U[(i<<6) + j]      = _V[ch][(table_idx + (i<<7) + j     ) & 1023];
+                                U[(i<<6) + j + 32] = _V[ch][(table_idx + (i<<7) + j + 96) & 1023];
+                            }
+                        }
+    
+                        // apply window
+                        for (int i = 0;  i < 512;  ++i)
+                            U[i] = U[i] * D[i] + 32 >> 6;
+    
+                        // output samples
+                        for (int j = 0; j < 32; ++j)
+                        {
+                            int sum = 0;
+    
+                            for (int i = 0; i < 16; ++i)
+                                sum -= U[(i << 5) + j];
+    
+                            sum = std::clamp(sum + 8 >> 4, -32768, 32767);
+                            pcm[idx << 6 | j << 1 | ch] = int16_t(sum);
+                        }
+                    } // end of synthesis channel loop
+                } // end of synthesis sub-block loop
+    
+                // adjust PCM output pointer: decoded 3 * 32 = 96 stereo samples
+                pcm += 192;
+    
+            } // decoding of the granule finished
+        }
 
         //schrijf wav header voor eerste frame
         if (out_bytes == 0)
