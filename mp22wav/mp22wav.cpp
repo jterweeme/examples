@@ -183,20 +183,19 @@ unsigned Buffer::get_bits(uint16_t offset, uint16_t n)
     return ret;
 }
 
+static constexpr uint8_t STEREO = 0; //not used
+static constexpr uint8_t JOINT_STEREO = 1;
+static constexpr uint8_t DUAL_CHANNEL = 2; //not used
+static constexpr uint8_t MONO = 3;
+
 class Decoder
 {
 private:
-    static constexpr uint8_t STEREO = 0; //not used
-    static constexpr uint8_t JOINT_STEREO = 1;
-    static constexpr uint8_t DUAL_CHANNEL = 2; //not used
-    static constexpr uint8_t MONO = 3;
     Buffer _buf;
     int _Voffs;
     int _N[64][32];
     int _V[2][1024];
     int16_t _samples[1152 * 2];
-    void read_samples(const Quantizer_spec *q, int scalefactor, int *sample, unsigned &offset);
-    const Quantizer_spec *read_allocation(int sb, int b2_table, unsigned &offset);
 public:
     void kjmp2_init();
     uint32_t kjmp2_decode_frame(std::istream &is, int16_t *pcm, int &samplerate);
@@ -298,73 +297,6 @@ void Decoder::kjmp2_init()
     _Voffs = 0;
 }
 
-const Quantizer_spec *Decoder::read_allocation(int sb, int b2_table, unsigned &offset)
-{
-    int table_idx = quant_lut_step3[b2_table][sb];
-    unsigned n = table_idx >> 4;
-    table_idx = quant_lut_step4[table_idx & 15][_buf.get_bits(offset, n)];
-    offset += n;
-    return table_idx ? &quantizer_table[table_idx - 1] : 0;
-}
-
-void Decoder::read_samples(const Quantizer_spec *q, int scalefactor, int *sample, unsigned &offset)
-{
-    if (!q)
-    {
-        // no bits allocated for this subband
-        sample[0] = sample[1] = sample[2] = 0;
-        return;
-    }
-
-    // resolve scalefactor
-    if (scalefactor == 63)
-    {
-        scalefactor = 0;
-    }
-    else
-    {
-        int xadj = scalefactor / 3;
-        scalefactor = (scf_base[scalefactor % 3] + ((1 << xadj) >> 1)) >> xadj;
-    }
-
-    // decode samples
-    int adj = q->nlevels;
-
-    if (q->grouping)
-    {
-        // decode grouped samples
-        int val = _buf.get_bits(offset, q->cw_bits);
-        offset += q->cw_bits;
-        sample[0] = val % adj;
-        val /= adj;
-        sample[1] = val % adj;
-        sample[2] = val / adj;
-    }
-    else
-    {
-        // decode direct samples
-        for (int idx = 0;  idx < 3;  ++idx)
-        {
-            sample[idx] = _buf.get_bits(offset, q->cw_bits);
-            offset += q->cw_bits;
-        }
-    }
-
-    // postmultiply samples
-    int scale = 65536 / (adj + 1);
-    adj = (adj + 1 >> 1) - 1;
-
-    for (int idx = 0;  idx < 3;  ++idx)
-    {
-        // step 1: renormalization to [-1..1]
-        int val = (adj - sample[idx]) * scale;
-        // step 2: apply scalefactor
-        sample[idx] = ( val * (scalefactor >> 12)                  // upper part
-                    + ((val * (scalefactor & 4095) + 2048) >> 12)) // lower part
-                    >> 12;  // scale adjust
-    }
-}
-
 uint32_t
 Decoder::kjmp2_decode_frame(std::istream &is, int16_t *pcm, int &samplerate)
 {
@@ -449,12 +381,24 @@ Decoder::kjmp2_decode_frame(std::istream &is, int16_t *pcm, int &samplerate)
     const Quantizer_spec *alloc[2][32];
 
     // read the allocation information
-    for (int sb = 0; sb < bound; ++sb)
+    for (int sb = 0; sb < sblimit; ++sb)
+    {
         for (int ch = 0; ch < 2; ++ch)
-            alloc[ch][sb] = read_allocation(sb, table_idx, offset);
+        {
+            int xtable_idx = quant_lut_step3[table_idx][sb];
+            unsigned n = xtable_idx >> 4;
+            xtable_idx = quant_lut_step4[xtable_idx & 15][_buf.get_bits(offset, n)];
+            offset += n;
+            const Quantizer_spec *foo = xtable_idx ? &quantizer_table[xtable_idx - 1] : 0;
+            alloc[ch][sb] = foo;  //xtable_idx ? &quantizer_table[xtable_idx - 1] : 0;
 
-    for (int sb = bound; sb < sblimit; ++sb)
-        alloc[0][sb] = alloc[1][sb] = read_allocation(sb, table_idx, offset);
+            if (sb >= bound)
+            {
+                alloc[++ch][sb] = foo;
+                break;
+            }
+        }
+    }
 
     // read scale factor selector information
     int nch = (mode == MONO) ? 1 : 2;
@@ -522,16 +466,75 @@ Decoder::kjmp2_decode_frame(std::istream &is, int16_t *pcm, int &samplerate)
         for (int gr = 0; gr < 4; ++gr)
         {
             // read the samples
-            for (int sb = 0; sb < bound; ++sb)
-                for (int ch = 0; ch < 2; ++ch)
-                    read_samples(alloc[ch][sb], sf[ch][sb][part], sample[ch][sb], offset);
-
-            for (int sb = bound; sb < sblimit; ++sb)
+            for (int sb = 0; sb < sblimit; ++sb)
             {
-                read_samples(alloc[0][sb], sf[0][sb][part], sample[0][sb], offset);
+                int foo = sb < bound ? 2 : 1;
 
-                for (int idx = 0; idx < 3; ++idx)
-                    sample[1][sb][idx] = sample[0][sb][idx];
+                for (int ch = 0; ch < foo; ++ch)
+                {
+                    const Quantizer_spec *q = alloc[ch][sb];
+                    int scalefactor = sf[ch][sb][part];
+                    //int *sample = sample[ch][sb];
+
+                    if (!q)
+                    {
+                        // no bits allocated for this subband
+                        sample[ch][sb][0] = sample[ch][sb][1] = sample[ch][sb][2] = 0;
+                        continue;
+                    }
+                
+                    // resolve scalefactor
+                    if (scalefactor == 63)
+                    {
+                        scalefactor = 0;
+                    }
+                    else
+                    {
+                        int xadj = scalefactor / 3;
+                        scalefactor = (scf_base[scalefactor % 3] + ((1 << xadj) >> 1)) >> xadj;
+                    }
+                
+                    // decode samples
+                    int adj = q->nlevels;
+                
+                    if (q->grouping)
+                    {
+                        // decode grouped samples
+                        int val = _buf.get_bits(offset, q->cw_bits);
+                        offset += q->cw_bits;
+                        sample[ch][sb][0] = val % adj;
+                        val /= adj;
+                        sample[ch][sb][1] = val % adj;
+                        sample[ch][sb][2] = val / adj;
+                    }
+                    else
+                    {
+                        // decode direct samples
+                        for (int idx = 0;  idx < 3;  ++idx)
+                        {
+                            sample[ch][sb][idx] = _buf.get_bits(offset, q->cw_bits);
+                            offset += q->cw_bits;
+                        }
+                    }
+                
+                    // postmultiply samples
+                    int scale = 65536 / (adj + 1);
+                    adj = (adj + 1 >> 1) - 1;
+                
+                    for (int idx = 0;  idx < 3;  ++idx)
+                    {
+                        // step 1: renormalization to [-1..1]
+                        int val = (adj - sample[ch][sb][idx]) * scale;
+                        // step 2: apply scalefactor
+                        sample[ch][sb][idx] = ( val * (scalefactor >> 12)      // upper part
+                                    + ((val * (scalefactor & 4095) + 2048) >> 12)) // lower part
+                                    >> 12;  // scale adjust
+                    }
+
+                    if (sb >= bound)
+                        for (int idx = 0; idx < 3; ++idx)
+                            sample[1][sb][idx] = sample[0][sb][idx];
+                }
             }
 
             for (int ch = 0; ch < 2; ++ch)
