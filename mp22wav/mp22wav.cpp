@@ -13,6 +13,9 @@
 
 using std::ifstream;
 using std::istream;
+using std::string;
+using std::cerr;
+using std::cin;
 
 struct Quantizer_spec
 {
@@ -54,20 +57,17 @@ static constexpr char quant_lut_step2[3][4] = {
 //(upper 4 bits: nbal, lower 4 bits: row index)
 static constexpr char quant_lut_step3[3][32] = {
     //low-rate table (3-B.2c and 3-B.2d)
-    { 68,68,                         //SB  0 -  1
-      52,52,52,52,52,52,52,52,52,52  //SB  2 - 12
-    },
+    { 68,68,52,52,52,52,52,52,52,52,52,52},
     //high-rate table (3-B.2a and 3-B.2b)
-    { 0x43,0x43,0x43,                                              // SB  0 -  2
-      0x42,0x42,0x42,0x42,0x42,0x42,0x42,0x42,                     // SB  3 - 10
-      0x31,0x31,0x31,0x31,0x31,0x31,0x31,0x31,0x31,0x31,0x31,0x31, // SB 11 - 22
-      0x20,0x20,0x20,0x20,0x20,0x20,0x20                           // SB 23 - 29
+    { 67,67,67,
+      66,66,66,66,66,66,66,66,
+      49,49,49,49,49,49,49,49,49,49,49,49,
+      32,32,32,32,32,32,32
     },
     //MPEG-2 LSR table (B.2 in ISO 13818-3)
-    { 0x45,0x45,0x45,0x45,                                         // SB  0 -  3
-      0x34,0x34,0x34,0x34,0x34,0x34,0x34,                          // SB  4 - 10
-      0x24,0x24,0x24,0x24,0x24,0x24,0x24,0x24,0x24,0x24,           // SB 11 -
-                     0x24,0x24,0x24,0x24,0x24,0x24,0x24,0x24,0x24  //       - 29
+    { 69,69,69,69,
+      52,52,52,52,52,52,52,
+      36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36,36
     }
 };
 
@@ -158,36 +158,32 @@ class Buffer
 {
     char *_buf = new char[1000];
     uint16_t _size = 1000;
-    unsigned get_bit(uint16_t offset);
-public:
-    auto read(uint16_t offset, std::istream &is, uint16_t n);
-    unsigned get_bits(uint16_t offset, uint16_t n);
-};
 
-auto Buffer::read(uint16_t offset, std::istream &is, uint16_t n)
-{
-    is.read(_buf + offset, n);
-    return is.gcount();
-}
-
-unsigned Buffer::get_bit(uint16_t offset)
-{
-    unsigned mask = 7 - offset % 8;
-    return (_buf[offset / 8] & 1 << mask) >> mask;
-}
-
-unsigned Buffer::get_bits(uint16_t offset, uint16_t n)
-{
-    unsigned ret = 0;
-
-    for (uint16_t i = 0; i < n; ++i)
+    unsigned get_bit(uint16_t offset)
     {
-        ret <<= 1;
-        ret |= get_bit(i + offset);
+        unsigned mask = 7 - offset % 8;
+        return (_buf[offset / 8] & 1 << mask) >> mask;
+    }
+public:
+    auto read(uint16_t offset, istream &is, uint16_t n)
+    {
+        is.read(_buf + offset, n);
+        return is.gcount();
     }
 
-    return ret;
-}
+    unsigned get_bits(uint16_t offset, uint16_t n)
+    {
+        unsigned ret = 0;
+
+        for (uint16_t i = 0; i < n; ++i)
+        {
+            ret <<= 1;
+            ret |= get_bit(i + offset);
+        }
+
+        return ret;
+    }
+};
 
 class Toolbox
 {
@@ -212,13 +208,13 @@ class COptions
 private:
     bool _stdinput = false;
     bool _stdoutput = false;
-    std::string _ifn;
-    std::string _ofn;
+    string _ifn;
+    string _ofn;
 public:
     bool stdinput() const { return _stdinput; }
     bool stdoutput() const { return _stdoutput; }
-    std::string ifn() const { return _ifn; }
-    std::string ofn() const { return _ofn; }
+    string ifn() const { return _ifn; }
+    string ofn() const { return _ofn; }
 
     void parse(int argc, char **argv)
     {
@@ -282,7 +278,7 @@ int main(int argc, char **argv)
 
     if (opts.stdinput())
     {
-        is = &std::cin;
+        is = &cin;
 #ifdef _WIN32
         setmode(fileno(stdin), O_BINARY);
 #endif
@@ -312,10 +308,9 @@ int main(int argc, char **argv)
     int _Voffs;
     int _N[64][32];
     int _V[2][1024];
-    int16_t _samples[1152 * 2];
 
     for (int i = 0;  i < 64;  ++i)
-        for (int j = 0;  j < 32;  ++j)
+        for (int j = 0;  j < 32;  ++j)                                  //pi/64
             _N[i][j] = int(256.0 * cos(((16 + i) * ((j << 1) + 1)) * 0.0490873852123405));
 
     for (int i = 0;  i < 2;  ++i)
@@ -323,24 +318,19 @@ int main(int argc, char **argv)
             _V[i][j] = 0;
 
     _Voffs = 0;
+    int samplerate;
+    int16_t samples[1152 * 2];
+    unsigned frameno = 0;
 
-    while (true)
+    while (_buf.read(0, *is, 10) == 10)
     {
-        int samplerate;
-        int16_t samples[1152 * 2];
+        ++frameno;
         int16_t *pcm = samples;
-
-        std::streamsize ret = _buf.read(0, *is, 10);
-        
-        if (ret != 10)
-            break;
-    
         uint8_t frame0 = _buf.get_bits(0, 8);
         uint8_t frame1 = _buf.get_bits(8, 8);
         uint8_t frame2 = _buf.get_bits(16, 8);
         assert(frame0 == 0xff);
         assert((frame1 & 0xf6) == 0xf4);
-
 #if 0
         samplerate[(((frame1 & 0x08) >> 1) ^ 4)  // MPEG-1/2 switch
                       + ((frame2 >> 2) & 3)];         // actual rate
@@ -380,7 +370,7 @@ int main(int argc, char **argv)
         // compute the frame size
         uint32_t frame_size = 144000 * bitrates[bit_rate_index_minus1]
                    / sample_rates[freq] + padding_bit;
-    
+
         _buf.read(10, *is, frame_size - 10);
 
         // prepare the quantizer table lookups
