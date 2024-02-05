@@ -270,38 +270,25 @@ public:
 
 int main(int argc, char **argv)
 {
+#ifdef _WIN32
+    setmode(fileno(stdin), O_BINARY);
+    setmode(fileno(stdout), O_BINARY);
+#endif
     COptions opts;
     opts.parse(argc, argv);
-    FILE *fout;
+    FILE *fout = stdout;
     ifstream ifs;
-    istream *is;
+    istream *is = &cin;
 
-    if (opts.stdinput())
-    {
-        is = &cin;
-#ifdef _WIN32
-        setmode(fileno(stdin), O_BINARY);
-#endif
-    }
-    else
+    if (opts.stdinput() == false)
     {
         ifs.open(opts.ifn());
         is = &ifs;
     }
 
-    if (opts.stdoutput())
-    {
-        fout = stdout;
-#ifdef _WIN32
-        setmode(fileno(stdout), O_BINARY);
-#endif
-    }
-    else
-    {
+    if (opts.stdoutput() == false)
         fout = fopen(opts.ofn().c_str(), "wb");
-    }
 
-    int ret = -1;
     CWavHeader h;
     int out_bytes = 0;
     Buffer _buf;
@@ -618,7 +605,9 @@ int main(int argc, char **argv)
             h.write(fout);
         }
 
-        out_bytes += (int) fwrite((const void*)samples, 1, 1152 * 4, fout);
+        fwrite((const void*)samples, 1, 1152 * 4, fout);
+        //os.write((const void *)samples, 1152 * 4);
+        out_bytes += 1152 * 4;
     }
 
     if (fout != stdout)
@@ -632,8 +621,7 @@ int main(int argc, char **argv)
 
     fflush(fout);
     fclose(fout);
-    ret = 0;
-    return ret;
+    return 0;
 }
 
 
