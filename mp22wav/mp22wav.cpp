@@ -13,9 +13,15 @@
 
 using std::ifstream;
 using std::istream;
+using std::ostream;
 using std::string;
+using std::clamp;
+using std::endl;
 using std::cerr;
+using std::cout;
 using std::cin;
+using std::min;
+using std::ios;
 
 struct Quantizer_spec
 {
@@ -185,22 +191,10 @@ public:
     }
 };
 
-class Toolbox
+struct Toolbox
 {
-public:
-    static void writeWLE(char *buf, uint16_t w)
-    {
-        buf[0] = char(w >> 0 & 0xff);
-        buf[1] = char(w >> 8 & 0xff);
-    }
-
-    static void writeDwLE(char *buf, uint32_t dw)
-    {
-        buf[0] = char(dw >>  0 & 0xff);
-        buf[1] = char(dw >>  8 & 0xff);
-        buf[2] = char(dw >> 16 & 0xff);
-        buf[3] = char(dw >> 24 & 0xff);
-    }
+    static constexpr void writeWLE(char *buf, uint16_t w) { *(uint16_t *)buf = w;}
+    static constexpr void writeDwLE(char *buf, uint32_t dw) { *(uint32_t *)buf = dw; }
 };
 
 class COptions
@@ -241,16 +235,17 @@ class CWavHeader
 private:
     int _rate;
     uint32_t _filesize = 0;
+    uint32_t _datasize = 0;
 public:
     void rate(int val) { _rate = val; }
-    void filesize(uint32_t val) { _filesize = val; }
+    void datasize(uint32_t n) { _datasize = n; }
 
     void write(FILE *fp) const
     {
         Toolbox t;
         uint8_t header[44];
         strncpy((char *)header + 0, "RIFF", 4);
-        t.writeDwLE((char *)(header + 4), _filesize - 36);
+        t.writeDwLE((char *)(header + 4), _datasize + 36);  //filesize - 8 bytes
         strncpy((char *)header + 8, "WAVE", 4);
         strncpy((char *)header + 12, "fmt ", 4);
         t.writeDwLE((char *)(header + 16), 16);
@@ -261,7 +256,7 @@ public:
         t.writeWLE((char *)(header + 32), 4);
         t.writeWLE((char *)(header + 34), 16);
         strncpy((char *)header + 36, "data", 4);
-        t.writeDwLE((char *)(header + 40), _filesize);
+        t.writeDwLE((char *)(header + 40), _datasize);
     
         //write wav header to file
         fwrite((const void*) header, 44, 1, fp);
@@ -279,6 +274,7 @@ int main(int argc, char **argv)
     FILE *fout = stdout;
     ifstream ifs;
     istream *is = &cin;
+    //ostream *os = &cout;
 
     if (opts.stdinput() == false)
     {
@@ -307,22 +303,56 @@ int main(int argc, char **argv)
     _Voffs = 0;
     int samplerate;
     int16_t samples[1152 * 2];
-    unsigned frameno = 0;
+
+    if (opts.stdinput() == false)
+    {
+        unsigned frames = 0;
+
+        while (_buf.read(0, *is, 10) == 10)
+        {
+            ++frames;
+            uint8_t frame0 = _buf.get_bits(0, 8);
+            uint8_t frame1 = _buf.get_bits(8, 8);
+            assert(frame0 == 0xff);
+            assert((frame1 & 0xf6) == 0xf4);
+    
+            // read the rest of the header
+            unsigned bit_rate_index_minus1 = _buf.get_bits(16, 4) - 1;
+            assert(bit_rate_index_minus1 <= 13);    //invalid bit rate or 'free format'
+            unsigned freq = _buf.get_bits(20, 2);
+            assert(freq != 3);
+    
+            //MPEG-2
+            if ((frame1 & 0x08) == 0)
+                bit_rate_index_minus1 += 14;
+    
+            unsigned padding_bit = _buf.get_bits(22, 1);
+            _buf.get_bits(28, 4);
+    
+            // compute the frame size
+            uint32_t frame_size = 144000 * bitrates[bit_rate_index_minus1]
+                       / sample_rates[freq] + padding_bit;
+    
+            _buf.read(10, *is, frame_size - 10);
+        }
+
+        h.datasize(frames * 1152 * 4);
+        is->clear();
+        is->seekg(0, ios::beg);
+        //cerr << frameno << endl;
+    }
 
     while (_buf.read(0, *is, 10) == 10)
     {
-        ++frameno;
         int16_t *pcm = samples;
         uint8_t frame0 = _buf.get_bits(0, 8);
-        uint8_t frame1 = _buf.get_bits(8, 8);
-        uint8_t frame2 = _buf.get_bits(16, 8);
         assert(frame0 == 0xff);
+        uint8_t frame1 = _buf.get_bits(8, 8);
         assert((frame1 & 0xf6) == 0xf4);
-#if 0
-        samplerate[(((frame1 & 0x08) >> 1) ^ 4)  // MPEG-1/2 switch
+        uint8_t frame2 = _buf.get_bits(16, 8);
+
+        samplerate = sample_rates[(((frame1 & 0x08) >> 1) ^ 4)  // MPEG-1/2 switch
                       + ((frame2 >> 2) & 3)];         // actual rate
-#endif
-        samplerate = 44100;
     
         // read the rest of the header
         unsigned bit_rate_index_minus1 = _buf.get_bits(16, 4) - 1;
@@ -377,7 +407,7 @@ int main(int argc, char **argv)
             table_idx >>= 6;
         }
     
-        bound = std::min(bound, sblimit);
+        bound = min(bound, sblimit);
         const Quantizer_spec *alloc[2][32];
     
         // read the allocation information
@@ -390,7 +420,7 @@ int main(int argc, char **argv)
                 xtable_idx = quant_lut_step4[xtable_idx & 15][_buf.get_bits(offset, n)];
                 offset += n;
                 const Quantizer_spec *foo = xtable_idx ? &quantizer_table[xtable_idx - 1] : 0;
-                alloc[ch][sb] = foo;  //xtable_idx ? &quantizer_table[xtable_idx - 1] : 0;
+                alloc[ch][sb] = foo;
     
                 if (sb >= bound)
                 {
@@ -586,7 +616,7 @@ int main(int argc, char **argv)
                             for (int i = 0; i < 16; ++i)
                                 sum -= U[(i << 5) + j];
     
-                            sum = std::clamp(sum + 8 >> 4, -32768, 32767);
+                            sum = clamp(sum + 8 >> 4, -32768, 32767);
                             pcm[idx << 6 | j << 1 | ch] = int16_t(sum);
                         }
                     } // end of synthesis channel loop
@@ -612,7 +642,7 @@ int main(int argc, char **argv)
 
     if (fout != stdout)
     {
-        h.filesize(out_bytes + 36);
+        h.datasize(out_bytes);
 
         //rewrite WAV header
         fseek(fout, 0, SEEK_SET);
