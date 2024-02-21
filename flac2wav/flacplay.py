@@ -4,7 +4,7 @@
 
 #https://www.nayuki.io/page/simple-flac-implementation
 
-import struct, sys
+import struct, sys, pyaudio
 
 class BitInputStream:
     def __init__(self, inp):
@@ -103,9 +103,10 @@ def decode_subframe(inp, blocksize, sampledepth):
         raise ValueError("Reserved subframe type")
     return [v << shift for v in result]
 
-if __name__ == "__main__":
-    f = sys.stdin.buffer if len(sys.argv) < 2 else open(sys.argv[1], "rb")
-    inp = BitInputStream(f)
+
+
+def onzin():
+    inp = BitInputStream(sys.stdin.buffer)
     out = sys.stdout.buffer
     assert inp.read_uint(32) == 0x664C6143, "Invalid magic string"
     samplerate = None
@@ -130,6 +131,7 @@ if __name__ == "__main__":
     assert samplerate != None, "Stream info metadata block absent"
     assert sampledepth % 8 == 0, "Sample depth not supported"
     sampledatalen = numsamples * numchannels * (sampledepth // 8)
+    """
     out.write(b"RIFF")
     out.write(struct.pack("<I", sampledatalen + 36))
     out.write(b"WAVE")
@@ -138,7 +140,7 @@ if __name__ == "__main__":
         samplerate * numchannels * (sampledepth // 8),
         numchannels * (sampledepth // 8), sampledepth))
     out.write(b"data")
-    out.write(struct.pack("<I", sampledatalen))
+    out.write(struct.pack("<I", sampledatalen))"""
     while (temp := inp.read_byte()) != -1:
         sync = temp << 6 | inp.read_uint(6)
         assert sync == 0x3ffe, "Sync code expected"
@@ -192,8 +194,20 @@ if __name__ == "__main__":
         inp.read_uint(16)
         numbytes = sampledepth // 8
         addend = 128 if sampledepth == 8 else 0
+        ba = bytearray()
         for i in range(blocksize):
             for j in range(numchannels):
-                out.write(struct.pack("<i", samples[j][i] + addend)[ : numbytes])
+                ba += struct.pack("<i", samples[j][i] + addend)[:numbytes]
+        yield bytes(ba)
+
+
+if __name__ == "__main__":
+    p = pyaudio.PyAudio()
+    fmt = p.get_format_from_width(2)
+    stream = p.open(format = fmt, channels = 2, rate = 44100, output = True)
+    for data in onzin():
+        stream.write(data)
+    stream.stop_stream()
+    p.terminate()   
 
 
