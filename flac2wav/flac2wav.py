@@ -129,6 +129,7 @@ if __name__ == "__main__":
                 inp.read_uint(8)
     assert samplerate != None, "Stream info metadata block absent"
     assert sampledepth % 8 == 0, "Sample depth not supported"
+    addend = 128 if sampledepth == 8 else 0
     sampledatalen = numsamples * numchannels * (sampledepth // 8)
     out.write(b"RIFF")
     out.write(struct.pack("<I", sampledatalen + 36))
@@ -191,9 +192,10 @@ if __name__ == "__main__":
         inp.align_to_byte()
         inp.read_uint(16)
         numbytes = sampledepth // 8
-        addend = 128 if sampledepth == 8 else 0
+        foobar = 0
         for i in range(blocksize):
             for j in range(numchannels):
+                foobar += 1
                 out.write(struct.pack("<i", samples[j][i] + addend)[ : numbytes])
-
+        print(foobar, file=sys.stderr)
 

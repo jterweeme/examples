@@ -203,8 +203,8 @@ def onzin():
 
 if __name__ == "__main__":
     p = pyaudio.PyAudio()
-    fmt = p.get_format_from_width(2)
-    stream = p.open(format = fmt, channels = 2, rate = 44100, output = True)
+    fmt = p.get_format_from_width(1)
+    stream = p.open(format = fmt, channels = 1, rate = 22050, output = True)
     for data in onzin():
         stream.write(data)
     stream.stop_stream()

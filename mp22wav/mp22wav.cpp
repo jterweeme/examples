@@ -162,8 +162,8 @@ static constexpr uint8_t MONO = 3;
 
 class Buffer
 {
+    //wat is de maximale frame size?
     char *_buf = new char[1000];
-    uint16_t _size = 1000;
 
     unsigned get_bit(uint16_t offset)
     {
@@ -243,20 +243,20 @@ public:
     void write(FILE *fp) const
     {
         Toolbox t;
-        uint8_t header[44];
-        strncpy((char *)header + 0, "RIFF", 4);
-        t.writeDwLE((char *)(header + 4), _datasize + 36);  //filesize - 8 bytes
-        strncpy((char *)header + 8, "WAVE", 4);
-        strncpy((char *)header + 12, "fmt ", 4);
-        t.writeDwLE((char *)(header + 16), 16);
-        t.writeWLE((char *)(header + 20), 1);
-        t.writeWLE((char *)(header + 22), 2);
-        t.writeDwLE((char *)(header + 24), _rate);
-        t.writeDwLE((char *)(header + 28), _rate << 2);
-        t.writeWLE((char *)(header + 32), 4);
-        t.writeWLE((char *)(header + 34), 16);
-        strncpy((char *)header + 36, "data", 4);
-        t.writeDwLE((char *)(header + 40), _datasize);
+        char header[44];
+        strncpy(header + 0, "RIFF", 4);
+        t.writeDwLE(header + 4, _datasize + 36);  //filesize - 8 bytes
+        strncpy(header + 8, "WAVE", 4);
+        strncpy(header + 12, "fmt ", 4);
+        t.writeDwLE(header + 16, 16);
+        t.writeWLE(header + 20, 1);
+        t.writeWLE(header + 22, 2);
+        t.writeDwLE(header + 24, _rate);
+        t.writeDwLE(header + 28, _rate << 2);
+        t.writeWLE(header + 32, 4);
+        t.writeWLE(header + 34, 16);
+        strncpy(header + 36, "data", 4);
+        t.writeDwLE(header + 40, _datasize);
     
         //write wav header to file
         fwrite((const void*) header, 44, 1, fp);
@@ -304,6 +304,9 @@ int main(int argc, char **argv)
     int samplerate;
     int16_t samples[1152 * 2];
 
+    //Ga eerst de lengte opnemen, zodat dit vantevoren kan worden weggeschreven
+    //naar de WAV header. Dit kan niet met input van stdin, want deze kan niet
+    //teruggespoeld worden naar begin
     if (opts.stdinput() == false)
     {
         unsigned frames = 0;
@@ -316,7 +319,7 @@ int main(int argc, char **argv)
             assert(frame0 == 0xff);
             assert((frame1 & 0xf6) == 0xf4);
     
-            // read the rest of the header
+            //read the rest of the header
             unsigned bit_rate_index_minus1 = _buf.get_bits(16, 4) - 1;
             assert(bit_rate_index_minus1 <= 13);    //invalid bit rate or 'free format'
             unsigned freq = _buf.get_bits(20, 2);
@@ -329,7 +332,7 @@ int main(int argc, char **argv)
             unsigned padding_bit = _buf.get_bits(22, 1);
             _buf.get_bits(28, 4);
     
-            // compute the frame size
+            //compute the frame size
             uint32_t frame_size = 144000 * bitrates[bit_rate_index_minus1]
                        / sample_rates[freq] + padding_bit;
     
@@ -339,7 +342,6 @@ int main(int argc, char **argv)
         h.datasize(frames * 1152 * 4);
         is->clear();
         is->seekg(0, ios::beg);
-        //cerr << frameno << endl;
     }
 
     while (_buf.read(0, *is, 10) == 10)

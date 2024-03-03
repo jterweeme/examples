@@ -4,6 +4,13 @@
 
 #include <iostream>
 #include <fstream>
+#include <cstdint>
+#include <cassert>
+
+using std::ostream;
+using std::istream;
+using std::cout;
+using std::cin;
 
 template <class T> class Matrix
 {
@@ -39,25 +46,93 @@ public:
 class Toolbox
 {
 public:
-    static void writeWLE(std::ostream &os, uint16_t w);
-    static void writeDwLE(std::ostream &os, uint32_t dw);
+    static void writeWLE(ostream &os, uint16_t w);
+    static void writeDwLE(ostream &os, uint32_t dw);
 };
+
+void Toolbox::writeWLE(ostream &os, uint16_t w)
+{
+    os.write((const char *)&w, 2);
+    return;
+    os.put(w >> 0 & 0xff);
+    os.put(w >> 8 & 0xff);
+}
+
+void Toolbox::writeDwLE(ostream &os, uint32_t dw)
+{
+    os.write((const char *)&dw, 4);
+    return;
+    os.put(dw >>  0 & 0xff);
+    os.put(dw >>  8 & 0xff);
+    os.put(dw >> 16 & 0xff);
+    os.put(dw >> 24 & 0xff);
+}
 
 class BitInputStream
 {
 private:
-    std::istream *_is;
+    istream *_is;
     long _bitBuffer = 0;
     int _bitBufferLen = 0;
 public:
-    BitInputStream(std::istream *is);
-    void alignToByte();
+    BitInputStream(std::istream *is) : _is(is) { }
+    void alignToByte() { _bitBufferLen -= _bitBufferLen % 8; }
     bool peek();
     uint64_t readUint(int n);
     int readByte();
     int64_t readSignedInt(int n);
     int64_t readRiceSignedInt(int param);
 };
+
+int BitInputStream::readByte()
+{
+    if (_bitBufferLen >= 8)
+        return readUint(8);
+
+    return _is->get();
+}
+
+bool BitInputStream::peek()
+{
+    if (_bitBufferLen > 0)
+        return true;
+
+    int temp = _is->get();
+
+    if (temp == -1)
+        return false;
+
+    _bitBuffer = (_bitBuffer << 8) | temp;
+    _bitBufferLen += 8;
+    return true;
+}
+
+uint64_t BitInputStream::readUint(int n)
+{
+    while (_bitBufferLen < n)
+    {
+        int temp = _is->get();
+
+        if (temp == -1)
+            throw std::exception();
+
+        _bitBuffer = (_bitBuffer << 8) | temp;
+        _bitBufferLen += 8;
+    }
+
+    _bitBufferLen -= n;
+    int result = int(_bitBuffer >> _bitBufferLen);
+
+    if (n < 32)
+        result &= (1 << n) - 1;
+
+    return result;
+}
+
+int64_t BitInputStream::readSignedInt(int n)
+{
+    return int64_t(readUint(n) << 64 - n) >> 64 - n;
+}
 
 class FlacFrame
 {
@@ -75,24 +150,32 @@ public:
     void write(std::ostream &os);
 };
 
+int64_t BitInputStream::readRiceSignedInt(int param)
+{
+    int64_t val = 0;
+
+    while (readUint(1) == 0)
+        ++val;
+    
+    val = val << param | readUint(param);
+    int64_t ret = (val >> 1) ^ -(val & 1);
+    return ret;
+}
+
 void FlacFrame::_decodeResiduals(BitInputStream &in, int warmup, int ch)
 {
     uint8_t method = in.readUint(2);
-
-    if (method >= 2)
-        throw "Reserved residual coding method";
-
+    assert(method < 2);
     uint8_t paramBits = method == 0 ? 4 : 5;
     uint8_t escapeParam = method == 0 ? 0xF : 0x1F;
     uint8_t partitionOrder = in.readUint(4);
     uint32_t numPartitions = 1 << partitionOrder;
 
-    if (_blockSize % numPartitions != 0)
-        throw "Block size not divisible by number of Rice partitions";
-
+    //Block size must be divisble by number of Rice partitions
+    assert(_blockSize % numPartitions == 0); 
     uint32_t partitionSize = _blockSize / numPartitions;
 
-    for (uint32_t i = 0; i < numPartitions; i++)
+    for (uint32_t i = 0; i < numPartitions; ++i)
     {
         int start = i * partitionSize + (i == 0 ? warmup : 0);
         int end = (i + 1) * partitionSize;
@@ -144,10 +227,8 @@ void FlacFrame::_decodeSubframe(BitInputStream &in, int sampleDepth, int ch)
     uint8_t shift = in.readUint(1);
 
     if (shift == 1)
-    {
         while (in.readUint(1) == 0)
-            shift++;
-    }
+            ++shift;
 
     sampleDepth -= shift;
 
@@ -206,16 +287,8 @@ void FlacFrame::_decodeSubframe(BitInputStream &in, int sampleDepth, int ch)
 
 void FlacFrame::decode(BitInputStream &in)
 {
-    {
-        int temp = in.readByte();
-        int sync = temp << 6 | in.readUint(6);
-
-        if (sync != 0x3ffe)
-            throw "Sync code expected";
-
-        in.readUint(1);
-        in.readUint(1);
-    }
+    assert(in.readByte() << 6 | in.readUint(6) == 0x3ffe);
+    in.readUint(2);
     uint8_t blockSizeCode = in.readUint(4);
     uint8_t sampleRateCode = in.readUint(4);
     uint8_t chanAsgn = in.readUint(4);
@@ -228,7 +301,7 @@ void FlacFrame::decode(BitInputStream &in)
         while (foo >= 0b11000000)
         {
             in.readUint(8);
-            foo = (foo << 1) & 0xff;
+            foo = foo << 1 & 0xff;
         }
     }
 
@@ -295,7 +368,7 @@ void FlacFrame::decode(BitInputStream &in)
     in.readUint(16);
 }
 
-void FlacFrame::write(std::ostream &os)
+void FlacFrame::write(ostream &os)
 {
      // Write the decoded samples
     for (int i = 0; i < _blockSize; i++)
@@ -329,13 +402,12 @@ FlacFrame::FlacFrame(Matrix<int64_t> *mat, int numChannels, int sampleDepth)
 {
 }
 
-static void decodeFile(BitInputStream &in, std::ostream &os)
+int main()
 {
+    BitInputStream in(&cin);
+    ostream &os = cout;
     uint32_t magic = in.readUint(32);
-
-    if (magic != 0x664c6143)
-        throw "Invalid magic string";
-
+    assert(magic == 0x664c6143);
     int sampleRate = -1;
     int numChannels = -1;
     uint8_t sampleDepth = 0;
@@ -368,12 +440,8 @@ static void decodeFile(BitInputStream &in, std::ostream &os)
         }
     }
 
-    if (sampleRate == -1)
-        throw "Stream info metadata block absent";
-
-    if (sampleDepth % 8 != 0)
-        throw "Sample depth not supported";
-
+    assert(sampleRate != -1);   //Stream info metadata block absent
+    assert(sampleDepth % 8 == 0);
     uint64_t sampleDataLen = numSamples * numChannels * (sampleDepth / 8);
     os << "RIFF";
     Toolbox::writeDwLE(os, sampleDataLen + 36);
@@ -396,125 +464,7 @@ static void decodeFile(BitInputStream &in, std::ostream &os)
         frame.decode(in);
         frame.write(os);
     }
-}
 
-void Toolbox::writeWLE(std::ostream &os, uint16_t w)
-{
-    os.put(w >> 0 & 0xff);
-    os.put(w >> 8 & 0xff);
-}
-
-void Toolbox::writeDwLE(std::ostream &os, uint32_t dw)
-{
-    os.put(dw >>  0 & 0xff);
-    os.put(dw >>  8 & 0xff);
-    os.put(dw >> 16 & 0xff);
-    os.put(dw >> 24 & 0xff);
-}
-
-BitInputStream::BitInputStream(std::istream *is) : _is(is)
-{
-}
-
-void BitInputStream::alignToByte()
-{
-    _bitBufferLen -= _bitBufferLen % 8;
-}
-
-int BitInputStream::readByte()
-{
-    if (_bitBufferLen >= 8)
-        return readUint(8);
-
-    return _is->get();
-}
-
-bool BitInputStream::peek()
-{
-    if (_bitBufferLen > 0)
-        return true;
-
-    int temp = _is->get();
-
-    if (temp == -1)
-        return false;
-
-    _bitBuffer = (_bitBuffer << 8) | temp;
-    _bitBufferLen += 8;
-    return true;
-}
-
-uint64_t BitInputStream::readUint(int n)
-{
-    while (_bitBufferLen < n)
-    {
-        int temp = _is->get();
-
-        if (temp == -1)
-            throw std::exception();
-
-        _bitBuffer = (_bitBuffer << 8) | temp;
-        _bitBufferLen += 8;
-    }
-
-    _bitBufferLen -= n;
-    int result = int(_bitBuffer >> _bitBufferLen);
-
-    if (n < 32)
-        result &= (1 << n) - 1;
-
-    return result;
-}
-
-int64_t BitInputStream::readSignedInt(int n)
-{
-    return int64_t(readUint(n) << 64 - n) >> 64 - n;
-}
-
-int64_t BitInputStream::readRiceSignedInt(int param)
-{
-    int64_t val = 0;
-
-    while (readUint(1) == 0)
-        ++val;
-    
-    val = (val << param) | readUint(param);
-    int64_t ret = (val >> 1) ^ -(val & 1);
-    return ret;
-}
-
-
-int main(int argc, char **argv)
-{
-
-    try
-    {
-        std::istream *is = &std::cin;
-        std::ostream *os = &std::cout;
-        std::ifstream ifs;
-        std::ofstream ofs;
-
-        if (argc == 3)
-        {
-            ifs.open(argv[1]);
-            ofs.open(argv[2]);
-            is = &ifs;
-            os = &ofs;
-        }
-
-        BitInputStream bin(is);
-        decodeFile(bin, *os);
-    }
-    catch (const char *e)
-    {
-        std::cerr << e << "\r\n";
-        std::cerr.flush();
-    }
-    catch (...)
-    {
-        std::cerr << "Onbekend exception\r\n";
-        std::cerr.flush();
-    }
     return 0;
 }
 

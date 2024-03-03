@@ -1,5 +1,20 @@
 #!/usr/bin/python3
 
+import math, numpy, sys
+import matplotlib.pyplot as plt
+
+def integrate(lst):
+    ret = [lst[0]]
+    for i in range(1, len(lst)):
+        ret += [ret[-1] + lst[i]]
+    return ret
+
+def differentiate(lst):
+    ret = [lst[0]]
+    for i in range(1, len(lst)):
+        ret += [lst[i] - lst[i - 1]]
+    return ret
+
 bitrates = [
     32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384,
      8, 16, 24, 32, 40, 48,  56,  64,  80,  96, 112, 128, 144, 160];
@@ -13,14 +28,15 @@ quant_lut_step3 = [
     [67] * 3 + [66] * 8 + [49] * 12 + [32] * 7,
     [69] * 4 + [52] * 7 + [36]]
 
-quant_lut_step4 = [
-    [0,1,2,17],
-    [0,1,2,3,4,5,6,17],
+quant_lut_step4 = [[0,1,2,17],[0,1,2,3,4,5,6,17],
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 17],
     [0, 1, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
     [0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17],
-    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-]
+    list(range(16))]
+
+quantizer_table = [[3,1,5],[5,1,7],[7,0,3],[9,1,10],[15,0,4],[31,0,5],
+    [63,0,6],[127,0,7],[255,0,8],[511,0,9],[1023,0,10],[2047,0,11],
+    [4095,0,12],[8191,0,13],[16383,0,14],[32767,0,15],[65535,0,16]]
 
 a = [0, 0, 0, 0, 0, 0, 0, -1,
 -1, -1, -1, -2, -2, -3, -3, -4,
@@ -31,7 +47,17 @@ a = [0, 0, 0, 0, 0, 0, 0, -1,
 -103, -110, -116, -124, -131, -138, -146, -153,
 -160, -168, -175, -182, -189, -195, -201, -207]
 
+c = [math.cos(x) * 1000 - 1000 for x in numpy.arange(0, 0.5, 1/128)]
 
+plt.plot(a)
+plt.plot(c)
+#plt.show()
+
+b = [0,0,0,0,0,0,0,-1,0,0,0,-1,0,-1, 0,-1,0,-1,-1,0, -1,-1,-1,-1,-2,-1,-2,-1,-2,-2,-3,-2,
+-3,-2,-4,-3,-3,-4,-4,-4,-5,-5,-5,-5,-6,-6,-6,-6,-7,-7,-6,-8,-7,-7,-8,-7,-7,-8,-7,-7,-7,-6,-6,-6]
+
+assert(integrate(b) == a)
+assert(differentiate(a) == b)
 
 a += [213, 218, 222, 225, 227, 228, 228, 227, 224, 221, 215, 208, 200, 189,
 177, 163, 146, 127, 106, 83, 57, 29, -1, -35, -71, -110, -152, -196, -243,
@@ -79,20 +105,6 @@ a += [213, 208, 202,
 85, 79, 73, 68, 63, 58, 53, 49, 45, 41, 38, 35, 31, 29, 26, 24, 21, 19, 17, 16,
 14, 13, 11, 10, 9, 8, 7, 7, 6, 5, 5, 4, 4, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1]
 
-def integrate(lst):
-    ret = [lst[0]]
-    for i in range(1, len(lst)):
-        ret += [ret[-1] + lst[i]]
-    return ret
-
-b = [0,0,0,0,0,0,0,-1,0,0,0,-1,0,-1, 0,-1,0,-1,-1,0, -1,-1,-1,-1,-2,-1,-2,-1,-2,-2,-3,-2,
--3,-2,-4,-3,-3,-4,-4,-4,-5,-5,-5,-5,-6,-6,-6,-6,-7,-7,-6,-8,-7,-7,-8,-7,-7,-8,-7,-7,-7,-6,-6,-6]
-
-"""
-e = [213, 5, 4, 3, 2, 1, 0, -1, -3, -3, -4, -7, -8, -11,
--12, -14, 
-"""
-
 b = integrate(b)
 
 b += [213, 218, 222, 225, 227, 228, 228, 227, 224, 221, 215, 208, 200, 189,
@@ -121,15 +133,98 @@ b += [b[64]] + [(b[63 - x] -1) * -1 for x in range(63)]
 
 assert(a == b)
 
-import math
-import matplotlib.pyplot as plt
+sample_rates = [44100, 48000, 32000, 0, 22050, 24000, 16000, 0]
 
-plt.plot(a)
-plt.show()
+
 
 
 class Buffer:
-    pass
+    def get_bit(self, offset):
+        mask = 7 - offset % 8
+        return (self.buf[offset // 8] & 1 << mask) >> mask
+    def read(self, offset, ins, n):
+        self.buf = ins.read(n)
+        return len(self.buf)
+    def get_bits(self, offset, n):
+        ret = 0
+        for i in range(n):
+            ret <<= 1
+            ret |= self.get_bit(i + offset)
+        return ret
 
+f = open(sys.argv[1], "rb") if len(sys.argv) >= 2 else sys.stdin.buffer
 
+frames = 0
+buf = Buffer()
+
+while buf.read(0, f, 10) == 10:
+    frames += 1
+    frame0 = buf.get_bits(0, 8)
+    frame1 = buf.get_bits(8, 8)
+    assert frame0 == 0xff
+    assert (frame1 & 0xf6) == 0xf4
+    bit_rate_index_minus1 = buf.get_bits(16, 4) - 1
+    assert bit_rate_index_minus1 <= 13
+    freq = buf.get_bits(20, 2)
+    assert freq != 3
+    
+    #MPEG-2
+    if (frame1 & 0x08) == 0:
+        bit_rate_index_minus1 += 14
+
+    padding_bit = buf.get_bits(22, 1)
+    buf.get_bits(28, 4)
+    frame_size = 144000 * bitrates[bit_rate_index_minus1] // sample_rates[freq] + padding_bit
+    buf.read(10, f, frame_size - 10)
+
+print(frames)
+
+f.seek(0)
+
+while buf.read(0, f, 10) == 10:
+    frame0 = buf.get_bits(0, 8)
+    frame1 = buf.get_bits(8, 8)
+    assert frame0 == 0xff
+    assert (frame1 & 0xf6) == 0xf4
+    frame2 = buf.get_bits(16, 8)
+    samplerate = sample_rates[(((frame1 & 0x08) >> 1) ^ 4) + ((frame2 >> 2) & 3)]
+    bit_rate_index_minus1 = buf.get_bits(16, 4) - 1
+    assert bit_rate_index_minus1 <= 13
+    freq = buf.get_bits(20, 2)
+    assert freq != 3
+
+    #MPEG-2
+    if (frame1 & 0x08) == 0:
+        freq += 4
+        bit_rate_index_minus1 += 14
+
+    padding_bit = buf.get_bits(22, 1)
+    mode = buf.get_bits(24, 2)
+    bound = buf.get_bits(26, 2) + 1 << 2
+
+    if mode != JOINT_STEREO
+        bound = 0 if mode == MONO else 32
+
+    buf.get_bits(28, 4)
+    offset = 32
+
+    if (frame1 & 1) == 0:
+        buf.get_bits(offset, 16)
+        offset += 16
+
+    frame_size = 144000 * bitrates[bit_rate_index_minus1] / sample_rates[freq] + padding_bit
+    buf.read(10, f, frame_size - 10
+
+    if freq & 4:
+        table_idx = 2
+        sblimit = 30
+    else:
+        table_idx = 0 if mode == MONO else 1
+        table_idx = quant_lut_step1[table_idx][bit_rate_index_minus1]
+        table_idx = quant_lut_step2[table_idx][freq]
+        sblimit = table_idx & 63
+        table_idx >>= 6
+
+    bound = min(bound, sblimit)
+    
 
