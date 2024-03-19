@@ -1,105 +1,170 @@
 \documentclass{article}
+\usepackage{amsmath}
+\DeclareMathOperator{\csch}{csch}
+\DeclareMathOperator{\sech}{sech}
+%\DeclareMathOperator{\log1p}{log1p}
+\DeclareMathOperator{\arctanh}{arctanh}
+\DeclareMathOperator{\arcsinh}{arcsinh}
 \begin{document}
+\center
 
-\[2^{2.5} = 2^2 \times 2^{0.5} = 2^2 \times \sqrt{2} \approx 5.656854249492381...\]
+$$2^{2.5} = 2^2 \times 2^{0.5} = 2^2 \times \sqrt{2} \approx 5.656854249492381...$$
 
-\[\ln(1-x) = -\frac{x^1}{1} - \frac{x^2}{2} - \frac{x^3}{3} - \cdots\]
+$$\sqrt{17} = 4\sqrt{\frac{17}{16}}$$
 
-\[\ln(1+x) = \frac{x^1}{1} - \frac{x^2}{2} + \frac{x^3}{3} - \frac{x^4}{4} + \cdots\]
+$$\sqrt{98} = \sqrt{2\times49} = \sqrt{2\times7\times7} = 7\sqrt{2}\approx9.899494936611665...$$
 
-\[\frac{\pi}{\sqrt{12}} =
-\frac{1}{1*3^0} - \frac{1}{3*3^1} + \frac{1}{5*3^2} - \frac{1}{7*3^3} + \cdots\]
+$$\arctan x = -\frac{\pi}{2} - \frac{1}{1x^1} + \frac{1}{3x^3} - \frac{1}{5x^5} + \cdots
+\quad x \leq -1$$
 
-\[\arctan x = \frac{x^1}{1} - \frac{x^3}{3} + \frac{x^5}{5} - \cdots\]
+$$\arctan x = \frac{x^1}{1} - \frac{x^3}{3} + \frac{x^5}{5} - \cdots \quad-1 < x < 1$$
 
-\[\frac{\pi}{4} = \arctan1 =
+$$\arctan x = \frac{\pi}{2} - \frac{1}{1x^1} + \frac{1}{3x^3} - \frac{1}{5x^5} + \cdots
+\quad x \geq 1$$
+
+$$\arctanh x = \frac{x^1}{1} + \frac{x^3}{3} + \frac{x^5}{5} +\cdots \quad-1 < x < 1$$
+
+$$\arcsin x =
+x + \frac{x^3}{2\times3} + \frac{(1\times3)x^5}{2\times4\times5} +
+\frac{(1\times3\times5)x^7}{2\times4\times6\times7}+\cdots$$
+
+$$\arctan x = \arcsin\frac{x}{\sqrt{1+x^2}}$$
+
+$$\ln(1-x) = -\frac{x^1}{1} - \frac{x^2}{2} - \frac{x^3}{3} - \cdots$$
+
+$$\log1p x = \ln(1+x) =
+2\arctanh\frac{x}{2+x}=
+\frac{x^1}{1} - \frac{x^2}{2} + \frac{x^3}{3} - \frac{x^4}{4} + \cdots$$
+
+$$\log_{10}(x) = \frac{\ln{x}}{\ln{10}}$$
+
+$$\ln x = \arctanh\frac{x^2-1}{x^2+1} = \frac{\log_{10}x}{\log_{10}e}$$
+
+$$\ln(x\times y) = \ln x + \ln y$$
+
+$$\ln 1 = 0$$
+
+$$\exp(x) = e^x = (1 + \frac{x}{\infty})^\infty =
+\sum_{n=0}^\infty \frac{x^n}{n!} =
+\frac{x^0}{0!} + \frac{x^1}{1!} + \frac{x^2}{2!} + \frac{x^3}{3!} + \cdots$$
+
+$$e = \exp(1) = (1 + \frac{1}{\infty})^\infty = \sum_{n=0}^\infty \frac{1}{n!} =
+\frac{1}{0!} + \frac{1}{1!} + \frac{1}{2!} + \frac{1}{3!} + \cdots \approx 2.718281828459045...$$
+
+$$e^{ix} = \cos x + i\sin x$$
+
+$$\ln e^x = x$$
+
+$$\ln e = 1$$
+
+$$x^y = \exp(y\ln x)$$
+
+$$\sqrt{x} = \exp\frac{\ln x}{2}$$
+
+$$\frac{\pi}{\sqrt{12}} =
+\frac{1}{1\times3^0}-\frac{1}{3\times3^1}+\frac{1}{5\times3^2}-\frac{1}{7\times3^3}+
+\cdots\approx0.9068996821171089...$$
+
+$$\frac{\pi}{4} = \arctan1 =
 \frac{1}{1} + \frac{1}{3} - \frac{1}{5} + \frac{1}{7} - \frac{1}{9} + \cdots =
-4\arctan{\frac{1}{5}} - \arctan{\frac{1}{239}} \approx 0.7853981633974483...\]
+4\arctan{\frac{1}{5}} - \arctan{\frac{1}{239}}\approx0.7853981633974483...$$
 
-\[\pi = 4\arctan1 = \frac{4}{1} + \frac{4}{3} - \frac{4}{5} + \frac{4}{7} - \frac{4}{9} + \cdots
-\approx 3.141592653589793...\]
+$$\frac{\pi}{2} = \arcsin1 \approx 1.5707963267948966...$$
 
-\[\pi = 16\arctan{\frac{1}{5}} - 4\arctan{\frac{1}{239}} = \arctan1 + \arctan2 + \arctan3\]
+$$\pi = \arccos-1 = 16\arctan{\frac{1}{5}} - 4\arctan{\frac{1}{239}} =
+\arctan1 + \arctan2 + \arctan3\approx 3.141592653589793...$$
 
-\[e = (1 + \frac{1}{\infty})^{\infty} =
-\frac{1}{0!} + \frac{1}{1!} + \frac{1}{2!} + \frac{1}{3!} + \cdots \approx 2.718281828459045...\]
+$$\pi = \arccos-1 = 2\arcsin1 = 4\arctan1 =
+\frac{4}{1} + \frac{4}{3} - \frac{4}{5} + \frac{4}{7} - \frac{4}{9} + \cdots\approx
+3.141592653589793...$$
 
-\[\exp(x) = e^x = \frac{x^0}{0!} + \frac{x^1}{1!} + \frac{x^2}{2!} + \frac{x^3}{3!} + \cdots\]
+$$\sin x = \sum_{n=0}^{\infty}(-1)^n\frac{x^{2n+1}}{(2n+1)!} =
+\frac{x^1}{1!} - \frac{x^3}{3!} + \frac{x^5}{5!} - \frac{x^7}{7!} + \cdots =
+\Im\exp xi = \Im e^{xi}$$
 
-\[\sin x = \sum_{n=0}^{\infty}(-1)^n\frac{x^{2n+1}}{(2n+1)!} =
-\frac{x^1}{1!} - \frac{x^3}{3!} + \frac{x^5}{5!} - \frac{x^7}{7!} + \cdots\]
+$$\cos x = \sum_{n=0}^{\infty}(-1)^n\frac{x^{2n}}{(2n)!} =
+\frac{x^0}{0!} - \frac{x^2}{2!} + \frac{x^4}{4!} - \frac{x^6}{6!} + \cdots =
+\Re\exp xi = \Re e^{xi}$$
 
-\[\sin x = -\sin(-x) = -\sin(\pi + x) = \sin(\pi - x) = -\cos(\frac{\pi}{2} + x)\]
+$$\sin x = -\sin(-x) = -\sin(\pi + x) = \sin(\pi - x) = -\cos(\frac{\pi}{2} + x)$$
 
-\[\sinh x = \frac{x^1}{1!} + \frac{x^3}{3!} + \frac{x^5}{5!} + \frac{x^7}{7!} + \cdots =
-\frac{e^x - e^{-x}}{2} = \frac{e^{2x} - 1}{2e^x} = \frac{1 - e^{-2x}}{2e^{-x}}\]
+$$\sinh x = \frac{e^x - e^{-x}}{2} = \frac{e^{2x} - 1}{2e^x} = \frac{1 - e^{-2x}}{2e^{-x}} =
+\frac{x^1}{1!} + \frac{x^3}{3!} + \frac{x^5}{5!} + \frac{x^7}{7!} + \cdots$$
 
-\[\cos x = \sum_{n=0}^{\infty}(-1)^n\frac{x^{2n}}{(2n)!} =
-\frac{x^0}{0!} - \frac{x^2}{2!} + \frac{x^4}{4!} - \frac{x^6}{6!} + \cdots\]
+$$\sin x\times\sin x + \cos x\times\cos x = 1$$
 
-\[\cosh x = \frac{x^0}{0!} + \frac{x^2}{2!} + \frac{x^4}{4!} + \frac{x^6}{6!} + \cdots\]
+\[\cosh x = \frac{e^x + e^{-x}}{2} = \frac{e^{2x} + 1}{2e^x} = \frac{1 + e^{-2x}}{2e^{-x}} =
+\frac{x^0}{0!} + \frac{x^2}{2!} + \frac{x^4}{4!} + \frac{x^6}{6!} + \cdots\]
 
-\[\cos x = \sin(\frac{1}{2}\pi - x) = \sin(\frac{1}{2}\pi + x)\]
+$$\cos x = \sin(\frac{1}{2}\pi - x) = \sin(\frac{1}{2}\pi + x)$$
 
-\[\tan x = x^1 + \frac{1}{3}x^3 + \frac{2}{15}x^5 +
-\frac{17}{315}x^7 + \frac{62}{2835}x^9 + \cdots\]
+$$\tan x = \frac{\sin x}{\cos x} = \frac{1}{\cot x} =
+x^1 + \frac{1}{3}x^3 + \frac{2}{15}x^5 +
+\frac{17}{315}x^7 + \frac{62}{2835}x^9 + \cdots$$
 
-\[\sec x = x^0 + \frac{1}{2}x^2 + \frac{5}{24}x^4 + \frac{61}{720}x^6 +
-\frac{277}{8064}x^8 + \cdots\]
+$$\cot x = \frac{1}{\tan x} = \frac{\cos x}{\sin x} =
+\frac{1}{x} - \frac{x}{3} - \frac{x^3}{45} - \frac{2x^5}{945} + \frac{x^7}{4725} - \cdots$$
 
-\[\tan x = \frac{\sin x}{\cos x} = \frac{1}{\cot x}\]
+$$\sec x = \frac{1}{\cos x} =
+x^0 + \frac{1}{2}x^2 + \frac{5}{24}x^4 + \frac{61}{720}x^6 +
+\frac{277}{8064}x^8 + \cdots$$
 
-\[\cot x = \tan^{-1} = \frac{1}{\tan x} = \frac{\cos x}{\sin x}\]
+$$\csc x = \frac{1}{\sin x}$$
 
-\[\sec x = \cos^{-1}x = \frac{1}{\cos x}\]
+$$\tanh x = \frac{e^x-e^{-x}}{e^x+e^{-x}} =
+\frac{e^{2x}-1}{e^{2x}+1} = \frac{\sinh x}{\cosh x}$$
 
-\[\csc x = \sin^{-1}x = \frac{1}{\sin x}\]
+$$\coth x = \frac{e^x + e^{-x}}{e^x - e^{-x}} =
+\frac{e^{2x} + 1}{e^{2x} - 1} = \frac{\cosh x}{\sinh x}$$
 
-\[\cosh x = \frac{e^x + e^{-x}}{2} = \frac{e^{2x} + 1}{2e^x} = \frac{1 + e^{-2x}}{2e^{-x}}\]
+$$\sech x = \frac{2}{e^x + e^{-x}} = \frac{2e^x}{e^{2x}+1} = \frac{1}{\cosh x}$$
 
-\[\tanh x = \frac{e^x-e^{-x}}{e^x+e^{-x}} =
-\frac{e^{2x}-1}{e^{2x}+1} = \frac{\sinh x}{\cosh x}\]
+$$\csch x = \frac{2}{e^x - e^{-x}} = \frac{2e^x}{e^{2x}-1} = \frac{1}{\sinh x}$$
 
-\[\coth x = \frac{e^x + e^{-x}}{e^x - e^{-x}} =
-\frac{e^{2x} + 1}{e^{2x} - 1} = \frac{\cosh x}{\sinh x}\]
+$$\arcsin x = \arctan\frac{x}{\sqrt{1-x^2}}
+%= x + \frac{x^3}{2\times3} + \frac{(1\times3)x^5}{2\times4\times5}
+\quad -1 < x < 1$$
 
-\[sech x = \frac{2}{e^x + e^{-x}} = \frac{2e^x}{e^{2x}+1} = \frac{1}{\cosh x}\]
+$$\arccos x = \arctan\frac{-1}{\sqrt{1-x^2}}\quad -1 < x < 1$$
 
-\[csch x = \frac{2}{e^x - e^{-x}} = \frac{2e^x}{e^{2x}-1} = \frac{1}{\sinh x}\]
+$$\arcsinh x = \ln(x+\sqrt{x^2+1})$$
 
-\[\arcsin x\]
+$$\sin(\arcsin x) = x$$
 
-$\sin(\arcsin x) = x$
+$$\cos(\arccos x) = x$$
+
+$$\tan(\arctan x) = x$$
+
+$$\sin(-\frac{1}{2}\pi) = \cos\pi = -1$$
+
+$$\arctan-1 = -\frac{\pi}{4} = -0.7853981633974483...$$
+
+$$\sin0 = \sinh0 = \tan0 = \tanh0 = \arcsin0 = \arctan0 = \arccos1 = \sin\pi =
+\tan\pi = \cos\frac{1}{2}\pi = 0$$
+
+$$\sin\frac{1}{6}\pi = \sin\frac{5}{6}\pi = \cos\frac{1}{3}\pi = \frac{1}{2} = 0.5$$
+
+$$\sin\frac{1}{4}\pi = \cos\frac{1}{2}\pi = \frac{1}{2}\sqrt{2}\approx0.7071067811865476...$$
+
+$$\arctan1=\frac{\pi}{4}\approx0.7853981633974483...$$
+
+$$\sin\frac{\pi}{3}=\frac{\sqrt{3}}{2}\approx0.8660254037844386...$$
+
+$$\sin\frac{1}{2}\pi = \cos0 = \tan\frac{1}{4}\pi = 1$$
+
+$$\arctan\sqrt{3} = \frac{\pi}{3}\approx1.0471975511965976...$$
+
+$$\arcsin1 = \arccos0 = \arctan2(+x,0) = \frac{\pi}{2}\approx1.5707963267948966...$$
+
+$$\arcsin x + \arccos x = \frac{\pi}{2} \approx1.5707963267948966...$$
+
+$$\tan\frac{\pi}{3}=\sqrt{3}\approx1.7320508075688772...$$
+
+$$\arccos-1 = \arctan2(0,-x) = \pi\approx3.141592653589793...$$
 
 
 
-\hrulefill
-
-\[\sin(-\frac{1}{2}\pi) = \cos\pi = -1\]
-
-\[\sin0 = \tan0 = \arcsin0 = \arctan0 = \sin\pi = \tan\pi = \cos\frac{1}{2}\pi = 0\]
-
-\[\sin\frac{1}{6}\pi = \sin\frac{5}{6}\pi = \cos\frac{1}{3}\pi = \frac{1}{2} = 0.5\]
-
-\[\sin\frac{1}{4}\pi = \cos\frac{1}{2}\pi = \frac{1}{2}\sqrt{2} \approx 0.7071067811865476...\]
-
-\[\arctan{1} = \frac{1}{4}\pi \approx 0.7853981633974483...\]
-
-\[\sin\frac{1}{3}\pi = \frac{\sqrt{3}}{2} \approx 0.8660254037844386\]
-
-\[\sin\frac{1}{2}\pi = \cos0 = \tan\frac{1}{4}\pi = 1\]
-
-\[\tan\frac{1}{3}\pi = \sqrt{3} \approx 1.7320508075688772...\]
-
-\[\ln 1 = 0\]
-
-\[\ln e = 1\]
-
-\[\sin x * \sin x + \cos x * \cos x = 1\]
-
-\hrulefill
-
-$0\circ = 0\pi$
+$$0\circ = 0\pi$$
 
 $45\circ = \frac{1}{4}\pi$
 
@@ -107,15 +172,11 @@ $90\circ = \frac{1}{2}\pi$
 
 $180\circ = 1\pi$
 
-\hrulefill
-
 $\sin 0\circ = \sin 180\circ = \sin\pi = 0$
 
 $\sin 45\circ = \sin\frac{\pi}{4}$
 
 $\sin 90\circ = \sin\frac{\pi}{2} = 1$
-
-\hrulefill
 
 \begin{tabular}{c c c c}
 -               & $\sin$               & $\cos$               & $\tan$\\
@@ -124,9 +185,11 @@ $\frac{\pi}{4}$ & $\frac{\sqrt{2}}{2}$ & $\frac{\sqrt{2}}{2}$ & 1\\
 $\frac{\pi}{2}$ & 1                    & 0                    & n/a
 \end{tabular}
 
-\hrulefill
+$$\binom{4}{2}$$
 
+$$\int_0^1x^2dx=\frac{1}{3}\approx0.333...$$
 
+$$\int_{-\infty}^\infty\exp(-x^2)dx = \sqrt{\pi}$$
 
 \end{document}
 

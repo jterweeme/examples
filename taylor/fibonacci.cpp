@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <exception>
 #include <concepts>
+#include <cassert>
 #include <iostream>
 
 using std::convertible_to;
