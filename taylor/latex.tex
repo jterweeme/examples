@@ -3,8 +3,12 @@
 \DeclareMathOperator{\csch}{csch}
 \DeclareMathOperator{\sech}{sech}
 %\DeclareMathOperator{\log1p}{log1p}
-\DeclareMathOperator{\arctanh}{arctanh}
 \DeclareMathOperator{\arcsinh}{arcsinh}
+\DeclareMathOperator{\arccosh}{arccosh}
+\DeclareMathOperator{\arctanh}{arctanh}
+\DeclareMathOperator{\arccoth}{arccoth}
+\DeclareMathOperator{\arccsch}{arccsch}
+\DeclareMathOperator{\arcsech}{arcsech}
 \begin{document}
 \center
 
@@ -14,29 +18,42 @@ $$\sqrt{17} = 4\sqrt{\frac{17}{16}}$$
 
 $$\sqrt{98} = \sqrt{2\times49} = \sqrt{2\times7\times7} = 7\sqrt{2}\approx9.899494936611665...$$
 
-$$\arctan x = -\frac{\pi}{2} - \frac{1}{1x^1} + \frac{1}{3x^3} - \frac{1}{5x^5} + \cdots
-\quad x \leq -1$$
-
-$$\arctan x = \frac{x^1}{1} - \frac{x^3}{3} + \frac{x^5}{5} - \cdots \quad-1 < x < 1$$
-
-$$\arctan x = \frac{\pi}{2} - \frac{1}{1x^1} + \frac{1}{3x^3} - \frac{1}{5x^5} + \cdots
-\quad x \geq 1$$
-
-$$\arctanh x = \frac{x^1}{1} + \frac{x^3}{3} + \frac{x^5}{5} +\cdots \quad-1 < x < 1$$
-
 $$\arcsin x =
 x + \frac{x^3}{2\times3} + \frac{(1\times3)x^5}{2\times4\times5} +
-\frac{(1\times3\times5)x^7}{2\times4\times6\times7}+\cdots$$
+\frac{(1\times3\times5)x^7}{2\times4\times6\times7}+\cdots\quad-1\leq x \leq1$$
 
 $$\arctan x = \arcsin\frac{x}{\sqrt{1+x^2}}$$
 
-$$\ln(1-x) = -\frac{x^1}{1} - \frac{x^2}{2} - \frac{x^3}{3} - \cdots$$
+$$
+\arctan x=\left\{\begin{array}{l}
+-\frac{\pi}{2} - \frac{1}{1x^1} + \frac{1}{3x^3} - \frac{1}{5x^5} + \cdots\quad x \leq-1\\
+\frac{x^1}{1} - \frac{x^3}{3} + \frac{x^5}{5} - \cdots\quad -1 < x < 1\\
+\frac{\pi}{2} - \frac{1}{1x^1} + \frac{1}{3x^3} - \frac{1}{5x^5} + \cdots\quad x \geq 1
+\end{array}\right.
+$$
 
-$$\log1p x = \ln(1+x) =
+$$
+\arcsin x =\left\{\begin{array}{l}
+-\frac{\pi}{2}\quad x == -1\\
+\arctan\frac{x}{\sqrt{1-x^2}}\quad -1 < x < 1\\
+\frac{\pi}{2}\quad x == 1
+\end{array}\right.
+$$
+
+$$\arctanh x = \frac{1}{2}\ln\frac{1 + x}{1 - x} =
+\frac{x^1}{1} + \frac{x^3}{3} + \frac{x^5}{5} +\cdots \quad-1 < x < 1$$
+
+$$\arccoth x = \frac{1}{2}\ln\frac{x + 1}{x - 1}$$
+
+$$\ln(1-x) = -\frac{x^1}{1} - \frac{x^2}{2} - \frac{x^3}{3} - \cdots\quad x < 1$$
+
+$$\log1p(x) = \ln(1+x) =
 2\arctanh\frac{x}{2+x}=
 \frac{x^1}{1} - \frac{x^2}{2} + \frac{x^3}{3} - \frac{x^4}{4} + \cdots$$
 
-$$\log_{10}(x) = \frac{\ln{x}}{\ln{10}}$$
+$$\log_{10}(x) = \frac{\ln{x}}{\ln{10}} = \frac{\log_2(x)}{\log_2(10)}$$
+
+$$\log_2(x) = \frac{\ln{x}}{\ln{2}} = \frac{\log_{10}(x)}{\log_{10}(2)}$$
 
 $$\ln x = \arctanh\frac{x^2-1}{x^2+1} = \frac{\log_{10}x}{\log_{10}e}$$
 
@@ -50,6 +67,8 @@ $$\exp(x) = e^x = (1 + \frac{x}{\infty})^\infty =
 
 $$e = \exp(1) = (1 + \frac{1}{\infty})^\infty = \sum_{n=0}^\infty \frac{1}{n!} =
 \frac{1}{0!} + \frac{1}{1!} + \frac{1}{2!} + \frac{1}{3!} + \cdots \approx 2.718281828459045...$$
+
+$$\exp(-x) = \frac{1}{\exp(x)}$$
 
 $$e^{ix} = \cos x + i\sin x$$
 
@@ -80,11 +99,11 @@ $$\pi = \arccos-1 = 2\arcsin1 = 4\arctan1 =
 
 $$\sin x = \sum_{n=0}^{\infty}(-1)^n\frac{x^{2n+1}}{(2n+1)!} =
 \frac{x^1}{1!} - \frac{x^3}{3!} + \frac{x^5}{5!} - \frac{x^7}{7!} + \cdots =
-\Im\exp xi = \Im e^{xi}$$
+\Im(\exp xi) = \Im(e^{xi})$$
 
 $$\cos x = \sum_{n=0}^{\infty}(-1)^n\frac{x^{2n}}{(2n)!} =
 \frac{x^0}{0!} - \frac{x^2}{2!} + \frac{x^4}{4!} - \frac{x^6}{6!} + \cdots =
-\Re\exp xi = \Re e^{xi}$$
+\Re(\exp xi) = \Re(e^{xi})$$
 
 $$\sin x = -\sin(-x) = -\sin(\pi + x) = \sin(\pi - x) = -\cos(\frac{\pi}{2} + x)$$
 
@@ -98,40 +117,37 @@ $$\sin x\times\sin x + \cos x\times\cos x = 1$$
 
 $$\cos x = \sin(\frac{1}{2}\pi - x) = \sin(\frac{1}{2}\pi + x)$$
 
-$$\tan x = \frac{\sin x}{\cos x} = \frac{1}{\cot x} =
-x^1 + \frac{1}{3}x^3 + \frac{2}{15}x^5 +
-\frac{17}{315}x^7 + \frac{62}{2835}x^9 + \cdots$$
+$$\tan x = \frac{\sin x}{\cos x} = \frac{1}{\cot x}
+%x^1 + \frac{1}{3}x^3 + \frac{2}{15}x^5 +
+%\frac{17}{315}x^7 + \frac{62}{2835}x^9 + \cdots
+\quad x \neq\frac{\pi}{2}$$
 
-$$\cot x = \frac{1}{\tan x} = \frac{\cos x}{\sin x} =
-\frac{1}{x} - \frac{x}{3} - \frac{x^3}{45} - \frac{2x^5}{945} + \frac{x^7}{4725} - \cdots$$
+$$\cot x = \frac{1}{\tan x} = \frac{\cos x}{\sin x}$$
+%\frac{1}{x} - \frac{x}{3} - \frac{x^3}{45} - \frac{2x^5}{945} + \frac{x^7}{4725} - \cdots$$
 
-$$\sec x = \frac{1}{\cos x} =
-x^0 + \frac{1}{2}x^2 + \frac{5}{24}x^4 + \frac{61}{720}x^6 +
-\frac{277}{8064}x^8 + \cdots$$
+$$\sec x = \frac{1}{\cos x}$$
+%x^0 + \frac{1}{2}x^2 + \frac{5}{24}x^4 + \frac{61}{720}x^6 + \frac{277}{8064}x^8 + \cdots$$
 
 $$\csc x = \frac{1}{\sin x}$$
 
 $$\tanh x = \frac{e^x-e^{-x}}{e^x+e^{-x}} =
-\frac{e^{2x}-1}{e^{2x}+1} = \frac{\sinh x}{\cosh x}$$
+\frac{e^{2x}-1}{e^{2x}+1} = \frac{\sinh x}{\cosh x} =
+\Im(\tan(xi))$$
 
-$$\coth x = \frac{e^x + e^{-x}}{e^x - e^{-x}} =
+$$\coth x = \frac{1}{\tanh x} = \frac{e^x + e^{-x}}{e^x - e^{-x}} =
 \frac{e^{2x} + 1}{e^{2x} - 1} = \frac{\cosh x}{\sinh x}$$
 
 $$\sech x = \frac{2}{e^x + e^{-x}} = \frac{2e^x}{e^{2x}+1} = \frac{1}{\cosh x}$$
 
 $$\csch x = \frac{2}{e^x - e^{-x}} = \frac{2e^x}{e^{2x}-1} = \frac{1}{\sinh x}$$
 
-$$\arcsin x = \arctan\frac{x}{\sqrt{1-x^2}}
-%= x + \frac{x^3}{2\times3} + \frac{(1\times3)x^5}{2\times4\times5}
-\quad -1 < x < 1$$
-
-$$\arccos x = \arctan\frac{-1}{\sqrt{1-x^2}}\quad -1 < x < 1$$
-
 $$\arcsinh x = \ln(x+\sqrt{x^2+1})$$
 
-$$\sin(\arcsin x) = x$$
+$$\arccosh x = \ln(x+\sqrt{x^2-1})$$
 
-$$\cos(\arccos x) = x$$
+$$\sin(\arcsin x) = x \quad -1 \leq x \leq 1$$
+
+$$\cos(\arccos x) = x \quad -1 \leq x \leq 1$$
 
 $$\tan(\arctan x) = x$$
 
@@ -140,7 +156,7 @@ $$\sin(-\frac{1}{2}\pi) = \cos\pi = -1$$
 $$\arctan-1 = -\frac{\pi}{4} = -0.7853981633974483...$$
 
 $$\sin0 = \sinh0 = \tan0 = \tanh0 = \arcsin0 = \arctan0 = \arccos1 = \sin\pi =
-\tan\pi = \cos\frac{1}{2}\pi = 0$$
+\tan\pi = \cos\frac{\pi}{2} = 0$$
 
 $$\sin\frac{1}{6}\pi = \sin\frac{5}{6}\pi = \cos\frac{1}{3}\pi = \frac{1}{2} = 0.5$$
 
