@@ -55,31 +55,31 @@ def log(x):
 def fmod(a, b):
     return a % b
 
-def cosh(x, nterms = 20):
+def cosh(x):
     foo = exp(x)
     return (foo + 1/foo) / 2
     #return numpy.cos(1j * x).real
 
-def sinh(x, nterms = 20):
+def sinh(x):
     foo = exp(x)
     return (foo - 1/foo) / 2
     #return numpy.sin(1j * x).imag
 
-def sin_(x):
-    return exp((x % tau()) *1j).imag
-    #return exp(x * 1j).imag
-    #return sinh(x *1j).imag
-
-def cos_(x):
-    return exp((x % tau()) *1j).real
-    #return exp(x * 1j).real
-    #return cosh(x *1j).real
-
 def sin(x):
-    ret = sin_(x.real)
-    return ret * cosh(x.imag) + cos_(x.real) * sinh(x.imag) *1j if isinstance(x, complex) else ret
+    ret = sinh(x.real * 1j).imag
+    if isinstance(x, complex):
+        ret = ret * cosh(x.imag) + cosh(x.real * 1j).real * sinh(x.imag) *1j
+    return ret
 
 def cos(x):
+    def sin_(x):
+        return exp((x % tau()) *1j).imag
+        #return exp(x * 1j).imag
+        #return sinh(x *1j).imag
+    def cos_(x):
+        return exp((x % tau()) *1j).real
+        #return exp(x * 1j).real
+        #return cosh(x *1j).real
     ret = cos_(x.real)
     return ret * cosh(x.imag) + sin_(x.real) * sinh(x.imag) *1j if isinstance(x, complex) else ret
 
